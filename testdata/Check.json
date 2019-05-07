@@ -1,0 +1,78 @@
+{
+    "id": "1",
+    "name": "testCheck",
+    "checkType": "BROWSER",
+    "frequency": 0,
+    "activated": true,
+    "muted": false,
+    "doubleCheck": true,
+    "sslCheck": true,
+    "sslCheckDomain": "string",
+    "shouldFail": true,
+    "locations": [
+        "string"
+    ],
+    "request": {
+        "method": "GET",
+        "url": "localhost",
+        "followRedirects": true,
+        "body": "string",
+        "bodyType": "JSON",
+        "headers": [
+            {
+                "key": "string",
+                "value": "",
+                "locked": false
+            }
+        ],
+        "queryParameters": [
+            {
+                "key": "string",
+                "value": "",
+                "locked": false
+            }
+        ],
+        "assertions": [
+            {}
+        ],
+        "basicAuth": {
+            "username": "",
+            "password": ""
+        }
+    },
+    "script": "string",
+    "environmentVariables": [
+        {
+            "key": "string",
+            "value": "",
+            "locked": false
+        }
+    ],
+    "tags": [
+        "string"
+    ],
+    "setupSnippetId": 0,
+    "tearDownSnippetId": 0,
+    "localSetupScript": "string",
+    "localTearDownScript": "string",
+    "alertSettings": {
+        "escalationType": "RUN_BASED",
+        "runBasedEscalation": {
+            "failedRunThreshold": 1
+        },
+        "timeBasedEscalation": {
+            "minutesFailingThreshold": 5
+        },
+        "reminders": {
+            "amount": 0,
+            "interval": 5
+        },
+        "sslCertificates": {
+            "enabled": true,
+            "alertThreshold": 3
+        }
+    },
+    "useGlobalAlertSettings": true,
+    "created_at": "2019-05-06",
+    "updated_at": "2019-05-06"
+}
