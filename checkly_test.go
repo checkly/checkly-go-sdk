@@ -21,11 +21,11 @@ func TestCreateCheck(t *testing.T) {
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	// client.Debug = os.Stdout
-	check, err := client.CreateCheck(Params{"name": "testCheck"})
+	wantName := "test"
+	check, err := client.CreateCheck(Params{"name": wantName})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantName := "testCheck"
 	if check.Name != wantName {
 		t.Fatalf("want %q, got %q", wantName, check.Name)
 	}

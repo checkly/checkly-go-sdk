@@ -12,11 +12,11 @@ import (
 	"strings"
 )
 
-// Client represents a Checkly client. If the Debug field is set to an
-// io.Writer, then the client will dump API requests to it instead of calling
-// the real API.  To use a non-default HTTP client (for example, for testing, or
-// to set a timeout), assign to the HTTPClient field. To set a non-default URL
-// (for example, for testing), assign to the URL field.
+// Client represents a Checkly client. If the Debug field is set to an io.Writer
+// (for example os.Stdout), then the client will dump API requests and responses
+// to it.  To use a non-default HTTP client (for example, for testing, or to set
+// a timeout), assign to the HTTPClient field. To set a non-default URL (for
+// example, for testing), assign to the URL field.
 type Client struct {
 	apiKey     string
 	URL        string
