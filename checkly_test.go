@@ -6,6 +6,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -19,7 +22,7 @@ func TestCreateCheck(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			t.Fatalf("want POST request, got %q", r.Method)
+			t.Errorf("want POST request, got %q", r.Method)
 		}
 		wantURL := "/v1/checks"
 		if r.URL.EscapedPath() != wantURL {
@@ -41,42 +44,49 @@ func TestCreateCheck(t *testing.T) {
 	client := NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	// client.Debug = os.Stdout
-	wantName := "test"
+	wantID := "73d29e72-6540-4bb5-967e-e07fa2c9465e"
 	params := Params{
-		"name":      wantName,
+		"name":      "test",
 		"checkType": "BROWSER",
 		"activated": "true",
 	}
-	check, err := client.CreateCheck(params)
+	gotID, err := client.CreateCheck(params)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if check.Name != wantName {
-		t.Fatalf("want %q, got %q", wantName, check.Name)
+	if gotID != wantID {
+		t.Errorf("want %q, got %q", wantID, gotID)
 	}
 }
 
 func TestDeleteCheck(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			t.Errorf("want DELETE request, got %q", r.Method)
+		}
+		wantURLPrefix := "/v1/checks"
+		if !strings.HasPrefix(r.URL.EscapedPath(), wantURLPrefix) {
+			t.Errorf("want URL prefix %q, got %q", wantURLPrefix, r.URL.EscapedPath())
+		}
+		ID := path.Base(r.URL.String())
+		_, err := strconv.Atoi(ID)
+		if err != nil {
+			t.Errorf("want numeric ID, got %q", ID)
+		}
 		data, err := os.Open("testdata/Check.json")
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer data.Close()
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
 	client := NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	// client.Debug = os.Stdout
-	wantName := "test"
-	check, err := client.CreateCheck(Params{"name": wantName})
+	err := client.DeleteCheck("73d29e72-6540-4bb5-967e-e07fa2c9465e")
 	if err != nil {
 		t.Fatal(err)
-	}
-	if check.Name != wantName {
-		t.Fatalf("want %q, got %q", wantName, check.Name)
 	}
 }

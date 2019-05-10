@@ -2,6 +2,7 @@ package checkly
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,17 +25,8 @@ type Client struct {
 	Debug      io.Writer
 }
 
-// Error represents an API error.
-type Error map[string]interface{}
-
-// Params holds optional parameters for API calls.
+// Params stores parameters for API calls.
 type Params map[string]string
-
-// Check represents a Checkly check.
-type Check struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
 
 // NewClient takes a Checkly API key, and returns a Client ready to use.
 func NewClient(apiKey string) Client {
@@ -45,18 +37,33 @@ func NewClient(apiKey string) Client {
 	}
 }
 
-// CreateCheck creates a new check with the specified details. It returns the newly
-// created check, or an error.
-func (c *Client) CreateCheck(p Params) (Check, error) {
+// CreateCheck creates a new check with the specified details. It returns the
+// check ID of the newly-created check, or an error.
+func (c *Client) CreateCheck(p Params) (string, error) {
 	res, err := c.MakeAPICall("checks", p)
 	if err != nil {
-		return Check{}, err
+		return "", err
 	}
-	var m Check
+	m := make(map[string]interface{})
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&m); err != nil {
-		return Check{}, fmt.Errorf("decoding error: %v", err)
+		return "", fmt.Errorf("decoding error: %v", err)
 	}
-	return m, nil
+	rawID, ok := m["id"]
+	if !ok {
+		return "", errors.New("no ID field in response")
+	}
+	ID, ok := rawID.(string)
+	if !ok {
+		return "", fmt.Errorf("bad ID: %q", rawID)
+	}
+	return ID, nil
+}
+
+// DeleteCheck deletes the check with the specified ID. It returns a non-nil
+// error if the request failed.
+func (c *Client) DeleteCheck(ID string) error {
+	// TODO make API request
+	return errors.New("not implemented")
 }
 
 // MakeAPICall calls the checkly API with the specified verb and stores the
