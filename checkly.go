@@ -40,7 +40,7 @@ func NewClient(apiKey string) Client {
 // CreateCheck creates a new check with the specified details. It returns the
 // check ID of the newly-created check, or an error.
 func (c *Client) CreateCheck(p Params) (string, error) {
-	res, err := c.MakeAPICall("checks", p)
+	res, err := c.MakeAPICall(http.MethodPost, "checks", p)
 	if err != nil {
 		return "", err
 	}
@@ -68,18 +68,17 @@ func (c *Client) DeleteCheck(ID string) error {
 
 // MakeAPICall calls the checkly API with the specified verb and stores the
 // returned data in the Response struct.
-func (c *Client) MakeAPICall(verb string, params Params) (string, error) {
+func (c *Client) MakeAPICall(method string, URL string, params Params) (string, error) {
 	form := url.Values{}
-	form.Add("api_key", c.apiKey)
-	form.Add("format", "json")
 	for k, v := range params {
 		form.Add(k, v)
 	}
-	requestURL := c.URL + "/v1/" + verb
-	req, err := http.NewRequest("POST", requestURL, strings.NewReader(form.Encode()))
+	requestURL := c.URL + "/v1/" + URL
+	req, err := http.NewRequest(method, requestURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
+	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	if c.Debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
