@@ -16,25 +16,41 @@ Import the library using:
 import "github.com/bitfield/checkly"
 ```
 
+## Creating a client
+
 Create a new `Client` object by calling `checkly.NewClient()` with your API key:
 
 ```go
 client = checkly.New(apiKey)
 ```
 
-Once you have a client, you can use it to create a check:
+## Creating a new check
+
+Once you have a client, you can use `client.Create()` to create a check. It returns the ID string of the newly-created check:
 
 ```go
-params = Params{
+params = checkly.Params{
         "name": "My awesome check",
         "checkType": "BROWSER",
+        "activated": "true",
 }
-check, err := client.CreateCheck(params)
+ID, err := client.Create(params)
 if err != nil {
         log.Fatal(err)
 }
-fmt.Println(check.Name)
+fmt.Println(ID)
 // Output: My awesome check
+```
+
+## Deleting a check
+
+Use `client.Delete(ID)` to delete a check.
+
+```go
+err := client.Delete("73d29ea2-6540-4bb5-967e-e07fa2c9465e")
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## Debugging
@@ -43,11 +59,10 @@ If things aren't working as you expect, you can assign an `io.Writer` to `client
 
 ```go
 client.Debug = os.Stdout
-r := checkly.Response{}
 p := checkly.Params{
     "frogurt": "cursed",
 }
-if err := client.MakeAPICall("monkeyPaw", &r, p); err != nil {
+status, response, err := client.MakeAPICall(http.MethodGet, "monkeyPaw", p); if err != nil {
     log.Fatal(err)
 }
 ```
@@ -55,7 +70,7 @@ if err := client.MakeAPICall("monkeyPaw", &r, p); err != nil {
 outputs:
 
 ```
-POST /v2/monkeyPaw HTTP/1.1
+POST /v1/monkeyPaw HTTP/1.1
 Host: api.checkly.com
 User-Agent: Go-http-client/1.1
 Content-Length: 52
@@ -70,6 +85,6 @@ api_key=XXX&format=json&frogurt=cursed
 
 If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/bitfield/checkly/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
-Not all the functionality of the checkly API is implemented yet.
+Not all the functionality of the Checkly API is implemented yet.
 
 Pull requests welcome!

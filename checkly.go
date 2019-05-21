@@ -36,9 +36,9 @@ func NewClient(apiKey string) Client {
 	}
 }
 
-// CreateCheck creates a new check with the specified details. It returns the
+// Create creates a new check with the specified details. It returns the
 // check ID of the newly-created check, or an error.
-func (c *Client) CreateCheck(p Params) (string, error) {
+func (c *Client) Create(p Params) (string, error) {
 	status, res, err := c.MakeAPICall(http.MethodPost, "checks", p)
 	if err != nil {
 		return "", err
@@ -61,9 +61,9 @@ func (c *Client) CreateCheck(p Params) (string, error) {
 	return ID, nil
 }
 
-// DeleteCheck deletes the check with the specified ID. It returns a non-nil
+// Delete deletes the check with the specified ID. It returns a non-nil
 // error if the request failed.
-func (c *Client) DeleteCheck(ID string) error {
+func (c *Client) Delete(ID string) error {
 	status, _, err := c.MakeAPICall(http.MethodDelete, "checks/"+ID, nil)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (c *Client) DeleteCheck(ID string) error {
 	return nil
 }
 
-// MakeAPICall calls the checkly API with the specified verb and stores the
+// MakeAPICall calls the Checkly API with the specified verb and stores the
 // returned data in the Response struct.
 func (c *Client) MakeAPICall(method string, URL string, params Params) (statusCode int, response string, err error) {
 	var body io.Reader

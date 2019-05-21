@@ -18,7 +18,7 @@ func assertFormParamPresent(t *testing.T, form url.Values, param string) {
 		t.Errorf("want %q parameter, got none", param)
 	}
 }
-func TestCreateCheck(t *testing.T) {
+func TestCreate(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -51,7 +51,7 @@ func TestCreateCheck(t *testing.T) {
 		"checkType": "BROWSER",
 		"activated": "true",
 	}
-	gotID, err := client.CreateCheck(params)
+	gotID, err := client.Create(params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ const idFormat = `[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4
 
 var idRE = regexp.MustCompile(idFormat)
 
-func TestDeleteCheck(t *testing.T) {
+func TestDelete(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "DELETE" {
@@ -84,7 +84,7 @@ func TestDeleteCheck(t *testing.T) {
 	client := NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	err := client.DeleteCheck("73d29e72-6540-4bb5-967e-e07fa2c9465e")
+	err := client.Delete("73d29e72-6540-4bb5-967e-e07fa2c9465e")
 	if err != nil {
 		t.Fatal(err)
 	}

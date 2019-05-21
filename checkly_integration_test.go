@@ -16,7 +16,7 @@ func getAPIKey(t *testing.T) string {
 	return key
 }
 
-func TestCreateCheckIntegration(t *testing.T) {
+func TestCreateIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
 	params := Params{
@@ -24,8 +24,8 @@ func TestCreateCheckIntegration(t *testing.T) {
 		"checkType": "BROWSER",
 		"activated": "true",
 	}
-	ID, err := client.CreateCheck(params)
-	defer client.DeleteCheck(ID)
+	ID, err := client.Create(params)
+	defer client.Delete(ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestCreateCheckIntegration(t *testing.T) {
 	}
 }
 
-func TestDeleteCheckIntegration(t *testing.T) {
+func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
 	params := Params{
@@ -42,11 +42,11 @@ func TestDeleteCheckIntegration(t *testing.T) {
 		"checkType": "BROWSER",
 		"activated": "true",
 	}
-	ID, err := client.CreateCheck(params)
+	ID, err := client.Create(params)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.DeleteCheck(ID); err != nil {
+	if err := client.Delete(ID); err != nil {
 		t.Error(err)
 	}
 }
