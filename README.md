@@ -26,31 +26,43 @@ client = checkly.New(apiKey)
 
 ## Creating a new check
 
-Once you have a client, you can use `client.Create()` to create a check. It returns the ID string of the newly-created check:
+Once you have a client, you can create a check. First, populate a Check struct with the required parameters:
 
 ```go
-params = checkly.Params{
-        "name": "My awesome check",
-        "checkType": "BROWSER",
-        "activated": "true",
+check := checkly.Check{
+        Name:      "My Awesome Check",
+        Type:      TypeBrowser,
+        Activated: true,
+        Request:   checkly.Request{
+                Method: http.MethodGet,
+                URL: "http://example.com",
+        }
 }
-ID, err := client.Create(params)
-if err != nil {
-        log.Fatal(err)
-}
-fmt.Println(ID)
-// Output: My awesome check
+```
+
+Now you can pass it to `client.Create()` to create a check. This returns the ID string of the newly-created check:
+
+```go
+ID, err := client.Create(check)
+```
+
+## Retrieving a check
+
+`client.Get(ID)` finds an existing check by ID and returns a Check struct containing its details:
+
+```go
+check, err := client.Get(ID)
+fmt.Println(check.Name)
+// Output: My Awesome Check
+
 ```
 
 ## Deleting a check
 
-Use `client.Delete(ID)` to delete a check.
+Use `client.Delete(ID)` to delete a check by ID.
 
 ```go
 err := client.Delete("73d29ea2-6540-4bb5-967e-e07fa2c9465e")
-if err != nil {
-    log.Fatal(err)
-}
 ```
 
 ## Debugging
@@ -62,7 +74,8 @@ client.Debug = os.Stdout
 p := checkly.Params{
     "frogurt": "cursed",
 }
-status, response, err := client.MakeAPICall(http.MethodGet, "monkeyPaw", p); if err != nil {
+status, response, err := client.MakeAPICall(http.MethodGet, "monkeyPaw", p)
+if err != nil {
     log.Fatal(err)
 }
 ```

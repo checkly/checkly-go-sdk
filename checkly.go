@@ -24,7 +24,28 @@ type Client struct {
 	Debug      io.Writer
 }
 
-// Params stores parameters for API calls.
+// TypeBrowser is used to identify a browser check.
+const TypeBrowser = "BROWSER"
+
+// TypeAPI is used to identify an API check.
+const TypeAPI = "API"
+
+// Check represents the parameters for an existing check.
+type Check struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Type      string  `json:"checkType"`
+	Activated bool    `json:"activated"`
+	Request   Request `json:"request"`
+}
+
+// Request represents the parameters for the request made by the check.
+type Request struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
+
+// Params represents a set of parameters sent with an API call.
 type Params map[string]string
 
 // NewClient takes a Checkly API key, and returns a Client ready to use.
@@ -38,7 +59,12 @@ func NewClient(apiKey string) Client {
 
 // Create creates a new check with the specified details. It returns the
 // check ID of the newly-created check, or an error.
-func (c *Client) Create(p Params) (string, error) {
+func (c *Client) Create(check Check) (string, error) {
+	p := Params{
+		"name":      check.Name,
+		"checkType": check.Type,
+		"activated": fmt.Sprintf("%t", check.Activated),
+	}
 	status, res, err := c.MakeAPICall(http.MethodPost, "checks", p)
 	if err != nil {
 		return "", err
@@ -72,6 +98,23 @@ func (c *Client) Delete(ID string) error {
 		return fmt.Errorf("unexpected response status %d", status)
 	}
 	return nil
+}
+
+// Get takes the ID of an existing check, and returns the check parameters, or
+// an error.
+func (c *Client) Get(ID string) (Check, error) {
+	status, res, err := c.MakeAPICall(http.MethodGet, "checks/"+ID, nil)
+	if err != nil {
+		return Check{}, err
+	}
+	if status != http.StatusOK {
+		return Check{}, fmt.Errorf("unexpected response status %d", status)
+	}
+	check := Check{}
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&check); err != nil {
+		return Check{}, fmt.Errorf("decoding error: %v", err)
+	}
+	return check, nil
 }
 
 // MakeAPICall calls the Checkly API with the specified verb and stores the
