@@ -33,7 +33,7 @@ func TestCreate(t *testing.T) {
 		for _, p := range wantParams {
 			assertFormParamPresent(t, r.Form, p)
 		}
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusCreated)
 		data, err := os.Open("testdata/Create.json")
 		if err != nil {
 			t.Fatal(err)

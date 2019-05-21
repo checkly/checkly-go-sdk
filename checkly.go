@@ -69,7 +69,7 @@ func (c *Client) Create(check Check) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if status != http.StatusOK {
+	if status != http.StatusCreated {
 		return "", fmt.Errorf("unexpected response status %d", status)
 	}
 	m := make(map[string]interface{})
