@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strconv"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -33,6 +33,7 @@ func TestCreateCheck(t *testing.T) {
 		for _, p := range wantParams {
 			assertFormParamPresent(t, r.Form, p)
 		}
+		w.WriteHeader(http.StatusCreated)
 		data, err := os.Open("testdata/Check.json")
 		if err != nil {
 			t.Fatal(err)
@@ -59,6 +60,10 @@ func TestCreateCheck(t *testing.T) {
 	}
 }
 
+const idFormat = `[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}`
+
+var idRE = regexp.MustCompile(idFormat)
+
 func TestDeleteCheck(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -70,16 +75,10 @@ func TestDeleteCheck(t *testing.T) {
 			t.Errorf("want URL prefix %q, got %q", wantURLPrefix, r.URL.EscapedPath())
 		}
 		ID := path.Base(r.URL.String())
-		_, err := strconv.Atoi(ID)
-		if err != nil {
-			t.Errorf("want numeric ID, got %q", ID)
+		if !idRE.MatchString(ID) {
+			t.Errorf("malformed ID %q (should match %q)", ID, idFormat)
 		}
-		data, err := os.Open("testdata/Check.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer ts.Close()
 	client := NewClient("dummy")

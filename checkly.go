@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-
 	"strings"
 )
 
@@ -40,9 +39,12 @@ func NewClient(apiKey string) Client {
 // CreateCheck creates a new check with the specified details. It returns the
 // check ID of the newly-created check, or an error.
 func (c *Client) CreateCheck(p Params) (string, error) {
-	res, err := c.MakeAPICall(http.MethodPost, "checks", p)
+	status, res, err := c.MakeAPICall(http.MethodPost, "checks", p)
 	if err != nil {
 		return "", err
+	}
+	if status != http.StatusCreated {
+		return "", fmt.Errorf("unexpected response status %d", status)
 	}
 	m := make(map[string]interface{})
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&m); err != nil {
@@ -62,48 +64,58 @@ func (c *Client) CreateCheck(p Params) (string, error) {
 // DeleteCheck deletes the check with the specified ID. It returns a non-nil
 // error if the request failed.
 func (c *Client) DeleteCheck(ID string) error {
-	// TODO make API request
-	return errors.New("not implemented")
+	status, _, err := c.MakeAPICall(http.MethodDelete, "checks/"+ID, nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d", status)
+	}
+	return nil
 }
 
 // MakeAPICall calls the checkly API with the specified verb and stores the
 // returned data in the Response struct.
-func (c *Client) MakeAPICall(method string, URL string, params Params) (string, error) {
-	form := url.Values{}
-	for k, v := range params {
-		form.Add(k, v)
+func (c *Client) MakeAPICall(method string, URL string, params Params) (statusCode int, response string, err error) {
+	var body io.Reader
+	if params != nil {
+		form := url.Values{}
+		for k, v := range params {
+			form.Add(k, v)
+		}
+		body = strings.NewReader(form.Encode())
 	}
 	requestURL := c.URL + "/v1/" + URL
-	req, err := http.NewRequest(method, requestURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(method, requestURL, body)
 	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %v", err)
+		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	if c.Debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
-			return "", fmt.Errorf("error dumping HTTP request: %v", err)
+			return 0, "", fmt.Errorf("error dumping HTTP request: %v", err)
 		}
 		fmt.Fprintln(c.Debug, string(requestDump))
 		fmt.Fprintln(c.Debug)
 	}
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("HTTP request failed: %v", err)
+		return 0, "", fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
 	if c.Debug != nil {
 		responseDump, err := httputil.DumpResponse(resp, true)
 		if err != nil {
-			return "", fmt.Errorf("error dumping HTTP response: %v", err)
+			return resp.StatusCode, "", fmt.Errorf("error dumping HTTP response: %v", err)
 		}
 		fmt.Fprintln(c.Debug, string(responseDump))
 		fmt.Fprintln(c.Debug)
 	}
 	res, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return resp.StatusCode, "", err
 	}
-	return string(res), nil
+	return resp.StatusCode, string(res), nil
 }
