@@ -21,7 +21,8 @@ import "github.com/bitfield/checkly"
 Create a new `Client` object by calling `checkly.NewClient()` with your API key:
 
 ```go
-client = checkly.New(apiKey)
+apiKey := "3a4405dfb5894f4580785b40e48e6e10"
+client := checkly.NewClient(apiKey)
 ```
 
 ## Creating a new check
@@ -51,7 +52,7 @@ ID, err := client.Create(check)
 `client.Get(ID)` finds an existing check by ID and returns a Check struct containing its details:
 
 ```go
-check, err := client.Get(ID)
+check, err := client.Get("87dd7a8d-f6fd-46c0-b73c-b35712f56d72")
 fmt.Println(check.Name)
 // Output: My Awesome Check
 
@@ -93,6 +94,12 @@ Accept-Encoding: gzip
 api_key=XXX&format=json&frogurt=cursed
 ...
 ```
+
+## Managing checks with Terraform
+
+While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
+
+https://github.com/bitfield/terraform-provider-checkly
 
 ## Bugs and feature requests
 
