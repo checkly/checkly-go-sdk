@@ -1,14 +1,13 @@
 package checkly
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"strings"
 )
 
@@ -37,6 +36,7 @@ type Check struct {
 	Type      string  `json:"checkType"`
 	Activated bool    `json:"activated"`
 	Request   Request `json:"request"`
+	Tags      []string `json:"tags"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -44,9 +44,6 @@ type Request struct {
 	Method string `json:"method"`
 	URL    string `json:"url"`
 }
-
-// Params represents a set of parameters sent with an API call.
-type Params map[string]string
 
 // NewClient takes a Checkly API key, and returns a Client ready to use.
 func NewClient(apiKey string) Client {
@@ -60,31 +57,22 @@ func NewClient(apiKey string) Client {
 // Create creates a new check with the specified details. It returns the
 // check ID of the newly-created check, or an error.
 func (c *Client) Create(check Check) (string, error) {
-	p := Params{
-		"name":      check.Name,
-		"checkType": check.Type,
-		"activated": fmt.Sprintf("%t", check.Activated),
+	data, err := json.Marshal(check)
+	if err != nil {
+		return "", err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPost, "checks", p)
+	status, res, err := c.MakeAPICall(http.MethodPost, "checks", data)
 	if err != nil {
 		return "", err
 	}
 	if status != http.StatusCreated {
 		return "", fmt.Errorf("unexpected response status %d", status)
 	}
-	m := make(map[string]interface{})
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&m); err != nil {
-		return "", fmt.Errorf("decoding error: %v", err)
+	var result Check
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return "", fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
-	rawID, ok := m["id"]
-	if !ok {
-		return "", errors.New("no ID field in response")
-	}
-	ID, ok := rawID.(string)
-	if !ok {
-		return "", fmt.Errorf("bad ID: %q", rawID)
-	}
-	return ID, nil
+	return result.ID, nil
 }
 
 // Delete deletes the check with the specified ID. It returns a non-nil
@@ -119,22 +107,14 @@ func (c *Client) Get(ID string) (Check, error) {
 
 // MakeAPICall calls the Checkly API with the specified verb and stores the
 // returned data in the Response struct.
-func (c *Client) MakeAPICall(method string, URL string, params Params) (statusCode int, response string, err error) {
-	var body io.Reader
-	if params != nil {
-		form := url.Values{}
-		for k, v := range params {
-			form.Add(k, v)
-		}
-		body = strings.NewReader(form.Encode())
-	}
+func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
 	requestURL := c.URL + "/v1/" + URL
-	req, err := http.NewRequest(method, requestURL, body)
+	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("content-type", "application/json")
 	if c.Debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {

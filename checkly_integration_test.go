@@ -3,8 +3,9 @@
 package checkly
 
 import (
-	// "fmt"
+	"net/http"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -16,59 +17,46 @@ func getAPIKey(t *testing.T) string {
 	return key
 }
 
-func TestCreateIntegration(t *testing.T) {
-	t.Parallel()
-	client := NewClient(getAPIKey(t))
-	checkCreate := Check{
-		Name:      "integrationTestCreate",
-		Type:      TypeBrowser,
+func testCheck(name string) Check {
+	return Check{
+		Name:      name,
+		Type:      TypeAPI,
 		Activated: true,
-	}
-	ID, err := client.Create(checkCreate)
-	defer client.Delete(ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !idRE.MatchString(ID) {
-		t.Errorf("malformed ID %q (should match %q)", ID, idFormat)
+		Request: Request{
+			Method: http.MethodGet,
+			URL:    "http://example.com",
+		},
 	}
 }
-
-func TestGetIntegration(t *testing.T) {
+func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
-	checkCreate := Check{
-		Name:      "integrationTestGet",
-		Type:      TypeBrowser,
-		Activated: true,
-	}
+	checkCreate := testCheck("integrationTestCreate")
 	ID, err := client.Create(checkCreate)
+	// defer client.Delete(ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(ID)
 	check, err := client.Get(ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if check.Name != "integrationTestGet" {
-		t.Errorf("want 'integrationTestGet', got %q", check.Name)
+	checkCreate.ID = ID
+	if !reflect.DeepEqual(checkCreate, check) {
+		t.Errorf("mismatch: want %+v, got %+v", checkCreate, check)
 	}
 }
 
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
-	checkCreate := Check{
-		Name:      "integrationTestDelete",
-		Type:      TypeBrowser,
-		Activated: true,
-	}
-	ID, err := client.Create(checkCreate)
+	checkDelete := testCheck("integrationTestDelete")
+	ID, err := client.Create(checkDelete)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := client.Delete(ID); err != nil {
 		t.Error(err)
+	}
+	_, err = client.Get(ID)
+	if err == nil {
+		t.Error("want error getting deleted check, but got nil")
 	}
 }

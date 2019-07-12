@@ -25,6 +25,12 @@ apiKey := "3a4405dfb5894f4580785b40e48e6e10"
 client := checkly.NewClient(apiKey)
 ```
 
+Or read the key from an environment variable:
+
+```go
+client := checkly.NewClient(os.Getenv("CHECKLY_API_KEY"))
+```
+
 ## Creating a new check
 
 Once you have a client, you can create a check. First, populate a Check struct with the required parameters:
@@ -32,12 +38,12 @@ Once you have a client, you can create a check. First, populate a Check struct w
 ```go
 check := checkly.Check{
         Name:      "My Awesome Check",
-        Type:      TypeBrowser,
+        Type:      checkly.TypeAPI,
         Activated: true,
         Request:   checkly.Request{
                 Method: http.MethodGet,
                 URL: "http://example.com",
-        }
+        },
 }
 ```
 

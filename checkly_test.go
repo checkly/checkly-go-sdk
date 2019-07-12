@@ -1,12 +1,15 @@
 package checkly
 
 import (
+	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -20,6 +23,16 @@ func assertFormParamPresent(t *testing.T, form url.Values, param string) {
 }
 func TestCreate(t *testing.T) {
 	t.Parallel()
+	wantCheck := Check{
+		Name:      "test",
+		Type:      TypeAPI,
+		Activated: true,
+		Request: Request{
+			Method: http.MethodGet,
+			URL:    "http://example.com",
+		},
+		Tags: []string{"auto"},
+	}
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			t.Errorf("want POST request, got %q", r.Method)
@@ -28,10 +41,17 @@ func TestCreate(t *testing.T) {
 		if r.URL.EscapedPath() != wantURL {
 			t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
 		}
-		r.ParseForm()
-		wantParams := []string{"name", "checkType", "activated"}
-		for _, p := range wantParams {
-			assertFormParamPresent(t, r.Form, p)
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var check Check
+		err = json.Unmarshal(body, &check)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(check, wantCheck) {
+			t.Errorf("want %v, got %v", wantCheck, check)
 		}
 		w.WriteHeader(http.StatusCreated)
 		data, err := os.Open("testdata/Create.json")
@@ -46,12 +66,7 @@ func TestCreate(t *testing.T) {
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	wantID := "73d29e72-6540-4bb5-967e-e07fa2c9465e"
-	check := Check{
-		Name:      "test",
-		Type:      TypeBrowser,
-		Activated: true,
-	}
-	gotID, err := client.Create(check)
+	gotID, err := client.Create(wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
