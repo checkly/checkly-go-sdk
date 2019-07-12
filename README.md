@@ -4,6 +4,10 @@
 
 `checkly` is a Go library for the [Checkly](https://checkly.com/) website monitoring service. It allows you to create new checks, get data on existing checks, and delete checks.
 
+While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
+
+https://github.com/bitfield/terraform-provider-checkly
+
 ## Setting your API key
 
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
@@ -37,13 +41,15 @@ Once you have a client, you can create a check. First, populate a Check struct w
 
 ```go
 check := checkly.Check{
-        Name:      "My Awesome Check",
-        Type:      checkly.TypeAPI,
-        Activated: true,
-        Request:   checkly.Request{
-                Method: http.MethodGet,
-                URL: "http://example.com",
-        },
+		Name:      "My Awesome Check",
+		Type:      checkly.TypeAPI,
+		Frequency: 5,
+		Activated: true,
+		Locations: []string{"eu-west-1"},
+		Request: checkly.Request{
+			    Method: http.MethodGet,
+			    URL:    "http://example.com",
+		},
 }
 ```
 
@@ -72,40 +78,47 @@ Use `client.Delete(ID)` to delete a check by ID.
 err := client.Delete("73d29ea2-6540-4bb5-967e-e07fa2c9465e")
 ```
 
+## A complete example program
+
+You can see an example program which creates a Checkly check in the [examples/demo](examples/demo/main.go) folder.
+
 ## Debugging
 
-If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request and response to it:
+If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
+
+Regardless of the debug setting, if a request fails with HTTP status 400 Bad Request), the full response will be dumped (to standard error if no debug writer is set):
 
 ```go
-client.Debug = os.Stdout
-p := checkly.Params{
-    "frogurt": "cursed",
-}
-status, response, err := client.MakeAPICall(http.MethodGet, "monkeyPaw", p)
-if err != nil {
-    log.Fatal(err)
-}
+client.Debug = os.Stderr
 ```
 
-outputs:
+Example request and response dump:
 
 ```
-POST /v1/monkeyPaw HTTP/1.1
-Host: api.checkly.com
+POST /v1/checks HTTP/1.1
+Host: api.checklyhq.com
 User-Agent: Go-http-client/1.1
-Content-Length: 52
-Content-Type: application/x-www-form-urlencoded
+Content-Length: 452
+Authorization: Bearer 3a4459dfb589aeb40e48e6e114580785
+Content-Type: application/json
 Accept-Encoding: gzip
 
-api_key=XXX&format=json&frogurt=cursed
-...
+{"id":"","name":"My Awesome Check","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","environment_variables":null,"doubleCheck":false,"alertSettings":{"runBasedEscalation":{},"timeBasedEscalation":{},"reminders":{},"sslCertificates":{}},"UseGlobalAlertSettings":false,"request":{"method":"GET","url":"http://example.com"}}
+
+HTTP/1.1 201 Created
+Transfer-Encoding: chunked
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Type: application/json; charset=utf-8
+Date: Fri, 12 Jul 2019 12:47:09 GMT
+Server: Cowboy
+Vary: origin,accept-encoding
+Via: 1.1 vegur
+
+2d5
+{"name":"My Awesome Check","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"doubleCheck":false,"alertSettings":{"runBasedEscalation":{},"timeBasedEscalation":{},"reminders":{},"sslCertificates":{"enabled":true}},"request":{"method":"GET","url":"http://example.com","bodyType":"NONE","headers":[],"queryParameters":[],"assertions":[{"order":0}],"basicAuth":{"username":"","password":""}},"setupSnippetId":null,"tearDownSnippetId":null,"localSetupScript":null,"localTearDownScript":null,"created_at":"2019-07-12T12:47:09.298Z","id":"3bd4a7ef-2842-4991-af94-1ad7e9e110b6","sslCheckDomain":"example.com"}
+0
 ```
-
-## Managing checks with Terraform
-
-While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
-
-https://github.com/bitfield/terraform-provider-checkly
 
 ## Bugs and feature requests
 
