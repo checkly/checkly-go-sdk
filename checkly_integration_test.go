@@ -29,21 +29,30 @@ func testCheck(name string) Check {
 		Request: Request{
 			Method: http.MethodGet,
 			URL:    "http://example.com",
+			Assertions: []Assertion{
+				Assertion{
+					Source:     StatusCode,
+					Comparison: Equals,
+					Target:     "200",
+				},
+			},
 		},
 		Tags:                   []string{},
 		SSLCheck:               false,
 		UseGlobalAlertSettings: false,
 	}
 }
+
 func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
 	checkCreate := testCheck("integrationTestCreate")
+	client.Debug = os.Stdout
 	ID, err := client.Create(checkCreate)
-	// defer client.Delete(ID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	// defer client.Delete(ID)
 	check, err := client.Get(ID)
 	checkCreate.ID = ID
 	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {

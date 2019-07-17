@@ -18,17 +18,64 @@ type Client struct {
 	Debug      io.Writer
 }
 
+// Check type constants
+
 // TypeBrowser is used to identify a browser check.
 const TypeBrowser = "BROWSER"
 
 // TypeAPI is used to identify an API check.
 const TypeAPI = "API"
 
+// Escalation type constants
+
 // RunBased identifies a run-based escalation type, for use with an AlertSettings.
 const RunBased = "RUN_BASED"
 
 // TimeBased identifies a time-based escalation type, for use with an AlertSettings.
 const TimeBased = "TIME_BASED"
+
+// Assertion source constants
+
+// StatusCode identifies the HTTP status code as an assertion source.
+const StatusCode = "STATUS_CODE"
+
+// JSONBody identifies the JSON body data as an assertion source.
+const JSONBody = "JSON_BODY"
+
+// TextBody identifies the response body text as an assertion source.
+const TextBody = "TEXT_BODY"
+
+// Headers identifies the HTTP headers as an assertion source.
+const Headers = "HEADERS"
+
+// ResponseTime identifies the response time as an assertion source.
+const ResponseTime = "RESPONSE_TIME"
+
+// Assertion comparison constants
+
+// Equals asserts that the source and target are equal.
+const Equals = "EQUALS"
+
+// NotEquals asserts that the source and target are not equal.
+const NotEquals = "NOT_EQUALS"
+
+// IsEmpty asserts that the source is empty.
+const IsEmpty = "IS_EMPTY"
+
+// NotEmpty asserts that the source is not empty.
+const NotEmpty = "NOT_EMPTY"
+
+// GreaterThan asserts that the source is greater than the target.
+const GreaterThan = "GREATER_THAN"
+
+// LessThan asserts that the source is less than the target.
+const LessThan = "LESS_THAN"
+
+// Contains asserts that the source contains a specified value.
+const Contains = "CONTAINS"
+
+// NotContains asserts that the source does not contain a specified value.
+const NotContains = "NOT_CONTAINS"
 
 // Check represents the parameters for an existing check.
 type Check struct {
@@ -52,7 +99,7 @@ type Check struct {
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
 	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
-	AlertChannels          AlertChannels         `json:"alertChannels, omitempty"`
+	AlertChannels          AlertChannels         `json:"alertChannels,omitempty"`
 	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings bool                  `jons:"useGlobalAlertSettings"`
 	Request                Request               `json:"request"`
@@ -60,8 +107,35 @@ type Check struct {
 
 // Request represents the parameters for the request made by the check.
 type Request struct {
-	Method string `json:"method"`
-	URL    string `json:"url"`
+	Method          string      `json:"method"`
+	URL             string      `json:"url"`
+	FollowRedirects bool        `json:"followRedirects"`
+	Body            string      `json:"body"`
+	BodyType        string      `json:"bodyType,omitempty"`
+	Headers         []KeyValue  `json:"headers"`
+	QueryParameters []KeyValue  `json:"queryParameters"`
+	Assertions      []Assertion `json:"assertions"`
+}
+
+// Assertion represents an assertion about an API response, which will be
+// verified as part of the check.
+type Assertion struct {
+	Edit          bool   `json:"edit"`
+	Order         int    `json:"order"`
+	ArrayIndex    int    `json:"arrayIndex"`
+	ArraySelector int    `json:"arraySelector"`
+	Source        string `json:"source"`
+	Property      string `json:"property"`
+	Comparison    string `json:""comparison"`
+	Target        string `json:"target"`
+}
+
+// KeyValue represents a key-value pair, for example a request header setting,
+// or a query parameter.
+type KeyValue struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Locked bool   `json:"locked,omitempty"`
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
@@ -69,7 +143,7 @@ type Request struct {
 type EnvironmentVariable struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
-	Locked bool   `json:"locked"`
+	Locked bool   `json:"locked,omitempty"`
 }
 
 // AlertChannels represents the possible ways an alert notification can be sent.
