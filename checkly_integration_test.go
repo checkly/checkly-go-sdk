@@ -5,8 +5,10 @@ package checkly
 import (
 	"net/http"
 	"os"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func getAPIKey(t *testing.T) string {
@@ -22,10 +24,15 @@ func testCheck(name string) Check {
 		Name:      name,
 		Type:      TypeAPI,
 		Activated: true,
+		Frequency: 5,
+		Locations: []string{"eu-west-1"},
 		Request: Request{
 			Method: http.MethodGet,
 			URL:    "http://example.com",
 		},
+		Tags:                   []string{},
+		SSLCheck:               false,
+		UseGlobalAlertSettings: false,
 	}
 }
 func TestCreateGetIntegration(t *testing.T) {
@@ -39,8 +46,8 @@ func TestCreateGetIntegration(t *testing.T) {
 	}
 	check, err := client.Get(ID)
 	checkCreate.ID = ID
-	if !reflect.DeepEqual(checkCreate, check) {
-		t.Errorf("mismatch: want %+v, got %+v", checkCreate, check)
+	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {
+		t.Error(cmp.Diff(checkCreate, check))
 	}
 }
 
