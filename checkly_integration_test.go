@@ -27,8 +27,10 @@ func testCheck(name string) Check {
 		Frequency: 5,
 		Locations: []string{"eu-west-1"},
 		Request: Request{
-			Method: http.MethodGet,
-			URL:    "http://example.com",
+			Method:          http.MethodGet,
+			URL:             "http://example.com",
+			Headers:         []KeyValue{},
+			QueryParameters: []KeyValue{},
 			Assertions: []Assertion{
 				Assertion{
 					Source:     StatusCode,
@@ -36,9 +38,26 @@ func testCheck(name string) Check {
 					Target:     "200",
 				},
 			},
+			BodyType: "NONE",
+		},
+		AlertSettings: AlertSettings{
+			RunBasedEscalation: RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+			TimeBasedEscalation: TimeBasedEscalation{
+				MinutesFailingThreshold: 5,
+			},
+			Reminders: Reminders{
+				Interval: 5,
+			},
+			SSLCertificates: SSLCertificates{
+				Enabled:        false,
+				AlertThreshold: 3,
+			},
 		},
 		Tags:                   []string{},
 		SSLCheck:               false,
+		SSLCheckDomain:         "example.com",
 		UseGlobalAlertSettings: false,
 	}
 }
@@ -47,12 +66,12 @@ func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
 	client := NewClient(getAPIKey(t))
 	checkCreate := testCheck("integrationTestCreate")
-	client.Debug = os.Stdout
+	// client.Debug = os.Stdout
 	ID, err := client.Create(checkCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// defer client.Delete(ID)
+	defer client.Delete(ID)
 	check, err := client.Get(ID)
 	checkCreate.ID = ID
 	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {

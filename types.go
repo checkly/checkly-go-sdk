@@ -93,15 +93,15 @@ type Check struct {
 	EnvironmentVariables   []EnvironmentVariable `json:"environment_variables"`
 	DoubleCheck            bool                  `json:"doubleCheck"`
 	Tags                   []string              `json:"tags,omitempty"`
-	SSLCheck               bool                  `json:"sslCheck,omitempty"`
-	SSLCheckDomain         string                `json:"sslCheckDomain,omitempty"`
+	SSLCheck               bool                  `json:"sslCheck"`
+	SSLCheckDomain         string                `json:"sslCheckDomain"`
 	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
 	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
 	AlertChannels          AlertChannels         `json:"alertChannels,omitempty"`
 	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings bool                  `jons:"useGlobalAlertSettings"`
+	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
 	Request                Request               `json:"request"`
 }
 
@@ -126,7 +126,7 @@ type Assertion struct {
 	ArraySelector int    `json:"arraySelector"`
 	Source        string `json:"source"`
 	Property      string `json:"property"`
-	Comparison    string `json:""comparison"`
+	Comparison    string `json:"comparison"`
 	Target        string `json:"target"`
 }
 
@@ -135,7 +135,7 @@ type Assertion struct {
 type KeyValue struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
-	Locked bool   `json:"locked,omitempty"`
+	Locked bool   `json:"locked"`
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
@@ -143,7 +143,7 @@ type KeyValue struct {
 type EnvironmentVariable struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
-	Locked bool   `json:"locked,omitempty"`
+	Locked bool   `json:"locked"`
 }
 
 // AlertChannels represents the possible ways an alert notification can be sent.
@@ -206,6 +206,6 @@ type Reminders struct {
 
 // SSLCertificates represents alert settings for expiring SSL certificates.
 type SSLCertificates struct {
-	Enabled        bool `json:"enabled,omitempty"`
-	AlertThreshold int  `json:"alertThreshold,omitempty"`
+	Enabled        bool `json:"enabled"`
+	AlertThreshold int  `json:"alertThreshold"`
 }
