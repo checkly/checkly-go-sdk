@@ -98,25 +98,25 @@ Example request and response dump:
 POST /v1/checks HTTP/1.1
 Host: api.checklyhq.com
 User-Agent: Go-http-client/1.1
-Content-Length: 452
-Authorization: Bearer 3a4459dfb589aeb40e48e6e114580785
+Content-Length: 852
+Authorization: Bearer XXX
 Content-Type: application/json
 Accept-Encoding: gzip
 
-{"id":"","name":"My Awesome Check","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","environment_variables":null,"doubleCheck":false,"alertSettings":{"runBasedEscalation":{},"timeBasedEscalation":{},"reminders":{},"sslCertificates":{}},"UseGlobalAlertSettings":false,"request":{"method":"GET","url":"http://example.com"}}
+{"id":"","name":"integrationTestCreate","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","environment_variables":null,"doubleCheck":false,"sslCheck":false,"sslCheckDomain":"example.com","alertChannels":{},"alertSettings":{"runBasedEscalation":{"failedRunThreshold":1},"timeBasedEscalation":{"minutesFailingThreshold":5},"reminders":{"interval":5},"sslCertificates":{"enabled":false,"alertThreshold":3}},"useGlobalAlertSettings":false,"request":{"method":"GET","url":"http://example.com","followRedirects":false,"body":"","bodyType":"NONE","headers":[],"queryParameters":[],"assertions":[{"edit":false,"order":0,"arrayIndex":0,"arraySelector":0,"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200"}]}}
 
 HTTP/1.1 201 Created
 Transfer-Encoding: chunked
 Cache-Control: no-cache
 Connection: keep-alive
 Content-Type: application/json; charset=utf-8
-Date: Fri, 12 Jul 2019 12:47:09 GMT
+Date: Thu, 18 Jul 2019 15:48:21 GMT
 Server: Cowboy
 Vary: origin,accept-encoding
 Via: 1.1 vegur
 
-2d5
-{"name":"My Awesome Check","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"doubleCheck":false,"alertSettings":{"runBasedEscalation":{},"timeBasedEscalation":{},"reminders":{},"sslCertificates":{"enabled":true}},"request":{"method":"GET","url":"http://example.com","bodyType":"NONE","headers":[],"queryParameters":[],"assertions":[{"order":0}],"basicAuth":{"username":"","password":""}},"setupSnippetId":null,"tearDownSnippetId":null,"localSetupScript":null,"localTearDownScript":null,"created_at":"2019-07-12T12:47:09.298Z","id":"3bd4a7ef-2842-4991-af94-1ad7e9e110b6","sslCheckDomain":"example.com"}
+3c8
+{"name":"integrationTestCreate","checkType":"API","frequency":5,"activated":true,"muted":false,"shouldFail":false,"locations":["eu-west-1"],"doubleCheck":false,"sslCheck":false,"sslCheckDomain":"example.com","alertSettings":{"runBasedEscalation":{"failedRunThreshold":1},"timeBasedEscalation":{"minutesFailingThreshold":5},"reminders":{"interval":5,"amount":0},"sslCertificates":{"enabled":false,"alertThreshold":3}},"useGlobalAlertSettings":false,"request":{"method":"GET","url":"http://example.com","followRedirects":false,"body":"","bodyType":"NONE","headers":[],"queryParameters":[],"assertions":[{"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200"}],"basicAuth":{"username":"","password":"f15c6e9c867c529b74b9dd2f9585ba76:1c97b45322f1cd139122666eb13c7562"}},"setupSnippetId":null,"tearDownSnippetId":null,"localSetupScript":null,"localTearDownScript":null,"created_at":"2019-07-18T15:48:21.844Z","id":"763fa73d-1d14-4046-88e6-14f883ceddc9"}
 0
 ```
 
