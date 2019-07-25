@@ -75,6 +75,31 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+func TestAPIError(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		data, err := os.Open("testdata/BadRequest.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client := NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	// Don't care about result, just the error message
+	_, err := client.Create(Check{})
+	if err == nil {
+		t.Fatal("want error when API returns 'bad request' status, got nil")
+	}
+	if !strings.Contains(err.Error(), "frequency") {
+		t.Errorf("want API error value to contain 'frequency', got %q", err.Error())
+	}
+}
+
 const idFormat = `[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}`
 
 var idRE = regexp.MustCompile(idFormat)

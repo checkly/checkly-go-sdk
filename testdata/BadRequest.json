@@ -1,0 +1,1 @@
+{"statusCode":400,"error":"Bad Request","message":"child \"frequency\" fails because [\"frequency\" must be one of [5, 10, 15, 30, 60, 720, 1440]]","validation":{"source":"payload","keys":["frequency"]}}

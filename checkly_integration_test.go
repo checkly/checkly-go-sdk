@@ -24,7 +24,7 @@ func testCheck(name string) Check {
 		Name:      name,
 		Type:      TypeAPI,
 		Activated: true,
-		Frequency: 5,
+		Frequency: 1,
 		Locations: []string{"eu-west-1"},
 		Request: Request{
 			Method:          http.MethodGet,

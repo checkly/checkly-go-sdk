@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"strings"
 )
 
@@ -32,7 +31,7 @@ func (c *Client) Create(check Check) (string, error) {
 		return "", err
 	}
 	if status != http.StatusCreated {
-		return "", fmt.Errorf("unexpected response status %d", status)
+		return "", fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Check
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
@@ -44,12 +43,12 @@ func (c *Client) Create(check Check) (string, error) {
 // Delete deletes the check with the specified ID. It returns a non-nil
 // error if the request failed.
 func (c *Client) Delete(ID string) error {
-	status, _, err := c.MakeAPICall(http.MethodDelete, "checks/"+ID, nil)
+	status, res, err := c.MakeAPICall(http.MethodDelete, "checks/"+ID, nil)
 	if err != nil {
 		return err
 	}
 	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d", status)
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
 }
@@ -62,7 +61,7 @@ func (c *Client) Get(ID string) (Check, error) {
 		return Check{}, err
 	}
 	if status != http.StatusOK {
-		return Check{}, fmt.Errorf("unexpected response status %d", status)
+		return Check{}, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	check := Check{}
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&check); err != nil {
@@ -94,7 +93,7 @@ func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode
 		return 0, "", fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
-	if c.Debug != nil || resp.StatusCode == http.StatusBadRequest {
+	if c.Debug != nil {
 		c.dumpResponse(resp)
 	}
 	res, err := ioutil.ReadAll(resp.Body)
@@ -109,10 +108,6 @@ func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode
 func (c *Client) dumpResponse(resp *http.Response) {
 	// ignore errors dumping response - no recovery from this
 	responseDump, _ := httputil.DumpResponse(resp, true)
-	out := c.Debug
-	if out == nil {
-		out = os.Stderr
-	}
-	fmt.Fprintln(out, string(responseDump))
-	fmt.Fprintln(out)
+	fmt.Fprintln(c.Debug, string(responseDump))
+	fmt.Fprintln(c.Debug)
 }
