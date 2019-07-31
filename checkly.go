@@ -40,6 +40,27 @@ func (c *Client) Create(check Check) (string, error) {
 	return result.ID, nil
 }
 
+// Update updates an existing check with the specified details. It returns a
+// non-nil error if the request failed.
+func (c *Client) Update(ID string, check Check) error {
+	data, err := json.Marshal(check)
+	if err != nil {
+		return err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPut, "checks/"+ID, data)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusOK {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result Check
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return nil
+}
+
 // Delete deletes the check with the specified ID. It returns a non-nil
 // error if the request failed.
 func (c *Client) Delete(ID string) error {

@@ -73,9 +73,37 @@ func TestCreateGetIntegration(t *testing.T) {
 	}
 	defer client.Delete(ID)
 	check, err := client.Get(ID)
+	if err != nil {
+		t.Error(err)
+	}
 	checkCreate.ID = ID
 	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {
 		t.Error(cmp.Diff(checkCreate, check))
+	}
+}
+
+func TestUpdateIntegration(t *testing.T) {
+	t.Parallel()
+	client := NewClient(getAPIKey(t))
+	checkUpdate := testCheck("integrationTestUpdate")
+	// client.Debug = os.Stdout
+	ID, err := client.Create(checkUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Delete(ID)
+	checkUpdate.Name = "integrationTestUpdate2"
+	err = client.Update(ID, checkUpdate)
+	if err != nil {
+		t.Error(err)
+	}
+	check, err := client.Get(ID)
+	if err != nil {
+		t.Error(err)
+	}
+	checkUpdate.ID = ID
+	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
+		t.Error(cmp.Diff(checkUpdate, check))
 	}
 }
 
