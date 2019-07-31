@@ -1,0 +1,70 @@
+{
+  "id": "c7927cf8-0e4a-43ac-ac81-f8f022b32231",
+  "checkType": "API",
+  "name": "My test check 2",
+  "frequency": 1,
+  "activated": false,
+  "muted": false,
+  "shouldFail": true,
+  "locations": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "us-west-1"
+  ],
+  "script": null,
+  "created_at": "2019-07-25T11:34:57.576Z",
+  "updated_at": "2019-07-30T13:15:07.693Z",
+  "environmentVariables": null,
+  "doubleCheck": false,
+  "tags": [],
+  "sslCheck": false,
+  "sslCheckDomain": "example.com",
+  "setupSnippetId": null,
+  "tearDownSnippetId": null,
+  "localSetupScript": null,
+  "localTearDownScript": null,
+  "alertSettings": {
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "sslCertificates": {
+      "enabled": false,
+      "alertThreshold": 3
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    },
+    "timeBasedEscalation": {
+      "minutesFailingThreshold": 5
+    }
+  },
+  "useGlobalAlertSettings": false,
+  "request": {
+    "method": "GET",
+    "url": "http://example.com/",
+    "body": "",
+    "bodyType": "NONE",
+    "headers": [],
+    "queryParameters": [],
+    "assertions": [
+      {
+        "source": "STATUS_CODE",
+        "target": "401",
+        "property": "",
+        "comparison": "EQUALS"
+      },
+      {
+        "source": "JSON_BODY",
+        "target": "authentication.failed",
+        "property": "code",
+        "comparison": "HAS_VALUE"
+      }
+    ],
+    "basicAuth": {
+      "password": "b098eabe25c327762a47da365a2e282e:5531e20d514ad14f24e99f31db60639a472a018fb56c1bf07b390bf7003c87cd63a0d5472d0ed2cb721c241b86d8e7444734bb30fd5998f79b758a34143dc7de1c458d5eeb5a7eaea168a81d6c62d823",
+      "username": ""
+    },
+    "followRedirects": true
+  }
+}

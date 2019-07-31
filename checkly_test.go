@@ -165,3 +165,53 @@ func TestGet(t *testing.T) {
 		t.Errorf("want URL %q, got %q", wantURL, check.Request.URL)
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	t.Parallel()
+	wantCheck := Check{
+		Name:      "test",
+		Type:      TypeAPI,
+		Activated: true,
+		Request: Request{
+			Method: http.MethodGet,
+			URL:    "http://example.com",
+		},
+		Tags: []string{"auto"},
+	}
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			t.Errorf("want PUT request, got %q", r.Method)
+		}
+		wantURLPrefix := "/v1/checks"
+		if !strings.HasPrefix(r.URL.EscapedPath(), wantURLPrefix) {
+			t.Errorf("want URL prefix %q, got %q", wantURLPrefix, r.URL.EscapedPath())
+		}
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var check Check
+		err = json.Unmarshal(body, &check)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(check, wantCheck) {
+			t.Errorf("want %v, got %v", wantCheck, check)
+		}
+		w.WriteHeader(http.StatusOK)
+		data, err := os.Open("testdata/Update.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client := NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	err := client.Update("73d29e72-6540-4bb5-967e-e07fa2c9465e", wantCheck)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
