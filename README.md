@@ -2,7 +2,7 @@
 
 # checkly
 
-`checkly` is a Go library for the [Checkly](https://checkly.com/) website monitoring service. It allows you to create new checks, get data on existing checks, and delete checks.
+`checkly` is a Go library for the [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) website monitoring service. It allows you to create new checks, get data on existing checks, and delete checks.
 
 While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
 
