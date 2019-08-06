@@ -70,6 +70,17 @@ fmt.Println(check.Name)
 
 ```
 
+## Updating a check
+
+`client.Update(ID, check)` updates an existing check with the specified details. For example, to change the name of a check:
+
+```go
+ID := "87dd7a8d-f6fd-46c0-b73c-b35712f56d72"
+check, err := client.Get(ID)
+check.Name = "My updated check name"
+client.Update(ID, check)
+```
+
 ## Deleting a check
 
 Use `client.Delete(ID)` to delete a check by ID.
