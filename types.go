@@ -115,6 +115,7 @@ type Request struct {
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
+	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
 }
 
 // Assertion represents an assertion about an API response, which will be
@@ -128,6 +129,12 @@ type Assertion struct {
 	Property      string `json:"property"`
 	Comparison    string `json:"comparison"`
 	Target        string `json:"target"`
+}
+
+// BasicAuth represents the HTTP basic authentication credentials for a request.
+type BasicAuth struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // KeyValue represents a key-value pair, for example a request header setting,
