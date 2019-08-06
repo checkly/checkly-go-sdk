@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path"
 	"reflect"
@@ -15,12 +14,6 @@ import (
 	"testing"
 )
 
-func assertFormParamPresent(t *testing.T, form url.Values, param string) {
-	value := form.Get(param)
-	if value == "" {
-		t.Errorf("want %q parameter, got none", param)
-	}
-}
 func TestCreate(t *testing.T) {
 	t.Parallel()
 	wantCheck := Check{
