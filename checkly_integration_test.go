@@ -21,26 +21,57 @@ func getAPIKey(t *testing.T) string {
 
 func testCheck(name string) Check {
 	return Check{
-		Name:      name,
-		Type:      TypeAPI,
-		Activated: true,
-		Frequency: 1,
-		Locations: []string{"eu-west-1"},
-		Request: Request{
-			Method:          http.MethodGet,
-			URL:             "http://example.com",
-			Headers:         []KeyValue{},
-			QueryParameters: []KeyValue{},
-			Assertions: []Assertion{
-				Assertion{
-					Source:     StatusCode,
-					Comparison: Equals,
-					Target:     "200",
+		Name:       name,
+		Type:       TypeAPI,
+		Frequency:  1,
+		Activated:  true,
+		Muted:      false,
+		ShouldFail: false,
+		Locations:  []string{"eu-west-1"},
+		Script:     "foo",
+		EnvironmentVariables: []EnvironmentVariable{
+			{
+				Key:   "ENVTEST",
+				Value: "Hello world",
+			},
+		},
+		DoubleCheck: false,
+		Tags: []string{
+			"foo",
+			"bar",
+		},
+		SSLCheck: true,
+		SSLCheckDomain: "example.com",
+		SetupSnippetID: 1,
+		TearDownSnippetID: 2,
+		LocalSetupScript: "bogus",
+		LocalTearDownScript: "bogus",
+		AlertChannels: AlertChannels{
+			Email: []AlertEmail{
+				{
+					Address: "info@example.com",
 				},
 			},
-			BodyType: "NONE",
+			Webhook: []AlertWebhook{
+				{
+					Name: "test webhook",
+					URL: "http://example.com/webhook",
+				},
+			},
+			Slack: []AlertSlack{
+				{
+					URL: "http://slack.com/example",
+				},
+			},
+			SMS: []AlertSMS{
+				{
+					Number: "555-5555",
+					Name: "test SMS",
+				},
+			},
 		},
 		AlertSettings: AlertSettings{
+			EscalationType: RunBased,
 			RunBasedEscalation: RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -55,10 +86,32 @@ func testCheck(name string) Check {
 				AlertThreshold: 3,
 			},
 		},
-		Tags:                   []string{},
-		SSLCheck:               false,
-		SSLCheckDomain:         "example.com",
 		UseGlobalAlertSettings: false,
+		Request: Request{
+			Method:          http.MethodGet,
+			URL:             "http://example.com",
+			Headers:         []KeyValue{
+				{
+					Key: "X-Test",
+					Value: "foo",
+				},
+			},
+			QueryParameters: []KeyValue{
+				{
+					Key: "query",
+					Value: "foo",
+				},
+			},
+			Assertions: []Assertion{
+				Assertion{
+					Source:     StatusCode,
+					Comparison: Equals,
+					Target:     "200",
+				},
+			},
+			Body: "",
+			BodyType: "NONE",
+		},
 	}
 }
 
