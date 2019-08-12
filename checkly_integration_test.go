@@ -40,11 +40,9 @@ func testCheck(name string) Check {
 			"foo",
 			"bar",
 		},
-		SSLCheck: true,
-		SSLCheckDomain: "example.com",
-		SetupSnippetID: 1,
-		TearDownSnippetID: 2,
-		LocalSetupScript: "bogus",
+		SSLCheck:            true,
+		SSLCheckDomain:      "example.com",
+		LocalSetupScript:    "bogus",
 		LocalTearDownScript: "bogus",
 		AlertChannels: AlertChannels{
 			Email: []AlertEmail{
@@ -55,7 +53,7 @@ func testCheck(name string) Check {
 			Webhook: []AlertWebhook{
 				{
 					Name: "test webhook",
-					URL: "http://example.com/webhook",
+					URL:  "http://example.com/webhook",
 				},
 			},
 			Slack: []AlertSlack{
@@ -66,7 +64,7 @@ func testCheck(name string) Check {
 			SMS: []AlertSMS{
 				{
 					Number: "555-5555",
-					Name: "test SMS",
+					Name:   "test SMS",
 				},
 			},
 		},
@@ -88,17 +86,17 @@ func testCheck(name string) Check {
 		},
 		UseGlobalAlertSettings: false,
 		Request: Request{
-			Method:          http.MethodGet,
-			URL:             "http://example.com",
-			Headers:         []KeyValue{
+			Method: http.MethodGet,
+			URL:    "http://example.com",
+			Headers: []KeyValue{
 				{
-					Key: "X-Test",
+					Key:   "X-Test",
 					Value: "foo",
 				},
 			},
 			QueryParameters: []KeyValue{
 				{
-					Key: "query",
+					Key:   "query",
 					Value: "foo",
 				},
 			},
@@ -109,7 +107,7 @@ func testCheck(name string) Check {
 					Target:     "200",
 				},
 			},
-			Body: "",
+			Body:     "",
 			BodyType: "NONE",
 		},
 	}
