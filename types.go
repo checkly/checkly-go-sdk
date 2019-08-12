@@ -90,7 +90,7 @@ type Check struct {
 	Script                 string                `json:"script,omitempty"`
 	CreatedAt              time.Time             `json:"created_at,omitempty"`
 	UpdatedAt              time.Time             `json:"updated_at,omitempty"`
-	EnvironmentVariables   []EnvironmentVariable `json:"environment_variables"`
+	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables"`
 	DoubleCheck            bool                  `json:"doubleCheck"`
 	Tags                   []string              `json:"tags,omitempty"`
 	SSLCheck               bool                  `json:"sslCheck"`
