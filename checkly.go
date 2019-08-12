@@ -91,8 +91,8 @@ func (c *Client) Get(ID string) (Check, error) {
 	return check, nil
 }
 
-// MakeAPICall calls the Checkly API with the specified verb and stores the
-// returned data in the Response struct.
+// MakeAPICall calls the Checkly API with the specified URL and data, and
+// returns the HTTP status code and string data of the response.
 func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
 	requestURL := c.URL + "/v1/" + URL
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
