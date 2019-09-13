@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestCreate(t *testing.T) {
@@ -43,8 +44,8 @@ func TestCreate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !reflect.DeepEqual(check, wantCheck) {
-			t.Errorf("want %v, got %v", wantCheck, check)
+		if !cmp.Equal(check, wantCheck) {
+			t.Error(cmp.Diff(check, wantCheck))
 		}
 		w.WriteHeader(http.StatusCreated)
 		data, err := os.Open("testdata/Create.json")
@@ -188,8 +189,8 @@ func TestUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !reflect.DeepEqual(check, wantCheck) {
-			t.Errorf("want %v, got %v", wantCheck, check)
+		if !cmp.Equal(check, wantCheck) {
+			t.Error(cmp.Diff(check, wantCheck))
 		}
 		w.WriteHeader(http.StatusOK)
 		data, err := os.Open("testdata/Update.json")
