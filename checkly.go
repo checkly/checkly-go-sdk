@@ -7,14 +7,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strings"
 )
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 // NewClient takes a Checkly API key, and returns a Client ready to use.
 func NewClient(apiKey string) Client {
 	return Client{
 		apiKey:     apiKey,
-		URL:        "https://api.checklyhq.com",
+		URL:        getEnv("CHECKLY_API_URL", "https://api.checklyhq.com"),
 		HTTPClient: http.DefaultClient,
 	}
 }

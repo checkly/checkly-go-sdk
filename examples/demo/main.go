@@ -9,31 +9,6 @@ import (
 	"github.com/bitfield/checkly"
 )
 
-var alertChannels = checkly.AlertChannels{
-	Email: []checkly.AlertEmail{
-		{
-			Address: "info@example.com",
-		},
-	},
-	Webhook: []checkly.AlertWebhook{
-		{
-			Name: "test webhook",
-			URL:  "http://example.com/webhook",
-		},
-	},
-	Slack: []checkly.AlertSlack{
-		{
-			URL: "http://slack.com/example",
-		},
-	},
-	SMS: []checkly.AlertSMS{
-		{
-			Number: "555-5555",
-			Name:   "test SMS",
-		},
-	},
-}
-
 var alertSettings = checkly.AlertSettings{
 	EscalationType: checkly.RunBased,
 	RunBasedEscalation: checkly.RunBasedEscalation{
@@ -71,7 +46,6 @@ var apiCheck = checkly.Check{
 		"foo",
 		"bar",
 	},
-	AlertChannels:          alertChannels,
 	AlertSettings:          alertSettings,
 	UseGlobalAlertSettings: false,
 	Request: checkly.Request{
@@ -90,7 +64,7 @@ var apiCheck = checkly.Check{
 			},
 		},
 		Assertions: []checkly.Assertion{
-			checkly.Assertion{
+			{
 				Source:     checkly.StatusCode,
 				Comparison: checkly.Equals,
 				Target:     "200",
@@ -112,7 +86,6 @@ var browserCheck = checkly.Check{
 	SSLCheck:       true,
 	SSLCheckDomain: "example.com",
 	Locations:      []string{"eu-west-1"},
-	AlertChannels:  alertChannels,
 	AlertSettings:  alertSettings,
 	Script: `const assert = require("chai").assert;
 	const puppeteer = require("puppeteer");

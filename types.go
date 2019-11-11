@@ -99,7 +99,6 @@ type Check struct {
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
 	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
-	AlertChannels          AlertChannels         `json:"alertChannels,omitempty"`
 	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
 	Request                Request               `json:"request"`
@@ -151,36 +150,6 @@ type EnvironmentVariable struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
 	Locked bool   `json:"locked"`
-}
-
-// AlertChannels represents the possible ways an alert notification can be sent.
-type AlertChannels struct {
-	Email   []AlertEmail   `json:"email,omitempty"`
-	Webhook []AlertWebhook `json:"webhook,omitempty"`
-	Slack   []AlertSlack   `json:"slack,omitempty"`
-	SMS     []AlertSMS     `json:"sms,omitempty"`
-}
-
-// AlertEmail represents an email contact for alerts.
-type AlertEmail struct {
-	Address string `json:"address"`
-}
-
-// AlertWebhook represents a webhook contact for alerts.
-type AlertWebhook struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
-}
-
-// AlertSlack represents a Slack contact for alerts.
-type AlertSlack struct {
-	URL string `json:"url"`
-}
-
-// AlertSMS represents an SMS contact for alerts.
-type AlertSMS struct {
-	Number string `json:"number"`
-	Name   string `json:"name"`
 }
 
 // AlertSettings represents an alert configuration.

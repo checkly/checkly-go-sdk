@@ -44,30 +44,6 @@ func testCheck(name string) Check {
 		SSLCheckDomain:      "example.com",
 		LocalSetupScript:    "bogus",
 		LocalTearDownScript: "bogus",
-		AlertChannels: AlertChannels{
-			Email: []AlertEmail{
-				{
-					Address: "info@example.com",
-				},
-			},
-			Webhook: []AlertWebhook{
-				{
-					Name: "test webhook",
-					URL:  "http://example.com/webhook",
-				},
-			},
-			Slack: []AlertSlack{
-				{
-					URL: "http://slack.com/example",
-				},
-			},
-			SMS: []AlertSMS{
-				{
-					Number: "555-5555",
-					Name:   "test SMS",
-				},
-			},
-		},
 		AlertSettings: AlertSettings{
 			EscalationType: RunBased,
 			RunBasedEscalation: RunBasedEscalation{
@@ -101,7 +77,7 @@ func testCheck(name string) Check {
 				},
 			},
 			Assertions: []Assertion{
-				Assertion{
+				{
 					Source:     StatusCode,
 					Comparison: Equals,
 					Target:     "200",
