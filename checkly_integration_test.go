@@ -104,7 +104,7 @@ func TestCreateGetIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkCreate.ID = ID
-	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {
+	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "AlertChannelSubscriptions", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkCreate, check))
 	}
 }
@@ -129,7 +129,7 @@ func TestUpdateIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkUpdate.ID = ID
-	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
+	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "AlertChannelSubscriptions", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkUpdate, check))
 	}
 }
