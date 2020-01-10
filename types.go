@@ -87,6 +87,8 @@ type Check struct {
 	Muted                     bool                  `json:"muted"`
 	ShouldFail                bool                  `json:"shouldFail"`
 	Locations                 []string              `json:"locations"`
+	DegradedResponseTime      int                   `json:"degradedResponseTime"`
+	MaxResponseTime           int                   `json:"maxResponseTime"`
 	Script                    string                `json:"script,omitempty"`
 	CreatedAt                 time.Time             `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time             `json:"updated_at,omitempty"`
