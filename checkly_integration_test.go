@@ -60,6 +60,12 @@ func testCheck(name string) Check {
 				AlertThreshold: 3,
 			},
 		},
+		AlertChannelSubscriptions: []Subscription{
+			{
+				AlertChannelID: 2996,
+				Activated:      true,
+			},
+		},
 		UseGlobalAlertSettings: false,
 		Request: Request{
 			Method: http.MethodGet,
@@ -104,7 +110,7 @@ func TestCreateGetIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkCreate.ID = ID
-	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "AlertChannelSubscriptions", "UpdatedAt")) {
+	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkCreate, check))
 	}
 }
@@ -129,7 +135,7 @@ func TestUpdateIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkUpdate.ID = ID
-	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "AlertChannelSubscriptions", "UpdatedAt")) {
+	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkUpdate, check))
 	}
 }

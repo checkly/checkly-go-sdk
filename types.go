@@ -187,7 +187,8 @@ type SSLCertificates struct {
 	AlertThreshold int  `json:"alertThreshold"`
 }
 
-// AlertChannel represents an alert channel and its subscribed checks. This struct is read only
+// AlertChannel represents an alert channel and its subscribed checks. The API
+// defines this data as read-only.
 type AlertChannel struct {
 	ID        string                 `json:"id"`
 	Type      string                 `json:"type,omitempty"`
@@ -196,9 +197,11 @@ type AlertChannel struct {
 	UpdatedAt time.Time              `json:"updated_at,omitempty"`
 }
 
+// Subscription represents a subscription to an alert channel. The API defines
+// this data as read-only.
 type Subscription struct {
 	ID             string `json:"id,omitempty"`
 	CheckID        string `json:"checkId,omitempty"`
-	AlertChannelId string `json:"alertChannelId,omitempty"`
+	AlertChannelID int64  `json:"alertChannelId,omitempty"`
 	Activated      bool   `json:"activated"`
 }
