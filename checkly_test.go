@@ -26,6 +26,12 @@ func TestCreate(t *testing.T) {
 			URL:    "http://example.com",
 		},
 		Tags: []string{"auto"},
+		AlertChannelSubscriptions: []Subscription{
+			{
+				AlertChannelID: 2996,
+				Activated:      true,
+			},
+		},
 	}
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {

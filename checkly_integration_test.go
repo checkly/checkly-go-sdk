@@ -44,30 +44,6 @@ func testCheck(name string) Check {
 		SSLCheckDomain:      "example.com",
 		LocalSetupScript:    "bogus",
 		LocalTearDownScript: "bogus",
-		AlertChannels: AlertChannels{
-			Email: []AlertEmail{
-				{
-					Address: "info@example.com",
-				},
-			},
-			Webhook: []AlertWebhook{
-				{
-					Name: "test webhook",
-					URL:  "http://example.com/webhook",
-				},
-			},
-			Slack: []AlertSlack{
-				{
-					URL: "http://slack.com/example",
-				},
-			},
-			SMS: []AlertSMS{
-				{
-					Number: "555-5555",
-					Name:   "test SMS",
-				},
-			},
-		},
 		AlertSettings: AlertSettings{
 			EscalationType: RunBased,
 			RunBasedEscalation: RunBasedEscalation{
@@ -82,6 +58,12 @@ func testCheck(name string) Check {
 			SSLCertificates: SSLCertificates{
 				Enabled:        false,
 				AlertThreshold: 3,
+			},
+		},
+		AlertChannelSubscriptions: []Subscription{
+			{
+				AlertChannelID: 2996,
+				Activated:      true,
 			},
 		},
 		UseGlobalAlertSettings: false,
@@ -101,7 +83,7 @@ func testCheck(name string) Check {
 				},
 			},
 			Assertions: []Assertion{
-				Assertion{
+				{
 					Source:     StatusCode,
 					Comparison: Equals,
 					Target:     "200",
@@ -128,7 +110,7 @@ func TestCreateGetIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkCreate.ID = ID
-	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt")) {
+	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkCreate, check))
 	}
 }
