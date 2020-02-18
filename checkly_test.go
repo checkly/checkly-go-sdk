@@ -32,6 +32,8 @@ func TestCreate(t *testing.T) {
 				Activated:      true,
 			},
 		},
+		DegradedResponseTime: 15000,
+		MaxResponseTime:      30000,
 	}
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {

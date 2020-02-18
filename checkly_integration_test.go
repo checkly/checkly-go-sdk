@@ -21,14 +21,16 @@ func getAPIKey(t *testing.T) string {
 
 func testCheck(name string) Check {
 	return Check{
-		Name:       name,
-		Type:       TypeAPI,
-		Frequency:  1,
-		Activated:  true,
-		Muted:      false,
-		ShouldFail: false,
-		Locations:  []string{"eu-west-1"},
-		Script:     "foo",
+		Name:                 name,
+		Type:                 TypeAPI,
+		Frequency:            1,
+		Activated:            true,
+		Muted:                false,
+		ShouldFail:           false,
+		Locations:            []string{"eu-west-1"},
+		Script:               "foo",
+		DegradedResponseTime: 15000,
+		MaxResponseTime:      30000,
 		EnvironmentVariables: []EnvironmentVariable{
 			{
 				Key:   "ENVTEST",

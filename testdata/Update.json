@@ -12,6 +12,8 @@
     "us-west-1"
   ],
   "script": null,
+  "degradedResponseTime": 15000,
+  "maxResponseTime": 30000,
   "created_at": "2019-07-25T11:34:57.576Z",
   "updated_at": "2019-07-30T13:15:07.693Z",
   "environmentVariables": null,
