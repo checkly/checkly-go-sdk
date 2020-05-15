@@ -1,4 +1,4 @@
-module github.com/bitfield/checkly
+module github.com/checkly/checkly-go-sdk
 
 go 1.12
 

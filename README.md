@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/bitfield/checkly?status.png)](http://godoc.org/github.com/bitfield/checkly)[![Go Report Card](https://goreportcard.com/badge/github.com/bitfield/checkly)](https://goreportcard.com/report/github.com/bitfield/checkly)[![CircleCI](https://circleci.com/gh/bitfield/checkly.svg?style=svg)](https://circleci.com/gh/bitfield/checkly)
+[![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)[![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)[![CircleCI](https://circleci.com/gh/checkly/checkly-go-sdk.svg?style=svg)](https://circleci.com/gh/checkly/checkly-go-sdk)
 
 # checkly
 
@@ -6,7 +6,7 @@
 
 While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
 
-https://github.com/bitfield/terraform-provider-checkly
+https://github.com/checkly/terraform-provider-checkly
 
 ## Setting your API key
 
@@ -17,7 +17,7 @@ To use the client library with your Checkly account, you will need an API Key fo
 Import the library using:
 
 ```go
-import "github.com/bitfield/checkly"
+import "github.com/checkly/checkly-go-sdk"
 ```
 
 ## Creating a client
@@ -133,7 +133,7 @@ Via: 1.1 vegur
 
 ## Bugs and feature requests
 
-If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/bitfield/checkly/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
+If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/checkly/checkly-go-sdk/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
 Not all the functionality of the Checkly API is implemented yet.
 

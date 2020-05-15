@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bitfield/checkly"
+	"github.com/checkly/checkly-go-sdk"
 )
 
 var alertSettings = checkly.AlertSettings{
