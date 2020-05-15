@@ -1,4 +1,4 @@
-package checkly
+package checkly_test
 
 import (
 	"encoding/json"
@@ -12,21 +12,22 @@ import (
 	"strings"
 	"testing"
 
+	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestCreate(t *testing.T) {
 	t.Parallel()
-	wantCheck := Check{
+	wantCheck := checkly.Check{
 		Name:      "test",
-		Type:      TypeAPI,
+		Type:      checkly.TypeAPI,
 		Activated: true,
-		Request: Request{
+		Request: checkly.Request{
 			Method: http.MethodGet,
 			URL:    "http://example.com",
 		},
 		Tags: []string{"auto"},
-		AlertChannelSubscriptions: []Subscription{
+		AlertChannelSubscriptions: []checkly.Subscription{
 			{
 				AlertChannelID: 2996,
 				Activated:      true,
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var check Check
+		var check checkly.Check
 		err = json.Unmarshal(body, &check)
 		if err != nil {
 			t.Fatal(err)
@@ -64,7 +65,7 @@ func TestCreate(t *testing.T) {
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
-	client := NewClient("dummy")
+	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	wantID := "73d29e72-6540-4bb5-967e-e07fa2c9465e"
@@ -89,11 +90,11 @@ func TestAPIError(t *testing.T) {
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
-	client := NewClient("dummy")
+	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	// Don't care about result, just the error message
-	_, err := client.Create(Check{})
+	_, err := client.Create(checkly.Check{})
 	if err == nil {
 		t.Fatal("want error when API returns 'bad request' status, got nil")
 	}
@@ -123,7 +124,7 @@ func TestDelete(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer ts.Close()
-	client := NewClient("dummy")
+	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	err := client.Delete("73d29e72-6540-4bb5-967e-e07fa2c9465e")
@@ -155,7 +156,7 @@ func TestGet(t *testing.T) {
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
-	client := NewClient("dummy")
+	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	check, err := client.Get("73d29e72-6540-4bb5-967e-e07fa2c9465e")
@@ -170,11 +171,11 @@ func TestGet(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
-	wantCheck := Check{
+	wantCheck := checkly.Check{
 		Name:      "test",
-		Type:      TypeAPI,
+		Type:      checkly.TypeAPI,
 		Activated: true,
-		Request: Request{
+		Request: checkly.Request{
 			Method: http.MethodGet,
 			URL:    "http://example.com",
 		},
@@ -192,7 +193,7 @@ func TestUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var check Check
+		var check checkly.Check
 		err = json.Unmarshal(body, &check)
 		if err != nil {
 			t.Fatal(err)
@@ -209,7 +210,7 @@ func TestUpdate(t *testing.T) {
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
-	client := NewClient("dummy")
+	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	err := client.Update("73d29e72-6540-4bb5-967e-e07fa2c9465e", wantCheck)

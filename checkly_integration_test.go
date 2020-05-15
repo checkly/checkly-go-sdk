@@ -1,12 +1,13 @@
 // +build integration
 
-package checkly
+package checkly_test
 
 import (
 	"net/http"
 	"os"
 	"testing"
 
+	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -19,10 +20,10 @@ func getAPIKey(t *testing.T) string {
 	return key
 }
 
-func testCheck(name string) Check {
-	return Check{
+func testCheck(name string) checkly.Check {
+	return checkly.Check{
 		Name:                 name,
-		Type:                 TypeAPI,
+		Type:                 checkly.TypeAPI,
 		Frequency:            1,
 		Activated:            true,
 		Muted:                false,
@@ -31,7 +32,7 @@ func testCheck(name string) Check {
 		Script:               "foo",
 		DegradedResponseTime: 15000,
 		MaxResponseTime:      30000,
-		EnvironmentVariables: []EnvironmentVariable{
+		EnvironmentVariables: []checkly.EnvironmentVariable{
 			{
 				Key:   "ENVTEST",
 				Value: "Hello world",
@@ -46,48 +47,48 @@ func testCheck(name string) Check {
 		SSLCheckDomain:      "example.com",
 		LocalSetupScript:    "bogus",
 		LocalTearDownScript: "bogus",
-		AlertSettings: AlertSettings{
-			EscalationType: RunBased,
-			RunBasedEscalation: RunBasedEscalation{
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
-			TimeBasedEscalation: TimeBasedEscalation{
+			TimeBasedEscalation: checkly.TimeBasedEscalation{
 				MinutesFailingThreshold: 5,
 			},
-			Reminders: Reminders{
+			Reminders: checkly.Reminders{
 				Interval: 5,
 			},
-			SSLCertificates: SSLCertificates{
+			SSLCertificates: checkly.SSLCertificates{
 				Enabled:        false,
 				AlertThreshold: 3,
 			},
 		},
-		AlertChannelSubscriptions: []Subscription{
+		AlertChannelSubscriptions: []checkly.Subscription{
 			{
 				AlertChannelID: 2996,
 				Activated:      true,
 			},
 		},
 		UseGlobalAlertSettings: false,
-		Request: Request{
+		Request: checkly.Request{
 			Method: http.MethodGet,
 			URL:    "http://example.com",
-			Headers: []KeyValue{
+			Headers: []checkly.KeyValue{
 				{
 					Key:   "X-Test",
 					Value: "foo",
 				},
 			},
-			QueryParameters: []KeyValue{
+			QueryParameters: []checkly.KeyValue{
 				{
 					Key:   "query",
 					Value: "foo",
 				},
 			},
-			Assertions: []Assertion{
+			Assertions: []checkly.Assertion{
 				{
-					Source:     StatusCode,
-					Comparison: Equals,
+					Source:     checkly.StatusCode,
+					Comparison: checkly.Equals,
 					Target:     "200",
 				},
 			},
@@ -99,7 +100,7 @@ func testCheck(name string) Check {
 
 func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
+	client := checkly.NewClient(getAPIKey(t))
 	checkCreate := testCheck("integrationTestCreate")
 	// client.Debug = os.Stdout
 	ID, err := client.Create(checkCreate)
@@ -112,14 +113,14 @@ func TestCreateGetIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkCreate.ID = ID
-	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
+	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(checkly.Check{}, "CreatedAt", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkCreate, check))
 	}
 }
 
 func TestUpdateIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
+	client := checkly.NewClient(getAPIKey(t))
 	checkUpdate := testCheck("integrationTestUpdate")
 	// client.Debug = os.Stdout
 	ID, err := client.Create(checkUpdate)
@@ -137,14 +138,14 @@ func TestUpdateIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	checkUpdate.ID = ID
-	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
+	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(checkly.Check{}, "CreatedAt", "UpdatedAt")) {
 		t.Error(cmp.Diff(checkUpdate, check))
 	}
 }
 
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
+	client := checkly.NewClient(getAPIKey(t))
 	checkDelete := testCheck("integrationTestDelete")
 	ID, err := client.Create(checkDelete)
 	if err != nil {
