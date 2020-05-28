@@ -28,51 +28,51 @@ func NewClient(apiKey string) Client {
 }
 
 // Create creates a new check with the specified details. It returns the
-// check ID of the newly-created check, or an error.
-func (c *Client) Create(check Check) (string, error) {
+// newly-created check, or an error.
+func (c *Client) Create(check Check) (Check, error) {
 	data, err := json.Marshal(check)
 	if err != nil {
-		return "", err
+		return Check{}, err
 	}
 	status, res, err := c.MakeAPICall(http.MethodPost, "checks", data)
 	if err != nil {
-		return "", err
+		return Check{}, err
 	}
 	if status != http.StatusCreated {
-		return "", fmt.Errorf("unexpected response status %d: %q", status, res)
+		return Check{}, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Check
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return "", fmt.Errorf("decoding error for data %s: %v", res, err)
+		return Check{}, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
-	return result.ID, nil
+	return result, nil
 }
 
-// Update updates an existing check with the specified details. It returns a
-// non-nil error if the request failed.
-func (c *Client) Update(ID string, check Check) error {
+// Update updates an existing check with the specified details. It returns the
+// updated check, or an error.
+func (c *Client) Update(ID string, check Check) (Check, error) {
 	data, err := json.Marshal(check)
 	if err != nil {
-		return err
+		return Check{}, err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPut, "checks/"+ID, data)
+	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("checks/%s", ID), data)
 	if err != nil {
-		return err
+		return Check{}, err
 	}
 	if status != http.StatusOK {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
+		return Check{}, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Check
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return fmt.Errorf("decoding error for data %s: %v", res, err)
+		return Check{}, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
-	return nil
+	return result, nil
 }
 
 // Delete deletes the check with the specified ID. It returns a non-nil
 // error if the request failed.
 func (c *Client) Delete(ID string) error {
-	status, res, err := c.MakeAPICall(http.MethodDelete, "checks/"+ID, nil)
+	status, res, err := c.MakeAPICall(http.MethodDelete, fmt.Sprintf("checks/%s", ID), nil)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (c *Client) Delete(ID string) error {
 // Get takes the ID of an existing check, and returns the check parameters, or
 // an error.
 func (c *Client) Get(ID string) (Check, error) {
-	status, res, err := c.MakeAPICall(http.MethodGet, "checks/"+ID, nil)
+	status, res, err := c.MakeAPICall(http.MethodGet, fmt.Sprintf("checks/%s", ID), nil)
 	if err != nil {
 		return Check{}, err
 	}
@@ -97,6 +97,79 @@ func (c *Client) Get(ID string) (Check, error) {
 		return Check{}, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return check, nil
+}
+
+// CreateGroup creates a new check group with the specified details. It returns
+// the newly-created group, or an error.
+func (c *Client) CreateGroup(group Group) (Group, error) {
+	data, err := json.Marshal(group)
+	if err != nil {
+		return Group{}, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPost, "check-groups", data)
+	if err != nil {
+		return Group{}, err
+	}
+	if status != http.StatusCreated {
+		return Group{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result Group
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return Group{}, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// GetGroup takes the ID of an existing check group, and returns the
+// corresponding group, or an error.
+func (c *Client) GetGroup(ID int64) (Group, error) {
+	status, res, err := c.MakeAPICall(http.MethodGet, fmt.Sprintf("check-groups/%d", ID), nil)
+	if err != nil {
+		return Group{}, err
+	}
+	if status != http.StatusOK {
+		return Group{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	group := Group{}
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&group); err != nil {
+		return Group{}, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return group, nil
+}
+
+// UpdateGroup takes the ID of an existing check group, and updates the
+// corresponding check group to match the supplied group. It returns the updated
+// group, or an error.
+func (c *Client) UpdateGroup(ID int64, group Group) (Group, error) {
+	data, err := json.Marshal(group)
+	if err != nil {
+		return Group{}, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("check-groups/%d", ID), data)
+	if err != nil {
+		return Group{}, err
+	}
+	if status != http.StatusOK {
+		return Group{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result Group
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return Group{}, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// DeleteGroup deletes the check group with the specified ID. It returns a
+// non-nil error if the request failed.
+func (c *Client) DeleteGroup(ID int64) error {
+	status, res, err := c.MakeAPICall(http.MethodDelete, fmt.Sprintf("check-groups/%d", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
 }
 
 // MakeAPICall calls the Checkly API with the specified URL and data, and

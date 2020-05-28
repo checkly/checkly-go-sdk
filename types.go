@@ -79,32 +79,30 @@ const NotContains = "NOT_CONTAINS"
 
 // Check represents the parameters for an existing check.
 type Check struct {
-	ID                        string                `json:"id"`
-	Name                      string                `json:"name"`
-	Type                      string                `json:"checkType"`
-	Frequency                 int                   `json:"frequency"`
-	Activated                 bool                  `json:"activated"`
-	Muted                     bool                  `json:"muted"`
-	ShouldFail                bool                  `json:"shouldFail"`
-	Locations                 []string              `json:"locations"`
-	DegradedResponseTime      int                   `json:"degradedResponseTime"`
-	MaxResponseTime           int                   `json:"maxResponseTime"`
-	Script                    string                `json:"script,omitempty"`
-	CreatedAt                 time.Time             `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time             `json:"updated_at,omitempty"`
-	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables"`
-	DoubleCheck               bool                  `json:"doubleCheck"`
-	Tags                      []string              `json:"tags,omitempty"`
-	SSLCheck                  bool                  `json:"sslCheck"`
-	SSLCheckDomain            string                `json:"sslCheckDomain"`
-	SetupSnippetID            int64                 `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                 `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          string                `json:"localSetupScript,omitempty"`
-	LocalTearDownScript       string                `json:"localTearDownScript,omitempty"`
-	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
-	Request                   Request               `json:"request"`
-	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions"`
+	ID                     string                `json:"id"`
+	Name                   string                `json:"name"`
+	Type                   string                `json:"checkType"`
+	Frequency              int                   `json:"frequency"`
+	Activated              bool                  `json:"activated"`
+	Muted                  bool                  `json:"muted"`
+	ShouldFail             bool                  `json:"shouldFail"`
+	Locations              []string              `json:"locations"`
+	DegradedResponseTime   int                   `json:"degradedResponseTime"`
+	MaxResponseTime        int                   `json:"maxResponseTime"`
+	Script                 string                `json:"script,omitempty"`
+	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables"`
+	DoubleCheck            bool                  `json:"doubleCheck"`
+	Tags                   []string              `json:"tags,omitempty"`
+	SSLCheck               bool                  `json:"sslCheck"`
+	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
+	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
+	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
+	Request                Request               `json:"request"`
+	GroupID                int64                 `json:"groupId,omitempty"`
+	GroupOrder             int                   `json:"groupOrder,omitempty"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -135,8 +133,8 @@ type Assertion struct {
 
 // BasicAuth represents the HTTP basic authentication credentials for a request.
 type BasicAuth struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // KeyValue represents a key-value pair, for example a request header setting,
@@ -206,4 +204,41 @@ type Subscription struct {
 	CheckID        string `json:"checkId,omitempty"`
 	AlertChannelID int64  `json:"alertChannelId,omitempty"`
 	Activated      bool   `json:"activated"`
+}
+
+// Group represents a check group.
+type Group struct {
+	ID                        int64                 `json:"id,omitempty"`
+	Name                      string                `json:"name"`
+	Activated                 bool                  `json:"activated"`
+	Muted                     bool                  `json:"muted"`
+	Tags                      []string              `json:"tags,omitempty"`
+	Locations                 []string              `json:"locations"`
+	Concurrency               int                   `json:"concurrency"`
+	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
+	BrowserCheckDefaults      BrowserCheckDefaults  `json:"browserCheckDefaults"`
+	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables"`
+	DoubleCheck               bool                  `json:"doubleCheck"`
+	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
+	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
+	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions"`
+	SetupSnippetID            int64                 `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                 `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          string                `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       string                `json:"localTearDownScript,omitempty"`
+}
+
+// APICheckDefaults represents the default settings for API checks within a
+// given group.
+type APICheckDefaults struct {
+	BaseURL         string      `json:"url"`
+	Headers         []KeyValue  `json:"headers"`
+	QueryParameters []KeyValue  `json:"queryParameters"`
+	Assertions      []Assertion `json:"assertions"`
+	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
+}
+
+// BrowserCheckDefaults represents the default settings for API checks within a
+// given group.
+type BrowserCheckDefaults struct {
 }
