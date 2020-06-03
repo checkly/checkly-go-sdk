@@ -37,7 +37,6 @@ var apiCheck = checkly.Check{
 	ShouldFail:           false,
 	DoubleCheck:          false,
 	SSLCheck:             true,
-	SSLCheckDomain:       "example.com",
 	LocalSetupScript:     "",
 	LocalTearDownScript:  "",
 	Locations: []string{
@@ -78,17 +77,16 @@ var apiCheck = checkly.Check{
 }
 
 var browserCheck = checkly.Check{
-	Name:           "My Browser Check",
-	Type:           checkly.TypeBrowser,
-	Frequency:      5,
-	Activated:      true,
-	Muted:          false,
-	ShouldFail:     false,
-	DoubleCheck:    false,
-	SSLCheck:       true,
-	SSLCheckDomain: "example.com",
-	Locations:      []string{"eu-west-1"},
-	AlertSettings:  alertSettings,
+	Name:          "My Browser Check",
+	Type:          checkly.TypeBrowser,
+	Frequency:     5,
+	Activated:     true,
+	Muted:         false,
+	ShouldFail:    false,
+	DoubleCheck:   false,
+	SSLCheck:      true,
+	Locations:     []string{"eu-west-1"},
+	AlertSettings: alertSettings,
 	Script: `const assert = require("chai").assert;
 	const puppeteer = require("puppeteer");
 
@@ -111,6 +109,74 @@ var browserCheck = checkly.Check{
 	},
 }
 
+var group = checkly.Group{
+	Name:        "test",
+	Activated:   true,
+	Muted:       false,
+	Tags:        []string{"auto"},
+	Locations:   []string{"eu-west-1"},
+	Concurrency: 3,
+	APICheckDefaults: checkly.APICheckDefaults{
+		BaseURL: "example.com/api/test",
+		Headers: []checkly.KeyValue{
+			{
+				Key:   "X-Test",
+				Value: "foo",
+			},
+		},
+		QueryParameters: []checkly.KeyValue{
+			{
+				Key:   "query",
+				Value: "foo",
+			},
+		},
+		Assertions: []checkly.Assertion{
+			{
+				Source:     checkly.StatusCode,
+				Comparison: checkly.Equals,
+				Target:     "200",
+			},
+		},
+		BasicAuth: checkly.BasicAuth{
+			Username: "user",
+			Password: "pass",
+		},
+	},
+	BrowserCheckDefaults: checkly.BrowserCheckDefaults{},
+	EnvironmentVariables: []checkly.EnvironmentVariable{
+		{
+			Key:   "ENVTEST",
+			Value: "Hello world",
+		},
+	},
+	DoubleCheck:            true,
+	UseGlobalAlertSettings: false,
+	AlertSettings: checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		TimeBasedEscalation: checkly.TimeBasedEscalation{
+			MinutesFailingThreshold: 5,
+		},
+		Reminders: checkly.Reminders{
+			Amount:   0,
+			Interval: 5,
+		},
+		SSLCertificates: checkly.SSLCertificates{
+			Enabled:        true,
+			AlertThreshold: 30,
+		},
+	},
+	AlertChannelSubscriptions: []checkly.Subscription{
+		{
+			Activated: true,
+		},
+	},
+	LocalSetupScript:    "setup-test",
+	LocalTearDownScript: "teardown-test",
+}
+
 func main() {
 	apiKey := os.Getenv("CHECKLY_API_KEY")
 	if apiKey == "" {
@@ -119,11 +185,16 @@ func main() {
 	client := checkly.NewClient(apiKey)
 	// uncomment this to enable dumping of API requests and responses
 	// client.Debug = os.Stdout
+	group, err := client.CreateGroup(group)
+	if err != nil {
+		log.Fatalf("creating group: %v", err)
+	}
+	fmt.Printf("New check group created with ID %d\n", group.ID)
 	for _, check := range []checkly.Check{apiCheck, browserCheck} {
-		ID, err := client.Create(check)
+		gotCheck, err := client.Create(check)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("New check created with ID %s\n", ID)
+		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
 }

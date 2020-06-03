@@ -1,0 +1,81 @@
+{
+  "id": 156,
+  "name": "test",
+  "concurrency": 3,
+  "apiCheckDefaults": {
+    "url": "example.com/api/test",
+    "headers": [
+      {
+        "key": "X-Test",
+        "value": "foo",
+        "locked": false
+      }
+    ],
+    "basicAuth": {
+      "password": "pass",
+      "username": "user"
+    },
+    "assertions": [
+      {
+        "source": "STATUS_CODE",
+        "target": "200",
+        "property": "",
+        "comparison": "EQUALS"
+      }
+    ],
+    "queryParameters": [
+      {
+        "key": "query",
+        "value": "foo",
+        "locked": false
+      }
+    ]
+  },
+  "browserCheckDefaults": {},
+  "alertSettings": {
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "escalationType": "RUN_BASED",
+    "sslCertificates": {
+      "enabled": true,
+      "alertThreshold": 30
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    },
+    "timeBasedEscalation": {
+      "minutesFailingThreshold": 5
+    }
+  },
+  "environmentVariables": [
+    {
+      "key": "ENVTEST",
+      "value": "Hello world",
+      "locked": false
+    }
+  ],
+  "setupSnippetId": null,
+  "tearDownSnippetId": null,
+  "localSetupScript": "setup-test",
+  "localTearDownScript": "teardown-test",
+  "activated": true,
+  "muted": false,
+  "useGlobalAlertSettings": false,
+  "doubleCheck": true,
+  "locations": [
+    "eu-west-1"
+  ],
+  "tags": [
+    "auto"
+  ],
+  "created_at": "2020-05-26T11:55:49.670Z",
+  "updated_at": "2020-05-26T12:03:20.080Z",
+  "alertChannelSubscriptions": [
+    {
+      "alertChannelId": 2996,
+      "activated": true
+    }
+  ]
+}

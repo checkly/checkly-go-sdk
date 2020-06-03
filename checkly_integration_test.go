@@ -1,14 +1,13 @@
 // +build integration
 
-package checkly
+package checkly_test
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
+	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func getAPIKey(t *testing.T) string {
@@ -19,142 +18,106 @@ func getAPIKey(t *testing.T) string {
 	return key
 }
 
-func testCheck(name string) Check {
-	return Check{
-		Name:                 name,
-		Type:                 TypeAPI,
-		Frequency:            1,
-		Activated:            true,
-		Muted:                false,
-		ShouldFail:           false,
-		Locations:            []string{"eu-west-1"},
-		Script:               "foo",
-		DegradedResponseTime: 15000,
-		MaxResponseTime:      30000,
-		EnvironmentVariables: []EnvironmentVariable{
-			{
-				Key:   "ENVTEST",
-				Value: "Hello world",
-			},
-		},
-		DoubleCheck: false,
-		Tags: []string{
-			"foo",
-			"bar",
-		},
-		SSLCheck:            true,
-		SSLCheckDomain:      "example.com",
-		LocalSetupScript:    "bogus",
-		LocalTearDownScript: "bogus",
-		AlertSettings: AlertSettings{
-			EscalationType: RunBased,
-			RunBasedEscalation: RunBasedEscalation{
-				FailedRunThreshold: 1,
-			},
-			TimeBasedEscalation: TimeBasedEscalation{
-				MinutesFailingThreshold: 5,
-			},
-			Reminders: Reminders{
-				Interval: 5,
-			},
-			SSLCertificates: SSLCertificates{
-				Enabled:        false,
-				AlertThreshold: 3,
-			},
-		},
-		AlertChannelSubscriptions: []Subscription{
-			{
-				AlertChannelID: 2996,
-				Activated:      true,
-			},
-		},
-		UseGlobalAlertSettings: false,
-		Request: Request{
-			Method: http.MethodGet,
-			URL:    "http://example.com",
-			Headers: []KeyValue{
-				{
-					Key:   "X-Test",
-					Value: "foo",
-				},
-			},
-			QueryParameters: []KeyValue{
-				{
-					Key:   "query",
-					Value: "foo",
-				},
-			},
-			Assertions: []Assertion{
-				{
-					Source:     StatusCode,
-					Comparison: Equals,
-					Target:     "200",
-				},
-			},
-			Body:     "",
-			BodyType: "NONE",
-		},
-	}
+func setupClient(t *testing.T) checkly.Client {
+	client := checkly.NewClient(getAPIKey(t))
+	// Uncomment the following line to enable debug output
+	// client.Debug = os.Stdout
+	return client
 }
 
-func TestCreateGetIntegration(t *testing.T) {
+func TestCreateIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
-	checkCreate := testCheck("integrationTestCreate")
-	// client.Debug = os.Stdout
-	ID, err := client.Create(checkCreate)
+	client := setupClient(t)
+	gotCheck, err := client.Create(wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(ID)
-	check, err := client.Get(ID)
-	if err != nil {
-		t.Error(err)
+	defer client.Delete(gotCheck.ID)
+	if !cmp.Equal(wantCheck, gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, gotCheck, ignoreCheckFields))
 	}
-	checkCreate.ID = ID
-	if !cmp.Equal(checkCreate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
-		t.Error(cmp.Diff(checkCreate, check))
+}
+
+func TestGetIntegration(t *testing.T) {
+	t.Parallel()
+	client := setupClient(t)
+	check, err := client.Create(wantCheck)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Delete(check.ID)
+	gotCheck, err := client.Get(check.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(wantCheck, gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, gotCheck, ignoreCheckFields))
 	}
 }
 
 func TestUpdateIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
-	checkUpdate := testCheck("integrationTestUpdate")
-	// client.Debug = os.Stdout
-	ID, err := client.Create(checkUpdate)
+	client := setupClient(t)
+	check, err := client.Create(wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(ID)
-	checkUpdate.Name = "integrationTestUpdate2"
-	err = client.Update(ID, checkUpdate)
+	defer client.Delete(check.ID)
+	updatedCheck := wantCheck
+	updatedCheck.Name = "integrationTestUpdate"
+	gotCheck, err := client.Update(check.ID, updatedCheck)
 	if err != nil {
 		t.Error(err)
 	}
-	check, err := client.Get(ID)
-	if err != nil {
-		t.Error(err)
-	}
-	checkUpdate.ID = ID
-	if !cmp.Equal(checkUpdate, check, cmpopts.IgnoreFields(Check{}, "CreatedAt", "UpdatedAt")) {
-		t.Error(cmp.Diff(checkUpdate, check))
+	if !cmp.Equal(updatedCheck, gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(updatedCheck, gotCheck, ignoreCheckFields))
 	}
 }
 
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
-	client := NewClient(getAPIKey(t))
-	checkDelete := testCheck("integrationTestDelete")
-	ID, err := client.Create(checkDelete)
+	client := setupClient(t)
+	check, err := client.Create(wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Delete(ID); err != nil {
+	if err := client.Delete(check.ID); err != nil {
 		t.Error(err)
 	}
-	_, err = client.Get(ID)
-	if err == nil {
-		t.Error("want error getting deleted check, but got nil")
+}
+
+func TestCreateGroupIntegration(t *testing.T) {
+	t.Parallel()
+	client := setupClient(t)
+	wantGroupCopy := wantGroup
+	gotGroup, err := client.CreateGroup(wantGroupCopy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.DeleteGroup(gotGroup.ID)
+	// These are set by the API
+	wantGroupCopy.AlertChannelSubscriptions = gotGroup.AlertChannelSubscriptions
+	if !cmp.Equal(wantGroupCopy, gotGroup, ignoreGroupFields) {
+		t.Error(cmp.Diff(wantGroupCopy, gotGroup, ignoreGroupFields))
+	}
+}
+
+func TestGetGroupIntegration(t *testing.T) {
+	t.Parallel()
+	client := setupClient(t)
+	wantGroupCopy := wantGroup
+	group, err := client.CreateGroup(wantGroupCopy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.DeleteGroup(group.ID)
+	gotGroup, err := client.GetGroup(group.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	// These are set by the API
+	wantGroupCopy.AlertChannelSubscriptions = gotGroup.AlertChannelSubscriptions
+	if !cmp.Equal(wantGroupCopy, gotGroup, ignoreGroupFields) {
+		t.Error(cmp.Diff(wantGroupCopy, gotGroup, ignoreGroupFields))
 	}
 }
