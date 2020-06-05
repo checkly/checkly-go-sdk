@@ -216,12 +216,11 @@ type Group struct {
 	Locations                 []string              `json:"locations"`
 	Concurrency               int                   `json:"concurrency"`
 	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
-	BrowserCheckDefaults      BrowserCheckDefaults  `json:"browserCheckDefaults"`
 	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables"`
 	DoubleCheck               bool                  `json:"doubleCheck"`
 	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
 	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
-	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions"`
+	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions,omitempty"`
 	SetupSnippetID            int64                 `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                 `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                `json:"localSetupScript,omitempty"`
@@ -236,9 +235,4 @@ type APICheckDefaults struct {
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
 	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
-}
-
-// BrowserCheckDefaults represents the default settings for API checks within a
-// given group.
-type BrowserCheckDefaults struct {
 }

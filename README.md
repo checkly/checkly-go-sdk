@@ -202,7 +202,6 @@ var wantGroup = checkly.Group{
 			Password: "pass",
 		},
 	},
-	BrowserCheckDefaults: checkly.BrowserCheckDefaults{},
 	EnvironmentVariables: []checkly.EnvironmentVariable{
 		{
 			Key:   "ENVTEST",

@@ -31,7 +31,6 @@
       }
     ]
   },
-  "browserCheckDefaults": {},
   "alertSettings": {
     "reminders": {
       "amount": 0,
