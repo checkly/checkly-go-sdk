@@ -231,8 +231,8 @@ type Group struct {
 // given group.
 type APICheckDefaults struct {
 	BaseURL         string      `json:"url"`
-	Headers         []KeyValue  `json:"headers"`
-	QueryParameters []KeyValue  `json:"queryParameters"`
-	Assertions      []Assertion `json:"assertions"`
+	Headers         []KeyValue  `json:"headers,omitempty"`
+	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
+	Assertions      []Assertion `json:"assertions,omitempty"`
 	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
 }
