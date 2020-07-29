@@ -115,7 +115,7 @@ type Request struct {
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
-	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
+	BasicAuth       *BasicAuth   `json:"basicAuth,omitempty"`
 }
 
 // Assertion represents an assertion about an API response, which will be
