@@ -1,0 +1,692 @@
+[
+    {
+        "id": "580c4e71-0109-45ba-9130-887ff01e1a7f",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "eu-central-1",
+        "startedAt": "2020-09-02T11:19:06.283Z",
+        "stoppedAt": "2020-09-02T11:19:06.413Z",
+        "responseTime": 129,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":342208329,\"browserCheckResults\":22827960}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 11:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 129.71048199990764,
+                    "lookup": 19.16466800030321,
+                    "socket": 0.8275390001945198,
+                    "connect": 42.655931000132114,
+                    "response": 129.49101700028405
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 18.33712900010869,
+                    "tcp": 23.491262999828905,
+                    "wait": 0.8275390001945198,
+                    "total": 129.71048199990764,
+                    "download": 0.21946499962359667,
+                    "firstByte": 86.83508600015193
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T11:19:06.681Z",
+        "name": "API check 1",
+        "checkRunId": 1599045546009,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "d7f83ccc-ffbf-4ff5-9fb8-4f1868414474",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "us-east-2",
+        "startedAt": "2020-09-02T10:19:06.451Z",
+        "stoppedAt": "2020-09-02T10:19:06.805Z",
+        "responseTime": 353,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":342153595,\"browserCheckResults\":22824326}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 10:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 353.55550000001676,
+                    "lookup": 28.741315999999642,
+                    "socket": 0.8839520000619814,
+                    "connect": 105.5042029999895,
+                    "response": 353.27526500006206
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 27.85736399993766,
+                    "tcp": 76.76288699998986,
+                    "wait": 0.8839520000619814,
+                    "total": 353.55550000001676,
+                    "download": 0.28023499995470047,
+                    "firstByte": 247.77106200007256
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T10:19:07.694Z",
+        "name": "API check 1",
+        "checkRunId": 1599041946007,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "2a48cb5f-415a-4368-bffe-a58533d4b0a8",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "eu-central-1",
+        "startedAt": "2020-09-02T09:19:06.296Z",
+        "stoppedAt": "2020-09-02T09:19:06.464Z",
+        "responseTime": 168,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":342098424,\"browserCheckResults\":22820685}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 09:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 167.96030399994925,
+                    "lookup": 17.685418999986723,
+                    "socket": 0.8298990000039339,
+                    "connect": 42.085346000036225,
+                    "response": 167.7844010000117
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 16.85551999998279,
+                    "tcp": 24.3999270000495,
+                    "wait": 0.8298990000039339,
+                    "total": 167.96030399994925,
+                    "download": 0.17590299993753433,
+                    "firstByte": 125.69905499997549
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T09:19:06.786Z",
+        "name": "API check 1",
+        "checkRunId": 1599038346004,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "4190e9f4-a279-45c2-852e-0cca5b4cdb99",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "us-east-2",
+        "startedAt": "2020-09-02T08:19:06.455Z",
+        "stoppedAt": "2020-09-02T08:19:06.799Z",
+        "responseTime": 344,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":342043972,\"browserCheckResults\":22817080}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 08:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 343.7897380000213,
+                    "lookup": 21.028032999951392,
+                    "socket": 0.8688619999447837,
+                    "connect": 97.8851479999721,
+                    "response": 343.62116500001866
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 20.15917100000661,
+                    "tcp": 76.85711500002071,
+                    "wait": 0.8688619999447837,
+                    "total": 343.7897380000213,
+                    "download": 0.1685730000026524,
+                    "firstByte": 245.73601700004656
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T08:19:07.581Z",
+        "name": "API check 1",
+        "checkRunId": 1599034746012,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "5454ac31-ca83-4453-9e8b-99e7fb778ac4",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "eu-central-1",
+        "startedAt": "2020-09-02T07:19:06.287Z",
+        "stoppedAt": "2020-09-02T07:19:06.459Z",
+        "responseTime": 172,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341987978,\"browserCheckResults\":22813172}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 07:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 172.31129200011492,
+                    "lookup": 35.06162100005895,
+                    "socket": 0.8007980003021657,
+                    "connect": 62.01192500023171,
+                    "response": 172.15233300020918
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 34.26082299975678,
+                    "tcp": 26.950304000172764,
+                    "wait": 0.8007980003021657,
+                    "total": 172.31129200011492,
+                    "download": 0.15895899990573525,
+                    "firstByte": 110.14040799997747
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T07:19:06.727Z",
+        "name": "API check 1",
+        "checkRunId": 1599031146009,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "4625bc11-a5c0-433a-a2c8-f900d1f60647",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "us-east-2",
+        "startedAt": "2020-09-02T06:19:06.504Z",
+        "stoppedAt": "2020-09-02T06:19:06.923Z",
+        "responseTime": 419,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341932321,\"browserCheckResults\":22809468}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 06:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 418.8889020001516,
+                    "lookup": 51.63841500040144,
+                    "socket": 22.667236000299454,
+                    "connect": 137.6782830003649,
+                    "response": 418.7380539998412
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 28.971179000101984,
+                    "tcp": 86.03986799996346,
+                    "wait": 22.667236000299454,
+                    "total": 418.8889020001516,
+                    "download": 0.15084800031036139,
+                    "firstByte": 281.0597709994763
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T06:19:07.685Z",
+        "name": "API check 1",
+        "checkRunId": 1599027546012,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "1333b5fd-6558-4948-810e-c318b05d2ab2",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "eu-central-1",
+        "startedAt": "2020-09-02T05:19:06.282Z",
+        "stoppedAt": "2020-09-02T05:19:06.419Z",
+        "responseTime": 136,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341879408,\"browserCheckResults\":22805953}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 05:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 136.50528699997813,
+                    "lookup": 17.929279000032693,
+                    "socket": 0.7943910001777112,
+                    "connect": 42.580758000258356,
+                    "response": 136.3022949998267
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 17.134887999854982,
+                    "tcp": 24.651479000225663,
+                    "wait": 0.7943910001777112,
+                    "total": 136.50528699997813,
+                    "download": 0.2029920001514256,
+                    "firstByte": 93.72153699956834
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T05:19:06.804Z",
+        "name": "API check 1",
+        "checkRunId": 1599023946004,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "0d81ff5f-1c0c-4e35-840a-857421140901",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "us-east-2",
+        "startedAt": "2020-09-02T04:19:06.445Z",
+        "stoppedAt": "2020-09-02T04:19:06.881Z",
+        "responseTime": 436,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341823896,\"browserCheckResults\":22802256}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 04:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 436.4482909999788,
+                    "lookup": 30.923027000389993,
+                    "socket": 11.374893000349402,
+                    "connect": 127.47370500024408,
+                    "response": 436.2794409999624
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 19.54813400004059,
+                    "tcp": 96.55067799985409,
+                    "wait": 11.374893000349402,
+                    "total": 436.4482909999788,
+                    "download": 0.16885000001639128,
+                    "firstByte": 308.8057359997183
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T04:19:07.559Z",
+        "name": "API check 1",
+        "checkRunId": 1599020346011,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "6016a3fd-d0e7-4bbd-9c94-2021ff05a560",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "eu-central-1",
+        "startedAt": "2020-09-02T03:19:06.257Z",
+        "stoppedAt": "2020-09-02T03:19:06.399Z",
+        "responseTime": 142,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341769059,\"browserCheckResults\":22798605}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 03:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 142.3437870000489,
+                    "lookup": 10.481633000075817,
+                    "socket": 0.7494280003011227,
+                    "connect": 36.86715100007132,
+                    "response": 142.1897420003079
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 9.732204999774694,
+                    "tcp": 26.3855179999955,
+                    "wait": 0.7494280003011227,
+                    "total": 142.3437870000489,
+                    "download": 0.15404499974101782,
+                    "firstByte": 105.32259100023657
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T03:19:06.702Z",
+        "name": "API check 1",
+        "checkRunId": 1599016746009,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    },
+    {
+        "id": "dec4697c-5f8b-4cdf-8d94-8b3fb81f9c2c",
+        "hasErrors": false,
+        "hasFailures": false,
+        "runLocation": "us-east-2",
+        "startedAt": "2020-09-02T02:19:06.534Z",
+        "stoppedAt": "2020-09-02T02:19:07.024Z",
+        "responseTime": 490,
+        "apiCheckResult": {
+            "request": {
+                "url": "https://api.checklyhq.com/public-stats",
+                "data": "",
+                "method": "GET",
+                "params": {},
+                "headers": {}
+            },
+            "response": {
+                "body": "{\"apiCheckResults\":341713985,\"browserCheckResults\":22794922}",
+                "href": "https://api.checklyhq.com/public-stats",
+                "status": 200,
+                "headers": {
+                    "via": "1.1 vegur",
+                    "date": "Wed, 02 Sep 2020 02:19:06 GMT",
+                    "vary": "origin",
+                    "server": "Cowboy",
+                    "connection": "close",
+                    "content-type": "application/json; charset=utf-8",
+                    "accept-ranges": "bytes",
+                    "cache-control": "no-cache",
+                    "content-length": "60",
+                    "access-control-expose-headers": "WWW-Authenticate,Server-Authorization"
+                },
+                "timings": {
+                    "end": 489.8290899991989,
+                    "lookup": 118.23668299987912,
+                    "socket": 0.9924519993364811,
+                    "connect": 206.22229199949652,
+                    "response": 489.6611019996926
+                },
+                "truncated": false,
+                "statusText": "OK",
+                "timingPhases": {
+                    "dns": 117.24423100054264,
+                    "tcp": 87.9856089996174,
+                    "wait": 0.9924519993364811,
+                    "total": 489.8290899991989,
+                    "download": 0.16798799950629473,
+                    "firstByte": 283.4388100001961
+                }
+            },
+            "assertions": [
+                {
+                    "order": 0,
+                    "source": "STATUS_CODE",
+                    "target": 200,
+                    "property": "",
+                    "comparison": "EQUALS"
+                }
+            ]
+        },
+        "browserCheckResult": null,
+        "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+        "created_at": "2020-09-02T02:19:07.733Z",
+        "name": "API check 1",
+        "checkRunId": 1599013146013,
+        "attempts": 1,
+        "isDegraded": false,
+        "overMaxResponseTime": false
+    }
+]

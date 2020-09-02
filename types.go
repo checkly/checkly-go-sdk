@@ -20,6 +20,8 @@ type Client struct {
 
 // Check type constants
 
+type CheckType string
+
 // TypeBrowser is used to identify a browser check.
 const TypeBrowser = "BROWSER"
 
@@ -115,7 +117,7 @@ type Request struct {
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
-	BasicAuth       *BasicAuth   `json:"basicAuth,omitempty"`
+	BasicAuth       *BasicAuth  `json:"basicAuth,omitempty"`
 }
 
 // Assertion represents an assertion about an API response, which will be
@@ -235,4 +237,44 @@ type APICheckDefaults struct {
 	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
 	Assertions      []Assertion `json:"assertions,omitempty"`
 	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
+}
+
+// CheckResult represents a Check result
+type CheckResult struct {
+	ID                  string              `json:"id"`
+	Name                string              `json:"name"`
+	CheckID             string              `"checkId"`
+	HasFailures         bool                `json:"hasFailures"`
+	HasErrors           bool                `json:"hasErrors"`
+	IsDegraded          bool                `json:"isDegraded"`
+	OverMaxResponseTime bool                `json:"overMaxResponseTime"`
+	RunLocation         string              `json:"runLocation"`
+	StartedAt           time.Time           `json:"startedAt"`
+	StoppedAt           time.Time           `json:"stoppedAt"`
+	CreatedAt           time.Time           `json:"created_at"`
+	ResponseTime        int64               `json:"responseTime"`
+	ApiCheckResult      *ApiCheckResult     `json:"apiCheckResult"`
+	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
+	CheckRunID          int64               `json:"checkRunId"`
+	Attempts            int64               `json:"attempts"`
+}
+
+// ApiCheckResult represents an API Check result
+type ApiCheckResult struct {
+}
+
+// BrowserCheckResult represents a Browser Check result
+type BrowserCheckResult struct {
+}
+
+// CheckResultsFilter represents the parameters that can be passed while 
+// getting Check Results
+type CheckResultsFilter struct {
+	Limit       int64
+	Page        int64
+	Location    string
+	To          int64
+	From        int64
+	CheckType   CheckType
+	HasFailures bool
 }

@@ -98,8 +98,8 @@ func cannedResponseServer(t *testing.T, wantMethod string, wantURL string, valid
 		if wantMethod != r.Method {
 			t.Errorf("want %q request, got %q", wantMethod, r.Method)
 		}
-		if r.URL.EscapedPath() != wantURL {
-			t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
+		if r.URL.String() != wantURL {
+			t.Errorf("want %q, got %q", wantURL, r.URL.String())
 		}
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
