@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -170,6 +171,69 @@ func (c *Client) DeleteGroup(ID int64) error {
 		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
+}
+
+// GetCheckResult gets a specific Check result
+func (c *Client) GetCheckResult(checkID, checkResultID string) (CheckResult, error) {
+	status, res, err := c.MakeAPICall(
+		http.MethodGet,
+		fmt.Sprintf("check-results/%s/%s", checkID, checkResultID),
+		nil,
+	)
+	result := CheckResult{}
+	if err != nil {
+		return result, err
+	}
+	if status != http.StatusOK {
+		return result, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return result, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return result, nil
+}
+
+// GetCheckResults gets the results of the given Check
+func (c *Client) GetCheckResults(
+	checkID string,
+	filters *CheckResultsFilter,
+) ([]CheckResult, error) {
+	uri := fmt.Sprintf("check-results/%s", checkID)
+	if filters != nil {
+		q := url.Values{}
+		q.Add("page", fmt.Sprintf("%d", filters.Page))
+		q.Add("limit", fmt.Sprintf("%d", filters.Limit))
+		q.Add("to", fmt.Sprintf("%d", filters.To))
+		q.Add("from", fmt.Sprintf("%d", filters.From))
+		if filters.CheckType == TypeBrowser || filters.CheckType == TypeAPI {
+			q.Add("checkType", string(filters.CheckType))
+		}
+		if filters.HasFailures {
+			q.Add("hasFailures", "1")
+		}
+		uri = uri + "?" + q.Encode()
+	}
+
+	status, res, err := c.MakeAPICall(
+		http.MethodGet,
+		uri,
+		nil,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := []CheckResult{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return result, nil
 }
 
 // MakeAPICall calls the Checkly API with the specified URL and data, and
