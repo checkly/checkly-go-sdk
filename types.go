@@ -260,14 +260,14 @@ type CheckResult struct {
 }
 
 // ApiCheckResult represents an API Check result
-type ApiCheckResult struct {
+type ApiCheckResult map[string]interface {
 }
 
 // BrowserCheckResult represents a Browser Check result
-type BrowserCheckResult struct {
+type BrowserCheckResult map[string]interface {
 }
 
-// CheckResultsFilter represents the parameters that can be passed while 
+// CheckResultsFilter represents the parameters that can be passed while
 // getting Check Results
 type CheckResultsFilter struct {
 	Limit       int64
