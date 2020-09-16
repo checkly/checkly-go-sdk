@@ -260,12 +260,10 @@ type CheckResult struct {
 }
 
 // ApiCheckResult represents an API Check result
-type ApiCheckResult map[string]interface {
-}
+type ApiCheckResult map[string]interface{}
 
 // BrowserCheckResult represents a Browser Check result
-type BrowserCheckResult map[string]interface {
-}
+type BrowserCheckResult map[string]interface{}
 
 // CheckResultsFilter represents the parameters that can be passed while
 // getting Check Results
