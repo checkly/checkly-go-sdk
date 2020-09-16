@@ -94,7 +94,7 @@ type Check struct {
 	Script                 string                `json:"script,omitempty"`
 	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables"`
 	DoubleCheck            bool                  `json:"doubleCheck"`
-	Tags                   []string              `json:"tags,omitempty"`
+	Tags                   []string              `json:"tags"`
 	SSLCheck               bool                  `json:"sslCheck"`
 	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
@@ -214,7 +214,7 @@ type Group struct {
 	Name                      string                `json:"name"`
 	Activated                 bool                  `json:"activated"`
 	Muted                     bool                  `json:"muted"`
-	Tags                      []string              `json:"tags,omitempty"`
+	Tags                      []string              `json:"tags"`
 	Locations                 []string              `json:"locations"`
 	Concurrency               int                   `json:"concurrency"`
 	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
