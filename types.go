@@ -278,9 +278,9 @@ type CheckResultsFilter struct {
 }
 
 type Snippet struct {
-	ID int64 `json:"id"`
-	Name string `json:"name"`
-	Script string `json:"script"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Script    string    `json:"script"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

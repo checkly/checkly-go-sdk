@@ -203,15 +203,26 @@ func (c *Client) GetCheckResults(
 	uri := fmt.Sprintf("check-results/%s", checkID)
 	if filters != nil {
 		q := url.Values{}
-		q.Add("page", fmt.Sprintf("%d", filters.Page))
-		q.Add("limit", fmt.Sprintf("%d", filters.Limit))
-		q.Add("to", fmt.Sprintf("%d", filters.To))
-		q.Add("from", fmt.Sprintf("%d", filters.From))
+		if filters.Page > 0 {
+			q.Add("page", fmt.Sprintf("%d", filters.Page))
+		}
+		if filters.Limit > 0 {
+			q.Add("limit", fmt.Sprintf("%d", filters.Limit))
+		}
+		if filters.From > 0 {
+			q.Add("from", fmt.Sprintf("%d", filters.From))
+		}
+		if filters.To > 0 {
+			q.Add("to", fmt.Sprintf("%d", filters.To))
+		}
 		if filters.CheckType == TypeBrowser || filters.CheckType == TypeAPI {
 			q.Add("checkType", string(filters.CheckType))
 		}
 		if filters.HasFailures {
 			q.Add("hasFailures", "1")
+		}
+		if len(filters.Location) > 0 {
+			q.Add("location", filters.Location)
 		}
 		uri = uri + "?" + q.Encode()
 	}
@@ -352,9 +363,8 @@ func (c *Client) DeleteSnippet(ID int64) error {
 	return nil
 }
 
-
-// CreateEnvironmentVariable creates a new environment variable with the 
-// specified details.  It returns the newly-created environment variable, 
+// CreateEnvironmentVariable creates a new environment variable with the
+// specified details.  It returns the newly-created environment variable,
 // or an error.
 func (c *Client) CreateEnvironmentVariable(envVar EnvironmentVariable) (EnvironmentVariable, error) {
 	data, err := json.Marshal(envVar)
@@ -403,7 +413,7 @@ func (c *Client) UpdateEnvironmentVariable(key string, envVar EnvironmentVariabl
 	if err != nil {
 		return result, err
 	}
-	
+
 	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("variables/%s", key), data)
 	if err != nil {
 		return result, err
