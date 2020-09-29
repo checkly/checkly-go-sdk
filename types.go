@@ -276,3 +276,11 @@ type CheckResultsFilter struct {
 	CheckType   CheckType
 	HasFailures bool
 }
+
+type Snippet struct {
+	ID int64 `json:"id"`
+	Name string `json:"name"`
+	Script string `json:"script"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
