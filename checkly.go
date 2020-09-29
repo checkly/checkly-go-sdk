@@ -277,3 +277,156 @@ func (c *Client) dumpResponse(resp *http.Response) {
 	fmt.Fprintln(c.Debug, string(responseDump))
 	fmt.Fprintln(c.Debug)
 }
+
+// CreateSnippet creates a new snippet with the specified details. It returns
+// the newly-created snippet, or an error.
+func (c *Client) CreateSnippet(snippet Snippet) (Snippet, error) {
+	data, err := json.Marshal(snippet)
+	if err != nil {
+		return Snippet{}, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPost, "snippets", data)
+	if err != nil {
+		return Snippet{}, err
+	}
+	if status != http.StatusCreated {
+		return Snippet{}, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result Snippet
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return Snippet{}, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// GetSnippet takes the ID of an existing snippet, and returns the
+// corresponding snippet, or an error.
+func (c *Client) GetSnippet(ID int64) (Snippet, error) {
+	status, res, err := c.MakeAPICall(http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil)
+	if err != nil {
+		return Snippet{}, err
+	}
+	if status != http.StatusOK {
+		return Snippet{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	snippet := Snippet{}
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&snippet); err != nil {
+		return Snippet{}, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return snippet, nil
+}
+
+// UpdateSnippet takes the ID of an existing snippet, and updates the
+// corresponding snippet to match the supplied snippet. It returns the updated
+// snippet, or an error.
+func (c *Client) UpdateSnippet(ID int64, snippet Snippet) (Snippet, error) {
+	data, err := json.Marshal(snippet)
+	if err != nil {
+		return Snippet{}, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("snippets/%d", ID), data)
+	if err != nil {
+		return Snippet{}, err
+	}
+	if status != http.StatusOK {
+		return Snippet{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result Snippet
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return Snippet{}, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// DeleteSnippet deletes the snippet with the specified ID. It returns a
+// non-nil error if the request failed.
+func (c *Client) DeleteSnippet(ID int64) error {
+	status, res, err := c.MakeAPICall(http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
+
+// CreateEnvironmentVariable creates a new environment variable with the 
+// specified details.  It returns the newly-created environment variable, 
+// or an error.
+func (c *Client) CreateEnvironmentVariable(envVar EnvironmentVariable) (EnvironmentVariable, error) {
+	data, err := json.Marshal(envVar)
+	if err != nil {
+		return EnvironmentVariable{}, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPost, "variables", data)
+	if err != nil {
+		return EnvironmentVariable{}, err
+	}
+	if status != http.StatusCreated {
+		return EnvironmentVariable{}, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result EnvironmentVariable
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return EnvironmentVariable{}, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
+// corresponding environment variable, or an error.
+func (c *Client) GetEnvironmentVariable(key string) (EnvironmentVariable, error) {
+	status, res, err := c.MakeAPICall(http.MethodGet, fmt.Sprintf("variables/%s", key), nil)
+	if err != nil {
+		return EnvironmentVariable{}, err
+	}
+	if status != http.StatusOK {
+		return EnvironmentVariable{}, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	envVar := EnvironmentVariable{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&envVar)
+	if err != nil {
+		return EnvironmentVariable{}, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return envVar, nil
+}
+
+// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
+// corresponding environment variable to match the supplied environment variable. It returns the updated
+// environment variable, or an error.
+func (c *Client) UpdateEnvironmentVariable(key string, envVar EnvironmentVariable) (EnvironmentVariable, error) {
+	var result EnvironmentVariable
+	data, err := json.Marshal(envVar)
+	if err != nil {
+		return result, err
+	}
+	
+	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("variables/%s", key), data)
+	if err != nil {
+		return result, err
+	}
+	if status != http.StatusOK {
+		return result, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return result, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return result, nil
+}
+
+// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
+// non-nil error if the request failed.
+func (c *Client) DeleteEnvironmentVariable(key string) error {
+	status, res, err := c.MakeAPICall(http.MethodDelete, fmt.Sprintf("variables/%s", key), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
