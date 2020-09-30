@@ -519,7 +519,7 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
-		"/v1/check-results/73d29e72-6540-4bb5-967e-e07fa2c9465e?checkType=API&from=1&hasFailures=1&limit=100&page=0&to=1000",
+		"/v1/check-results/73d29e72-6540?checkType=API&from=1&hasFailures=1&limit=100&location=us-east-1&page=1&to=1000",
 		validateEmptyBody,
 		http.StatusOK,
 		"GetCheckResults.json",
@@ -529,14 +529,39 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 	client := checkly.NewClient("dummy")
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	results, err := client.GetCheckResults(wantCheckID, &checkly.CheckResultsFilter{
+	results, err := client.GetCheckResults("73d29e72-6540", &checkly.CheckResultsFilter{
 		Limit:       100,
-		Page:        0,
+		Page:        1,
 		From:        1,
 		To:          1000,
 		CheckType:   checkly.TypeAPI,
 		HasFailures: true,
+		Location:    "us-east-1",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 10 {
+		t.Errorf("Expected to get 10 results got %d", len(results))
+		return
+	}
+}
+
+func TestGetCheckResultsWithFilters2(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		"/v1/check-results/73d29e72-6540?",
+		validateEmptyBody,
+		http.StatusOK,
+		"GetCheckResults.json",
+	)
+
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	results, err := client.GetCheckResults("73d29e72-6540", &checkly.CheckResultsFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -549,8 +574,8 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 var ignoreSnippetFields = cmpopts.IgnoreFields(checkly.Snippet{}, "ID")
 
 var testSnippet = checkly.Snippet{
-	ID: 1,
-	Name: "snippet1",
+	ID:     1,
+	Name:   "snippet1",
 	Script: "script1",
 }
 
@@ -650,9 +675,8 @@ func TestDeleteSnippet(t *testing.T) {
 	}
 }
 
-
 var testEnvVariable = checkly.EnvironmentVariable{
-	Key: "k1",
+	Key:   "k1",
 	Value: "v1",
 }
 
