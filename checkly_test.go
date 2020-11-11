@@ -94,7 +94,14 @@ var wantCheck = checkly.Check{
 	GroupOrder:             0,
 }
 
-func cannedResponseServer(t *testing.T, wantMethod string, wantURL string, validate func(*testing.T, []byte), status int, filename string) *httptest.Server {
+func cannedResponseServer(
+	t *testing.T,
+	wantMethod string,
+	wantURL string,
+	validate func(*testing.T, []byte),
+	status int,
+	filename string,
+) *httptest.Server {
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if wantMethod != r.Method {
 			t.Errorf("want %q request, got %q", wantMethod, r.Method)
@@ -771,6 +778,168 @@ func TestDeleteEnvironmentVariable(t *testing.T) {
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	err := client.DeleteEnvironmentVariable(testEnvVariable.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+var ignoreAlertChannelFields = cmpopts.IgnoreFields(checkly.AlertChannel{}, "ID")
+
+func getTestAlertChannelEmail() *checkly.AlertChannel {
+	return &checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertEmail,
+		Email: &checkly.AlertChannelEmail{
+			Address: "test@example.com",
+		},
+	}
+}
+
+func getTestAlertChannelSlack() checkly.AlertChannel {
+	ac := checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertEmail,
+		Slack: &checkly.AlertChannelSlack{
+			Channel:    "test",
+			WebhookURL: "https://slack.com/test",
+		},
+	}
+	return ac
+}
+
+func validateAlertChannel(t *testing.T, body []byte) {
+	response := map[string]interface{}{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	ac := checkly.AlertChannel{}
+	ac.ID = int64(response["id"].(float64))
+	ac.Type = response["type"].(string)
+	cfg, ok := response["config"]
+	if ok {
+		ac.SetConfig(cfg.(map[string]interface{}))
+	} else {
+		t.Error("NO CFG", string(body))
+		return
+	}
+
+	if ac.Type == checkly.AlertEmail {
+		ta := getTestAlertChannelEmail()
+		if ac.Email == nil {
+			t.Error("Email nil -> ", cfg, string(body))
+			return
+		}
+		if ta.Email.Address != ac.Email.Address {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Email.Address,
+				ac.Email.Address,
+			)
+		}
+	}
+	if ac.Type == checkly.AlertSlack {
+		ta := getTestAlertChannelSlack()
+		if ta.Slack.Channel != ac.Slack.Channel {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Slack.Channel,
+				ac.Slack.Channel,
+			)
+		}
+		if ta.Slack.WebhookURL != ac.Slack.WebhookURL {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Slack.WebhookURL,
+				ac.Slack.WebhookURL,
+			)
+		}
+	}
+
+}
+
+func TestCreateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/alert-channels",
+		validateAlertChannel,
+		http.StatusCreated,
+		"CreateAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	ta := getTestAlertChannelEmail()
+	ac, err := client.CreateAlertChannel(*ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestGetAlertChannel(t *testing.T) {
+	return
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateAlertChannel,
+		http.StatusOK,
+		"GetAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	ac, err := client.GetAlertChannel(ta.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestUpdateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateAlertChannel,
+		http.StatusOK,
+		"UpdateAlertChannel.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	_, err := client.UpdateAlertChannel(ta.ID, *ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	err := client.DeleteAlertChannel(ta.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

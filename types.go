@@ -1,6 +1,7 @@
 package checkly
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -189,25 +190,6 @@ type SSLCertificates struct {
 	AlertThreshold int  `json:"alertThreshold"`
 }
 
-// AlertChannel represents an alert channel and its subscribed checks. The API
-// defines this data as read-only.
-type AlertChannel struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type,omitempty"`
-	Config    map[string]interface{} `json:"config,omitempty"`
-	CreatedAt time.Time              `json:"created_at,omitempty"`
-	UpdatedAt time.Time              `json:"updated_at,omitempty"`
-}
-
-// Subscription represents a subscription to an alert channel. The API defines
-// this data as read-only.
-type Subscription struct {
-	ID             string `json:"id,omitempty"`
-	CheckID        string `json:"checkId,omitempty"`
-	AlertChannelID int64  `json:"alertChannelId,omitempty"`
-	Activated      bool   `json:"activated"`
-}
-
 // Group represents a check group.
 type Group struct {
 	ID                        int64                 `json:"id,omitempty"`
@@ -284,3 +266,251 @@ type Snippet struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
+
+const (
+	AlertEmail     = "EMAIL"
+	AlertSlack     = "SLACK"
+	AlertWebhook   = "WEBHOOK"
+	AlertSMS       = "SMS"
+	AlertPagerduty = "PAGERDUTY"
+	AlertOpsgenie  = "OPSGENIE"
+)
+
+// Subscription represents a subscription to an alert channel. The API defines
+// this data as read-only.
+type Subscription struct {
+	ID             string `json:"id"`
+	CheckID        string `json:"checkId"`
+	AlertChannelID int64  `json:"alertChannelId"`
+	Activated      bool   `json:"activated"`
+}
+
+//AlertChannelEmail defines a type for an email alert channel
+type AlertChannelEmail struct {
+	Address string `json:"address"`
+}
+
+//AlertChannelSlack defines a type for a slack alert channel
+type AlertChannelSlack struct {
+	WebhookURL string `json:"url"`
+	Channel    string `json:"channel"`
+}
+
+//AlertChannelSMS defines a type for a sms alert channel
+type AlertChannelSMS struct {
+	Name   string `json:"name"`
+	Number string `json:"number"`
+}
+
+//AlertChannelOpsgenie defines a type for an opsgenie alert channel
+type AlertChannelOpsgenie struct {
+	Name     string `json:"name"`
+	APIKey   string `json:"apiKey"`
+	Region   string `json:"region"`
+	Priority string `json:"priority"`
+}
+
+//AlertChannelWebhook defines a type for a webhook alert channel
+type AlertChannelWebhook struct {
+	Name            string     `json:"name"`
+	Method          string     `json:"method"`
+	Headers         []KeyValue `json:"headers"`
+	QueryParameters []KeyValue `json:"queryParameters"`
+	Template        string     `json:"template"`
+	URL             string     `json:"url"`
+	WebhookSecret   string     `json:"webhookSecret"`
+}
+
+// AlertChannel represents an alert channel and its subscribed checks. The API
+// defines this data as read-only.
+type AlertChannel struct {
+	ID   int64  `json:"id"`
+	Type string `json:"type"`
+	//Config        map[string]interface{} `json:"config"`
+	CreatedAt time.Time             `json:"created_at"`
+	UpdatedAt time.Time             `json:"updated_at"`
+	Email     *AlertChannelEmail    `json:"-"`
+	Slack     *AlertChannelSlack    `json:"-"`
+	SMS       *AlertChannelSMS      `json:"-"`
+	Opsgenie  *AlertChannelOpsgenie `json:"-"`
+	Webhook   *AlertChannelWebhook  `json:"-"`
+}
+
+//SetConfig sets config of alert channel based on it's type
+func (a *AlertChannel) SetConfig(cfg map[string]interface{}) {
+	switch a.Type {
+	case AlertEmail:
+		a.setEmailConfig(cfg)
+	case AlertSMS:
+		a.setSMSConfig(cfg)
+	case AlertSlack:
+		a.setSlackConfig(cfg)
+	case AlertWebhook:
+		a.setWebhookConfig(cfg)
+	case AlertOpsgenie:
+		a.setOpsgenieConfig(cfg)
+	}
+}
+
+//GetConfig gets the config of the alert channel based on it's type
+func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
+	byts := []byte{}
+	var err error
+	switch a.Type {
+	case AlertEmail:
+		byts, err = json.Marshal(a.Email)
+	case AlertSMS:
+		byts, err = json.Marshal(a.SMS)
+	case AlertSlack:
+		byts, err = json.Marshal(a.Slack)
+	case AlertWebhook:
+		byts, err = json.Marshal(a.Webhook)
+	case AlertOpsgenie:
+		byts, err = json.Marshal(a.Opsgenie)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(byts, &cfg)
+	return cfg
+}
+
+func (a *AlertChannel) setEmailConfig(cfg map[string]interface{}) {
+	a.Email = &AlertChannelEmail{
+		Address: readStringFromCfg(cfg, "address"),
+	}
+}
+
+func (a *AlertChannel) setSMSConfig(cfg map[string]interface{}) {
+	a.SMS = &AlertChannelSMS{
+		Name:   readStringFromCfg(cfg, "name"),
+		Number: readStringFromCfg(cfg, "number"),
+	}
+}
+
+func (a *AlertChannel) setSlackConfig(cfg map[string]interface{}) {
+	a.Slack = &AlertChannelSlack{
+		WebhookURL: readStringFromCfg(cfg, "url"),
+		Channel:    readStringFromCfg(cfg, "channel"),
+	}
+}
+
+func (a *AlertChannel) setWebhookConfig(cfg map[string]interface{}) {
+	a.Webhook = &AlertChannelWebhook{
+		Name:            readStringFromCfg(cfg, "name"),
+		Method:          readStringFromCfg(cfg, "method"),
+		Headers:         readKeyValueFromCfg(cfg, "headers"),
+		QueryParameters: readKeyValueFromCfg(cfg, "queryParameters"),
+		Template:        readStringFromCfg(cfg, "template"),
+		URL:             readStringFromCfg(cfg, "url"),
+		WebhookSecret:   readStringFromCfg(cfg, "webhookSecret"),
+	}
+}
+
+func (a *AlertChannel) setOpsgenieConfig(cfg map[string]interface{}) {
+	a.Opsgenie = &AlertChannelOpsgenie{
+		Name:     readStringFromCfg(cfg, "name"),
+		APIKey:   readStringFromCfg(cfg, "apiKey"),
+		Region:   readStringFromCfg(cfg, "region"),
+		Priority: readStringFromCfg(cfg, "priority"),
+	}
+}
+
+func readStringFromCfg(cfg map[string]interface{}, key string) string {
+	if v, ok := cfg[key]; ok {
+		return v.(string)
+	}
+	return ""
+}
+
+func readKeyValueFromCfg(cfg map[string]interface{}, key string) []KeyValue {
+	if v, ok := cfg[key]; ok {
+		return v.([]KeyValue)
+	}
+	return []KeyValue{}
+}
+
+/*
+//GetEmailConfig gets config for an email alert channel
+func (a *AlertChannel) getEmailConfig() *AlertChannelEmail {
+	return a.email
+	return map[string]interface{}{
+		"address": a.Email.Address
+	}
+}
+
+//SetEmailConfig set config for an email alert channel
+func (a *AlertChannel) SetEmailConfig(cfg *AlertChannelEmail) error {
+	a.Type = AlertEmail
+	a.email = cfg
+
+}
+
+//GetSMSConfig gets config for a SMS alert channel
+func (a *AlertChannel) GetSMSConfig() *AlertChannelSMS {
+	return a.sms
+	return &AlertChannelSMS{
+
+	}
+}
+
+//SetSMSConfig set config for a SMS alert channel
+func (a *AlertChannel) SetSMSConfig(cfg *AlertChannelSMS) {
+	a.Type = AlertSMS
+	a.sms = cfg
+	a.config = map[string]interface{}{}
+	if cfg != nil {
+
+	}
+}
+
+//GetSlackConfig gets config for a slack alert channel
+func (a *AlertChannel) GetSlackConfig() *AlertChannelSlack {
+	return a.slack
+}
+
+//SetSlackConfig set config for a slack alert channel
+func (a *AlertChannel) SetSlackConfig(cfg *AlertChannelSlack) {
+	a.Type = AlertSlack
+	a.slack = cfg
+	a.config = map[string]interface{}{}
+	if cfg != nil {
+		a.config["webhookURL"] = cfg.WebhookURL
+		a.config["channel"] = cfg.Channel
+	}
+}
+
+//GetWebhookConfig gets config for a webhook alert channel
+func (a *AlertChannel) GetWebhookConfig() *AlertChannelWebhook {
+	return a.webhook
+}
+
+//SetWebhookConfig set config for a webhook alert channel
+func (a *AlertChannel) SetWebhookConfig(cfg *AlertChannelWebhook) {
+	a.Type = AlertWebhook
+	a.webhook = cfg
+	a.config = map[string]interface{}{}
+	if cfg != nil {
+		a.config["name"] = cfg.Name
+		a.config["method"] = cfg.Method
+		a.config["headers"] = cfg.Headers
+		a.config["queryParameters"] = cfg.QueryParameters
+		a.config["template"] = cfg.Template
+		a.config["url"] = cfg.URL
+		a.config["webhookSecret"] = cfg.WebhookSecret
+	}
+}
+
+//GetOpsgenieConfig gets config for a slack opsgenie channel
+func (a *AlertChannel) GetOpsgenieConfig() *AlertChannelOpsgenie {
+	return a.opsgenie
+}
+
+//SetOpsgenieConfig set config for a slack opsgenie channel
+func (a *AlertChannel) SetOpsgenieConfig(it AlertChannelOpsgenie) {
+	a.config = map[string]interface{}{
+
+	}
+}
+*/
