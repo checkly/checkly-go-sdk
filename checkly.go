@@ -457,20 +457,29 @@ func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
 	}
 	result := map[string]interface{}{}
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, fmt.Errorf("CreateAlertChannel: decoding error for data %s: %v", res, err)
 	}
 	resultAc := &AlertChannel{
 		ID:   int64(result["id"].(float64)),
 		Type: result["type"].(string),
 	}
 	if cfg, ok := result["config"]; ok {
-		resultAc.SetConfig(cfg.(map[string]interface{}))
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
 	}
 	return resultAc, nil
 }
@@ -487,14 +496,23 @@ func (c *Client) GetAlertChannel(ID int64) (*AlertChannel, error) {
 	}
 	result := map[string]interface{}{}
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+		return nil, fmt.Errorf("GetAlertChannel: decoding error for data %q: %v", res, err)
 	}
 	resultAc := &AlertChannel{
-		ID:   result["id"].(int64),
+		ID:   int64(result["id"].(float64)),
 		Type: result["type"].(string),
 	}
 	if cfg, ok := result["config"]; ok {
-		resultAc.SetConfig(cfg.(map[string]interface{}))
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
 	}
 	return resultAc, nil
 }
@@ -521,14 +539,23 @@ func (c *Client) UpdateAlertChannel(ID int64, ac AlertChannel) (*AlertChannel, e
 	}
 	result := map[string]interface{}{}
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data ID(%d), Res(%s), Err(%w)", ID, res, err)
 	}
 	resultAc := &AlertChannel{
 		ID:   int64(result["id"].(float64)),
 		Type: result["type"].(string),
 	}
 	if cfg, ok := result["config"]; ok {
-		resultAc.SetConfig(cfg.(map[string]interface{}))
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
 	}
 	return resultAc, nil
 }

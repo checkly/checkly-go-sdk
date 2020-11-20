@@ -2,7 +2,9 @@ package checkly
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -106,6 +108,7 @@ type Check struct {
 	Request                Request               `json:"request"`
 	GroupID                int64                 `json:"groupId,omitempty"`
 	GroupOrder             int                   `json:"groupOrder,omitempty"`
+	AlertChannelID         int64                 `json:"alertChannelId"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -259,6 +262,7 @@ type CheckResultsFilter struct {
 	HasFailures bool
 }
 
+//Snippet defines Snippet type
 type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
@@ -268,12 +272,12 @@ type Snippet struct {
 }
 
 const (
-	AlertEmail     = "EMAIL"
-	AlertSlack     = "SLACK"
-	AlertWebhook   = "WEBHOOK"
-	AlertSMS       = "SMS"
-	AlertPagerduty = "PAGERDUTY"
-	AlertOpsgenie  = "OPSGENIE"
+	AlertTypeEmail     = "EMAIL"
+	AlertTypeSlack     = "SLACK"
+	AlertTypeWebhook   = "WEBHOOK"
+	AlertTypeSMS       = "SMS"
+	AlertTypePagerduty = "PAGERDUTY"
+	AlertTypeOpsgenie  = "OPSGENIE"
 )
 
 // Subscription represents a subscription to an alert channel. The API defines
@@ -324,7 +328,7 @@ type AlertChannelWebhook struct {
 // AlertChannel represents an alert channel and its subscribed checks. The API
 // defines this data as read-only.
 type AlertChannel struct {
-	ID   int64  `json:"id"`
+	ID   int64  `json:"id,omitempty"`
 	Type string `json:"type"`
 	//Config        map[string]interface{} `json:"config"`
 	CreatedAt time.Time             `json:"created_at"`
@@ -337,18 +341,20 @@ type AlertChannel struct {
 }
 
 //SetConfig sets config of alert channel based on it's type
-func (a *AlertChannel) SetConfig(cfg map[string]interface{}) {
-	switch a.Type {
-	case AlertEmail:
-		a.setEmailConfig(cfg)
-	case AlertSMS:
-		a.setSMSConfig(cfg)
-	case AlertSlack:
-		a.setSlackConfig(cfg)
-	case AlertWebhook:
-		a.setWebhookConfig(cfg)
-	case AlertOpsgenie:
-		a.setOpsgenieConfig(cfg)
+func (a *AlertChannel) SetConfig(cfg interface{}) {
+	switch v := cfg.(type) {
+	case *AlertChannelEmail:
+		a.Email = cfg.(*AlertChannelEmail)
+	case *AlertChannelSMS:
+		a.SMS = cfg.(*AlertChannelSMS)
+	case *AlertChannelSlack:
+		a.Slack = cfg.(*AlertChannelSlack)
+	case *AlertChannelWebhook:
+		a.Webhook = cfg.(*AlertChannelWebhook)
+	case *AlertChannelOpsgenie:
+		a.Opsgenie = cfg.(*AlertChannelOpsgenie)
+	default:
+		log.Printf("Unknown config type %v", v)
 	}
 }
 
@@ -357,15 +363,15 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 	byts := []byte{}
 	var err error
 	switch a.Type {
-	case AlertEmail:
+	case AlertTypeEmail:
 		byts, err = json.Marshal(a.Email)
-	case AlertSMS:
+	case AlertTypeSMS:
 		byts, err = json.Marshal(a.SMS)
-	case AlertSlack:
+	case AlertTypeSlack:
 		byts, err = json.Marshal(a.Slack)
-	case AlertWebhook:
+	case AlertTypeWebhook:
 		byts, err = json.Marshal(a.Webhook)
-	case AlertOpsgenie:
+	case AlertTypeOpsgenie:
 		byts, err = json.Marshal(a.Opsgenie)
 	}
 
@@ -376,59 +382,31 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 	return cfg
 }
 
-func (a *AlertChannel) setEmailConfig(cfg map[string]interface{}) {
-	a.Email = &AlertChannelEmail{
-		Address: readStringFromCfg(cfg, "address"),
+//AlertChannelConfigFromJSON gets AlertChannel.config from JSON
+func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}, error) {
+	switch channelType {
+	case AlertTypeEmail:
+		r := AlertChannelEmail{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeSMS:
+		r := AlertChannelSMS{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeSlack:
+		r := AlertChannelSlack{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeOpsgenie:
+		r := AlertChannelOpsgenie{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeWebhook:
+		r := AlertChannelWebhook{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
 	}
-}
-
-func (a *AlertChannel) setSMSConfig(cfg map[string]interface{}) {
-	a.SMS = &AlertChannelSMS{
-		Name:   readStringFromCfg(cfg, "name"),
-		Number: readStringFromCfg(cfg, "number"),
-	}
-}
-
-func (a *AlertChannel) setSlackConfig(cfg map[string]interface{}) {
-	a.Slack = &AlertChannelSlack{
-		WebhookURL: readStringFromCfg(cfg, "url"),
-		Channel:    readStringFromCfg(cfg, "channel"),
-	}
-}
-
-func (a *AlertChannel) setWebhookConfig(cfg map[string]interface{}) {
-	a.Webhook = &AlertChannelWebhook{
-		Name:            readStringFromCfg(cfg, "name"),
-		Method:          readStringFromCfg(cfg, "method"),
-		Headers:         readKeyValueFromCfg(cfg, "headers"),
-		QueryParameters: readKeyValueFromCfg(cfg, "queryParameters"),
-		Template:        readStringFromCfg(cfg, "template"),
-		URL:             readStringFromCfg(cfg, "url"),
-		WebhookSecret:   readStringFromCfg(cfg, "webhookSecret"),
-	}
-}
-
-func (a *AlertChannel) setOpsgenieConfig(cfg map[string]interface{}) {
-	a.Opsgenie = &AlertChannelOpsgenie{
-		Name:     readStringFromCfg(cfg, "name"),
-		APIKey:   readStringFromCfg(cfg, "apiKey"),
-		Region:   readStringFromCfg(cfg, "region"),
-		Priority: readStringFromCfg(cfg, "priority"),
-	}
-}
-
-func readStringFromCfg(cfg map[string]interface{}, key string) string {
-	if v, ok := cfg[key]; ok {
-		return v.(string)
-	}
-	return ""
-}
-
-func readKeyValueFromCfg(cfg map[string]interface{}, key string) []KeyValue {
-	if v, ok := cfg[key]; ok {
-		return v.([]KeyValue)
-	}
-	return []KeyValue{}
+	return nil, fmt.Errorf("Unknown AlertChannel.config type")
 }
 
 /*

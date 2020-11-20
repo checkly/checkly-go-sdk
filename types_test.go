@@ -8,7 +8,7 @@ import (
 
 func TestAlertChannelEmail(t *testing.T) {
 	ac := checkly.AlertChannel{
-		Type: checkly.AlertEmail,
+		Type: checkly.AlertTypeEmail,
 	}
 	email := "foo@test.com"
 	cfg := map[string]interface{}{
@@ -33,7 +33,7 @@ func TestAlertChannelEmail(t *testing.T) {
 
 func TestAlertChannelSlack(t *testing.T) {
 	ac := checkly.AlertChannel{
-		Type: checkly.AlertSlack,
+		Type: checkly.AlertTypeSlack,
 	}
 	webhookURL := "http://example.com/"
 	channel := "foochan"
@@ -68,7 +68,7 @@ func TestAlertChannelSlack(t *testing.T) {
 
 func TestAlertChannelSMS(t *testing.T) {
 	ac := checkly.AlertChannel{
-		Type: checkly.AlertSMS,
+		Type: checkly.AlertTypeSMS,
 	}
 	name := "foo"
 	number := "0123456789"
@@ -103,7 +103,7 @@ func TestAlertChannelSMS(t *testing.T) {
 
 func TestAlertChannelWebhook(t *testing.T) {
 	ac := checkly.AlertChannel{
-		Type: checkly.AlertWebhook,
+		Type: checkly.AlertTypeWebhook,
 	}
 
 	name := "foo"
@@ -255,7 +255,7 @@ func TestAlertChannelWebhook(t *testing.T) {
 
 func TestAlertChannelOpsgenie(t *testing.T) {
 	ac := checkly.AlertChannel{
-		Type: checkly.AlertOpsgenie,
+		Type: checkly.AlertTypeOpsgenie,
 	}
 
 	name := "foo"

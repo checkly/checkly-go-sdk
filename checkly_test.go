@@ -12,9 +12,10 @@ import (
 	"testing"
 	"time"
 
-	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	checkly "github.com/checkly/checkly-go-sdk"
 )
 
 var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
@@ -788,7 +789,7 @@ var ignoreAlertChannelFields = cmpopts.IgnoreFields(checkly.AlertChannel{}, "ID"
 func getTestAlertChannelEmail() *checkly.AlertChannel {
 	return &checkly.AlertChannel{
 		ID:   1,
-		Type: checkly.AlertEmail,
+		Type: checkly.AlertTypeEmail,
 		Email: &checkly.AlertChannelEmail{
 			Address: "test@example.com",
 		},
@@ -798,7 +799,7 @@ func getTestAlertChannelEmail() *checkly.AlertChannel {
 func getTestAlertChannelSlack() checkly.AlertChannel {
 	ac := checkly.AlertChannel{
 		ID:   1,
-		Type: checkly.AlertEmail,
+		Type: checkly.AlertTypeEmail,
 		Slack: &checkly.AlertChannelSlack{
 			Channel:    "test",
 			WebhookURL: "https://slack.com/test",
@@ -824,7 +825,7 @@ func validateAlertChannel(t *testing.T, body []byte) {
 		return
 	}
 
-	if ac.Type == checkly.AlertEmail {
+	if ac.Type == checkly.AlertTypeEmail {
 		ta := getTestAlertChannelEmail()
 		if ac.Email == nil {
 			t.Error("Email nil -> ", cfg, string(body))
@@ -838,7 +839,7 @@ func validateAlertChannel(t *testing.T, body []byte) {
 			)
 		}
 	}
-	if ac.Type == checkly.AlertSlack {
+	if ac.Type == checkly.AlertTypeSlack {
 		ta := getTestAlertChannelSlack()
 		if ta.Slack.Channel != ac.Slack.Channel {
 			t.Errorf(
@@ -864,7 +865,7 @@ func TestCreateAlertChannel(t *testing.T) {
 		http.MethodPost,
 		"/v1/alert-channels",
 		validateAlertChannel,
-		http.StatusCreated,
+		http.StatusOK,
 		"CreateAlertChannelEmail.json",
 	)
 	defer ts.Close()
@@ -942,5 +943,93 @@ func TestDeleteAlertChannel(t *testing.T) {
 	err := client.DeleteAlertChannel(ta.ID)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAlertChannelSetSmsConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "SMS",
+	}
+	c := &checkly.AlertChannelSMS{
+		Name:   "foo",
+		Number: "012345",
+	}
+	ac.SetConfig(c)
+	if ac.SMS == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.SMS.Name != "foo" {
+		t.Errorf("Unexpected value: %s", ac.SMS.Name)
+	}
+}
+
+func TestAlertChannelSetEmailConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "EMAIL",
+	}
+	var c map[string]interface{}
+	j := []byte(
+		`{"address":"add@example.com"}`,
+	)
+	json.Unmarshal(j, &c)
+	ac.SetConfig(c)
+	if ac.Email == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.Email.Address != "add@example.com" {
+		t.Errorf("Unexpected value: %s", ac.Email.Address)
+	}
+}
+
+func TestAlertChannelSetWebookConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "WEBHOOK",
+	}
+	var c interface{}
+	json := []byte(`{"headers":[{"key":"X-1","value":"h1v"},{"key":"X-2","value":"h2v"}],"method":"get","name":"fooname","queryParameters":[{"key":"q1","value":"v1"}],"template":"tmpl","url":"https://example.com/webhook","webhookSecret":"foosecret"}`)
+
+	c, err := checkly.AlertChannelConfigFromJSON(ac.Type, json)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+	}
+	ac.SetConfig(c)
+	if ac.Webhook == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.Webhook.Name != "fooname" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Name)
+	}
+	if ac.Webhook.Method != "get" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Method)
+	}
+	if ac.Webhook.Template != "tmpl" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Template)
+	}
+	if ac.Webhook.URL != "https://example.com/webhook" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.URL)
+	}
+	if ac.Webhook.WebhookSecret != "foosecret" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.WebhookSecret)
+	}
+	if len(ac.Webhook.Headers) != 2 {
+		t.Errorf("Unexpected len: %d", len(ac.Webhook.Headers))
+	}
+	if ac.Webhook.Headers[0].Key != "X-1" && ac.Webhook.Headers[0].Key != "X-2" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Key)
+	}
+	if ac.Webhook.Headers[0].Value != "h1v" && ac.Webhook.Headers[0].Value != "h2v" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Value)
+	}
+	if len(ac.Webhook.QueryParameters) != 1 {
+		t.Errorf("Unexpected len: %d", len(ac.Webhook.QueryParameters))
+	}
+	if ac.Webhook.QueryParameters[0].Key != "q1" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Key)
+	}
+	if ac.Webhook.QueryParameters[0].Value != "v1" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Value)
 	}
 }
