@@ -10,22 +10,21 @@ func TestAlertChannelEmail(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeEmail,
 	}
-	email := "foo@test.com"
-	cfg := map[string]interface{}{
-		"address": email,
+	cfg := checkly.AlertChannelEmail{
+		Address: "foo@test.com",
 	}
 
-	ac.SetConfig(cfg)
+	ac.SetConfig(&cfg)
 
 	if ac.Email == nil {
 		t.Error("Config shouldn't be nil")
 		return
 	}
 
-	if ac.Email.Address != email {
+	if ac.Email.Address != cfg.Address {
 		t.Errorf(
 			"Expected email to be: `%s`, got: `%s`",
-			email,
+			cfg.Address,
 			ac.Email.Address,
 		)
 	}
@@ -35,32 +34,30 @@ func TestAlertChannelSlack(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeSlack,
 	}
-	webhookURL := "http://example.com/"
-	channel := "foochan"
-	cfg := map[string]interface{}{
-		"url":     webhookURL,
-		"channel": channel,
+	cfg := checkly.AlertChannelSlack{
+		WebhookURL: "http://example.com/",
+		Channel:    "foochan",
 	}
 
-	ac.SetConfig(cfg)
+	ac.SetConfig(&cfg)
 
 	if ac.Slack == nil {
 		t.Error("Config shouldn't be nil")
 		return
 	}
 
-	if ac.Slack.WebhookURL != webhookURL {
+	if ac.Slack.WebhookURL != cfg.WebhookURL {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			webhookURL,
+			cfg.WebhookURL,
 			ac.Slack.WebhookURL,
 		)
 	}
 
-	if ac.Slack.Channel != channel {
+	if ac.Slack.Channel != cfg.Channel {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			channel,
+			cfg.Channel,
 			ac.Slack.Channel,
 		)
 	}
@@ -70,32 +67,30 @@ func TestAlertChannelSMS(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeSMS,
 	}
-	name := "foo"
-	number := "0123456789"
-	cfg := map[string]interface{}{
-		"name":   name,
-		"number": number,
+	cfg := checkly.AlertChannelSMS{
+		Name:   "foo",
+		Number: "0123456789",
 	}
 
-	ac.SetConfig(cfg)
+	ac.SetConfig(&cfg)
 
 	if ac.SMS == nil {
 		t.Error("Config shouldn't be nil")
 		return
 	}
 
-	if ac.SMS.Name != name {
+	if ac.SMS.Name != cfg.Name {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			name,
+			cfg.Name,
 			ac.SMS.Name,
 		)
 	}
 
-	if ac.SMS.Number != number {
+	if ac.SMS.Number != cfg.Number {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			number,
+			cfg.Number,
 			ac.SMS.Number,
 		)
 	}
@@ -105,148 +100,140 @@ func TestAlertChannelWebhook(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeWebhook,
 	}
-
-	name := "foo"
-	method := "GET"
-	headers := []checkly.KeyValue{
-		{
-			Key:    "fookey",
-			Value:  "fooval",
-			Locked: false,
+	cfg := checkly.AlertChannelWebhook{
+		Name:          "foo",
+		Method:        "GET",
+		Template:      "bar",
+		URL:           "http://foo.com",
+		WebhookSecret: "scrt",
+		Headers: []checkly.KeyValue{
+			{
+				Key:    "fookey",
+				Value:  "fooval",
+				Locked: false,
+			},
+			{
+				Key:    "barkey",
+				Value:  "barval",
+				Locked: true,
+			},
 		},
-		{
-			Key:    "barkey",
-			Value:  "barval",
-			Locked: true,
+		QueryParameters: []checkly.KeyValue{
+			{
+				Key:    "fookey",
+				Value:  "fooval",
+				Locked: true,
+			},
+			{
+				Key:    "barkey",
+				Value:  "barval",
+				Locked: true,
+			},
 		},
-	}
-	queryParameters := []checkly.KeyValue{
-		{
-			Key:    "fookey",
-			Value:  "fooval",
-			Locked: true,
-		},
-		{
-			Key:    "barkey",
-			Value:  "barval",
-			Locked: true,
-		},
-	}
-	template := "footemp"
-	url := "http://foo.com"
-	webhookSecret := "foosecret"
-	cfg := map[string]interface{}{
-		"name":            name,
-		"method":          method,
-		"template":        template,
-		"url":             url,
-		"webhookSecret":   webhookSecret,
-		"headers":         headers,
-		"queryParameters": queryParameters,
 	}
 
-	ac.SetConfig(cfg)
+	ac.SetConfig(&cfg)
 
 	if ac.Webhook == nil {
 		t.Error("Config shouldn't be nil")
 		return
 	}
 
-	if ac.Webhook.Name != name {
+	if ac.Webhook.Name != cfg.Name {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			name,
+			cfg.Name,
 			ac.Webhook.Name,
 		)
 	}
 
-	if ac.Webhook.Method != method {
+	if ac.Webhook.Method != cfg.Method {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			method,
+			cfg.Method,
 			ac.Webhook.Method,
 		)
 	}
 
-	if ac.Webhook.Template != template {
+	if ac.Webhook.Template != cfg.Template {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			template,
+			cfg.Template,
 			ac.Webhook.Template,
 		)
 	}
 
-	if ac.Webhook.URL != url {
+	if ac.Webhook.URL != cfg.URL {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			url,
+			cfg.URL,
 			ac.Webhook.URL,
 		)
 	}
 
-	if ac.Webhook.WebhookSecret != webhookSecret {
+	if ac.Webhook.WebhookSecret != cfg.WebhookSecret {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			webhookSecret,
+			cfg.WebhookSecret,
 			ac.Webhook.WebhookSecret,
 		)
 	}
 
-	if len(ac.Webhook.Headers) != len(headers) {
+	if len(ac.Webhook.Headers) != len(cfg.Headers) {
 		t.Errorf(
 			"Expected: %d headers, got: %d headers",
-			len(headers),
+			len(cfg.Headers),
 			len(ac.Webhook.Headers),
 		)
 	} else {
-		if ac.Webhook.Headers[0].Key != headers[0].Key {
+		if ac.Webhook.Headers[0].Key != cfg.Headers[0].Key {
 			t.Errorf(
 				"Expected Headers[0].Key to be: `%s`, got: `%s`",
-				headers[0].Key,
+				cfg.Headers[0].Key,
 				ac.Webhook.Headers[0].Key,
 			)
 		}
-		if ac.Webhook.Headers[0].Value != headers[0].Value {
+		if ac.Webhook.Headers[0].Value != cfg.Headers[0].Value {
 			t.Errorf(
 				"Expected Headers[0].Value to be: `%s`, got: `%s`",
-				headers[0].Value,
+				cfg.Headers[0].Value,
 				ac.Webhook.Headers[0].Value,
 			)
 		}
-		if ac.Webhook.Headers[0].Locked != headers[0].Locked {
+		if ac.Webhook.Headers[0].Locked != cfg.Headers[0].Locked {
 			t.Errorf(
 				"Expected Headers[0].Locked to be: `%t`, got `%t`",
-				headers[0].Locked,
+				cfg.Headers[0].Locked,
 				ac.Webhook.Headers[0].Locked,
 			)
 		}
 	}
 
-	if len(ac.Webhook.QueryParameters) != len(queryParameters) {
+	if len(ac.Webhook.QueryParameters) != len(cfg.QueryParameters) {
 		t.Errorf(
 			"Expected: %d queryParameters, got: %d queryParameters",
-			len(queryParameters),
+			len(cfg.QueryParameters),
 			len(ac.Webhook.QueryParameters),
 		)
 	} else {
-		if ac.Webhook.QueryParameters[0].Key != queryParameters[0].Key {
+		if ac.Webhook.QueryParameters[0].Key != cfg.QueryParameters[0].Key {
 			t.Errorf(
 				"Expected QueryParameters[0].Key to be: `%s`, got: `%s`",
-				queryParameters[0].Key,
+				cfg.QueryParameters[0].Key,
 				ac.Webhook.QueryParameters[0].Key,
 			)
 		}
-		if ac.Webhook.QueryParameters[0].Value != queryParameters[0].Value {
+		if ac.Webhook.QueryParameters[0].Value != cfg.QueryParameters[0].Value {
 			t.Errorf(
 				"Expected QueryParameters[0].Value to be: `%s`, got: `%s`",
-				queryParameters[0].Value,
+				cfg.QueryParameters[0].Value,
 				ac.Webhook.QueryParameters[0].Value,
 			)
 		}
-		if ac.Webhook.QueryParameters[0].Locked != queryParameters[0].Locked {
+		if ac.Webhook.QueryParameters[0].Locked != cfg.QueryParameters[0].Locked {
 			t.Errorf(
 				"Expected QueryParameters[0].Locked to be: `%t`, got `%t`",
-				queryParameters[0].Locked,
+				cfg.QueryParameters[0].Locked,
 				ac.Webhook.QueryParameters[0].Locked,
 			)
 		}
@@ -258,52 +245,47 @@ func TestAlertChannelOpsgenie(t *testing.T) {
 		Type: checkly.AlertTypeOpsgenie,
 	}
 
-	name := "foo"
-	apiKey := "dkdkjdkd34"
-	region := "fooregion"
-	priority := "prio1"
-	cfg := map[string]interface{}{
-		"name":     name,
-		"apiKey":   apiKey,
-		"region":   region,
-		"priority": priority,
+	cfg := checkly.AlertChannelOpsgenie{
+		Name:     "foo",
+		APIKey:   "bar",
+		Region:   "regio-1",
+		Priority: "highp",
 	}
-
-	ac.SetConfig(cfg)
+	ac.SetConfig(&cfg)
 
 	if ac.Opsgenie == nil {
 		t.Error("Config shouldn't be nil")
 		return
 	}
 
-	if ac.Opsgenie.Name != name {
+	if ac.Opsgenie.Name != cfg.Name {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			name,
+			cfg.Name,
 			ac.Opsgenie.Name,
 		)
 	}
 
-	if ac.Opsgenie.APIKey != apiKey {
+	if ac.Opsgenie.APIKey != cfg.APIKey {
 		t.Errorf(
 			"Expected: `%s`, got:`%s`",
-			apiKey,
+			cfg.APIKey,
 			ac.Opsgenie.APIKey,
 		)
 	}
 
-	if ac.Opsgenie.Region != region {
+	if ac.Opsgenie.Region != cfg.Region {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			region,
+			cfg.Region,
 			ac.Opsgenie.Region,
 		)
 	}
 
-	if ac.Opsgenie.Priority != priority {
+	if ac.Opsgenie.Priority != cfg.Priority {
 		t.Errorf(
 			"Expected: `%s`, got: `%s`",
-			priority,
+			cfg.Priority,
 			ac.Opsgenie.Priority,
 		)
 	}

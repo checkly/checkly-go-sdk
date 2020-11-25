@@ -314,10 +314,10 @@ var wantGroup = checkly.Group{
 			AlertThreshold: 30,
 		},
 	},
-	AlertChannelSubscriptions: []checkly.Subscription{
+	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
 		{
-			Activated:      true,
-			AlertChannelID: 2996,
+			Activated: true,
+			ChannelID: 2996,
 		},
 	},
 	LocalSetupScript:    "setup-test",
@@ -968,17 +968,15 @@ func TestAlertChannelSetEmailConfig(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: "EMAIL",
 	}
-	var c map[string]interface{}
-	j := []byte(
-		`{"address":"add@example.com"}`,
-	)
-	json.Unmarshal(j, &c)
-	ac.SetConfig(c)
+	c := checkly.AlertChannelEmail{
+		Address: "add@example.com",
+	}
+	ac.SetConfig(&c)
 	if ac.Email == nil {
 		t.Error("Shouldn't be nil")
 		return
 	}
-	if ac.Email.Address != "add@example.com" {
+	if ac.Email.Address != c.Address {
 		t.Errorf("Unexpected value: %s", ac.Email.Address)
 	}
 }

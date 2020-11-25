@@ -84,31 +84,31 @@ const NotContains = "NOT_CONTAINS"
 
 // Check represents the parameters for an existing check.
 type Check struct {
-	ID                     string                `json:"id"`
-	Name                   string                `json:"name"`
-	Type                   string                `json:"checkType"`
-	Frequency              int                   `json:"frequency"`
-	Activated              bool                  `json:"activated"`
-	Muted                  bool                  `json:"muted"`
-	ShouldFail             bool                  `json:"shouldFail"`
-	Locations              []string              `json:"locations"`
-	DegradedResponseTime   int                   `json:"degradedResponseTime"`
-	MaxResponseTime        int                   `json:"maxResponseTime"`
-	Script                 string                `json:"script,omitempty"`
-	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables"`
-	DoubleCheck            bool                  `json:"doubleCheck"`
-	Tags                   []string              `json:"tags"`
-	SSLCheck               bool                  `json:"sslCheck"`
-	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
-	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
-	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
-	Request                Request               `json:"request"`
-	GroupID                int64                 `json:"groupId,omitempty"`
-	GroupOrder             int                   `json:"groupOrder,omitempty"`
-	AlertChannelID         int64                 `json:"alertChannelId"`
+	ID                        string                     `json:"id"`
+	Name                      string                     `json:"name"`
+	Type                      string                     `json:"checkType"`
+	Frequency                 int                        `json:"frequency"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	Script                    string                     `json:"script,omitempty"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	Tags                      []string                   `json:"tags"`
+	SSLCheck                  bool                       `json:"sslCheck"`
+	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   Request                    `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -195,23 +195,23 @@ type SSLCertificates struct {
 
 // Group represents a check group.
 type Group struct {
-	ID                        int64                 `json:"id,omitempty"`
-	Name                      string                `json:"name"`
-	Activated                 bool                  `json:"activated"`
-	Muted                     bool                  `json:"muted"`
-	Tags                      []string              `json:"tags"`
-	Locations                 []string              `json:"locations"`
-	Concurrency               int                   `json:"concurrency"`
-	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
-	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables"`
-	DoubleCheck               bool                  `json:"doubleCheck"`
-	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
-	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
-	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions,omitempty"`
-	SetupSnippetID            int64                 `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                 `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          string                `json:"localSetupScript,omitempty"`
-	LocalTearDownScript       string                `json:"localTearDownScript,omitempty"`
+	ID                        int64                      `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	Tags                      []string                   `json:"tags"`
+	Locations                 []string                   `json:"locations"`
+	Concurrency               int                        `json:"concurrency"`
+	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
@@ -280,13 +280,10 @@ const (
 	AlertTypeOpsgenie  = "OPSGENIE"
 )
 
-// Subscription represents a subscription to an alert channel. The API defines
-// this data as read-only.
-type Subscription struct {
-	ID             string `json:"id"`
-	CheckID        string `json:"checkId"`
-	AlertChannelID int64  `json:"alertChannelId"`
-	Activated      bool   `json:"activated"`
+// AlertChannelSubscription represents a subscription to an alert channel.
+type AlertChannelSubscription struct {
+	ChannelID int64 `json:"alertChannelId"`
+	Activated bool  `json:"activated"`
 }
 
 //AlertChannelEmail defines a type for an email alert channel
@@ -328,9 +325,8 @@ type AlertChannelWebhook struct {
 // AlertChannel represents an alert channel and its subscribed checks. The API
 // defines this data as read-only.
 type AlertChannel struct {
-	ID   int64  `json:"id,omitempty"`
-	Type string `json:"type"`
-	//Config        map[string]interface{} `json:"config"`
+	ID        int64                 `json:"id,omitempty"`
+	Type      string                `json:"type"`
 	CreatedAt time.Time             `json:"created_at"`
 	UpdatedAt time.Time             `json:"updated_at"`
 	Email     *AlertChannelEmail    `json:"-"`
