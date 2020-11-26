@@ -100,7 +100,7 @@ type Check struct {
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
 	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
-	AlertSettings          AlertSettings         `json:"alertSettings,omitempty"`
+	AlertSettings          *AlertSettings        `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
 	Request                Request               `json:"request"`
 	GroupID                int64                 `json:"groupId,omitempty"`
@@ -157,11 +157,11 @@ type EnvironmentVariable struct {
 
 // AlertSettings represents an alert configuration.
 type AlertSettings struct {
-	EscalationType      string              `json:"escalationType,omitempty"`
-	RunBasedEscalation  RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
-	TimeBasedEscalation TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
-	Reminders           Reminders           `json:"reminders,omitempty"`
-	SSLCertificates     SSLCertificates     `json:"sslCertificates,omitempty"`
+	EscalationType      string               `json:"escalationType,omitempty"`
+	RunBasedEscalation  *RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
+	TimeBasedEscalation *TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
+	Reminders           *Reminders           `json:"reminders,omitempty"`
+	SSLCertificates     *SSLCertificates     `json:"sslCertificates,omitempty"`
 }
 
 // RunBasedEscalation represents an alert escalation based on a number of failed

@@ -71,18 +71,18 @@ var wantCheck = checkly.Check{
 	},
 	LocalSetupScript:    "setitup",
 	LocalTearDownScript: "tearitdown",
-	AlertSettings: checkly.AlertSettings{
+	AlertSettings: &checkly.AlertSettings{
 		EscalationType: checkly.RunBased,
-		RunBasedEscalation: checkly.RunBasedEscalation{
+		RunBasedEscalation: &checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
-		TimeBasedEscalation: checkly.TimeBasedEscalation{
+		TimeBasedEscalation: &checkly.TimeBasedEscalation{
 			MinutesFailingThreshold: 5,
 		},
-		Reminders: checkly.Reminders{
+		Reminders: &checkly.Reminders{
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
+		SSLCertificates: &checkly.SSLCertificates{
 			Enabled:        false,
 			AlertThreshold: 30,
 		},
@@ -291,17 +291,17 @@ var wantGroup = checkly.Group{
 	UseGlobalAlertSettings: false,
 	AlertSettings: checkly.AlertSettings{
 		EscalationType: checkly.RunBased,
-		RunBasedEscalation: checkly.RunBasedEscalation{
+		RunBasedEscalation: &checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
-		TimeBasedEscalation: checkly.TimeBasedEscalation{
+		TimeBasedEscalation: &checkly.TimeBasedEscalation{
 			MinutesFailingThreshold: 5,
 		},
-		Reminders: checkly.Reminders{
+		Reminders: &checkly.Reminders{
 			Amount:   0,
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
+		SSLCertificates: &checkly.SSLCertificates{
 			Enabled:        true,
 			AlertThreshold: 30,
 		},
