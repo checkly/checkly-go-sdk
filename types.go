@@ -88,13 +88,13 @@ type Check struct {
 	Activated              bool                  `json:"activated"`
 	Muted                  bool                  `json:"muted"`
 	ShouldFail             bool                  `json:"shouldFail"`
-	Locations              []string              `json:"locations"`
+	Locations              []string              `json:"locations,omitempty"`
 	DegradedResponseTime   int                   `json:"degradedResponseTime"`
 	MaxResponseTime        int                   `json:"maxResponseTime"`
 	Script                 string                `json:"script,omitempty"`
-	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables"`
+	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables,omitempty"`
 	DoubleCheck            bool                  `json:"doubleCheck"`
-	Tags                   []string              `json:"tags"`
+	Tags                   []string              `json:"tags,omitempty"`
 	SSLCheck               bool                  `json:"sslCheck"`
 	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
@@ -114,9 +114,9 @@ type Request struct {
 	FollowRedirects bool        `json:"followRedirects"`
 	Body            string      `json:"body"`
 	BodyType        string      `json:"bodyType,omitempty"`
-	Headers         []KeyValue  `json:"headers"`
-	QueryParameters []KeyValue  `json:"queryParameters"`
-	Assertions      []Assertion `json:"assertions"`
+	Headers         []KeyValue  `json:"headers,omitempty"`
+	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
+	Assertions      []Assertion `json:"assertions,omitempty"`
 	BasicAuth       *BasicAuth  `json:"basicAuth,omitempty"`
 }
 
@@ -214,11 +214,11 @@ type Group struct {
 	Name                      string                `json:"name"`
 	Activated                 bool                  `json:"activated"`
 	Muted                     bool                  `json:"muted"`
-	Tags                      []string              `json:"tags"`
-	Locations                 []string              `json:"locations"`
+	Tags                      []string              `json:"tags,omitempty"`
+	Locations                 []string              `json:"locations,omitempty"`
 	Concurrency               int                   `json:"concurrency"`
 	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
-	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables"`
+	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables,omitempty"`
 	DoubleCheck               bool                  `json:"doubleCheck"`
 	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
 	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
