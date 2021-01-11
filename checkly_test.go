@@ -815,7 +815,6 @@ func validateAlertChannel(t *testing.T, body []byte) {
 		t.Fatalf("decoding error for data %q: %v", body, err)
 	}
 	ac := checkly.AlertChannel{}
-	ac.ID = int64(response["id"].(float64))
 	ac.Type = response["type"].(string)
 	cfgJSON, err := json.Marshal(response["config"])
 	if err != nil {
