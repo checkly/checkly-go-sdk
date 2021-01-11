@@ -817,13 +817,17 @@ func validateAlertChannel(t *testing.T, body []byte) {
 	ac := checkly.AlertChannel{}
 	ac.ID = int64(response["id"].(float64))
 	ac.Type = response["type"].(string)
-	cfg, ok := response["config"]
-	if ok {
-		ac.SetConfig(cfg.(map[string]interface{}))
-	} else {
-		t.Error("NO CFG", string(body))
+	cfgJSON, err := json.Marshal(response["config"])
+	if err != nil {
+		t.Error("NO CFG", response["config"].(string))
 		return
 	}
+	cfg, err := checkly.AlertChannelConfigFromJSON(ac.Type, cfgJSON)
+	if err != nil {
+		t.Error("NO CFG", err)
+		return
+	}
+	ac.SetConfig(cfg)
 
 	if ac.Type == checkly.AlertTypeEmail {
 		ta := getTestAlertChannelEmail()
