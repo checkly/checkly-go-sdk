@@ -445,7 +445,6 @@ func (c *Client) DeleteEnvironmentVariable(key string) error {
 // the newly-created alert channel, or an error.
 func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
 	payload := map[string]interface{}{
-		"id":     ac.ID,
 		"type":   ac.Type,
 		"config": ac.GetConfig(),
 	}
@@ -457,7 +456,7 @@ func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
+	if status != http.StatusOK && status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
 	}
 	result := map[string]interface{}{}
