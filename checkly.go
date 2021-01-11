@@ -541,7 +541,7 @@ func (c *Client) UpdateAlertChannel(ID int64, ac AlertChannel) (*AlertChannel, e
 		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data ID(%d), Res(%s), Err(%w)", ID, res, err)
 	}
 	resultAc := &AlertChannel{
-		ID:   int64(result["id"].(float64)),
+		ID:   ac.ID,
 		Type: result["type"].(string),
 	}
 	if cfg, ok := result["config"]; ok {
