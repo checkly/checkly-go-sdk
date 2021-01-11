@@ -440,3 +440,135 @@ func (c *Client) DeleteEnvironmentVariable(key string) error {
 	}
 	return nil
 }
+
+// CreateAlertChannel creates a new alert channel with the specified details. It returns
+// the newly-created alert channel, or an error.
+func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
+	payload := map[string]interface{}{
+		"id":     ac.ID,
+		"type":   ac.Type,
+		"config": ac.GetConfig(),
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPost, "alert-channels", data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
+	}
+	result := map[string]interface{}{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("CreateAlertChannel: decoding error for data %s: %v", res, err)
+	}
+	resultAc := &AlertChannel{
+		ID:   int64(result["id"].(float64)),
+		Type: result["type"].(string),
+	}
+	if cfg, ok := result["config"]; ok {
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
+	}
+	return resultAc, nil
+}
+
+// GetAlertChannel takes the ID of an existing alert channel, and returns the
+// corresponding alert channel, or an error.
+func (c *Client) GetAlertChannel(ID int64) (*AlertChannel, error) {
+	status, res, err := c.MakeAPICall(http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := map[string]interface{}{}
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("GetAlertChannel: decoding error for data %q: %v", res, err)
+	}
+	resultAc := &AlertChannel{
+		ID:   int64(result["id"].(float64)),
+		Type: result["type"].(string),
+	}
+	if cfg, ok := result["config"]; ok {
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
+	}
+	return resultAc, nil
+}
+
+// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
+// corresponding alert channel to match the supplied alert channel. It returns the updated
+// alert channel, or an error.
+func (c *Client) UpdateAlertChannel(ID int64, ac AlertChannel) (*AlertChannel, error) {
+	payload := map[string]interface{}{
+		"id":     ac.ID,
+		"type":   ac.Type,
+		"config": ac.GetConfig(),
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := map[string]interface{}{}
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data ID(%d), Res(%s), Err(%w)", ID, res, err)
+	}
+	resultAc := &AlertChannel{
+		ID:   int64(result["id"].(float64)),
+		Type: result["type"].(string),
+	}
+	if cfg, ok := result["config"]; ok {
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
+	}
+	return resultAc, nil
+}
+
+// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
+// non-nil error if the request failed.
+func (c *Client) DeleteAlertChannel(ID int64) error {
+	status, res, err := c.MakeAPICall(http.MethodDelete, fmt.Sprintf("alert-channels/%d", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}

@@ -12,9 +12,10 @@ import (
 	"testing"
 	"time"
 
-	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	checkly "github.com/checkly/checkly-go-sdk"
 )
 
 var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
@@ -94,7 +95,14 @@ var wantCheck = checkly.Check{
 	GroupOrder:             0,
 }
 
-func cannedResponseServer(t *testing.T, wantMethod string, wantURL string, validate func(*testing.T, []byte), status int, filename string) *httptest.Server {
+func cannedResponseServer(
+	t *testing.T,
+	wantMethod string,
+	wantURL string,
+	validate func(*testing.T, []byte),
+	status int,
+	filename string,
+) *httptest.Server {
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if wantMethod != r.Method {
 			t.Errorf("want %q request, got %q", wantMethod, r.Method)
@@ -306,10 +314,10 @@ var wantGroup = checkly.Group{
 			AlertThreshold: 30,
 		},
 	},
-	AlertChannelSubscriptions: []checkly.Subscription{
+	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
 		{
-			Activated:      true,
-			AlertChannelID: 2996,
+			Activated: true,
+			ChannelID: 2996,
 		},
 	},
 	LocalSetupScript:    "setup-test",
@@ -773,5 +781,257 @@ func TestDeleteEnvironmentVariable(t *testing.T) {
 	err := client.DeleteEnvironmentVariable(testEnvVariable.Key)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+var ignoreAlertChannelFields = cmpopts.IgnoreFields(checkly.AlertChannel{}, "ID")
+
+func getTestAlertChannelEmail() *checkly.AlertChannel {
+	return &checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertTypeEmail,
+		Email: &checkly.AlertChannelEmail{
+			Address: "test@example.com",
+		},
+	}
+}
+
+func getTestAlertChannelSlack() checkly.AlertChannel {
+	ac := checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertTypeEmail,
+		Slack: &checkly.AlertChannelSlack{
+			Channel:    "test",
+			WebhookURL: "https://slack.com/test",
+		},
+	}
+	return ac
+}
+
+func validateAlertChannel(t *testing.T, body []byte) {
+	response := map[string]interface{}{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	ac := checkly.AlertChannel{}
+	ac.ID = int64(response["id"].(float64))
+	ac.Type = response["type"].(string)
+	cfgJSON, err := json.Marshal(response["config"])
+	if err != nil {
+		t.Error("NO CFG", response["config"].(string))
+		return
+	}
+	cfg, err := checkly.AlertChannelConfigFromJSON(ac.Type, cfgJSON)
+	if err != nil {
+		t.Error("NO CFG", err)
+		return
+	}
+	ac.SetConfig(cfg)
+
+	if ac.Type == checkly.AlertTypeEmail {
+		ta := getTestAlertChannelEmail()
+		if ac.Email == nil {
+			t.Error("Email nil -> ", cfg, string(body))
+			return
+		}
+		if ta.Email.Address != ac.Email.Address {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Email.Address,
+				ac.Email.Address,
+			)
+		}
+	}
+	if ac.Type == checkly.AlertTypeSlack {
+		ta := getTestAlertChannelSlack()
+		if ta.Slack.Channel != ac.Slack.Channel {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Slack.Channel,
+				ac.Slack.Channel,
+			)
+		}
+		if ta.Slack.WebhookURL != ac.Slack.WebhookURL {
+			t.Errorf(
+				"Expected: %s, Got: %s",
+				ta.Slack.WebhookURL,
+				ac.Slack.WebhookURL,
+			)
+		}
+	}
+
+}
+
+func TestCreateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/alert-channels",
+		validateAlertChannel,
+		http.StatusOK,
+		"CreateAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	ta := getTestAlertChannelEmail()
+	ac, err := client.CreateAlertChannel(*ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestGetAlertChannel(t *testing.T) {
+	return
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateAlertChannel,
+		http.StatusOK,
+		"GetAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	ac, err := client.GetAlertChannel(ta.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestUpdateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateAlertChannel,
+		http.StatusOK,
+		"UpdateAlertChannel.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	_, err := client.UpdateAlertChannel(ta.ID, *ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient("dummy")
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	err := client.DeleteAlertChannel(ta.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAlertChannelSetSmsConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "SMS",
+	}
+	c := &checkly.AlertChannelSMS{
+		Name:   "foo",
+		Number: "012345",
+	}
+	ac.SetConfig(c)
+	if ac.SMS == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.SMS.Name != "foo" {
+		t.Errorf("Unexpected value: %s", ac.SMS.Name)
+	}
+}
+
+func TestAlertChannelSetEmailConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "EMAIL",
+	}
+	c := checkly.AlertChannelEmail{
+		Address: "add@example.com",
+	}
+	ac.SetConfig(&c)
+	if ac.Email == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.Email.Address != c.Address {
+		t.Errorf("Unexpected value: %s", ac.Email.Address)
+	}
+}
+
+func TestAlertChannelSetWebookConfig(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: "WEBHOOK",
+	}
+	var c interface{}
+	json := []byte(`{"headers":[{"key":"X-1","value":"h1v"},{"key":"X-2","value":"h2v"}],"method":"get","name":"fooname","queryParameters":[{"key":"q1","value":"v1"}],"template":"tmpl","url":"https://example.com/webhook","webhookSecret":"foosecret"}`)
+
+	c, err := checkly.AlertChannelConfigFromJSON(ac.Type, json)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+	}
+	ac.SetConfig(c)
+	if ac.Webhook == nil {
+		t.Error("Shouldn't be nil")
+		return
+	}
+	if ac.Webhook.Name != "fooname" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Name)
+	}
+	if ac.Webhook.Method != "get" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Method)
+	}
+	if ac.Webhook.Template != "tmpl" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Template)
+	}
+	if ac.Webhook.URL != "https://example.com/webhook" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.URL)
+	}
+	if ac.Webhook.WebhookSecret != "foosecret" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.WebhookSecret)
+	}
+	if len(ac.Webhook.Headers) != 2 {
+		t.Errorf("Unexpected len: %d", len(ac.Webhook.Headers))
+	}
+	if ac.Webhook.Headers[0].Key != "X-1" && ac.Webhook.Headers[0].Key != "X-2" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Key)
+	}
+	if ac.Webhook.Headers[0].Value != "h1v" && ac.Webhook.Headers[0].Value != "h2v" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Value)
+	}
+	if len(ac.Webhook.QueryParameters) != 1 {
+		t.Errorf("Unexpected len: %d", len(ac.Webhook.QueryParameters))
+	}
+	if ac.Webhook.QueryParameters[0].Key != "q1" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Key)
+	}
+	if ac.Webhook.QueryParameters[0].Value != "v1" {
+		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Value)
 	}
 }
