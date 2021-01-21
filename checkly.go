@@ -510,16 +510,24 @@ func (c *Client) DeleteAlertChannel(ID int64) error {
 
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 	payload := map[string]interface{}{
-		"id":           ac.ID,
-		"type":         ac.Type,
-		"config":       ac.GetConfig(),
-		"sendRecovery": ac.SendRecovery,
-		"sendDegraded": ac.SendDegraded,
-		"sendFailure":  ac.SendFailure,
-		"sslExpiry":    ac.SSLExpiry,
+		"id":     ac.ID,
+		"type":   ac.Type,
+		"config": ac.GetConfig(),
+	}
+	if ac.SendRecovery != nil {
+		payload["sendRecovery"] = *ac.SendRecovery
+	}
+	if ac.SendDegraded != nil {
+		payload["sendDegraded"] = *ac.SendDegraded
+	}
+	if ac.SendFailure != nil {
+		payload["sendFailure"] = *ac.SendFailure
+	}
+	if ac.SSLExpiry != nil {
+		payload["sslExpiry"] = *ac.SSLExpiry
 	}
 	if ac.SSLExpiryThreshold != nil {
-		payload["sslExpiryThreshold"] = ac.SSLExpiryThreshold
+		payload["sslExpiryThreshold"] = *ac.SSLExpiryThreshold
 	}
 	return payload
 }
