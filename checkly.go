@@ -444,10 +444,7 @@ func (c *Client) DeleteEnvironmentVariable(key string) error {
 // CreateAlertChannel creates a new alert channel with the specified details. It returns
 // the newly-created alert channel, or an error.
 func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
-	payload := map[string]interface{}{
-		"type":   ac.Type,
-		"config": ac.GetConfig(),
-	}
+	payload := payloadFromAlertChannel(ac)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -459,28 +456,7 @@ func (c *Client) CreateAlertChannel(ac AlertChannel) (*AlertChannel, error) {
 	if status != http.StatusOK && status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
 	}
-	result := map[string]interface{}{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("CreateAlertChannel: decoding error for data %s: %v", res, err)
-	}
-	resultAc := &AlertChannel{
-		ID:   int64(result["id"].(float64)),
-		Type: result["type"].(string),
-	}
-	if cfg, ok := result["config"]; ok {
-		cfgJSON, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, err
-		}
-		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
-		if err != nil {
-			//TODO check this
-			return nil, err
-		}
-		resultAc.SetConfig(c)
-	}
-	return resultAc, nil
+	return alertChannelFromJSON(res)
 }
 
 // GetAlertChannel takes the ID of an existing alert channel, and returns the
@@ -497,34 +473,14 @@ func (c *Client) GetAlertChannel(ID int64) (*AlertChannel, error) {
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("GetAlertChannel: decoding error for data %q: %v", res, err)
 	}
-	resultAc := &AlertChannel{
-		ID:   int64(result["id"].(float64)),
-		Type: result["type"].(string),
-	}
-	if cfg, ok := result["config"]; ok {
-		cfgJSON, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, err
-		}
-		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
-		if err != nil {
-			//TODO check this
-			return nil, err
-		}
-		resultAc.SetConfig(c)
-	}
-	return resultAc, nil
+	return alertChannelFromJSON(res)
 }
 
 // UpdateAlertChannel takes the ID of an existing alert channel, and updates the
 // corresponding alert channel to match the supplied alert channel. It returns the updated
 // alert channel, or an error.
 func (c *Client) UpdateAlertChannel(ID int64, ac AlertChannel) (*AlertChannel, error) {
-	payload := map[string]interface{}{
-		"id":     ac.ID,
-		"type":   ac.Type,
-		"config": ac.GetConfig(),
-	}
+	payload := payloadFromAlertChannel(ac)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -536,27 +492,7 @@ func (c *Client) UpdateAlertChannel(ID int64, ac AlertChannel) (*AlertChannel, e
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	result := map[string]interface{}{}
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data ID(%d), Res(%s), Err(%w)", ID, res, err)
-	}
-	resultAc := &AlertChannel{
-		ID:   ac.ID,
-		Type: result["type"].(string),
-	}
-	if cfg, ok := result["config"]; ok {
-		cfgJSON, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, err
-		}
-		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
-		if err != nil {
-			//TODO check this
-			return nil, err
-		}
-		resultAc.SetConfig(c)
-	}
-	return resultAc, nil
+	return alertChannelFromJSON(res)
 }
 
 // DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
@@ -570,4 +506,72 @@ func (c *Client) DeleteAlertChannel(ID int64) error {
 		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
+}
+
+func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
+	payload := map[string]interface{}{
+		"id":           ac.ID,
+		"type":         ac.Type,
+		"config":       ac.GetConfig(),
+		"sendRecovery": ac.SendRecovery,
+		"sendDegraded": ac.SendDegraded,
+		"sendFailure":  ac.SendFailure,
+		"sslExpiry":    ac.SSLExpiry,
+	}
+	if ac.SSLExpiry {
+		payload["sslExpiryThreshold"] = ac.SSLExpiryThreshold
+	}
+	return payload
+}
+
+func alertChannelFromJSON(response string) (*AlertChannel, error) {
+	result := map[string]interface{}{}
+	if err := json.NewDecoder(strings.NewReader(response)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data Res(%s), Err(%w)", response, err)
+	}
+	resultAc := &AlertChannel{}
+	if v, ok := result["id"]; ok {
+		switch v.(type) {
+		case int, int64:
+			resultAc.ID = v.(int64)
+		case float32, float64:
+			resultAc.ID = int64(v.(float64))
+		}
+	}
+	if v, ok := result["type"]; ok {
+		resultAc.Type = v.(string)
+	}
+	if v, ok := result["sendRecovery"]; ok {
+		resultAc.SendRecovery = v.(bool)
+	}
+	if v, ok := result["sendFailure"]; ok {
+		resultAc.SendFailure = v.(bool)
+	}
+	if v, ok := result["sendDegraded"]; ok {
+		resultAc.SendDegraded = v.(bool)
+	}
+	if v, ok := result["sslExpiry"]; ok {
+		resultAc.SSLExpiry = v.(bool)
+	}
+	if v, ok := result["sslExpiryThreshold"]; ok {
+		switch v.(type) {
+		case int, int64:
+			resultAc.SSLExpiryThreshold = v.(int)
+		case float32, float64:
+			resultAc.SSLExpiryThreshold = int(v.(float64))
+		}
+	}
+	if cfg, ok := result["config"]; ok {
+		cfgJSON, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
+		if err != nil {
+			//TODO check this
+			return nil, err
+		}
+		resultAc.SetConfig(c)
+	}
+	return resultAc, nil
 }
