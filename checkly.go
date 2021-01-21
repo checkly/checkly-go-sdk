@@ -518,7 +518,7 @@ func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 		"sendFailure":  ac.SendFailure,
 		"sslExpiry":    ac.SSLExpiry,
 	}
-	if ac.SSLExpiry != nil {
+	if ac.SSLExpiryThreshold != nil {
 		payload["sslExpiryThreshold"] = ac.SSLExpiryThreshold
 	}
 	return payload
