@@ -228,7 +228,7 @@ type APICheckDefaults struct {
 type CheckResult struct {
 	ID                  string              `json:"id"`
 	Name                string              `json:"name"`
-	CheckID             string              `"checkId"`
+	CheckID             string              `json:"checkId"`
 	HasFailures         bool                `json:"hasFailures"`
 	HasErrors           bool                `json:"hasErrors"`
 	IsDegraded          bool                `json:"isDegraded"`
@@ -325,15 +325,20 @@ type AlertChannelWebhook struct {
 // AlertChannel represents an alert channel and its subscribed checks. The API
 // defines this data as read-only.
 type AlertChannel struct {
-	ID        int64                 `json:"id,omitempty"`
-	Type      string                `json:"type"`
-	CreatedAt time.Time             `json:"created_at"`
-	UpdatedAt time.Time             `json:"updated_at"`
-	Email     *AlertChannelEmail    `json:"-"`
-	Slack     *AlertChannelSlack    `json:"-"`
-	SMS       *AlertChannelSMS      `json:"-"`
-	Opsgenie  *AlertChannelOpsgenie `json:"-"`
-	Webhook   *AlertChannelWebhook  `json:"-"`
+	ID                 int64                 `json:"id,omitempty"`
+	Type               string                `json:"type"`
+	CreatedAt          time.Time             `json:"created_at"`
+	UpdatedAt          time.Time             `json:"updated_at"`
+	Email              *AlertChannelEmail    `json:"-"`
+	Slack              *AlertChannelSlack    `json:"-"`
+	SMS                *AlertChannelSMS      `json:"-"`
+	Opsgenie           *AlertChannelOpsgenie `json:"-"`
+	Webhook            *AlertChannelWebhook  `json:"-"`
+	SendRecovery       *bool                 `json:"sendRecovery"`
+	SendFailure        *bool                 `json:"sendFailure"`
+	SendDegraded       *bool                 `json:"sendDegraded"`
+	SSLExpiry          *bool                 `json:"sslExpiry"`
+	SSLExpiryThreshold *int                  `json:"sslExpiryThreshold"`
 }
 
 //SetConfig sets config of alert channel based on it's type
