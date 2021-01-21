@@ -334,11 +334,11 @@ type AlertChannel struct {
 	SMS                *AlertChannelSMS      `json:"-"`
 	Opsgenie           *AlertChannelOpsgenie `json:"-"`
 	Webhook            *AlertChannelWebhook  `json:"-"`
-	SendRecovery       bool                  `json:"sendRecovery"`
-	SendFailure        bool                  `json:"sendFailure"`
-	SendDegraded       bool                  `json:"sendDegraded"`
-	SSLExpiry          bool                  `json:"sslExpiry"`
-	SSLExpiryThreshold int                   `json:"sslExpiryThreshold"`
+	SendRecovery       *bool                 `json:"sendRecovery"`
+	SendFailure        *bool                 `json:"sendFailure"`
+	SendDegraded       *bool                 `json:"sendDegraded"`
+	SSLExpiry          *bool                 `json:"sslExpiry"`
+	SSLExpiryThreshold *int                  `json:"sslExpiryThreshold"`
 }
 
 //SetConfig sets config of alert channel based on it's type

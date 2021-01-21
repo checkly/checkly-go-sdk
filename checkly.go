@@ -518,7 +518,7 @@ func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 		"sendFailure":  ac.SendFailure,
 		"sslExpiry":    ac.SSLExpiry,
 	}
-	if ac.SSLExpiry {
+	if ac.SSLExpiry != nil {
 		payload["sslExpiryThreshold"] = ac.SSLExpiryThreshold
 	}
 	return payload
@@ -542,23 +542,29 @@ func alertChannelFromJSON(response string) (*AlertChannel, error) {
 		resultAc.Type = v.(string)
 	}
 	if v, ok := result["sendRecovery"]; ok {
-		resultAc.SendRecovery = v.(bool)
+		sr := v.(bool)
+		resultAc.SendRecovery = &sr
 	}
 	if v, ok := result["sendFailure"]; ok {
-		resultAc.SendFailure = v.(bool)
+		sf := v.(bool)
+		resultAc.SendFailure = &sf
 	}
 	if v, ok := result["sendDegraded"]; ok {
-		resultAc.SendDegraded = v.(bool)
+		sd := v.(bool)
+		resultAc.SendDegraded = &sd
 	}
 	if v, ok := result["sslExpiry"]; ok {
-		resultAc.SSLExpiry = v.(bool)
+		expiry := v.(bool)
+		resultAc.SSLExpiry = &expiry
 	}
 	if v, ok := result["sslExpiryThreshold"]; ok {
 		switch v.(type) {
 		case int, int64:
-			resultAc.SSLExpiryThreshold = v.(int)
+			t := v.(int)
+			resultAc.SSLExpiryThreshold = &t
 		case float32, float64:
-			resultAc.SSLExpiryThreshold = int(v.(float64))
+			t := int(v.(float64))
+			resultAc.SSLExpiryThreshold = &t
 		}
 	}
 	if cfg, ok := result["config"]; ok {
