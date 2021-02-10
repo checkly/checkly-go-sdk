@@ -22,25 +22,26 @@ import checkly "github.com/checkly/checkly-go-sdk"
 
 ## Creating a client
 
-Create a new `Client` object by calling `checkly.NewClient()` with your API key:
+Create a new `Client` by calling `checkly.NewClient()` with your API key:
 
 ```go
-apiKey := "3a4405df05894f4580758b40e48e6e10"
-client := checkly.NewClient(apiKey)
+baseUrl := "https://api.checklyhq.com"
+apiKey := os.Getenv("CHECKLY_API_KEY")
+client := checkly.NewClient(
+	baseUrl,
+	apiKey,
+	nil, //custom http client, defaults to http.DefaultClient
+	nil, //io.Writer to output debug messages
+)
 ```
 
-Or read the key from an environment variable:
-
-```go
-client := checkly.NewClient(os.Getenv("CHECKLY_API_KEY"))
-```
 
 ## Creating a new check
 
 Once you have a client, you can create a check. First, populate a Check struct with the parameters you want:
 
 ```go
-wantCheck := checkly.Check{
+check := checkly.Check{
 	Name:                 "My API Check",
 	Type:                 checkly.TypeAPI,
 	Frequency:            5,
@@ -94,13 +95,14 @@ wantCheck := checkly.Check{
 Now you can pass it to `client.Create()` to create a check. This returns the newly-created Check object, or an error if there was a problem:
 
 ```go
-check, err := client.Create(wantCheck)
+ctx := context.WithTimeout(context.Background(), time.Second * 5)
+check, err := client.Create(ctx, check)
 ```
 
 For browser checks, the options are slightly different:
 
 ```go
-wantCheck := checkly.Check{
+check := checkly.Check{
 	Name:          "My Browser Check",
 	Type:          checkly.TypeBrowser,
 	Frequency:     5,
@@ -136,10 +138,10 @@ wantCheck := checkly.Check{
 
 ## Retrieving a check
 
-`client.Get(ID)` finds an existing check by ID and returns a Check struct containing its details:
+`client.Get(ctx, ID)` finds an existing check by ID and returns a Check struct containing its details:
 
 ```go
-check, err := client.Get("87dd7a8d-f6fd-46c0-b73c-b35712f56d72")
+check, err := client.Get(ctx, "87dd7a8d-f6fd-46c0-b73c-b35712f56d72")
 fmt.Println(check.Name)
 // Output: My Awesome Check
 
@@ -147,21 +149,21 @@ fmt.Println(check.Name)
 
 ## Updating a check
 
-`client.Update(ID, check)` updates an existing check with the specified details. For example, to change the name of a check:
+`client.Update(ctx, ID, check)` updates an existing check with the specified details. For example, to change the name of a check:
 
 ```go
 ID := "87dd7a8d-f6fd-46c0-b73c-b35712f56d72"
-check, err := client.Get(ID)
+check, err := client.Get(ctx, ID)
 check.Name = "My updated check name"
-updatedCheck, err = client.Update(ID, check)
+updatedCheck, err = client.Update(ctx, ID, check)
 ```
 
 ## Deleting a check
 
-Use `client.Delete(ID)` to delete a check by ID.
+Use `client.Delete(ctx, ID)` to delete a check by ID.
 
 ```go
-err := client.Delete("73d29ea2-6540-4bb5-967e-e07fa2c9465e")
+err := client.Delete(ctx, "73d29ea2-6540-4bb5-967e-e07fa2c9465e")
 ```
 
 ## Creating a new check group
@@ -235,7 +237,7 @@ var wantGroup = checkly.Group{
 	LocalSetupScript:    "setup-test",
 	LocalTearDownScript: "teardown-test",
 }
-group, err := client.CreateGroup(wantGroup)
+group, err := client.CreateGroup(ctx, wantGroup)
 ```
 
 ## A complete example program
@@ -244,12 +246,18 @@ You can see an example program which creates a Checkly check in the [examples/de
 
 ## Debugging
 
-If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
+If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
 
 Regardless of the debug setting, if a request fails with HTTP status 400 Bad Request), the full response will be dumped (to standard error if no debug writer is set):
 
 ```go
-client.Debug = os.Stderr
+debugOutput := os.Stderr
+client.NewClient(
+	"https://api.checklyhq.com",
+	"your-api-key",
+	nil,
+	debugOutput,
+)
 ```
 
 Example request and response dump:
