@@ -1,6 +1,7 @@
 package checkly_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -145,7 +146,7 @@ func validateEmptyBody(t *testing.T, body []byte) {
 func validateAnything(*testing.T, []byte) {
 }
 
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID")
+var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
@@ -157,10 +158,8 @@ func TestAPIError(t *testing.T) {
 		"BadRequest.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	_, err := client.Create(checkly.Check{})
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.Create(context.Background(), checkly.Check{})
 	if err == nil {
 		t.Fatal("want error when API returns 'bad request' status, got nil")
 	}
@@ -179,15 +178,13 @@ func TestCreate(t *testing.T) {
 		"CreateCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotCheck, err := client.Create(wantCheck)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantCheck, gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, gotCheck, ignoreCheckFields))
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
 	}
 }
 
@@ -201,15 +198,13 @@ func TestGet(t *testing.T) {
 		"GetCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotCheck, err := client.Get(wantCheckID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.Get(context.Background(), wantCheckID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantCheck, gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, gotCheck, ignoreCheckFields))
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
 	}
 }
 
@@ -223,15 +218,13 @@ func TestUpdate(t *testing.T) {
 		"UpdateCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotCheck, err := client.Update(wantCheckID, wantCheck)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.Update(context.Background(), wantCheckID, wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantCheck, gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, gotCheck, ignoreCheckFields))
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
 	}
 }
 
@@ -245,10 +238,8 @@ func TestDelete(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	err := client.Delete(wantCheckID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.Delete(context.Background(), wantCheckID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,15 +338,14 @@ func TestCreateGroup(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotGroup, err := client.CreateGroup(wantGroup)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotGroup, err := client.CreateGroup(context.Background(), wantGroup)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantGroup, gotGroup, ignoreGroupFields) {
-		t.Error(cmp.Diff(wantGroup, gotGroup, ignoreGroupFields))
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
+		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
 }
 
@@ -369,15 +359,14 @@ func TestGetGroup(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotGroup, err := client.GetGroup(wantGroupID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotGroup, err := client.GetGroup(context.Background(), wantGroupID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantGroup, gotGroup, ignoreGroupFields) {
-		t.Error(cmp.Diff(wantGroup, gotGroup, ignoreGroupFields))
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
+		t.Error(cmp.Diff(wantGroup, *gotGroup, ignored))
 	}
 }
 
@@ -391,15 +380,14 @@ func TestUpdateGroup(t *testing.T) {
 		"UpdateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotGroup, err := client.UpdateGroup(wantGroupID, wantGroup)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotGroup, err := client.UpdateGroup(context.Background(), wantGroupID, wantGroup)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(wantGroup, gotGroup, ignoreGroupFields) {
-		t.Error(cmp.Diff(wantGroup, gotGroup, ignoreGroupFields))
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
+		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
 }
 
@@ -413,10 +401,8 @@ func TestDeleteGroup(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	err := client.DeleteGroup(wantGroupID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteGroup(context.Background(), wantGroupID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -433,10 +419,8 @@ func TestGetCheckResult(t *testing.T) {
 		"GetCheckResult.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	result, err := client.GetCheckResult(wantCheckID, resultID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
 		t.Errorf("Expected no errors, got %w", err)
 	}
@@ -463,7 +447,7 @@ func TestGetCheckResult(t *testing.T) {
 		IsDegraded:          false,
 		OverMaxResponseTime: false,
 	}
-	if !cmp.Equal(expectedResult, result, nil) {
+	if !cmp.Equal(expectedResult, *result, nil) {
 		expected, _ := json.Marshal(expectedResult)
 		got, _ := json.Marshal(result)
 		t.Errorf("Got invalid result, expected: %s, \ngot: %s", expected, got)
@@ -481,10 +465,8 @@ func TestGetCheckResults(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	results, err := client.GetCheckResults(wantCheckID, nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	results, err := client.GetCheckResults(context.Background(), wantCheckID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -534,10 +516,8 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	results, err := client.GetCheckResults("73d29e72-6540", &checkly.CheckResultsFilter{
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	results, err := client.GetCheckResults(context.Background(), "73d29e72-6540", &checkly.CheckResultsFilter{
 		Limit:       100,
 		Page:        1,
 		From:        1,
@@ -566,10 +546,11 @@ func TestGetCheckResultsWithFilters2(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	results, err := client.GetCheckResults("73d29e72-6540", &checkly.CheckResultsFilter{})
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	results, err := client.GetCheckResults(
+		context.Background(),
+		"73d29e72-6540", &checkly.CheckResultsFilter{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -608,15 +589,13 @@ func TestCreateSnippet(t *testing.T) {
 		"CreateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotSnippet, err := client.CreateSnippet(testSnippet)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotSnippet, err := client.CreateSnippet(context.Background(), testSnippet)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testSnippet, gotSnippet, ignoreSnippetFields) {
-		t.Error(cmp.Diff(testSnippet, gotSnippet, ignoreSnippetFields))
+	if !cmp.Equal(testSnippet, *gotSnippet, ignoreSnippetFields) {
+		t.Error(cmp.Diff(testSnippet, *gotSnippet, ignoreSnippetFields))
 	}
 }
 
@@ -630,15 +609,13 @@ func TestGetSnippet(t *testing.T) {
 		"CreateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotSnippet, err := client.GetSnippet(testSnippet.ID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotSnippet, err := client.GetSnippet(context.Background(), testSnippet.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testSnippet, gotSnippet, ignoreSnippetFields) {
-		t.Error(cmp.Diff(testSnippet, gotSnippet, ignoreSnippetFields))
+	if !cmp.Equal(testSnippet, *gotSnippet, ignoreSnippetFields) {
+		t.Error(cmp.Diff(testSnippet, *gotSnippet, ignoreSnippetFields))
 	}
 }
 
@@ -652,15 +629,13 @@ func TestUpdateSnippet(t *testing.T) {
 		"UpdateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	gotSnippet, err := client.UpdateSnippet(testSnippet.ID, testSnippet)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotSnippet, err := client.UpdateSnippet(context.Background(), testSnippet.ID, testSnippet)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testSnippet, gotSnippet, ignoreSnippetFields) {
-		t.Error(cmp.Diff(testSnippet, gotSnippet, ignoreSnippetFields))
+	if !cmp.Equal(testSnippet, *gotSnippet, ignoreSnippetFields) {
+		t.Error(cmp.Diff(testSnippet, *gotSnippet, ignoreSnippetFields))
 	}
 }
 
@@ -674,10 +649,8 @@ func TestDeleteSnippet(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	err := client.DeleteSnippet(testSnippet.ID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteSnippet(context.Background(), testSnippet.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -709,15 +682,13 @@ func TestCreateEnvironmentVariable(t *testing.T) {
 		"CreateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	result, err := client.CreateEnvironmentVariable(testEnvVariable)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	result, err := client.CreateEnvironmentVariable(context.Background(), testEnvVariable)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testEnvVariable, result, nil) {
-		t.Error(cmp.Diff(testEnvVariable, result, nil))
+	if !cmp.Equal(testEnvVariable, *result, nil) {
+		t.Error(cmp.Diff(testEnvVariable, *result, nil))
 	}
 }
 
@@ -731,15 +702,13 @@ func TestGetEnvironmentVariable(t *testing.T) {
 		"CreateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	result, err := client.GetEnvironmentVariable(testEnvVariable.Key)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	result, err := client.GetEnvironmentVariable(context.Background(), testEnvVariable.Key)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testEnvVariable, result, nil) {
-		t.Error(cmp.Diff(testEnvVariable, result, nil))
+	if !cmp.Equal(testEnvVariable, *result, nil) {
+		t.Error(cmp.Diff(testEnvVariable, *result, nil))
 	}
 }
 
@@ -753,15 +722,17 @@ func TestUpdateEnvironmentVariable(t *testing.T) {
 		"UpdateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	result, err := client.UpdateEnvironmentVariable(testEnvVariable.Key, testEnvVariable)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	result, err := client.UpdateEnvironmentVariable(
+		context.Background(),
+		testEnvVariable.Key,
+		testEnvVariable,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(testEnvVariable, result, nil) {
-		t.Error(cmp.Diff(testEnvVariable, result, nil))
+	if !cmp.Equal(testEnvVariable, *result, nil) {
+		t.Error(cmp.Diff(testEnvVariable, *result, nil))
 	}
 }
 
@@ -775,10 +746,8 @@ func TestDeleteEnvironmentVariable(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	err := client.DeleteEnvironmentVariable(testEnvVariable.Key)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteEnvironmentVariable(context.Background(), testEnvVariable.Key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -872,11 +841,9 @@ func TestCreateAlertChannel(t *testing.T) {
 		"CreateAlertChannelEmail.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
 	ta := getTestAlertChannelEmail()
-	ac, err := client.CreateAlertChannel(*ta)
+	ac, err := client.CreateAlertChannel(context.Background(), *ta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -897,15 +864,13 @@ func TestGetAlertChannel(t *testing.T) {
 		"GetAlertChannelEmail.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	ac, err := client.GetAlertChannel(ta.ID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	ac, err := client.GetAlertChannel(context.Background(), ta.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
-		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	if !cmp.Equal(ta, *ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, *ac, ignoreAlertChannelFields))
 	}
 }
 
@@ -920,10 +885,8 @@ func TestUpdateAlertChannel(t *testing.T) {
 		"UpdateAlertChannel.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	_, err := client.UpdateAlertChannel(ta.ID, *ta)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateAlertChannel(context.Background(), ta.ID, *ta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -940,10 +903,8 @@ func TestDeleteAlertChannel(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient("dummy")
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	err := client.DeleteAlertChannel(ta.ID)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteAlertChannel(context.Background(), ta.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

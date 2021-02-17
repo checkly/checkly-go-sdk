@@ -1,6 +1,7 @@
 package checkly
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,16 +10,183 @@ import (
 	"time"
 )
 
-// Client represents a Checkly client. If the Debug field is set to an io.Writer
+// Client is an interface that implements Checkly's API
+type Client interface {
+	// Create creates a new check with the specified details.
+	// It returns the newly-created check, or an error.
+	Create(
+		ctx context.Context,
+		check Check,
+	) (*Check, error)
+
+	// Update updates an existing check with the specified details.
+	// It returns the updated check, or an error.
+	Update(
+		ctx context.Context,
+		ID string,
+		check Check,
+	) (*Check, error)
+
+	// Delete deletes the check with the specified ID.
+	// It returns a non-nil error if the request failed.
+	Delete(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// Get takes the ID of an existing check, and returns the check parameters,
+	// or an error.
+	Get(
+		ctx context.Context,
+		ID string,
+	) (*Check, error)
+
+	// CreateGroup creates a new check group with the specified details.
+	// It returns the newly-created group, or an error.
+	CreateGroup(
+		ctx context.Context,
+		group Group,
+	) (*Group, error)
+
+	// GetGroup takes the ID of an existing check group, and returns the
+	// corresponding group, or an error.
+	GetGroup(
+		ctx context.Context,
+		ID int64,
+	) (*Group, error)
+
+	// UpdateGroup takes the ID of an existing check group, and updates the
+	// corresponding check group to match the supplied group. It returns the updated
+	// group, or an error.
+	UpdateGroup(
+		ctx context.Context,
+		ID int64,
+		group Group,
+	) (*Group, error)
+
+	// DeleteGroup deletes the check group with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteGroup(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// GetCheckResult gets a specific Check result, or it returns an error.
+	GetCheckResult(
+		ctx context.Context,
+		checkID,
+		checkResultID string,
+	) (*CheckResult, error)
+
+	// GetCheckResults gets the results of the given Check
+	GetCheckResults(
+		ctx context.Context,
+		checkID string,
+		filters *CheckResultsFilter,
+	) ([]CheckResult, error)
+
+	// CreateSnippet creates a new snippet with the specified details. It returns
+	// the newly-created snippet, or an error.
+	CreateSnippet(
+		ctx context.Context,
+		snippet Snippet,
+	) (*Snippet, error)
+
+	// GetSnippet takes the ID of an existing snippet, and returns the
+	// corresponding snippet, or an error.
+	GetSnippet(
+		ctx context.Context,
+		ID int64,
+	) (*Snippet, error)
+
+	// UpdateSnippet takes the ID of an existing snippet, and updates the
+	// corresponding snippet to match the supplied snippet. It returns the updated
+	// snippet, or an error.
+	UpdateSnippet(
+		ctx context.Context,
+		ID int64,
+		snippet Snippet,
+	) (*Snippet, error)
+
+	// DeleteSnippet deletes the snippet with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteSnippet(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// CreateEnvironmentVariable creates a new environment variable with the
+	// specified details.  It returns the newly-created environment variable,
+	// or an error.
+	CreateEnvironmentVariable(
+		ctx context.Context,
+		envVar EnvironmentVariable,
+	) (*EnvironmentVariable, error)
+
+	// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
+	// corresponding environment variable, or an error.
+	GetEnvironmentVariable(
+		ctx context.Context,
+		key string,
+	) (*EnvironmentVariable, error)
+
+	// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
+	// corresponding environment variable to match the supplied environment variable. It returns the updated
+	// environment variable, or an error.
+	UpdateEnvironmentVariable(
+		ctx context.Context,
+		key string,
+		envVar EnvironmentVariable,
+	) (*EnvironmentVariable, error)
+
+	// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteEnvironmentVariable(
+		ctx context.Context,
+		key string,
+	) error
+
+	// CreateAlertChannel creates a new alert channel with the specified details. It returns
+	// the newly-created alert channel, or an error.
+	CreateAlertChannel(
+		ctx context.Context,
+		ac AlertChannel,
+	) (*AlertChannel, error)
+
+	// GetAlertChannel takes the ID of an existing alert channel, and returns the
+	// corresponding alert channel, or an error.
+	GetAlertChannel(
+		ctx context.Context,
+		ID int64,
+	) (*AlertChannel, error)
+
+	// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
+	// corresponding alert channel to match the supplied alert channel. It returns the updated
+	// alert channel, or an error.
+	UpdateAlertChannel(
+		ctx context.Context,
+		ID int64,
+		ac AlertChannel,
+	) (*AlertChannel, error)
+
+	// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteAlertChannel(
+		ctx context.Context,
+		ID int64,
+	) error
+}
+
+// client represents a Checkly client. If the Debug field is set to an io.Writer
 // (for example os.Stdout), then the client will dump API requests and responses
 // to it.  To use a non-default HTTP client (for example, for testing, or to set
 // a timeout), assign to the HTTPClient field. To set a non-default URL (for
 // example, for testing), assign to the URL field.
-type Client struct {
+type client struct {
 	apiKey     string
-	URL        string
-	HTTPClient *http.Client
-	Debug      io.Writer
+	url        string
+	httpClient *http.Client
+	debug      io.Writer
 }
 
 // Check type constants
