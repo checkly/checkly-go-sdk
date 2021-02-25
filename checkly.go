@@ -251,6 +251,13 @@ func (c *Client) GetCheckResults(
 // returns the HTTP status code and string data of the response.
 func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
 	requestURL := c.URL + "/v1/" + URL
+	{ //for deprecating the old auto assigning of alert channels to checks
+		m := strings.ToLower(method)
+		if (m == "post" || m == "put") &&
+			(strings.Contains(URL, "checks") || strings.Contains(URL, "check-groups")) {
+			requestURL = requestURL + "?autoAssignAlerts=true"
+		}
+	}
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
