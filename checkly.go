@@ -331,6 +331,58 @@ func (c *client) GetCheckResults(
 	return result, nil
 }
 
+<<<<<<< HEAD
+=======
+// MakeAPICall calls the Checkly API with the specified URL and data, and
+// returns the HTTP status code and string data of the response.
+func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
+	requestURL := c.URL + "/v1/" + URL
+	{ //for deprecating the old auto assigning of alert channels to checks
+		m := strings.ToLower(method)
+		if (m == "post" || m == "put") &&
+			(strings.Contains(URL, "checks") || strings.Contains(URL, "check-groups")) {
+			requestURL = requestURL + "?autoAssignAlerts=true"
+		}
+	}
+	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+	req.Header.Add("Authorization", "Bearer "+c.apiKey)
+	req.Header.Add("content-type", "application/json")
+	if c.Debug != nil {
+		requestDump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return 0, "", fmt.Errorf("error dumping HTTP request: %v", err)
+		}
+		fmt.Fprintln(c.Debug, string(requestDump))
+		fmt.Fprintln(c.Debug)
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return 0, "", fmt.Errorf("HTTP request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if c.Debug != nil {
+		c.dumpResponse(resp)
+	}
+	res, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+	return resp.StatusCode, string(res), nil
+}
+
+// dumpResponse writes the raw response data to the debug output, if set, or
+// standard error otherwise.
+func (c *Client) dumpResponse(resp *http.Response) {
+	// ignore errors dumping response - no recovery from this
+	responseDump, _ := httputil.DumpResponse(resp, true)
+	fmt.Fprintln(c.Debug, string(responseDump))
+	fmt.Fprintln(c.Debug)
+}
+
+>>>>>>> Add autoAssignAlerts query param to check and groups POST/PUT
 // CreateSnippet creates a new snippet with the specified details. It returns
 // the newly-created snippet, or an error.
 func (c *client) CreateSnippet(
