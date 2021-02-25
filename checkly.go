@@ -55,7 +55,15 @@ func (c *client) Create(
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	status, res, err := c.apiCall(ctx, http.MethodPost, "checks", data)
+=======
+	status, res, err := c.MakeAPICall(
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks"),
+		data,
+	)
+>>>>>>> adding autoAssignAlerts
 	if err != nil {
 		return nil, err
 	}
@@ -79,10 +87,16 @@ func (c *client) Update(
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("checks/%s", ID),
+=======
+	status, res, err := c.MakeAPICall(
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
+>>>>>>> adding autoAssignAlerts
 		data,
 	)
 	if err != nil {
@@ -156,7 +170,15 @@ func (c *client) CreateGroup(
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	status, res, err := c.apiCall(ctx, http.MethodPost, "check-groups", data)
+=======
+	status, res, err := c.MakeAPICall(
+		http.MethodPost,
+		withAutoAssignAlertsFlag("check-groups"),
+		data,
+	)
+>>>>>>> adding autoAssignAlerts
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +231,16 @@ func (c *client) UpdateGroup(
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("check-groups/%d", ID),
+=======
+	status, res, err := c.MakeAPICall(
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
+>>>>>>> adding autoAssignAlerts
 		data,
 	)
 	if err != nil {
@@ -337,13 +365,6 @@ func (c *client) GetCheckResults(
 // returns the HTTP status code and string data of the response.
 func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
 	requestURL := c.URL + "/v1/" + URL
-	{ //for deprecating the old auto assigning of alert channels to checks
-		m := strings.ToLower(method)
-		if (m == "post" || m == "put") &&
-			(strings.Contains(URL, "checks") || strings.Contains(URL, "check-groups")) {
-			requestURL = requestURL + "?autoAssignAlerts=true"
-		}
-	}
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
@@ -743,6 +764,7 @@ func alertChannelFromJSON(response string) (*AlertChannel, error) {
 	return resultAc, nil
 }
 
+<<<<<<< HEAD
 // dumpResponse writes the raw response data to the debug output, if set, or
 // standard error otherwise.
 func (c *client) dumpResponse(resp *http.Response) {
@@ -787,4 +809,8 @@ func (c *client) apiCall(
 		return resp.StatusCode, "", fmt.Errorf("HTTP request failed: %v", err)
 	}
 	return resp.StatusCode, string(res), nil
+=======
+func withAutoAssignAlertsFlag(url string) string {
+	return url + "?autoAssignAlerts=true"
+>>>>>>> adding autoAssignAlerts
 }
