@@ -55,7 +55,12 @@ func (c *client) Create(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "checks", data)
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks"),
+		data,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +87,7 @@ func (c *client) Update(
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodPut,
-		fmt.Sprintf("checks/%s", ID),
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
 		data,
 	)
 	if err != nil {
@@ -156,7 +161,12 @@ func (c *client) CreateGroup(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "check-groups", data)
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("check-groups"),
+		data,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +222,7 @@ func (c *client) UpdateGroup(
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodPut,
-		fmt.Sprintf("check-groups/%d", ID),
+		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
 		data,
 	)
 	if err != nil {
@@ -735,4 +745,12 @@ func (c *client) apiCall(
 		return resp.StatusCode, "", fmt.Errorf("HTTP request failed: %v", err)
 	}
 	return resp.StatusCode, string(res), nil
+}
+
+func withAutoAssignAlertsFlag(url string) string {
+	flag := "autoAssignAlerts=false"
+	if strings.Contains(url, "?") {
+		return url + "&" + flag
+	}
+	return url + "?" + flag
 }

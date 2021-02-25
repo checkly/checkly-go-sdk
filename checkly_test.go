@@ -89,11 +89,12 @@ var wantCheck = checkly.Check{
 			AlertThreshold: 30,
 		},
 	},
-	UseGlobalAlertSettings: false,
-	DegradedResponseTime:   15000,
-	MaxResponseTime:        30000,
-	GroupID:                0,
-	GroupOrder:             0,
+	UseGlobalAlertSettings:    false,
+	DegradedResponseTime:      15000,
+	MaxResponseTime:           30000,
+	GroupID:                   0,
+	GroupOrder:                0,
+	AlertChannelSubscriptions: nil,
 }
 
 func cannedResponseServer(
@@ -152,7 +153,7 @@ func TestAPIError(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks",
+		"/v1/checks?autoAssignAlerts=false",
 		validateAnything,
 		http.StatusBadRequest,
 		"BadRequest.json",
@@ -172,7 +173,7 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks",
+		"/v1/checks?autoAssignAlerts=false",
 		validateCheck,
 		http.StatusCreated,
 		"CreateCheck.json",
@@ -212,7 +213,7 @@ func TestUpdate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/checks/%s", wantCheckID),
+		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
 		validateCheck,
 		http.StatusOK,
 		"UpdateCheck.json",
@@ -332,7 +333,7 @@ func TestCreateGroup(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/check-groups",
+		"/v1/check-groups?autoAssignAlerts=false",
 		validateGroup,
 		http.StatusCreated,
 		"CreateGroup.json",
@@ -374,7 +375,7 @@ func TestUpdateGroup(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/check-groups/%d", wantGroupID),
+		fmt.Sprintf("/v1/check-groups/%d?autoAssignAlerts=false", wantGroupID),
 		validateGroup,
 		http.StatusOK,
 		"UpdateGroup.json",
