@@ -151,7 +151,7 @@ func TestAPIError(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks",
+		"/v1/checks?autoAssignAlerts=true",
 		validateAnything,
 		http.StatusBadRequest,
 		"BadRequest.json",
@@ -173,7 +173,7 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks",
+		"/v1/checks?autoAssignAlerts=true",
 		validateCheck,
 		http.StatusCreated,
 		"CreateCheck.json",
@@ -217,7 +217,7 @@ func TestUpdate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/checks/%s", wantCheckID),
+		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=true", wantCheckID),
 		validateCheck,
 		http.StatusOK,
 		"UpdateCheck.json",
@@ -341,7 +341,7 @@ func TestCreateGroup(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/check-groups",
+		"/v1/check-groups?autoAssignAlerts=true",
 		validateGroup,
 		http.StatusCreated,
 		"CreateGroup.json",
@@ -385,7 +385,7 @@ func TestUpdateGroup(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/check-groups/%d", wantGroupID),
+		fmt.Sprintf("/v1/check-groups/%d?autoAssignAlerts=true", wantGroupID),
 		validateGroup,
 		http.StatusOK,
 		"UpdateGroup.json",

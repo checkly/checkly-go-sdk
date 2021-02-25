@@ -35,7 +35,11 @@ func (c *Client) Create(check Check) (Check, error) {
 	if err != nil {
 		return Check{}, err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPost, "checks", data)
+	status, res, err := c.MakeAPICall(
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks"),
+		data,
+	)
 	if err != nil {
 		return Check{}, err
 	}
@@ -56,7 +60,11 @@ func (c *Client) Update(ID string, check Check) (Check, error) {
 	if err != nil {
 		return Check{}, err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("checks/%s", ID), data)
+	status, res, err := c.MakeAPICall(
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
+		data,
+	)
 	if err != nil {
 		return Check{}, err
 	}
@@ -107,7 +115,11 @@ func (c *Client) CreateGroup(group Group) (Group, error) {
 	if err != nil {
 		return Group{}, err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPost, "check-groups", data)
+	status, res, err := c.MakeAPICall(
+		http.MethodPost,
+		withAutoAssignAlertsFlag("check-groups"),
+		data,
+	)
 	if err != nil {
 		return Group{}, err
 	}
@@ -146,7 +158,11 @@ func (c *Client) UpdateGroup(ID int64, group Group) (Group, error) {
 	if err != nil {
 		return Group{}, err
 	}
-	status, res, err := c.MakeAPICall(http.MethodPut, fmt.Sprintf("check-groups/%d", ID), data)
+	status, res, err := c.MakeAPICall(
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
+		data,
+	)
 	if err != nil {
 		return Group{}, err
 	}
@@ -251,13 +267,6 @@ func (c *Client) GetCheckResults(
 // returns the HTTP status code and string data of the response.
 func (c *Client) MakeAPICall(method string, URL string, data []byte) (statusCode int, response string, err error) {
 	requestURL := c.URL + "/v1/" + URL
-	{ //for deprecating the old auto assigning of alert channels to checks
-		m := strings.ToLower(method)
-		if (m == "post" || m == "put") &&
-			(strings.Contains(URL, "checks") || strings.Contains(URL, "check-groups")) {
-			requestURL = requestURL + "?autoAssignAlerts=true"
-		}
-	}
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
@@ -595,4 +604,8 @@ func alertChannelFromJSON(response string) (*AlertChannel, error) {
 		resultAc.SetConfig(c)
 	}
 	return resultAc, nil
+}
+
+func withAutoAssignAlertsFlag(url string) string {
+	return url + "?autoAssignAlerts=true"
 }
