@@ -256,6 +256,7 @@ type Check struct {
 	Name                      string                     `json:"name"`
 	Type                      string                     `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
@@ -265,7 +266,7 @@ type Check struct {
 	Script                    string                     `json:"script,omitempty"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
-	Tags                      []string                   `json:"tags"`
+	Tags                      []string                   `json:"tags,omitempty"`
 	SSLCheck                  bool                       `json:"sslCheck"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
