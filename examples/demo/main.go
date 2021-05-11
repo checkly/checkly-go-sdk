@@ -191,11 +191,11 @@ func main() {
 	// client.Debug = os.Stdout
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
-	// group, err := client.CreateGroup(ctx, group)
-	// if err != nil {
-	// 	log.Fatalf("creating group: %v", err)
-	// }
-	// fmt.Printf("New check group created with ID %d\n", group.ID)
+	group, err := client.CreateGroup(ctx, group)
+	if err != nil {
+		log.Fatalf("creating group: %v", err)
+	}
+	fmt.Printf("New check group created with ID %d\n", group.ID)
 
 	for _, check := range []checkly.Check{apiCheck, browserCheck} {
 		gotCheck, err := client.Create(ctx, check)
