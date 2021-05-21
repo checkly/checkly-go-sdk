@@ -1,26 +1,29 @@
+# Checkly Go SDK
+
 [![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)[![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)
 
-# checkly
+> 🦦 Go SDK library for use with the Checkly API
 
-`checkly` is a Go library for the [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) website monitoring service. It allows you to create new checks, get data on existing checks, and delete checks.
+## 👀 Overview
 
-While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
+This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
 
-https://github.com/checkly/terraform-provider-checkly
+While you can manage your Checkly account entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly [Terraform provider](https://github.com/checkly/terraform-provider-checkly) (which is built on top of this library):
 
-## Setting your API key
+<br>
+
+## 🪛 How to use?
 
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
 
-## Using the Go library
 
-Import the library using:
+### Import the SDK
 
 ```go
 import checkly "github.com/checkly/checkly-go-sdk"
 ```
 
-## Creating a client
+### Create a client
 
 Create a new `Client` by calling `checkly.NewClient()` with your API key:
 
@@ -35,8 +38,7 @@ client := checkly.NewClient(
 )
 ```
 
-
-## Creating a new check
+### Create a check
 
 Once you have a client, you can create a check. First, populate a Check struct with the parameters you want:
 
@@ -136,7 +138,7 @@ check := checkly.Check{
 }
 ```
 
-## Retrieving a check
+### Retrieve a check
 
 `client.Get(ctx, ID)` finds an existing check by ID and returns a Check struct containing its details:
 
@@ -147,7 +149,7 @@ fmt.Println(check.Name)
 
 ```
 
-## Updating a check
+### Update a check
 
 `client.Update(ctx, ID, check)` updates an existing check with the specified details. For example, to change the name of a check:
 
@@ -158,7 +160,7 @@ check.Name = "My updated check name"
 updatedCheck, err = client.Update(ctx, ID, check)
 ```
 
-## Deleting a check
+### Delete a check
 
 Use `client.Delete(ctx, ID)` to delete a check by ID.
 
@@ -166,7 +168,7 @@ Use `client.Delete(ctx, ID)` to delete a check by ID.
 err := client.Delete(ctx, "73d29ea2-6540-4bb5-967e-e07fa2c9465e")
 ```
 
-## Creating a new check group
+### Create a check group
 
 Checkly checks can be combined into a group, so that you can configure default values for all the checks within it:
 
@@ -240,11 +242,15 @@ var wantGroup = checkly.Group{
 group, err := client.CreateGroup(ctx, wantGroup)
 ```
 
-## A complete example program
+<br>
+
+## 👌 A complete example program!
 
 You can see an example program which creates a Checkly check in the [examples/demo](examples/demo/main.go) folder.
 
-## Debugging
+<br>
+
+## 🐛 Debugging
 
 If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
 
@@ -320,10 +326,28 @@ Via: 1.1 vegur
 0
 ```
 
-## Bugs and feature requests
+<br>
+
+## 📝 Bugs and feature requests
 
 If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/checkly/checkly-go-sdk/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
 Not all the functionality of the Checkly API is implemented yet.
 
 Pull requests welcome!
+
+<br>
+
+## 📄 License
+
+[MIT](https://github.com/checkly/checkly-go-sdk/blob/master/LICENSE)
+
+<h3 align="center">Supported by</h3>
+<p align="center">
+  <a href="https://checklyhq.com?utm_source=github&utm_medium=sponsor-logo-github&utm_campaign=headless-recorder" target="_blank">
+  <img width="200px" src="./checkly.png" alt="Checkly" />
+  </a>
+  <br />
+  <i><sub>Delightful Active Monitoring for Developers</sub></i>
+<p>
+
