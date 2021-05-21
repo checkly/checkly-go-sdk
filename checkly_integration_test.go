@@ -35,6 +35,7 @@ func setupClient(t *testing.T) checkly.Client {
 
 func TestCreateIntegration(t *testing.T) {
 	client := setupClient(t)
+
 	gotCheck, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)

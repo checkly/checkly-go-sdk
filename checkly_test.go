@@ -147,7 +147,7 @@ func validateEmptyBody(t *testing.T, body []byte) {
 func validateAnything(*testing.T, []byte) {
 }
 
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions")
+var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
