@@ -6,11 +6,9 @@
 
 ## 👀 Overview
 
-`checkly` is a Go library for the [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) website monitoring service. It allows you to create new checks, get data on existing checks, and delete checks.
+This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
 
-While you can manage your Checkly checks entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly Terraform provider (which in turn uses this library):
-
-https://github.com/checkly/terraform-provider-checkly
+While you can manage your Checkly account entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly [Terraform provider](https://github.com/checkly/terraform-provider-checkly) (which is built on top of this library):
 
 <br>
 
@@ -19,7 +17,7 @@ https://github.com/checkly/terraform-provider-checkly
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
 
 
-### Import the library
+### Import the SDK
 
 ```go
 import checkly "github.com/checkly/checkly-go-sdk"
