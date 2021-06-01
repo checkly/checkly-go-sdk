@@ -289,5 +289,46 @@ func TestAlertChannelOpsgenie(t *testing.T) {
 			ac.Opsgenie.Priority,
 		)
 	}
+}
 
+func TestAlertChannelPagerduty(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: checkly.AlertTypePagerduty,
+	}
+
+	cfg := checkly.AlertChannelPagerduty{
+		Account:     "foo",
+		ServiceKey:  "xxx",
+		ServiceName: "bar",
+	}
+	ac.SetConfig(&cfg)
+
+	if ac.Pagerduty == nil {
+		t.Error("Config shouldn't be nil")
+		return
+	}
+
+	if ac.Pagerduty.Account != cfg.Account {
+		t.Errorf(
+			"Expected: `%s`, got: `%s`",
+			cfg.Account,
+			ac.Pagerduty.Account,
+		)
+	}
+
+	if ac.Pagerduty.ServiceKey != cfg.ServiceKey {
+		t.Errorf(
+			"Expected: `%s`, got:`%s`",
+			cfg.ServiceKey,
+			ac.Pagerduty.ServiceKey,
+		)
+	}
+
+	if ac.Pagerduty.ServiceName != cfg.ServiceName {
+		t.Errorf(
+			"Expected: `%s`, got: `%s`",
+			cfg.ServiceName,
+			ac.Pagerduty.ServiceName,
+		)
+	}
 }

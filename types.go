@@ -480,6 +480,13 @@ type AlertChannelOpsgenie struct {
 	Priority string `json:"priority"`
 }
 
+//AlertChannelPagerduty defines a type for an pager duty alert channel
+type AlertChannelPagerduty struct {
+	Account     string `json:"account,omitempty"`
+	ServiceKey  string `json:"serviceKey"`
+	ServiceName string `json:"serviceName,omitempty"`
+}
+
 //AlertChannelWebhook defines a type for a webhook alert channel
 type AlertChannelWebhook struct {
 	Name            string     `json:"name"`
@@ -494,20 +501,21 @@ type AlertChannelWebhook struct {
 // AlertChannel represents an alert channel and its subscribed checks. The API
 // defines this data as read-only.
 type AlertChannel struct {
-	ID                 int64                 `json:"id,omitempty"`
-	Type               string                `json:"type"`
-	CreatedAt          time.Time             `json:"created_at"`
-	UpdatedAt          time.Time             `json:"updated_at"`
-	Email              *AlertChannelEmail    `json:"-"`
-	Slack              *AlertChannelSlack    `json:"-"`
-	SMS                *AlertChannelSMS      `json:"-"`
-	Opsgenie           *AlertChannelOpsgenie `json:"-"`
-	Webhook            *AlertChannelWebhook  `json:"-"`
-	SendRecovery       *bool                 `json:"sendRecovery"`
-	SendFailure        *bool                 `json:"sendFailure"`
-	SendDegraded       *bool                 `json:"sendDegraded"`
-	SSLExpiry          *bool                 `json:"sslExpiry"`
-	SSLExpiryThreshold *int                  `json:"sslExpiryThreshold"`
+	ID                 int64                  `json:"id,omitempty"`
+	Type               string                 `json:"type"`
+	CreatedAt          time.Time              `json:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at"`
+	Email              *AlertChannelEmail     `json:"-"`
+	Slack              *AlertChannelSlack     `json:"-"`
+	SMS                *AlertChannelSMS       `json:"-"`
+	Opsgenie           *AlertChannelOpsgenie  `json:"-"`
+	Webhook            *AlertChannelWebhook   `json:"-"`
+	Pagerduty          *AlertChannelPagerduty `json:"-"`
+	SendRecovery       *bool                  `json:"sendRecovery"`
+	SendFailure        *bool                  `json:"sendFailure"`
+	SendDegraded       *bool                  `json:"sendDegraded"`
+	SSLExpiry          *bool                  `json:"sslExpiry"`
+	SSLExpiryThreshold *int                   `json:"sslExpiryThreshold"`
 }
 
 //SetConfig sets config of alert channel based on it's type
@@ -523,6 +531,8 @@ func (a *AlertChannel) SetConfig(cfg interface{}) {
 		a.Webhook = cfg.(*AlertChannelWebhook)
 	case *AlertChannelOpsgenie:
 		a.Opsgenie = cfg.(*AlertChannelOpsgenie)
+	case *AlertChannelPagerduty:
+		a.Pagerduty = cfg.(*AlertChannelPagerduty)
 	default:
 		log.Printf("Unknown config type %v", v)
 	}
@@ -539,10 +549,12 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 		byts, err = json.Marshal(a.SMS)
 	case AlertTypeSlack:
 		byts, err = json.Marshal(a.Slack)
-	case AlertTypeWebhook:
-		byts, err = json.Marshal(a.Webhook)
 	case AlertTypeOpsgenie:
 		byts, err = json.Marshal(a.Opsgenie)
+	case AlertTypePagerduty:
+		byts, err = json.Marshal(a.Pagerduty)
+	case AlertTypeWebhook:
+		byts, err = json.Marshal(a.Webhook)
 	}
 
 	if err != nil {
@@ -569,6 +581,10 @@ func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}
 		return &r, nil
 	case AlertTypeOpsgenie:
 		r := AlertChannelOpsgenie{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypePagerduty:
+		r := AlertChannelPagerduty{}
 		json.Unmarshal(cfgJSON, &r)
 		return &r, nil
 	case AlertTypeWebhook:
