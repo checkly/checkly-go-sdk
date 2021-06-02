@@ -190,7 +190,6 @@ type client struct {
 }
 
 // Check type constants
-
 type CheckType string
 
 // TypeBrowser is used to identify a browser check.
