@@ -1,6 +1,9 @@
 # Checkly Go SDK
 
 [![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)[![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/checkly/checkly-go-sdk)
+[![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
+
 
 > 🦦 Go SDK library for use with the Checkly API
 
@@ -325,6 +328,14 @@ Via: 1.1 vegur
 "id":"29815146-8ab5-492d-a092-9912c1ab8333"}
 0
 ```
+
+<br>
+
+##  🚀 Release
+
+Release process is automatically handled using tags and the `release` GitHub Action. To create a new release, you have to create and push a new version tag: `vX.X.X`
+
+>  🔢 When creating a new tag, be sure to follow [SemVer](https://semver.org/).
 
 <br>
 
