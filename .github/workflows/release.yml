@@ -1,0 +1,32 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v1
+
+      -
+        name: Zip Release
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: checkly-go-sdk.zip
+          exclusions: '*.git* *_test.go /*testdata/* /*examples/* checkly.png'
+
+      -
+        name: Upload Release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          prerelease: true
+          artifacts: checkly-go-sdk.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
