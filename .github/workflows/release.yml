@@ -1,0 +1,28 @@
+name: Releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+
+jobs:
+  tagged-release:
+    name: Tagged Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # ...
+      - name: Zip
+        run: |
+          zip checkly-go-sdk.zip */**
+          tar -czf checkly-go-sdk.tar.gz .
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          draft: true
+          prerelease: true
+          files: |
+            checkly-go-sdk.zip
+            checkly-go-sdk.tar.gz
