@@ -211,7 +211,7 @@ type Check struct {
 	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
 	LocalSetupScript          string                     `json:"localSetupScript"`
 	LocalTearDownScript       string                     `json:"localTearDownScript"`
-	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	AlertSettings             *AlertSettings              `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	Request                   Request                    `json:"request"`
 	GroupID                   *int64                     `json:"groupId"`
@@ -226,9 +226,9 @@ type Request struct {
 	FollowRedirects bool        `json:"followRedirects"`
 	Body            string      `json:"body"`
 	BodyType        string      `json:"bodyType,omitempty"`
-	Headers         []KeyValue  `json:"headers"`
-	QueryParameters []KeyValue  `json:"queryParameters"`
-	Assertions      []Assertion `json:"assertions"`
+	Headers         []KeyValue  `json:"headers,omitempty"`
+	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
+	Assertions      []Assertion `json:"assertions,omitempty"`
 	BasicAuth       *BasicAuth  `json:"basicAuth,omitempty"`
 }
 
@@ -269,11 +269,11 @@ type EnvironmentVariable struct {
 
 // AlertSettings represents an alert configuration.
 type AlertSettings struct {
-	EscalationType      string              `json:"escalationType,omitempty"`
-	RunBasedEscalation  RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
-	TimeBasedEscalation TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
-	Reminders           Reminders           `json:"reminders,omitempty"`
-	SSLCertificates     SSLCertificates     `json:"sslCertificates,omitempty"`
+	EscalationType      string               `json:"escalationType,omitempty"`
+	RunBasedEscalation  *RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
+	TimeBasedEscalation *TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
+	Reminders           *Reminders           `json:"reminders,omitempty"`
+	SSLCertificates     *SSLCertificates     `json:"sslCertificates,omitempty"`
 }
 
 // RunBasedEscalation represents an alert escalation based on a number of failed
