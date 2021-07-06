@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/checkly/checkly-go-sdk"
 )
@@ -29,7 +31,8 @@ var alertSettings = checkly.AlertSettings{
 var apiCheck = checkly.Check{
 	Name:                 "My API Check",
 	Type:                 checkly.TypeAPI,
-	Frequency:            5,
+	Frequency:            10,
+	FrequencyOffset:      1,
 	DegradedResponseTime: 5000,
 	MaxResponseTime:      15000,
 	Activated:            true,
@@ -79,7 +82,7 @@ var apiCheck = checkly.Check{
 var browserCheck = checkly.Check{
 	Name:          "My Browser Check",
 	Type:          checkly.TypeBrowser,
-	Frequency:     5,
+	Frequency:     10,
 	Activated:     true,
 	Muted:         false,
 	ShouldFail:    false,
@@ -167,11 +170,6 @@ var group = checkly.Group{
 			AlertThreshold: 30,
 		},
 	},
-	AlertChannelSubscriptions: []checkly.Subscription{
-		{
-			Activated: true,
-		},
-	},
 	LocalSetupScript:    "setup-test",
 	LocalTearDownScript: "teardown-test",
 }
@@ -181,16 +179,26 @@ func main() {
 	if apiKey == "" {
 		log.Fatal("no CHECKLY_API_KEY set")
 	}
-	client := checkly.NewClient(apiKey)
+
+	baseUrl := "https://api.checklyhq.com"
+	client := checkly.NewClient(
+		baseUrl,
+		apiKey,
+		nil, //custom http client, defaults to http.DefaultClient
+		nil, //io.Writer to output debug messages
+	)
 	// uncomment this to enable dumping of API requests and responses
 	// client.Debug = os.Stdout
-	group, err := client.CreateGroup(group)
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
+
+	group, err := client.CreateGroup(ctx, group)
 	if err != nil {
 		log.Fatalf("creating group: %v", err)
 	}
 	fmt.Printf("New check group created with ID %d\n", group.ID)
+
 	for _, check := range []checkly.Check{apiCheck, browserCheck} {
-		gotCheck, err := client.Create(check)
+		gotCheck, err := client.Create(ctx, check)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -1,110 +1,222 @@
 package checkly
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
 
-// Client represents a Checkly client. If the Debug field is set to an io.Writer
+// Client is an interface that implements Checkly's API
+type Client interface {
+	// Create creates a new check with the specified details.
+	// It returns the newly-created check, or an error.
+	Create(
+		ctx context.Context,
+		check Check,
+	) (*Check, error)
+
+	// Update updates an existing check with the specified details.
+	// It returns the updated check, or an error.
+	Update(
+		ctx context.Context,
+		ID string,
+		check Check,
+	) (*Check, error)
+
+	// Delete deletes the check with the specified ID.
+	// It returns a non-nil error if the request failed.
+	Delete(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// Get takes the ID of an existing check, and returns the check parameters,
+	// or an error.
+	Get(
+		ctx context.Context,
+		ID string,
+	) (*Check, error)
+
+	// CreateGroup creates a new check group with the specified details.
+	// It returns the newly-created group, or an error.
+	CreateGroup(
+		ctx context.Context,
+		group Group,
+	) (*Group, error)
+
+	// GetGroup takes the ID of an existing check group, and returns the
+	// corresponding group, or an error.
+	GetGroup(
+		ctx context.Context,
+		ID int64,
+	) (*Group, error)
+
+	// UpdateGroup takes the ID of an existing check group, and updates the
+	// corresponding check group to match the supplied group. It returns the updated
+	// group, or an error.
+	UpdateGroup(
+		ctx context.Context,
+		ID int64,
+		group Group,
+	) (*Group, error)
+
+	// DeleteGroup deletes the check group with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteGroup(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// GetCheckResult gets a specific Check result, or it returns an error.
+	GetCheckResult(
+		ctx context.Context,
+		checkID,
+		checkResultID string,
+	) (*CheckResult, error)
+
+	// GetCheckResults gets the results of the given Check
+	GetCheckResults(
+		ctx context.Context,
+		checkID string,
+		filters *CheckResultsFilter,
+	) ([]CheckResult, error)
+
+	// CreateSnippet creates a new snippet with the specified details. It returns
+	// the newly-created snippet, or an error.
+	CreateSnippet(
+		ctx context.Context,
+		snippet Snippet,
+	) (*Snippet, error)
+
+	// GetSnippet takes the ID of an existing snippet, and returns the
+	// corresponding snippet, or an error.
+	GetSnippet(
+		ctx context.Context,
+		ID int64,
+	) (*Snippet, error)
+
+	// UpdateSnippet takes the ID of an existing snippet, and updates the
+	// corresponding snippet to match the supplied snippet. It returns the updated
+	// snippet, or an error.
+	UpdateSnippet(
+		ctx context.Context,
+		ID int64,
+		snippet Snippet,
+	) (*Snippet, error)
+
+	// DeleteSnippet deletes the snippet with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteSnippet(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// CreateEnvironmentVariable creates a new environment variable with the
+	// specified details.  It returns the newly-created environment variable,
+	// or an error.
+	CreateEnvironmentVariable(
+		ctx context.Context,
+		envVar EnvironmentVariable,
+	) (*EnvironmentVariable, error)
+
+	// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
+	// corresponding environment variable, or an error.
+	GetEnvironmentVariable(
+		ctx context.Context,
+		key string,
+	) (*EnvironmentVariable, error)
+
+	// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
+	// corresponding environment variable to match the supplied environment variable. It returns the updated
+	// environment variable, or an error.
+	UpdateEnvironmentVariable(
+		ctx context.Context,
+		key string,
+		envVar EnvironmentVariable,
+	) (*EnvironmentVariable, error)
+
+	// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteEnvironmentVariable(
+		ctx context.Context,
+		key string,
+	) error
+
+	// CreateAlertChannel creates a new alert channel with the specified details. It returns
+	// the newly-created alert channel, or an error.
+	CreateAlertChannel(
+		ctx context.Context,
+		ac AlertChannel,
+	) (*AlertChannel, error)
+
+	// GetAlertChannel takes the ID of an existing alert channel, and returns the
+	// corresponding alert channel, or an error.
+	GetAlertChannel(
+		ctx context.Context,
+		ID int64,
+	) (*AlertChannel, error)
+
+	// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
+	// corresponding alert channel to match the supplied alert channel. It returns the updated
+	// alert channel, or an error.
+	UpdateAlertChannel(
+		ctx context.Context,
+		ID int64,
+		ac AlertChannel,
+	) (*AlertChannel, error)
+
+	// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
+	// non-nil error if the request failed.
+	DeleteAlertChannel(
+		ctx context.Context,
+		ID int64,
+	) error
+}
+
+// client represents a Checkly client. If the Debug field is set to an io.Writer
 // (for example os.Stdout), then the client will dump API requests and responses
 // to it.  To use a non-default HTTP client (for example, for testing, or to set
 // a timeout), assign to the HTTPClient field. To set a non-default URL (for
 // example, for testing), assign to the URL field.
-type Client struct {
+type client struct {
 	apiKey     string
-	URL        string
-	HTTPClient *http.Client
-	Debug      io.Writer
+	url        string
+	httpClient *http.Client
+	debug      io.Writer
 }
-
-// Check type constants
-
-type CheckType string
-
-// TypeBrowser is used to identify a browser check.
-const TypeBrowser = "BROWSER"
-
-// TypeAPI is used to identify an API check.
-const TypeAPI = "API"
-
-// Escalation type constants
-
-// RunBased identifies a run-based escalation type, for use with an AlertSettings.
-const RunBased = "RUN_BASED"
-
-// TimeBased identifies a time-based escalation type, for use with an AlertSettings.
-const TimeBased = "TIME_BASED"
-
-// Assertion source constants
-
-// StatusCode identifies the HTTP status code as an assertion source.
-const StatusCode = "STATUS_CODE"
-
-// JSONBody identifies the JSON body data as an assertion source.
-const JSONBody = "JSON_BODY"
-
-// TextBody identifies the response body text as an assertion source.
-const TextBody = "TEXT_BODY"
-
-// Headers identifies the HTTP headers as an assertion source.
-const Headers = "HEADERS"
-
-// ResponseTime identifies the response time as an assertion source.
-const ResponseTime = "RESPONSE_TIME"
-
-// Assertion comparison constants
-
-// Equals asserts that the source and target are equal.
-const Equals = "EQUALS"
-
-// NotEquals asserts that the source and target are not equal.
-const NotEquals = "NOT_EQUALS"
-
-// IsEmpty asserts that the source is empty.
-const IsEmpty = "IS_EMPTY"
-
-// NotEmpty asserts that the source is not empty.
-const NotEmpty = "NOT_EMPTY"
-
-// GreaterThan asserts that the source is greater than the target.
-const GreaterThan = "GREATER_THAN"
-
-// LessThan asserts that the source is less than the target.
-const LessThan = "LESS_THAN"
-
-// Contains asserts that the source contains a specified value.
-const Contains = "CONTAINS"
-
-// NotContains asserts that the source does not contain a specified value.
-const NotContains = "NOT_CONTAINS"
 
 // Check represents the parameters for an existing check.
 type Check struct {
-	ID                     string                `json:"id"`
-	Name                   string                `json:"name"`
-	Type                   string                `json:"checkType"`
-	Frequency              int                   `json:"frequency"`
-	Activated              bool                  `json:"activated"`
-	Muted                  bool                  `json:"muted"`
-	ShouldFail             bool                  `json:"shouldFail"`
-	Locations              []string              `json:"locations,omitempty"`
-	DegradedResponseTime   int                   `json:"degradedResponseTime"`
-	MaxResponseTime        int                   `json:"maxResponseTime"`
-	Script                 string                `json:"script,omitempty"`
-	EnvironmentVariables   []EnvironmentVariable `json:"environmentVariables,omitempty"`
-	DoubleCheck            bool                  `json:"doubleCheck"`
-	Tags                   []string              `json:"tags,omitempty"`
-	SSLCheck               bool                  `json:"sslCheck"`
-	SetupSnippetID         int64                 `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID      int64                 `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript       string                `json:"localSetupScript,omitempty"`
-	LocalTearDownScript    string                `json:"localTearDownScript,omitempty"`
-	AlertSettings          *AlertSettings        `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings bool                  `json:"useGlobalAlertSettings"`
-	Request                Request               `json:"request"`
-	GroupID                int64                 `json:"groupId,omitempty"`
-	GroupOrder             int                   `json:"groupOrder,omitempty"`
+	ID                        string                     `json:"id"`
+	Name                      string                     `json:"name"`
+	Type                      string                     `json:"checkType"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	Script                    string                     `json:"script,omitempty"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	SSLCheck                  bool                       `json:"sslCheck"`
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          string                     `json:"localSetupScript"`
+	LocalTearDownScript       string                     `json:"localTearDownScript"`
+	AlertSettings             *AlertSettings              `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   Request                    `json:"request"`
+	GroupID                   *int64                     `json:"groupId"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -189,44 +301,25 @@ type SSLCertificates struct {
 	AlertThreshold int  `json:"alertThreshold"`
 }
 
-// AlertChannel represents an alert channel and its subscribed checks. The API
-// defines this data as read-only.
-type AlertChannel struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type,omitempty"`
-	Config    map[string]interface{} `json:"config,omitempty"`
-	CreatedAt time.Time              `json:"created_at,omitempty"`
-	UpdatedAt time.Time              `json:"updated_at,omitempty"`
-}
-
-// Subscription represents a subscription to an alert channel. The API defines
-// this data as read-only.
-type Subscription struct {
-	ID             string `json:"id,omitempty"`
-	CheckID        string `json:"checkId,omitempty"`
-	AlertChannelID int64  `json:"alertChannelId,omitempty"`
-	Activated      bool   `json:"activated"`
-}
-
 // Group represents a check group.
 type Group struct {
-	ID                        int64                 `json:"id,omitempty"`
-	Name                      string                `json:"name"`
-	Activated                 bool                  `json:"activated"`
-	Muted                     bool                  `json:"muted"`
-	Tags                      []string              `json:"tags,omitempty"`
-	Locations                 []string              `json:"locations,omitempty"`
-	Concurrency               int                   `json:"concurrency"`
-	APICheckDefaults          APICheckDefaults      `json:"apiCheckDefaults"`
-	EnvironmentVariables      []EnvironmentVariable `json:"environmentVariables,omitempty"`
-	DoubleCheck               bool                  `json:"doubleCheck"`
-	UseGlobalAlertSettings    bool                  `json:"useGlobalAlertSettings"`
-	AlertSettings             AlertSettings         `json:"alertSettings,omitempty"`
-	AlertChannelSubscriptions []Subscription        `json:"alertChannelSubscriptions,omitempty"`
-	SetupSnippetID            int64                 `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                 `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          string                `json:"localSetupScript,omitempty"`
-	LocalTearDownScript       string                `json:"localTearDownScript,omitempty"`
+	ID                        int64                      `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	Tags                      []string                   `json:"tags"`
+	Locations                 []string                   `json:"locations"`
+	Concurrency               int                        `json:"concurrency"`
+	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          string                     `json:"localSetupScript"`
+	LocalTearDownScript       string                     `json:"localTearDownScript"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
@@ -243,7 +336,7 @@ type APICheckDefaults struct {
 type CheckResult struct {
 	ID                  string              `json:"id"`
 	Name                string              `json:"name"`
-	CheckID             string              `"checkId"`
+	CheckID             string              `json:"checkId"`
 	HasFailures         bool                `json:"hasFailures"`
 	HasErrors           bool                `json:"hasErrors"`
 	IsDegraded          bool                `json:"isDegraded"`
@@ -277,10 +370,166 @@ type CheckResultsFilter struct {
 	HasFailures bool
 }
 
+//Snippet defines Snippet type
 type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	Script    string    `json:"script"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+const (
+	AlertTypeEmail     = "EMAIL"
+	AlertTypeSlack     = "SLACK"
+	AlertTypeWebhook   = "WEBHOOK"
+	AlertTypeSMS       = "SMS"
+	AlertTypePagerduty = "PAGERDUTY"
+	AlertTypeOpsgenie  = "OPSGENIE"
+)
+
+// AlertChannelSubscription represents a subscription to an alert channel.
+type AlertChannelSubscription struct {
+	ChannelID int64 `json:"alertChannelId"`
+	Activated bool  `json:"activated"`
+}
+
+//AlertChannelEmail defines a type for an email alert channel
+type AlertChannelEmail struct {
+	Address string `json:"address"`
+}
+
+//AlertChannelSlack defines a type for a slack alert channel
+type AlertChannelSlack struct {
+	WebhookURL string `json:"url"`
+	Channel    string `json:"channel"`
+}
+
+//AlertChannelSMS defines a type for a sms alert channel
+type AlertChannelSMS struct {
+	Name   string `json:"name"`
+	Number string `json:"number"`
+}
+
+//AlertChannelOpsgenie defines a type for an opsgenie alert channel
+type AlertChannelOpsgenie struct {
+	Name     string `json:"name"`
+	APIKey   string `json:"apiKey"`
+	Region   string `json:"region"`
+	Priority string `json:"priority"`
+}
+
+//AlertChannelPagerduty defines a type for an pager duty alert channel
+type AlertChannelPagerduty struct {
+	Account     string `json:"account,omitempty"`
+	ServiceKey  string `json:"serviceKey"`
+	ServiceName string `json:"serviceName,omitempty"`
+}
+
+//AlertChannelWebhook defines a type for a webhook alert channel
+type AlertChannelWebhook struct {
+	Name            string     `json:"name"`
+	Method          string     `json:"method"`
+	Headers         []KeyValue `json:"headers"`
+	QueryParameters []KeyValue `json:"queryParameters"`
+	Template        string     `json:"template"`
+	URL             string     `json:"url"`
+	WebhookSecret   string     `json:"webhookSecret"`
+}
+
+// AlertChannel represents an alert channel and its subscribed checks. The API
+// defines this data as read-only.
+type AlertChannel struct {
+	ID                 int64                  `json:"id,omitempty"`
+	Type               string                 `json:"type"`
+	CreatedAt          time.Time              `json:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at"`
+	Email              *AlertChannelEmail     `json:"-"`
+	Slack              *AlertChannelSlack     `json:"-"`
+	SMS                *AlertChannelSMS       `json:"-"`
+	Opsgenie           *AlertChannelOpsgenie  `json:"-"`
+	Webhook            *AlertChannelWebhook   `json:"-"`
+	Pagerduty          *AlertChannelPagerduty `json:"-"`
+	SendRecovery       *bool                  `json:"sendRecovery"`
+	SendFailure        *bool                  `json:"sendFailure"`
+	SendDegraded       *bool                  `json:"sendDegraded"`
+	SSLExpiry          *bool                  `json:"sslExpiry"`
+	SSLExpiryThreshold *int                   `json:"sslExpiryThreshold"`
+}
+
+//SetConfig sets config of alert channel based on it's type
+func (a *AlertChannel) SetConfig(cfg interface{}) {
+	switch v := cfg.(type) {
+	case *AlertChannelEmail:
+		a.Email = cfg.(*AlertChannelEmail)
+	case *AlertChannelSMS:
+		a.SMS = cfg.(*AlertChannelSMS)
+	case *AlertChannelSlack:
+		a.Slack = cfg.(*AlertChannelSlack)
+	case *AlertChannelWebhook:
+		a.Webhook = cfg.(*AlertChannelWebhook)
+	case *AlertChannelOpsgenie:
+		a.Opsgenie = cfg.(*AlertChannelOpsgenie)
+	case *AlertChannelPagerduty:
+		a.Pagerduty = cfg.(*AlertChannelPagerduty)
+	default:
+		log.Printf("Unknown config type %v", v)
+	}
+}
+
+//GetConfig gets the config of the alert channel based on it's type
+func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
+	byts := []byte{}
+	var err error
+	switch a.Type {
+	case AlertTypeEmail:
+		byts, err = json.Marshal(a.Email)
+	case AlertTypeSMS:
+		byts, err = json.Marshal(a.SMS)
+	case AlertTypeSlack:
+		byts, err = json.Marshal(a.Slack)
+	case AlertTypeOpsgenie:
+		byts, err = json.Marshal(a.Opsgenie)
+	case AlertTypePagerduty:
+		byts, err = json.Marshal(a.Pagerduty)
+	case AlertTypeWebhook:
+		byts, err = json.Marshal(a.Webhook)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(byts, &cfg)
+	return cfg
+}
+
+//AlertChannelConfigFromJSON gets AlertChannel.config from JSON
+func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}, error) {
+	switch channelType {
+	case AlertTypeEmail:
+		r := AlertChannelEmail{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeSMS:
+		r := AlertChannelSMS{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeSlack:
+		r := AlertChannelSlack{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeOpsgenie:
+		r := AlertChannelOpsgenie{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypePagerduty:
+		r := AlertChannelPagerduty{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeWebhook:
+		r := AlertChannelWebhook{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	}
+	return nil, fmt.Errorf("Unknown AlertChannel.config type")
 }

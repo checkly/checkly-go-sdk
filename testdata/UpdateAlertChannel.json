@@ -1,0 +1,9 @@
+{
+    "id":1,
+    "type":"EMAIL",
+    "config":{
+        "address":"test@example.com"
+    },
+    "created_at":"0001-01-14T00:00:00Z",
+    "updated_at":"0001-01-01T00:00:00Z"
+}
