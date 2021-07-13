@@ -277,6 +277,7 @@ type Check struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -380,6 +381,7 @@ type Group struct {
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
 	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
