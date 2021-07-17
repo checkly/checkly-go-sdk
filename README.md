@@ -1,4 +1,13 @@
-# Checkly Go SDK
+<p align="center">
+  <img width="300px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Go_Logo_Blue.svg/1200px-Go_Logo_Blue.svg.png" alt="Golang" />
+</p>
+
+
+<p>
+  <img height="128" src="https://www.checklyhq.com/images/footer-logo.svg" align="right" />
+  <h1>Checkly GO SDKr</h1>
+</p>
+
 
 [![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
 [![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)
@@ -9,6 +18,8 @@
 
 > 🦦 Go SDK library for use with the Checkly API
 
+<br>
+
 ## 👀 Overview
 
 This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
@@ -17,7 +28,7 @@ While you can manage your Checkly account entirely in Go code, using this librar
 
 <br>
 
-## 🪛 How to use?
+## 🔧 How to use?
 
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
 
@@ -355,12 +366,12 @@ Pull requests welcome!
 
 [MIT](https://github.com/checkly/checkly-go-sdk/blob/master/LICENSE)
 
-<h3 align="center">Supported by</h3>
 <p align="center">
   <a href="https://checklyhq.com?utm_source=github&utm_medium=sponsor-logo-github&utm_campaign=headless-recorder" target="_blank">
-  <img width="200px" src="./checkly.png" alt="Checkly" />
+  <img width="100px" src="https://www.checklyhq.com/images/text_racoon_logo.svg" alt="Checkly" />
   </a>
   <br />
   <i><sub>Delightful Active Monitoring for Developers</sub></i>
+  <br>
+  <b><sub>From Checkly with ♥️</sub></b>
 <p>
-
