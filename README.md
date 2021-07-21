@@ -5,7 +5,7 @@
 
 <p>
   <img height="128" src="https://www.checklyhq.com/images/footer-logo.svg" align="right" />
-  <h1>Checkly GO SDKr</h1>
+  <h1>Checkly GO SDK</h1>
 </p>
 
 
