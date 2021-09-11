@@ -185,10 +185,10 @@ func main() {
 		baseUrl,
 		apiKey,
 		nil, //custom http client, defaults to http.DefaultClient
+		// to enable dumping of API requests and responses use (e.g: os.Stdout | os.Stderr)
 		nil, //io.Writer to output debug messages
 	)
-	// uncomment this to enable dumping of API requests and responses
-	// client.Debug = os.Stdout
+
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
 	group, err := client.CreateGroup(ctx, group)
