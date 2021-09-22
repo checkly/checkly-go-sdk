@@ -182,13 +182,16 @@ func main() {
 	}
 
 	baseUrl := "https://api.checklyhq.com"
-	var debug interface{io.Writer} = nil //change nil for os.Stdout to enable dumping of API requests and responses
+	var debug interface{io.Writer} = nil
+	// uncomment this to enable dumping of API requests and responses
+	// debug = os.Stdout 	
 	client := checkly.NewClient(
 		baseUrl,
 		apiKey,
 		nil, //custom http client, defaults to http.DefaultClient
 		debug, //io.Writer to output debug messages
 	)
+
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
 	group, err := client.CreateGroup(ctx, group)
