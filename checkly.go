@@ -21,7 +21,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// NewClient constructs a Checly API client.
+// NewClient constructs a Checkly API client.
 func NewClient(
 	//checkly API's base url
 	baseURL,
