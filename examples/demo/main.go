@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"io"
 	"time"
 
 	"github.com/checkly/checkly-go-sdk"
@@ -181,14 +182,16 @@ func main() {
 	}
 
 	baseUrl := "https://api.checklyhq.com"
+	var debug interface{io.Writer} = nil
+	// uncomment this to enable dumping of API requests and responses
+	// debug = os.Stdout 	
 	client := checkly.NewClient(
 		baseUrl,
 		apiKey,
 		nil, //custom http client, defaults to http.DefaultClient
-		nil, //io.Writer to output debug messages
+		debug, //io.Writer to output debug messages
 	)
-	// uncomment this to enable dumping of API requests and responses
-	// client.Debug = os.Stdout
+
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
 	group, err := client.CreateGroup(ctx, group)
