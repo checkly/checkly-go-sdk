@@ -113,6 +113,19 @@ var browserCheck = checkly.Check{
 	},
 }
 
+var dashboard = checkly.Dashboard{
+	CustomUrl: "string",
+	CustomDomain: "string",
+	Logo: "string",
+	Header: "string",
+	Width: "FULL",
+	RefreshRate: 60,
+	Paginate: true,
+	PaginationRate: 30,
+	Tags: []string{"string"},
+	HideTags: false,
+	}
+
 var group = checkly.Group{
 	Name:        "test",
 	Activated:   true,
@@ -194,17 +207,31 @@ func main() {
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
-	group, err := client.CreateGroup(ctx, group)
+	// group, err := client.CreateGroup(ctx, group)
+	// if err != nil {
+	// 	log.Fatalf("creating group: %v", err)
+	// }
+	// fmt.Printf("New check group created with ID %d\n", group.ID)
+
+	// dashboard, err := client.GetDashboard(ctx, "0")
+	// if err != nil {
+	// 	log.Fatalf("get dashboard: %v", err)
+	// }
+	// fmt.Printf("get %s\n", dashboard.ID)
+
+	dashboard, err := client.CreateDashboard(ctx, dashboard)
 	if err != nil {
 		log.Fatalf("creating group: %v", err)
 	}
-	fmt.Printf("New check group created with ID %d\n", group.ID)
+	fmt.Printf("New check group created with ID %s\n", dashboard.ID)
 
-	for _, check := range []checkly.Check{apiCheck, browserCheck} {
-		gotCheck, err := client.Create(ctx, check)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
-	}
+	// for _, check := range []checkly.Check{apiCheck, browserCheck} {
+	// 	gotCheck, err := client.Create(ctx, check)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	fmt.Printf("New check created with ID %s\n", gotCheck.ID)
+	// }
+
+
 }
