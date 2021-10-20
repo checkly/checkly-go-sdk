@@ -28,6 +28,19 @@ var alertSettings = checkly.AlertSettings{
 	},
 }
 
+var dashboard = checkly.Dashboard{
+  CustomUrl: "string",
+  CustomDomain: "string",
+  Logo: "string",
+  Header: "string",
+  Width: "FULL",
+  RefreshRate: 60,
+  Paginate: true,
+  PaginationRate: 30,
+  Tags: []string{"string"},
+  HideTags: false,
+  }
+
 var apiCheck = checkly.Check{
 	Name:                 "My API Check",
 	Type:                 checkly.TypeAPI,
@@ -211,9 +224,9 @@ func main() {
   // }
   // fmt.Printf("get %s\n", dashboard.ID)
 
-  // dashboard, err := client.CreateDashboard(ctx, dashboard)
-  // if err != nil {
-  //  log.Fatalf("creating group: %v", err)
-  // }
-  // fmt.Printf("New check group created with ID %s\n", dashboard.ID)
+  dashboard, err := client.CreateDashboard(ctx, dashboard)
+  if err != nil {
+   log.Fatalf("creating group: %v", err)
+  }
+  fmt.Printf("New check group created with ID %s\n", dashboard.ID)
 }
