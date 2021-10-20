@@ -175,6 +175,27 @@ type Client interface {
 		ctx context.Context,
 		ID int64,
 	) error
+
+	CreateDashboard(
+		ctx context.Context,
+		dashboard Dashboard,
+	) (*Dashboard, error)
+
+	GetDashboard(
+		ctx context.Context,
+		ID string,
+	) (*Dashboard, error)
+
+	UpdateDashboard(
+		ctx context.Context,
+		ID string,
+		dashboard Dashboard,
+	) (*Dashboard, error)
+
+	DeleteDashboard(
+		ctx context.Context,
+		ID string,
+	) error
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -439,6 +460,21 @@ type Snippet struct {
 	Script    string    `json:"script"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// Dashboard defines a type for a dashboard.
+type Dashboard struct {
+	ID                 string                   `json:"id"`
+	CustomUrl          string                  `json:"customUrl"`
+	CustomDomain       string                  `json:"customDomain"`
+	Logo          	   string                  `json:"logo"`
+	Header             string                  `json:"header"`
+	Width              string                `json:"width"`
+	RefreshRate        int                     `json:"refreshRate"`
+	Paginate           bool                    `json:"paginate"`
+	PaginationRate     int                     `json:"paginationRate"`
+	Tags               []string                `json:"tags"`
+	HideTags           bool                    `json:"hideTags"`
 }
 
 const (
