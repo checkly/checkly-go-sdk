@@ -204,4 +204,16 @@ func main() {
 		}
 		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
+
+	// dashboard, err := client.GetDashboard(ctx, "0")
+  // if err != nil {
+  //  log.Fatalf("get dashboard: %v", err)
+  // }
+  // fmt.Printf("get %s\n", dashboard.ID)
+
+  // dashboard, err := client.CreateDashboard(ctx, dashboard)
+  // if err != nil {
+  //  log.Fatalf("creating group: %v", err)
+  // }
+  // fmt.Printf("New check group created with ID %s\n", dashboard.ID)
 }
