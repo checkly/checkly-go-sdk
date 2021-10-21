@@ -829,7 +829,6 @@ func validateAlertChannel(t *testing.T, body []byte) {
 			)
 		}
 	}
-
 }
 
 func TestCreateAlertChannel(t *testing.T) {
@@ -994,5 +993,47 @@ func TestAlertChannelSetWebookConfig(t *testing.T) {
 	}
 	if ac.Webhook.QueryParameters[0].Value != "v1" {
 		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Value)
+	}
+}
+
+/* ------- ACA 👇 -------- */
+
+func validateDashboard(t *testing.T, body []byte) {
+	var result checkly.Dashboard
+	err := json.Unmarshal(body, &result)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	// if !cmp.Equal(testEnvVariable, result) {
+	// 	t.Error(cmp.Diff(testEnvVariable, result))
+	// }
+}
+
+func getTestDashboard() *checkly.Dashboard {
+	return &checkly.Dashboard{
+		ID:   "1",
+	}
+}
+
+var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "ID")
+
+func TestCreateDashboard(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/dashboards",
+		validateDashboard,
+		http.StatusOK,
+		"CreateAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	ta := getTestDashboard()
+	ac, err := client.CreateDashboard(context.Background(), *ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(ta, ac, ignoreDashboardFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreDashboardFields))
 	}
 }

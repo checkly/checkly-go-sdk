@@ -31,13 +31,13 @@ var alertSettings = checkly.AlertSettings{
 var dashboard = checkly.Dashboard{
   CustomUrl: "string",
   CustomDomain: "string",
-  Logo: "string",
-  Header: "string",
-  Width: "FULL",
+  // Logo: "string",
+  // Header: "string",
+  // Width: "FULL",
   RefreshRate: 60,
   Paginate: true,
   PaginationRate: 30,
-  Tags: []string{"string"},
+  // Tags: []string{"string"},
   HideTags: false,
   }
 
@@ -217,10 +217,4 @@ func main() {
 		}
 		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
-
-	// dashboard, err := client.GetDashboard(ctx, "c22c94fc")
-  // if err != nil {
-  //  log.Fatalf("get dashboard: %v", err)
-  // }
-  // fmt.Printf("dashboard:", dashboard)
 }
