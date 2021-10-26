@@ -1,0 +1,14 @@
+{
+  "customUrl": "dashboard",
+  "customDomain": "dashboard",
+  "logo": "dashboard",
+  "header": "dashboard",
+  "width": "FULL",
+  "refreshRate": 60,
+  "paginate": true,
+  "paginationRate": 30,
+  "hideTags": false,
+  "tags": [
+    "string"
+    ]
+}

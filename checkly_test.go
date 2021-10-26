@@ -998,21 +998,44 @@ func TestAlertChannelSetWebookConfig(t *testing.T) {
 
 /* ------- ACA 👇 -------- */
 
+// func validateDashboard(t *testing.T, body []byte) {
+// 	var result checkly.Dashboard
+// 	err := json.Unmarshal(body, &result)
+// 	if err != nil {
+// 		t.Fatalf("decoding error for data %q: %v", body, err)
+// 	}
+// }
+
+// func getTestDashboard() *checkly.Dashboard {
+// 	return &checkly.Dashboard{
+// 		ID:   "1",
+// 	}
+// }
+
 func validateDashboard(t *testing.T, body []byte) {
-	var result checkly.Dashboard
-	err := json.Unmarshal(body, &result)
+	var gotDashboard checkly.Dashboard
+	err := json.Unmarshal(body, &gotDashboard)
 	if err != nil {
 		t.Fatalf("decoding error for data %q: %v", body, err)
 	}
-	// if !cmp.Equal(testEnvVariable, result) {
-	// 	t.Error(cmp.Diff(testEnvVariable, result))
-	// }
+	if !cmp.Equal(testDashboard, gotDashboard) {
+		t.Error(cmp.Diff(testDashboard, gotDashboard))
+	}
 }
 
-func getTestDashboard() *checkly.Dashboard {
-	return &checkly.Dashboard{
-		ID:   "1",
-	}
+
+var testDashboard = checkly.Dashboard{
+	ID: "1",
+	CustomUrl: "dashboard",
+  CustomDomain: "dashboard",
+	Logo: "dashboard",
+  Header: "dashboard",
+	Width: "FULL",
+  RefreshRate: 60,
+  Paginate: true,
+  PaginationRate: 30,
+  Tags: []string{"string"},
+  HideTags: false,
 }
 
 var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "ID")
@@ -1023,17 +1046,96 @@ func TestCreateDashboard(t *testing.T) {
 		http.MethodPost,
 		"/v1/dashboards",
 		validateDashboard,
-		http.StatusOK,
-		"CreateAlertChannelEmail.json",
+		http.StatusCreated,
+		"CreateDashboard.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	ta := getTestDashboard()
-	ac, err := client.CreateDashboard(context.Background(), *ta)
+	gotDashboard, err := client.CreateDashboard(context.Background(), testDashboard)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cmp.Equal(ta, ac, ignoreDashboardFields) {
-		t.Error(cmp.Diff(ta, ac, ignoreDashboardFields))
+	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
+		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
 	}
 }
+
+// func TestCreateDashboard(t *testing.T) {
+// 	t.Parallel()
+// 	ts := cannedResponseServer(t,
+// 		http.MethodPost,
+// 		"/v1/dashboards",
+// 		validateDashboard,
+// 		http.StatusOK,
+// 		"CreateDashboard.json",
+// 	)
+// 	defer ts.Close()
+// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+// 	ta := getTestDashboard()
+// 	ac, err := client.CreateDashboard(context.Background(), *ta)
+// 	ac, err := client.CreateDashboard(context.Background(), testDashboard)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if !cmp.Equal(testDashboard, *ac, ignoreDashboardFields) {
+// 		t.Error(cmp.Diff(testDashboard, *ac, ignoreDashboardFields))
+// 	}
+// }
+
+// func TestDeleteDashboard(t *testing.T) {
+// 	t.Parallel()
+// 	ta := getTestDashboard()
+// 	ts := cannedResponseServer(t,
+// 		http.MethodDelete,
+// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
+// 		validateEmptyBody,
+// 		http.StatusNoContent,
+// 		"Empty.json",
+// 	)
+// 	defer ts.Close()
+// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+// 	err := client.DeleteDashboard(context.Background(), ta.ID)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }
+
+// func TestUpdateDashboard(t *testing.T) {
+// 	t.Parallel()
+// 	ta := getTestDashboard()
+// 	ts := cannedResponseServer(t,
+// 		http.MethodPut,
+// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
+// 		validateDashboard,
+// 		http.StatusOK,
+// 		"CreateDashboard.json",
+// 	)
+// 	defer ts.Close()
+// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+// 	_, err := client.UpdateDashboard(context.Background(), ta.ID, *ta)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }
+
+// func TestGetDashboard(t *testing.T) {
+// 	return
+// 	t.Parallel()
+// 	ta := getTestDashboard()
+// 	ts := cannedResponseServer(t,
+// 		http.MethodGet,
+// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
+// 		validateDashboard,
+// 		http.StatusOK,
+// 		"CreateDashboard.json",
+// 	)
+// 	defer ts.Close()
+// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+// 	ac, err := client.GetDashboard(context.Background(), ta.ID)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if !cmp.Equal(ta, *ac, ignoreDashboardFields) {
+// 		t.Error(cmp.Diff(ta, *ac, ignoreDashboardFields))
+// 	}
+// }

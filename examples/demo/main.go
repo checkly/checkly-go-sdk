@@ -31,13 +31,13 @@ var alertSettings = checkly.AlertSettings{
 var dashboard = checkly.Dashboard{
   CustomUrl: "string",
   CustomDomain: "string",
-  // Logo: "string",
-  // Header: "string",
-  // Width: "FULL",
+  Logo: "string",
+  Header: "string",
+  Width: "FULL",
   RefreshRate: 60,
   Paginate: true,
   PaginationRate: 30,
-  // Tags: []string{"string"},
+  Tags: []string{"string"},
   HideTags: false,
   }
 
