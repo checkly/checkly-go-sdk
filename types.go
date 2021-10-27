@@ -512,12 +512,12 @@ type AlertChannelPagerduty struct {
 //AlertChannelWebhook defines a type for a webhook alert channel
 type AlertChannelWebhook struct {
 	Name            string     `json:"name"`
-	Method          string     `json:"method"`
-	Headers         []KeyValue `json:"headers"`
-	QueryParameters []KeyValue `json:"queryParameters"`
-	Template        string     `json:"template"`
 	URL             string     `json:"url"`
-	WebhookSecret   string     `json:"webhookSecret"`
+	Method          string     `json:"method,omitempty"`
+	Template        string     `json:"template,omitempty"`
+	WebhookSecret   string     `json:"webhookSecret,omitempty"`
+	Headers         []KeyValue `json:"headers,omitempty"`
+	QueryParameters []KeyValue `json:"queryParameters,omitempty"`
 }
 
 // AlertChannel represents an alert channel and its subscribed checks. The API
