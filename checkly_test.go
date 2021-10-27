@@ -1060,82 +1060,57 @@ func TestCreateDashboard(t *testing.T) {
 	}
 }
 
-// func TestCreateDashboard(t *testing.T) {
-// 	t.Parallel()
-// 	ts := cannedResponseServer(t,
-// 		http.MethodPost,
-// 		"/v1/dashboards",
-// 		validateDashboard,
-// 		http.StatusOK,
-// 		"CreateDashboard.json",
-// 	)
-// 	defer ts.Close()
-// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-// 	ta := getTestDashboard()
-// 	ac, err := client.CreateDashboard(context.Background(), *ta)
-// 	ac, err := client.CreateDashboard(context.Background(), testDashboard)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if !cmp.Equal(testDashboard, *ac, ignoreDashboardFields) {
-// 		t.Error(cmp.Diff(testDashboard, *ac, ignoreDashboardFields))
-// 	}
-// }
+func TestDeleteDashboard(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteDashboard(context.Background(), testDashboard.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
-// func TestDeleteDashboard(t *testing.T) {
-// 	t.Parallel()
-// 	ta := getTestDashboard()
-// 	ts := cannedResponseServer(t,
-// 		http.MethodDelete,
-// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
-// 		validateEmptyBody,
-// 		http.StatusNoContent,
-// 		"Empty.json",
-// 	)
-// 	defer ts.Close()
-// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-// 	err := client.DeleteDashboard(context.Background(), ta.ID)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+func TestUpdateDashboard(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.ID),
+		validateDashboard,
+		http.StatusOK,
+		"CreateDashboard.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateDashboard(context.Background(), testDashboard.ID, testDashboard)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
-// func TestUpdateDashboard(t *testing.T) {
-// 	t.Parallel()
-// 	ta := getTestDashboard()
-// 	ts := cannedResponseServer(t,
-// 		http.MethodPut,
-// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
-// 		validateDashboard,
-// 		http.StatusOK,
-// 		"CreateDashboard.json",
-// 	)
-// 	defer ts.Close()
-// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-// 	_, err := client.UpdateDashboard(context.Background(), ta.ID, *ta)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
-
-// func TestGetDashboard(t *testing.T) {
-// 	return
-// 	t.Parallel()
-// 	ta := getTestDashboard()
-// 	ts := cannedResponseServer(t,
-// 		http.MethodGet,
-// 		fmt.Sprintf("/v1/dashboards/%s", ta.ID),
-// 		validateDashboard,
-// 		http.StatusOK,
-// 		"CreateDashboard.json",
-// 	)
-// 	defer ts.Close()
-// 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-// 	ac, err := client.GetDashboard(context.Background(), ta.ID)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if !cmp.Equal(ta, *ac, ignoreDashboardFields) {
-// 		t.Error(cmp.Diff(ta, *ac, ignoreDashboardFields))
-// 	}
-// }
+func TestGetDashboard(t *testing.T) {
+	return
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.ID),
+		validateDashboard,
+		http.StatusOK,
+		"CreateDashboard.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	ac, err := client.GetDashboard(context.Background(), testDashboard.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testDashboard, *ac, ignoreDashboardFields) {
+		t.Error(cmp.Diff(testDashboard, *ac, ignoreDashboardFields))
+	}
+}

@@ -636,8 +636,7 @@ func (c *client) CreateDashboard(
   if status != http.StatusOK && status != http.StatusCreated {
     return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
   }
-  var result Dashboard
-  return &result, nil
+  return &dashboard, nil
 }
 
 // GetDashboard takes the ID of an existing dashboard, and returns the
