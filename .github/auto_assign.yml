@@ -6,8 +6,9 @@ reviewers:
   - tnolet
   - ianaya89
   - umutuzgur
+  - danielpaulus
 
 skipKeywords:
   - wip
 
-numberOfReviewers: 3
+numberOfReviewers: 4
