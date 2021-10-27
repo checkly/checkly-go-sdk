@@ -622,94 +622,94 @@ func (c *client) DeleteAlertChannel(
 // CreateDashboard creates a new dashboard with the specified details. It returns
 // the newly-created dashboard, or an error.
 func (c *client) CreateDashboard(
-  ctx context.Context,
-  dashboard Dashboard,
+	ctx context.Context,
+	dashboard Dashboard,
 ) (*Dashboard, error) {
-  data, err := json.Marshal(dashboard)
-  if err != nil {
-    return nil, err
-  }
-  status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
-  if err != nil {
-    return nil, err
-  }
-  if status != http.StatusOK && status != http.StatusCreated {
-    return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
-  }
-  return &dashboard, nil
+	data, err := json.Marshal(dashboard)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK && status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
+	}
+	return &dashboard, nil
 }
 
 // GetDashboard takes the ID of an existing dashboard, and returns the
 // corresponding dashboard, or an error.
 func (c *client) GetDashboard(
-  ctx context.Context,
-  ID string,
+	ctx context.Context,
+	ID string,
 ) (*Dashboard, error) {
-  status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("dashboards/%s", ID), nil)
-  if err != nil {
-    return nil, err
-  }
-  if status != http.StatusOK {
-    return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-  }
-  result := Dashboard{}
-  err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-  if err != nil {
-    return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
-  }
-  return &result, nil
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("dashboards/%s", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := Dashboard{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
 }
 
 // DeleteDashboard deletes the dashboard with the specified ID. It returns a
 // non-nil error if the request failed.
 func (c *client) DeleteDashboard(
-  ctx context.Context,
-  ID string,
+	ctx context.Context,
+	ID string,
 ) error {
-  status, res, err := c.apiCall(
-    ctx,
-    http.MethodDelete,
-    fmt.Sprintf("dashboards/%s", ID),
-    nil,
-  )
-  if err != nil {
-    return err
-  }
-  if status != http.StatusNoContent {
-    return fmt.Errorf("unexpected response status %d: %q", status, res)
-  }
-  return nil
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("dashboards/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
 }
 
 // UpdateDashboard takes the ID of an existing alert channel, and updates the
 // corresponding alert channel to match the supplied alert channel. It returns the updated
 // alert channel, or an error.
 func (c *client) UpdateDashboard(
-  ctx context.Context,
-  ID string,
-  dashboard Dashboard,
+	ctx context.Context,
+	ID string,
+	dashboard Dashboard,
 ) (*Dashboard, error) {
-  data, err := json.Marshal(dashboard)
-  if err != nil {
-    return nil, err
-  }
-  status, res, err := c.apiCall(
-    ctx,
-    http.MethodPut, fmt.Sprintf("dashboards/%s", ID),
-    data,
-  )
-  if err != nil {
-    return nil, err
-  }
-  if status != http.StatusOK {
-    return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-  }
-  var result Dashboard
-  err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-  if err != nil {
-    return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
-  }
-  return &result, nil
+	data, err := json.Marshal(dashboard)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut, fmt.Sprintf("dashboards/%s", ID),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result Dashboard
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
 }
 
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {

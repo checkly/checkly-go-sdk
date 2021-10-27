@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
-	"io"
 	"time"
 
 	"github.com/checkly/checkly-go-sdk"
@@ -30,17 +30,17 @@ var alertSettings = checkly.AlertSettings{
 }
 
 var dashboard = checkly.Dashboard{
-  CustomUrl: "string",
-  CustomDomain: "string",
-  Logo: "string",
-  Header: "string",
-  Width: "FULL",
-  RefreshRate: 60,
-  Paginate: true,
-  PaginationRate: 30,
-  Tags: []string{"string"},
-  HideTags: false,
-  }
+	CustomUrl:      "string",
+	CustomDomain:   "string",
+	Logo:           "string",
+	Header:         "string",
+	Width:          "FULL",
+	RefreshRate:    60,
+	Paginate:       true,
+	PaginationRate: 30,
+	Tags:           []string{"string"},
+	HideTags:       false,
+}
 
 var apiCheck = checkly.Check{
 	Name:                 "My API Check",
@@ -195,13 +195,13 @@ func main() {
 	}
 
 	baseUrl := "https://api.checklyhq.com"
-	var debug interface{io.Writer} = nil
+	var debug interface{ io.Writer } = nil
 	// uncomment this to enable dumping of API requests and responses
-	// debug = os.Stdout 	
+	// debug = os.Stdout
 	client := checkly.NewClient(
 		baseUrl,
 		apiKey,
-		nil, //custom http client, defaults to http.DefaultClient
+		nil,   //custom http client, defaults to http.DefaultClient
 		debug, //io.Writer to output debug messages
 	)
 
