@@ -996,22 +996,6 @@ func TestAlertChannelSetWebookConfig(t *testing.T) {
 	}
 }
 
-/* ------- ACA 👇 -------- */
-
-// func validateDashboard(t *testing.T, body []byte) {
-// 	var result checkly.Dashboard
-// 	err := json.Unmarshal(body, &result)
-// 	if err != nil {
-// 		t.Fatalf("decoding error for data %q: %v", body, err)
-// 	}
-// }
-
-// func getTestDashboard() *checkly.Dashboard {
-// 	return &checkly.Dashboard{
-// 		ID:   "1",
-// 	}
-// }
-
 func validateDashboard(t *testing.T, body []byte) {
 	var gotDashboard checkly.Dashboard
 	err := json.Unmarshal(body, &gotDashboard)
