@@ -177,25 +177,25 @@ type Client interface {
 	) error
 
 	CreateDashboard(
-    ctx context.Context,
-    dashboard Dashboard,
-  ) (*Dashboard, error)
+		ctx context.Context,
+		dashboard Dashboard,
+	) (*Dashboard, error)
 
-  GetDashboard(
-    ctx context.Context,
-    ID string,
-  ) (*Dashboard, error)
+	GetDashboard(
+		ctx context.Context,
+		ID string,
+	) (*Dashboard, error)
 
-  UpdateDashboard(
-    ctx context.Context,
-    ID string,
-    dashboard Dashboard,
-  ) (*Dashboard, error)
+	UpdateDashboard(
+		ctx context.Context,
+		ID string,
+		dashboard Dashboard,
+	) (*Dashboard, error)
 
-  DeleteDashboard(
-    ctx context.Context,
-    ID string,
-  ) error
+	DeleteDashboard(
+		ctx context.Context,
+		ID string,
+	) error
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -542,17 +542,17 @@ type AlertChannel struct {
 
 // Dashboard defines a type for a dashboard.
 type Dashboard struct {
-  ID                 string                  `json:"dashboardId"`
-  CustomUrl          string                  `json:"customUrl"`
-  CustomDomain       string                  `json:"customDomain"`
-  Logo               string                  `json:"logo"`
-  Header             string                  `json:"header"`
-  Width              string                  `json:"width,omitempty"`
-  RefreshRate        int                     `json:"refreshRate"`
-  Paginate           bool                    `json:"paginate"`
-  PaginationRate     int                     `json:"paginationRate"`
-  Tags               []string                `json:"tags,omitempty"`
-  HideTags           bool                    `json:"hideTags"`
+	ID             string   `json:"dashboardId"`
+	CustomUrl      string   `json:"customUrl"`
+	CustomDomain   string   `json:"customDomain"`
+	Logo           string   `json:"logo"`
+	Header         string   `json:"header"`
+	Width          string   `json:"width,omitempty"`
+	RefreshRate    int      `json:"refreshRate"`
+	Paginate       bool     `json:"paginate"`
+	PaginationRate int      `json:"paginationRate"`
+	Tags           []string `json:"tags,omitempty"`
+	HideTags       bool     `json:"hideTags"`
 }
 
 //SetConfig sets config of alert channel based on it's type
