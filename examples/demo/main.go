@@ -194,7 +194,11 @@ func main() {
 		log.Fatal("no CHECKLY_API_KEY set")
 	}
 
-	baseUrl := "https://api.checklyhq.com"
+	baseUrl := os.Getenv("CHECKLY_API_URL")
+	if baseUrl == "" {
+		baseUrl = "https://api.checklyhq.com"
+	}
+
 	var debug interface{ io.Writer } = nil
 	// uncomment this to enable dumping of API requests and responses
 	// debug = os.Stdout

@@ -266,6 +266,17 @@ You can see an example program which creates a Checkly check in the [examples/de
 
 <br>
 
+## 🧪 Testing
+
+There are two different set of tests: unite test and integration tests. Both can be run with the `go test` command.
+
+```bash
+$ go test ./... # unit tests
+$ go test ./... -tags=integration # integration tests
+```
+
+<br>
+
 ## 🐛 Debugging
 
 If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
