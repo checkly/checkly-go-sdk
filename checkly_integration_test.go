@@ -157,52 +157,25 @@ func TestCreateDashboardIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteDashboard(context.Background(), gotDashboard.ID)
+	defer client.DeleteDashboard(context.Background(), gotDashboard.DashboardID)
 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
 	}
 }
 
-func TestDeleteDashboardIntegration(t *testing.T) {
-	t.Parallel()
+func TestGetDashboardIntegration(t *testing.T) {
 	client := setupClient(t)
-	err := client.DeleteDashboard(context.Background(), testDashboard.ID)
+	dash, err := client.CreateDashboard(context.Background(), testDashboard)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer client.DeleteDashboard(context.Background(), dash.DashboardID)
+	gotDashboard, err := client.GetDashboard(context.Background(), dash.DashboardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
+		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
+	}
 }
 
-// func TestGetDashboardIntegration(t *testing.T) {
-// 	client := setupClient(t)
-// 	dash, err := client.CreateDashboard(context.Background(), testDashboard)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer client.DeleteDashboard(context.Background(), dash.ID)
-// 	gotDashboard, err := client.GetDashboard(context.Background(), dash.ID)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
-// 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
-// 	}
-// }
-
-// func TestUpdateDashboardIntegration(t *testing.T) {
-// 	t.Parallel()
-// 	client := setupClient(t)
-// 	dash, err := client.CreateDashboard(context.Background(), testDashboard)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer client.DeleteDashboard(context.Background(), dash.ID)
-// 	updatedDashboard := testDashboard
-// 	updatedDashboard.Header = "integrationTestUpdate"
-// 	gotDashboard, err := client.UpdateDashboard(context.Background(), dash.ID, updatedDashboard)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	if !cmp.Equal(updatedDashboard, *gotDashboard, ignoreDashboardFields) {
-// 		t.Error(cmp.Diff(updatedDashboard, *gotDashboard, ignoreDashboardFields))
-// 	}
-// }

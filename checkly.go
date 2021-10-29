@@ -630,13 +630,17 @@ func (c *client) CreateDashboard(
 		return nil, err
 	}
 	status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
+
+	var result Dashboard
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+
 	if err != nil {
 		return nil, err
 	}
 	if status != http.StatusOK && status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
 	}
-	return &dashboard, nil
+	return &result, nil
 }
 
 // GetDashboard takes the ID of an existing dashboard, and returns the
