@@ -268,7 +268,7 @@ You can see an example program which creates a Checkly check in the [examples/de
 
 ## 🧪 Testing
 
-There are two different set of tests: unite test and integration tests. Both can be run with the `go test` command.
+There are two different set of tests: unit test and integration tests. Both can be run with the `go test` command.
 
 ```bash
 $ go test ./... # unit tests

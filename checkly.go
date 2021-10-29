@@ -685,9 +685,9 @@ func (c *client) DeleteDashboard(
 	return nil
 }
 
-// UpdateDashboard takes the ID of an existing alert channel, and updates the
-// corresponding alert channel to match the supplied alert channel. It returns the updated
-// alert channel, or an error.
+// UpdateDashboard takes the ID of an existing dashboard, and updates the
+// corresponding dashboard to match the supplied dashboard. It returns the updated
+// dashboard, or an error.
 func (c *client) UpdateDashboard(
 	ctx context.Context,
 	ID string,
