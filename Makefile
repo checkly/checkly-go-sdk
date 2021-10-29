@@ -1,3 +1,3 @@
 test:
 	go clean -testcache ./...
-	go test ./... -tags=integration
+	go test -v ./... -tags=integration
