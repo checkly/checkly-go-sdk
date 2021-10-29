@@ -23,7 +23,7 @@ func setupClient(t *testing.T) checkly.Client {
 	}
 	apiKey := os.Getenv("CHECKLY_API_KEY")
 	if apiKey == "" {
-		t.Fatal("'CHECKLY_API_KEY' must be set for integration tests")
+		t.Error("'CHECKLY_API_KEY' must be set for integration tests")
 	}
 	return checkly.NewClient(
 		baseUrl,
@@ -39,7 +39,7 @@ func TestCreateIntegration(t *testing.T) {
 
 	gotCheck, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.Delete(context.Background(), gotCheck.ID)
 	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
@@ -51,12 +51,12 @@ func TestGetIntegration(t *testing.T) {
 	client := setupClient(t)
 	check, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.Delete(context.Background(), check.ID)
 	gotCheck, err := client.Get(context.Background(), check.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
 		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
@@ -68,7 +68,7 @@ func TestUpdateIntegration(t *testing.T) {
 	client := setupClient(t)
 	check, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.Delete(context.Background(), check.ID)
 	updatedCheck := wantCheck
@@ -87,7 +87,7 @@ func TestDeleteIntegration(t *testing.T) {
 	client := setupClient(t)
 	check, err := client.Create(context.Background(), wantCheck)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	if err := client.Delete(context.Background(), check.ID); err != nil {
 		t.Error(err)
@@ -117,7 +117,7 @@ func TestCreateGroupIntegration(t *testing.T) {
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
 	gotGroup, err := client.CreateGroup(context.Background(), wantGroupCopy)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.DeleteGroup(context.Background(), gotGroup.ID)
 	// These are set by the APIs
@@ -134,7 +134,7 @@ func TestGetGroupIntegration(t *testing.T) {
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
 	group, err := client.CreateGroup(context.Background(), wantGroupCopy)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.DeleteGroup(context.Background(), group.ID)
 	gotGroup, err := client.GetGroup(context.Background(), group.ID)
@@ -155,7 +155,7 @@ func TestCreateDashboardIntegration(t *testing.T) {
 
 	gotDashboard, err := client.CreateDashboard(context.Background(), testDashboard)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.DeleteDashboard(context.Background(), gotDashboard.DashboardID)
 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
@@ -167,12 +167,12 @@ func TestGetDashboardIntegration(t *testing.T) {
 	client := setupClient(t)
 	dash, err := client.CreateDashboard(context.Background(), testDashboard)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	defer client.DeleteDashboard(context.Background(), dash.DashboardID)
 	gotDashboard, err := client.GetDashboard(context.Background(), dash.DashboardID)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
