@@ -28,7 +28,6 @@ type Client interface {
 	) (*Check, error)
 
 	// Delete deletes the check with the specified ID.
-	// It returns a non-nil error if the request failed.
 	Delete(
 		ctx context.Context,
 		ID string,
@@ -65,7 +64,6 @@ type Client interface {
 	) (*Group, error)
 
 	// DeleteGroup deletes the check group with the specified ID. It returns a
-	// non-nil error if the request failed.
 	DeleteGroup(
 		ctx context.Context,
 		ID int64,
@@ -109,7 +107,6 @@ type Client interface {
 	) (*Snippet, error)
 
 	// DeleteSnippet deletes the snippet with the specified ID. It returns a
-	// non-nil error if the request failed.
 	DeleteSnippet(
 		ctx context.Context,
 		ID int64,
@@ -140,7 +137,6 @@ type Client interface {
 	) (*EnvironmentVariable, error)
 
 	// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
-	// non-nil error if the request failed.
 	DeleteEnvironmentVariable(
 		ctx context.Context,
 		key string,
@@ -170,7 +166,6 @@ type Client interface {
 	) (*AlertChannel, error)
 
 	// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
-	// non-nil error if the request failed.
 	DeleteAlertChannel(
 		ctx context.Context,
 		ID int64,

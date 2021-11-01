@@ -104,8 +104,7 @@ func (c *client) Update(
 	return &result, nil
 }
 
-// Delete deletes the check with the specified ID. It returns a non-nil
-// error if the request failed.
+// Delete deletes the check with the specified ID. 
 func (c *client) Delete(
 	ctx context.Context,
 	ID string,
@@ -239,8 +238,7 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
-// DeleteGroup deletes the check group with the specified ID. It returns a
-// non-nil error if the request failed.
+// DeleteGroup deletes the check group with the specified ID.
 func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
@@ -419,7 +417,6 @@ func (c *client) UpdateSnippet(
 }
 
 // DeleteSnippet deletes the snippet with the specified ID. It returns a
-// non-nil error if the request failed.
 func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,
@@ -518,8 +515,7 @@ func (c *client) UpdateEnvironmentVariable(
 	return &result, nil
 }
 
-// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
-// non-nil error if the request failed.
+// DeleteEnvironmentVariable deletes the environment variable with the specified ID. 
 func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,
@@ -599,7 +595,6 @@ func (c *client) UpdateAlertChannel(
 }
 
 // DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
-// non-nil error if the request failed.
 func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,
@@ -638,7 +633,7 @@ func (c *client) CreateDashboard(
 		return nil, err
 	}
 	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %s", status, res, data)
 	}
 	return &result, nil
 }
@@ -664,8 +659,7 @@ func (c *client) GetDashboard(
 	return &result, nil
 }
 
-// DeleteDashboard deletes the dashboard with the specified ID. It returns a
-// non-nil error if the request failed.
+// DeleteDashboard deletes the dashboard with the specified ID. 
 func (c *client) DeleteDashboard(
 	ctx context.Context,
 	ID string,
