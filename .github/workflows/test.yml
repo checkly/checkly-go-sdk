@@ -23,7 +23,7 @@ jobs:
 
       -
         name: Test
-        run: go test -v -tags=integration ./...
+        run: make test
         env:
           CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
           CHECKLY_API_URL: ${{ secrets.CHECKLY_API_URL }}
