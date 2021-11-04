@@ -537,7 +537,8 @@ type AlertChannel struct {
 
 // Dashboard defines a type for a dashboard.
 type Dashboard struct {
-	DashboardID    string   `json:"dashboardId"`
+	ID             int64    `json:"id,omitempty"`
+	DashboardID    string   `json:"dashboardId,omitempty"`
 	CustomUrl      string   `json:"customUrl"`
 	CustomDomain   string   `json:"customDomain"`
 	Logo           string   `json:"logo"`
