@@ -1,0 +1,11 @@
+{
+	"name":           "TEST",
+	"startsAt":       "2014-08-24T00:00:00.000Z",
+	"endsAt":         "2014-08-24T00:00:00.000Z",
+	"repeatUnit":     "MONTH",
+	"repeatEndsAt":   "2014-08-24T00:00:00.000Z",
+	"repeatInterval": 10,
+	"created_at":     "2013-08-24",
+	"updated_at":     "2015-08-24",
+	"tags":           ["string"]
+}

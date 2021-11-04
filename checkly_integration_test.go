@@ -157,7 +157,7 @@ func TestCreateDashboardIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteDashboard(context.Background(), gotDashboard.DashboardID)
+	defer client.DeleteDashboard(context.Background(), gotDashboard.ID)
 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
 	}
@@ -169,8 +169,8 @@ func TestGetDashboardIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteDashboard(context.Background(), dash.DashboardID)
-	gotDashboard, err := client.GetDashboard(context.Background(), dash.DashboardID)
+	defer client.DeleteDashboard(context.Background(), dash.ID)
+	gotDashboard, err := client.GetDashboard(context.Background(), dash.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -179,3 +179,33 @@ func TestGetDashboardIntegration(t *testing.T) {
 	}
 }
 
+//Maintenance Windows
+
+func TestCreateMwIntegration(t *testing.T) {
+	client := setupClient(t)
+
+	gotMaintenanceWindow, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteMaintenanceWindow(context.Background(), gotMaintenanceWindow.ID)
+	if !cmp.Equal(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields) {
+		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
+	}
+}
+
+// func TestGetMaintenanceWindowIntegration(t *testing.T) {
+// 	client := setupClient(t)
+// 	dash, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	defer client.DeleteMaintenanceWindow(context.Background(), dash.ID)
+// 	gotMaintenanceWindow, err := client.GetMaintenanceWindow(context.Background(), dash.ID)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	if !cmp.Equal(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields) {
+// 		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
+// 	}
+// }
