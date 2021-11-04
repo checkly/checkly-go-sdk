@@ -150,34 +150,34 @@ func TestGetGroupIntegration(t *testing.T) {
 
 //Dashboard
 
-func TestCreateDashboardIntegration(t *testing.T) {
-	client := setupClient(t)
+// func TestCreateDashboardIntegration(t *testing.T) {
+// 	client := setupClient(t)
 
-	gotDashboard, err := client.CreateDashboard(context.Background(), testDashboard)
-	if err != nil {
-		t.Error(err)
-	}
-	defer client.DeleteDashboard(context.Background(), gotDashboard.ID)
-	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
-		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
-	}
-}
+// 	gotDashboard, err := client.CreateDashboard(context.Background(), testDashboard)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	defer client.DeleteDashboard(context.Background(), gotDashboard.ID)
+// 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
+// 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
+// 	}
+// }
 
-func TestGetDashboardIntegration(t *testing.T) {
-	client := setupClient(t)
-	dash, err := client.CreateDashboard(context.Background(), testDashboard)
-	if err != nil {
-		t.Error(err)
-	}
-	defer client.DeleteDashboard(context.Background(), dash.ID)
-	gotDashboard, err := client.GetDashboard(context.Background(), dash.ID)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
-		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
-	}
-}
+// func TestGetDashboardIntegration(t *testing.T) {
+// 	client := setupClient(t)
+// 	dash, err := client.CreateDashboard(context.Background(), testDashboard)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	defer client.DeleteDashboard(context.Background(), dash.ID)
+// 	gotDashboard, err := client.GetDashboard(context.Background(), dash.ID)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
+// 		t.Error(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
+// 	}
+// }
 
 //Maintenance Windows
 
