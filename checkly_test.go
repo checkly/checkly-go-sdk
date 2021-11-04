@@ -1008,11 +1008,11 @@ func validateDashboard(t *testing.T, body []byte) {
 }
 
 var testDashboard = checkly.Dashboard{
-	ID:             1,
-	CustomUrl:      "dashboard",
-	CustomDomain:   "dashboard",
-	Logo:           "dashboard",
-	Header:         "dashboard",
+	ID:             10,
+	CustomUrl:      "string",
+	CustomDomain:   "string",
+	Logo:           "string",
+	Header:         "string",
 	Width:          "FULL",
 	RefreshRate:    60,
 	Paginate:       true,
