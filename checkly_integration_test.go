@@ -181,7 +181,7 @@ func TestGetDashboardIntegration(t *testing.T) {
 
 //Maintenance Windows
 
-func TestCreateMwIntegration(t *testing.T) {
+func TestCreateMaintenanceWindowIntegration(t *testing.T) {
 	client := setupClient(t)
 
 	gotMaintenanceWindow, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
