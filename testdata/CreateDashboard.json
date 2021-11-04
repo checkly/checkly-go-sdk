@@ -1,8 +1,8 @@
 {
-  "customUrl": "dashboard",
-  "customDomain": "dashboard",
-  "logo": "dashboard",
-  "header": "dashboard",
+  "customUrl": "string",
+  "customDomain": "string",
+  "logo": "string",
+  "header": "string",
   "width": "FULL",
   "refreshRate": 60,
   "paginate": true,
