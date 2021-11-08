@@ -46,13 +46,20 @@ Create a new `Client` by calling `checkly.NewClient()` with your API key:
 ```go
 baseUrl := "https://api.checklyhq.com"
 apiKey := os.Getenv("CHECKLY_API_KEY")
+accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
 client := checkly.NewClient(
 	baseUrl,
 	apiKey,
 	nil, //custom http client, defaults to http.DefaultClient
 	nil, //io.Writer to output debug messages
 )
+
+client.SetAccountId(accountId)
 ```
+
+> ⚠️ Account ID is only required if you are using new User API keys. If you are using legacy Account API keys you can omit it.
+
+> Note: if you don't have an API key, you can create one at [here](https://app.checklyhq.com/account/api-keys)
 
 ### Create a check
 
