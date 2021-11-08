@@ -165,31 +165,62 @@ type Client interface {
 		ac AlertChannel,
 	) (*AlertChannel, error)
 
-	// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
+	// DeleteAlertChannel deletes the alert channel with the specified ID.
 	DeleteAlertChannel(
 		ctx context.Context,
 		ID int64,
 	) error
 
+	// CreateDashboard creates a new dashboard with the specified details.
 	CreateDashboard(
 		ctx context.Context,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
+	// GetDashboard takes the ID of an existing dashboard and returns it
 	GetDashboard(
 		ctx context.Context,
 		ID string,
 	) (*Dashboard, error)
 
+	// UpdateDashboard takes the ID of an existing dashboard, and updates the
+	// corresponding dashboard to match the supplied dashboard.
 	UpdateDashboard(
 		ctx context.Context,
 		ID string,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
+	// DeleteDashboard deletes the dashboard with the specified ID.
 	DeleteDashboard(
 		ctx context.Context,
 		ID string,
+	) error
+
+	// CreateMaintenanceWindow creates a new maintenance window with the specified details.
+	CreateMaintenanceWindow(
+		ctx context.Context,
+		mw MaintenanceWindow,
+	) (*MaintenanceWindow, error)
+
+	// GetMaintenanceWindow takes the ID of an existing maintennace window and returns it
+	GetMaintenanceWindow(
+		ctx context.Context,
+		ID int64,
+	) (*MaintenanceWindow, error)
+
+	// UpdateMaintenanceWindow takes the ID of an existing maintenance window, and updates the
+	// corresponding maintenance window to match the supplied maintenance window.
+	UpdateMaintenanceWindow(
+		ctx context.Context,
+		ID int64,
+		mw MaintenanceWindow,
+	) (*MaintenanceWindow, error)
+
+	// DeleteMaintenanceWindow deletes the maintenance window with the specified ID.
+	DeleteMaintenanceWindow(
+		ctx context.Context,
+		ID int64,
 	) error
 }
 
@@ -549,6 +580,20 @@ type Dashboard struct {
 	PaginationRate int      `json:"paginationRate"`
 	Tags           []string `json:"tags,omitempty"`
 	HideTags       bool     `json:"hideTags"`
+}
+
+// MaintenanceWindow defines a type for a maintenance window.
+type MaintenanceWindow struct {
+	ID             int64    `json:"id"`
+	Name           string   `json:"name"`
+	StartsAt       string   `json:"startsAt"`
+	EndsAt         string   `json:"endsAt"`
+	RepeatInterval int      `json:"repeatInterval,omitempty"`
+	RepeatUnit     string   `json:"repeatUnit"`
+	RepeatEndsAt   string   `json:"repeatEndsAt,omitempty"`
+	CreatedAt      string   `json:"created_at"`
+	UpdatedAt      string   `json:"updated_at"`
+	Tags           []string `json:"tags"`
 }
 
 //SetConfig sets config of alert channel based on it's type

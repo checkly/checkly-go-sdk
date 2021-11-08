@@ -625,7 +625,9 @@ func (c *client) CreateDashboard(
 		return nil, err
 	}
 	status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
-
+	if err != nil {
+		return nil, err
+	}
 	var result Dashboard
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 
@@ -704,6 +706,102 @@ func (c *client) UpdateDashboard(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Dashboard
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// CreateMaintenanceWindow creates a new window with the specified details.
+func (c *client) CreateMaintenanceWindow(
+	ctx context.Context,
+	mw MaintenanceWindow,
+) (*MaintenanceWindow, error) {
+	data, err := json.Marshal(mw)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPost, "maintenance-windows", data)
+	if err != nil {
+		return nil, err
+	}
+	var result MaintenanceWindow
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK && status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %s", status, res, data)
+	}
+	return &result, nil
+}
+
+// GetMaintenanceWindow takes the ID of an existing window, and returns the
+// corresponding window.
+func (c *client) GetMaintenanceWindow(
+	ctx context.Context,
+	ID int64,
+) (*MaintenanceWindow, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := MaintenanceWindow{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+// DeleteMaintenanceWindow deletes the window with the specified ID.
+func (c *client) DeleteMaintenanceWindow(
+	ctx context.Context,
+	ID int64,
+) error {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("maintenance-windows/%d", ID),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
+// UpdateMaintenanceWindow takes the ID of an existing window, and updates the
+// corresponding window to match the supplied one.
+func (c *client) UpdateMaintenanceWindow(
+	ctx context.Context,
+	ID int64,
+	mw MaintenanceWindow,
+) (*MaintenanceWindow, error) {
+	data, err := json.Marshal(mw)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut, fmt.Sprintf("maintenance-windows/%d", ID),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MaintenanceWindow
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

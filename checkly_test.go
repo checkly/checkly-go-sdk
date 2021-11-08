@@ -1008,11 +1008,11 @@ func validateDashboard(t *testing.T, body []byte) {
 }
 
 var testDashboard = checkly.Dashboard{
-	DashboardID:    "1",
-	CustomUrl:      "dashboard",
-	CustomDomain:   "dashboard",
-	Logo:           "dashboard",
-	Header:         "dashboard",
+	DashboardID:    "10",
+	CustomUrl:      "string",
+	CustomDomain:   "string",
+	Logo:           "string",
+	Header:         "string",
 	Width:          "FULL",
 	RefreshRate:    60,
 	Paginate:       true,
@@ -1095,5 +1095,106 @@ func TestGetDashboard(t *testing.T) {
 	}
 	if !cmp.Equal(testDashboard, *ac, ignoreDashboardFields) {
 		t.Error(cmp.Diff(testDashboard, *ac, ignoreDashboardFields))
+	}
+}
+
+func validateMaintenanceWindow(t *testing.T, body []byte) {
+	var gotMaintenanceWindow checkly.MaintenanceWindow
+	err := json.Unmarshal(body, &gotMaintenanceWindow)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testMaintenanceWindow, gotMaintenanceWindow) {
+		t.Error(cmp.Diff(testMaintenanceWindow, gotMaintenanceWindow))
+	}
+}
+
+var testMaintenanceWindow = checkly.MaintenanceWindow{
+	ID:             1,
+	Name:           "TEST",
+	StartsAt:       "2014-08-24T00:00:00.000Z",
+	EndsAt:         "2014-08-24T00:00:00.000Z",
+	RepeatUnit:     "MONTH",
+	RepeatEndsAt:   "2014-08-24T00:00:00.000Z",
+	RepeatInterval: 10,
+	CreatedAt:      "2013-08-24",
+	UpdatedAt:      "2014-08-24",
+	Tags:           []string{"string"},
+}
+
+var ignoreMaintenanceWindowFields = cmpopts.IgnoreFields(checkly.MaintenanceWindow{}, "ID", "CreatedAt", "UpdatedAt")
+
+func TestCreateMaintenanceWindow(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/maintenance-windows",
+		validateMaintenanceWindow,
+		http.StatusCreated,
+		"CreateMaintenanceWindow.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotMaintencanceWindow, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testMaintenanceWindow, *gotMaintencanceWindow, ignoreMaintenanceWindowFields) {
+		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintencanceWindow, ignoreMaintenanceWindowFields))
+	}
+}
+
+func TestDeleteMaintenanceWindow(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/maintenance-windows/%d", testMaintenanceWindow.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteMaintenanceWindow(context.Background(), testMaintenanceWindow.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateMaintenanceWindow(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/maintenance-windows/%d", testMaintenanceWindow.ID),
+		validateMaintenanceWindow,
+		http.StatusOK,
+		"CreateMaintenanceWindow.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateMaintenanceWindow(context.Background(), testMaintenanceWindow.ID, testMaintenanceWindow)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetMaintenanceWindow(t *testing.T) {
+	return
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/maintenance-windows/%d", testMaintenanceWindow.ID),
+		validateMaintenanceWindow,
+		http.StatusOK,
+		"CreateMaintenanceWindow.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	mw, err := client.GetMaintenanceWindow(context.Background(), testMaintenanceWindow.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields) {
+		t.Error(cmp.Diff(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields))
 	}
 }
