@@ -191,6 +191,8 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) error
+
+	SetAccountId(ID string)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -201,6 +203,7 @@ type Client interface {
 type client struct {
 	apiKey     string
 	url        string
+	accountId  string
 	httpClient *http.Client
 	debug      io.Writer
 }
