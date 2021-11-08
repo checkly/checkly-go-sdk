@@ -644,9 +644,9 @@ func (c *client) CreateDashboard(
 // corresponding dashboard, or an error.
 func (c *client) GetDashboard(
 	ctx context.Context,
-	ID int64,
+	ID string,
 ) (*Dashboard, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("dashboards/%d", ID), nil)
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("dashboards/%s", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -664,12 +664,12 @@ func (c *client) GetDashboard(
 // DeleteDashboard deletes the dashboard with the specified ID.
 func (c *client) DeleteDashboard(
 	ctx context.Context,
-	ID int64,
+	ID string,
 ) error {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodDelete,
-		fmt.Sprintf("dashboards/%d", ID),
+		fmt.Sprintf("dashboards/%s", ID),
 		nil,
 	)
 	if err != nil {
@@ -686,7 +686,7 @@ func (c *client) DeleteDashboard(
 // dashboard, or an error.
 func (c *client) UpdateDashboard(
 	ctx context.Context,
-	ID int64,
+	ID string,
 	dashboard Dashboard,
 ) (*Dashboard, error) {
 	data, err := json.Marshal(dashboard)
@@ -695,7 +695,7 @@ func (c *client) UpdateDashboard(
 	}
 	status, res, err := c.apiCall(
 		ctx,
-		http.MethodPut, fmt.Sprintf("dashboards/%d", ID),
+		http.MethodPut, fmt.Sprintf("dashboards/%s", ID),
 		data,
 	)
 	if err != nil {

@@ -180,21 +180,21 @@ type Client interface {
 	// GetDashboard takes the ID of an existing dashboard and returns it
 	GetDashboard(
 		ctx context.Context,
-		ID int64,
+		ID string,
 	) (*Dashboard, error)
 
 	// UpdateDashboard takes the ID of an existing dashboard, and updates the
 	// corresponding dashboard to match the supplied dashboard.
 	UpdateDashboard(
 		ctx context.Context,
-		ID int64,
+		ID string,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
 	// DeleteDashboard deletes the dashboard with the specified ID.
 	DeleteDashboard(
 		ctx context.Context,
-		ID int64,
+		ID string,
 	) error
 
 	// CreateMaintenanceWindow creates a new maintenance window with the specified details.
@@ -568,7 +568,8 @@ type AlertChannel struct {
 
 // Dashboard defines a type for a dashboard.
 type Dashboard struct {
-	ID             int64    `json:"id"`
+	ID             int64    `json:"id,omitempty"`
+	DashboardID    string   `json:"dashboardId,omitempty"`
 	CustomUrl      string   `json:"customUrl"`
 	CustomDomain   string   `json:"customDomain"`
 	Logo           string   `json:"logo"`

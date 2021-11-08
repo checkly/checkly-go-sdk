@@ -1008,7 +1008,7 @@ func validateDashboard(t *testing.T, body []byte) {
 }
 
 var testDashboard = checkly.Dashboard{
-	ID:             10,
+	DashboardID:    "10",
 	CustomUrl:      "string",
 	CustomDomain:   "string",
 	Logo:           "string",
@@ -1021,7 +1021,7 @@ var testDashboard = checkly.Dashboard{
 	HideTags:       false,
 }
 
-var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "ID")
+var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID")
 
 func TestCreateDashboard(t *testing.T) {
 	t.Parallel()
@@ -1047,14 +1047,14 @@ func TestDeleteDashboard(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodDelete,
-		fmt.Sprintf("/v1/dashboards/%d", testDashboard.ID),
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.DashboardID),
 		validateEmptyBody,
 		http.StatusNoContent,
 		"Empty.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	err := client.DeleteDashboard(context.Background(), testDashboard.ID)
+	err := client.DeleteDashboard(context.Background(), testDashboard.DashboardID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1064,14 +1064,14 @@ func TestUpdateDashboard(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/dashboards/%d", testDashboard.ID),
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.DashboardID),
 		validateDashboard,
 		http.StatusOK,
 		"CreateDashboard.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	_, err := client.UpdateDashboard(context.Background(), testDashboard.ID, testDashboard)
+	_, err := client.UpdateDashboard(context.Background(), testDashboard.DashboardID, testDashboard)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1082,14 +1082,14 @@ func TestGetDashboard(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
-		fmt.Sprintf("/v1/dashboards/%d", testDashboard.ID),
+		fmt.Sprintf("/v1/dashboards/%s", testDashboard.DashboardID),
 		validateDashboard,
 		http.StatusOK,
 		"CreateDashboard.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	ac, err := client.GetDashboard(context.Background(), testDashboard.ID)
+	ac, err := client.GetDashboard(context.Background(), testDashboard.DashboardID)
 	if err != nil {
 		t.Error(err)
 	}
