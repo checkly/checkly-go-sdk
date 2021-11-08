@@ -646,7 +646,7 @@ func (c *client) GetDashboard(
 	ctx context.Context,
 	ID string,
 ) (*Dashboard, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("dashboards/%s", ID), nil)
+	status, res, err := c.apiCall(ctx, http.MethodGet, "dashboards/"+ID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -669,7 +669,7 @@ func (c *client) DeleteDashboard(
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodDelete,
-		fmt.Sprintf("dashboards/%s", ID),
+		"dashboards/"+ID,
 		nil,
 	)
 	if err != nil {
@@ -695,7 +695,8 @@ func (c *client) UpdateDashboard(
 	}
 	status, res, err := c.apiCall(
 		ctx,
-		http.MethodPut, fmt.Sprintf("dashboards/%s", ID),
+		http.MethodPut,
+		"dashboards/"+ID,
 		data,
 	)
 	if err != nil {
