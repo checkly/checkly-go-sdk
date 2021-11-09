@@ -221,6 +221,11 @@ func main() {
 		debug, //io.Writer to output debug messages
 	)
 
+	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
+	if accountId != "" {
+		client.SetAccountId(accountId)
+	}
+
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
 	group, err := client.CreateGroup(ctx, group)

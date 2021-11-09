@@ -45,6 +45,11 @@ func NewClient(
 	return c
 }
 
+// SetAccountId sets ID on a client which is required when using User API keys.
+func (c *client) SetAccountId(ID string) {
+	c.accountId = ID
+}
+
 // Create creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 func (c *client) Create(
@@ -908,11 +913,21 @@ func (c *client) apiCall(
 ) (statusCode int, response string, err error) {
 	requestURL := c.url + "/v1/" + URL
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
+
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
+
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/json")
+
+	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
+		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
+	}
+	if c.accountId != "" {
+		req.Header.Add("x-checkly-account", c.accountId)
+	}
+
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
@@ -921,15 +936,18 @@ func (c *client) apiCall(
 		fmt.Fprintln(c.debug, string(requestDump))
 		fmt.Fprintln(c.debug)
 	}
+
 	req = req.WithContext(ctx)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return 0, "", fmt.Errorf("HTTP request failed with: %v", err)
 	}
+
 	defer resp.Body.Close()
 	if c.debug != nil {
 		c.dumpResponse(resp)
 	}
+
 	res, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, "", fmt.Errorf("HTTP request failed: %v", err)
