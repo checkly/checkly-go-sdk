@@ -42,6 +42,18 @@ var dashboard = checkly.Dashboard{
 	HideTags:       false,
 }
 
+var mw = checkly.MaintenanceWindow{
+	Name:           "TEST",
+	StartsAt:       "2012-08-24",
+	EndsAt:         "2014-08-24",
+	RepeatUnit:     "MONTH",
+	RepeatEndsAt:   "2013-08-24",
+	RepeatInterval: 10,
+	CreatedAt:      "2013-08-24",
+	UpdatedAt:      "2015-08-24",
+	Tags:           []string{"string"},
+}
+
 var apiCheck = checkly.Check{
 	Name:                 "My API Check",
 	Type:                 checkly.TypeAPI,

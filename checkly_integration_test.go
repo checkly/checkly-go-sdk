@@ -179,3 +179,33 @@ func TestGetDashboardIntegration(t *testing.T) {
 	}
 }
 
+//Maintenance Windows
+
+func TestCreateMaintenanceWindowIntegration(t *testing.T) {
+	client := setupClient(t)
+
+	gotMaintenanceWindow, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteMaintenanceWindow(context.Background(), gotMaintenanceWindow.ID)
+	if !cmp.Equal(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields) {
+		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
+	}
+}
+
+func TestGetMaintenanceWindowIntegration(t *testing.T) {
+	client := setupClient(t)
+	dash, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteMaintenanceWindow(context.Background(), dash.ID)
+	gotMaintenanceWindow, err := client.GetMaintenanceWindow(context.Background(), dash.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields) {
+		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
+	}
+}
