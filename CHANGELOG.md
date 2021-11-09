@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2021-11-09
+### Added
+- Support for Public Dashboards [#40](https://github.com/checkly/checkly-go-sdk/issues/40)
+- Support for Maintenance Windows [#48](https://github.com/checkly/checkly-go-sdk/issues/48)
+- Support for User API Keys [#51](https://github.com/checkly/checkly-go-sdk/issues/51)
+
 ## [1.3.1] - 2021-10-15
 ### Changed
 - Fix optional and required values in webhooks alert channels [#41](https://github.com/checkly/checkly-go-sdk/issues/41)
