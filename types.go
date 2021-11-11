@@ -223,6 +223,25 @@ type Client interface {
 		ID int64,
 	) error
 
+	// CreateTriggerCheck creates a new trigger with the specified details.
+	CreateTriggerCheck(
+		ctx context.Context,
+		checkID string,
+	) (*TriggerCheck, error)
+
+	// GetTriggerCheck takes the ID of an existing trigger and returns it
+	GetTriggerCheck(
+		ctx context.Context,
+		checkID string,
+	) (*TriggerCheck, error)
+
+	// DeleteTriggerCheck deletes the trigger with the specified ID.
+	DeleteTriggerCheck(
+		ctx context.Context,
+		checkID string,
+		token string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 }
@@ -598,6 +617,16 @@ type MaintenanceWindow struct {
 	CreatedAt      string   `json:"created_at"`
 	UpdatedAt      string   `json:"updated_at"`
 	Tags           []string `json:"tags"`
+}
+
+// Trigger defines a type for a trigger.
+type TriggerCheck struct {
+	ID        int64  `json:"id"`
+	CheckId   string `json:"checkId"`
+	Token     string `json:"token"`
+	CreatedAt string `json:"created_at"`
+	CalledAt  string `json:"called_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 //SetConfig sets config of alert channel based on it's type

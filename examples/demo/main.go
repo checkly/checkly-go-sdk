@@ -208,7 +208,7 @@ func main() {
 
 	baseUrl := os.Getenv("CHECKLY_API_URL")
 	if baseUrl == "" {
-		baseUrl = "https://api.checklyhq.com"
+		baseUrl = "http://localhost:3000"
 	}
 
 	var debug interface{ io.Writer } = nil
