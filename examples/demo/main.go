@@ -208,7 +208,7 @@ func main() {
 
 	baseUrl := os.Getenv("CHECKLY_API_URL")
 	if baseUrl == "" {
-		baseUrl = "http://localhost:3000"
+		baseUrl = "https://api.checklyhq.com"
 	}
 
 	var debug interface{ io.Writer } = nil
@@ -228,23 +228,17 @@ func main() {
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
-	// group, err := client.CreateGroup(ctx, group)
-	// if err != nil {
-	// 	log.Fatalf("creating group: %v", err)
-	// }
-	// fmt.Printf("New check group created with ID %d\n", group.ID)
-
-	// for _, check := range []checkly.Check{apiCheck, browserCheck} {
-	// 	gotCheck, err := client.Create(ctx, check)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Printf("New check created with ID %s\n", gotCheck.ID)
-	// }
-
-	tc, err := client.CreateTriggerGroup(ctx, 215)
+	group, err := client.CreateGroup(ctx, group)
 	if err != nil {
-		log.Fatalf("creating : %v", err)
+		log.Fatalf("creating group: %v", err)
 	}
-	fmt.Printf("New check group created with ID %v\n", tc)
+	fmt.Printf("New check group created with ID %d\n", group.ID)
+
+	for _, check := range []checkly.Check{apiCheck, browserCheck} {
+		gotCheck, err := client.Create(ctx, check)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
+	}
 }
