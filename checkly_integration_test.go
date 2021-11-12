@@ -209,3 +209,65 @@ func TestGetMaintenanceWindowIntegration(t *testing.T) {
 		t.Error(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
 	}
 }
+
+//TriggerCheck
+
+func TestCreateTriggerCheckIntegration(t *testing.T) {
+	client := setupClient(t)
+
+	gotTriggerCheck, err := client.CreateTriggerCheck(context.Background(), testTriggerCheck.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteTriggerCheck(context.Background(), gotTriggerCheck.CheckId, gotTriggerCheck.Token)
+	if !cmp.Equal(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck) {
+		t.Error(cmp.Diff(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck))
+	}
+}
+
+func TestGetTriggerCheckIntegration(t *testing.T) {
+	client := setupClient(t)
+	tc, err := client.CreateTriggerCheck(context.Background(), testTriggerCheck.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteTriggerCheck(context.Background(), tc.CheckId, tc.Token)
+	gotTriggerCheck, err := client.GetTriggerCheck(context.Background(), tc.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck) {
+		t.Error(cmp.Diff(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck))
+	}
+}
+
+//TriggerGroup
+
+func TestCreateTriggerGroupIntegration(t *testing.T) {
+	client := setupClient(t)
+
+	gotTriggerGroup, err := client.CreateTriggerGroup(context.Background(), testTriggerGroup.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteTriggerGroup(context.Background(), gotTriggerGroup.GroupId, gotTriggerGroup.Token)
+	if !cmp.Equal(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup) {
+		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
+	}
+}
+
+func TestGetTriggerGroupIntegration(t *testing.T) {
+	client := setupClient(t)
+	tc, err := client.CreateTriggerGroup(context.Background(), testTriggerGroup.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeleteTriggerGroup(context.Background(), tc.GroupId, tc.Token)
+	gotTriggerGroup, err := client.GetTriggerGroup(context.Background(), tc.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup) {
+		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
+	}
+}

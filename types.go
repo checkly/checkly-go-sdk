@@ -242,6 +242,25 @@ type Client interface {
 		token string,
 	) error
 
+	// CreateTriggerGroup creates a new trigger with the specified details.
+	CreateTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+	) (*TriggerGroup, error)
+
+	// GetTriggerGroup takes the ID of an existing trigger and returns it
+	GetTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+	) (*TriggerGroup, error)
+
+	// DeleteTriggerGroup deletes the trigger with the specified ID.
+	DeleteTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+		token string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 }
@@ -623,6 +642,16 @@ type MaintenanceWindow struct {
 type TriggerCheck struct {
 	ID        int64  `json:"id"`
 	CheckId   string `json:"checkId"`
+	Token     string `json:"token"`
+	CreatedAt string `json:"created_at"`
+	CalledAt  string `json:"called_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// Trigger defines a type for a trigger.
+type TriggerGroup struct {
+	ID        int64  `json:"id"`
+	GroupId   int64  `json:"groupId"`
 	Token     string `json:"token"`
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
