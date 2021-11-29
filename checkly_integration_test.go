@@ -219,7 +219,7 @@ func TestCreateTriggerCheckIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteTriggerCheck(context.Background(), gotTriggerCheck.CheckId, gotTriggerCheck.Token)
+	defer client.DeleteTriggerCheck(context.Background(), gotTriggerCheck.CheckId)
 	if !cmp.Equal(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck) {
 		t.Error(cmp.Diff(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck))
 	}
@@ -231,7 +231,7 @@ func TestGetTriggerCheckIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteTriggerCheck(context.Background(), tc.CheckId, tc.Token)
+	defer client.DeleteTriggerCheck(context.Background(), tc.CheckId)
 	gotTriggerCheck, err := client.GetTriggerCheck(context.Background(), tc.CheckId)
 	if err != nil {
 		t.Error(err)
@@ -250,7 +250,7 @@ func TestCreateTriggerGroupIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteTriggerGroup(context.Background(), gotTriggerGroup.GroupId, gotTriggerGroup.Token)
+	defer client.DeleteTriggerGroup(context.Background(), gotTriggerGroup.GroupId)
 	if !cmp.Equal(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup) {
 		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
 	}
@@ -262,7 +262,7 @@ func TestGetTriggerGroupIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer client.DeleteTriggerGroup(context.Background(), tc.GroupId, tc.Token)
+	defer client.DeleteTriggerGroup(context.Background(), tc.GroupId)
 	gotTriggerGroup, err := client.GetTriggerGroup(context.Background(), tc.GroupId)
 	if err != nil {
 		t.Error(err)
