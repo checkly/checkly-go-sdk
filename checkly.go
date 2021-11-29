@@ -11,7 +11,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -862,12 +861,11 @@ func (c *client) GetTriggerCheck(
 func (c *client) DeleteTriggerCheck(
 	ctx context.Context,
 	checkID string,
-	token string,
 ) error {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodDelete,
-		path.Join("triggers/checks/", checkID, "/", token),
+		fmt.Sprintf("triggers/checks/%s", checkID),
 		nil,
 	)
 	if err != nil {
@@ -925,12 +923,11 @@ func (c *client) GetTriggerGroup(
 func (c *client) DeleteTriggerGroup(
 	ctx context.Context,
 	groupID int64,
-	token string,
 ) error {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodDelete,
-		path.Join("triggers/check-groups/", strconv.FormatInt(groupID, 10), "/", token),
+		fmt.Sprintf("triggers/check-groups/%s", strconv.FormatInt(groupID, 10)),
 		nil,
 	)
 	if err != nil {

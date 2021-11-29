@@ -239,7 +239,6 @@ type Client interface {
 	DeleteTriggerCheck(
 		ctx context.Context,
 		checkID string,
-		token string,
 	) error
 
 	// CreateTriggerGroup creates a new trigger with the specified details.
@@ -258,7 +257,6 @@ type Client interface {
 	DeleteTriggerGroup(
 		ctx context.Context,
 		groupID int64,
-		token string,
 	) error
 
 	// SetAccountId sets ID on a client which is required when using User API keys.
@@ -640,8 +638,8 @@ type MaintenanceWindow struct {
 
 // Trigger defines a type for a trigger.
 type TriggerCheck struct {
-	ID        int64  `json:"id"`
-	CheckId   string `json:"checkId"`
+	ID        int64  `json:"id,omitempty"`
+	CheckId   string `json:"checkId,omitempty"`
 	Token     string `json:"token"`
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
@@ -650,8 +648,8 @@ type TriggerCheck struct {
 
 // Trigger defines a type for a trigger.
 type TriggerGroup struct {
-	ID        int64  `json:"id"`
-	GroupId   int64  `json:"groupId"`
+	ID        int64  `json:"id,omitempty"`
+	GroupId   int64  `json:"groupId,omitempty"`
 	Token     string `json:"token"`
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`

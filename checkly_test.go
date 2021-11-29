@@ -1235,14 +1235,14 @@ func TestDeleteTriggerCheck(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodDelete,
-		path.Join("/v1/triggers/checks/", testTriggerCheck.CheckId, "/", testTriggerCheck.Token),
+		path.Join("/v1/triggers/checks/", testTriggerCheck.CheckId),
 		validateEmptyBody,
 		http.StatusNoContent,
 		"Empty.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	err := client.DeleteTriggerCheck(context.Background(), testTriggerCheck.CheckId, testTriggerCheck.Token)
+	err := client.DeleteTriggerCheck(context.Background(), testTriggerCheck.CheckId)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1301,14 +1301,14 @@ func TestDeleteTriggerGroup(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodDelete,
-		path.Join("/v1/triggers/check-groups/", strconv.FormatInt(testTriggerGroup.GroupId, 10), "/", testTriggerGroup.Token),
+		path.Join("/v1/triggers/check-groups/", strconv.FormatInt(testTriggerGroup.GroupId, 10)),
 		validateEmptyBody,
 		http.StatusNoContent,
 		"Empty.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	err := client.DeleteTriggerGroup(context.Background(), testTriggerGroup.GroupId, testTriggerGroup.Token)
+	err := client.DeleteTriggerGroup(context.Background(), testTriggerGroup.GroupId)
 	if err != nil {
 		t.Error(err)
 	}
