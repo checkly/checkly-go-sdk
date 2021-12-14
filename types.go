@@ -223,6 +223,42 @@ type Client interface {
 		ID int64,
 	) error
 
+	// CreateTriggerCheck creates a new trigger with the specified details.
+	CreateTriggerCheck(
+		ctx context.Context,
+		checkID string,
+	) (*TriggerCheck, error)
+
+	// GetTriggerCheck takes the ID of an existing trigger and returns it
+	GetTriggerCheck(
+		ctx context.Context,
+		checkID string,
+	) (*TriggerCheck, error)
+
+	// DeleteTriggerCheck deletes the trigger with the specified ID.
+	DeleteTriggerCheck(
+		ctx context.Context,
+		checkID string,
+	) error
+
+	// CreateTriggerGroup creates a new trigger with the specified details.
+	CreateTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+	) (*TriggerGroup, error)
+
+	// GetTriggerGroup takes the ID of an existing trigger and returns it
+	GetTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+	) (*TriggerGroup, error)
+
+	// DeleteTriggerGroup deletes the trigger with the specified ID.
+	DeleteTriggerGroup(
+		ctx context.Context,
+		groupID int64,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 }
@@ -598,6 +634,26 @@ type MaintenanceWindow struct {
 	CreatedAt      string   `json:"created_at"`
 	UpdatedAt      string   `json:"updated_at"`
 	Tags           []string `json:"tags"`
+}
+
+// Trigger defines a type for a trigger.
+type TriggerCheck struct {
+	ID        int64  `json:"id,omitempty"`
+	CheckId   string `json:"checkId,omitempty"`
+	Token     string `json:"token"`
+	CreatedAt string `json:"created_at"`
+	CalledAt  string `json:"called_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// Trigger defines a type for a trigger.
+type TriggerGroup struct {
+	ID        int64  `json:"id,omitempty"`
+	GroupId   int64  `json:"groupId,omitempty"`
+	Token     string `json:"token"`
+	CreatedAt string `json:"created_at"`
+	CalledAt  string `json:"called_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 //SetConfig sets config of alert channel based on it's type
