@@ -310,7 +310,7 @@ type Check struct {
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
-	Locations                 []string                   `json:"locations"`
+	Locations                 []string                   `json:"locations,omitempty"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
 	MaxResponseTime           int                        `json:"maxResponseTime"`
 	Script                    string                     `json:"script,omitempty"`
