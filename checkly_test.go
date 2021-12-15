@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1196,5 +1198,137 @@ func TestGetMaintenanceWindow(t *testing.T) {
 	}
 	if !cmp.Equal(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields) {
 		t.Error(cmp.Diff(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields))
+	}
+}
+
+var testTriggerCheck = checkly.TriggerCheck{
+	ID:        1,
+	CheckId:   "721d28d6-149f-4f32-95e1-e497b23156f4",
+	Token:     "MDMnt4oPjBBZ",
+	CreatedAt: "2013-08-24",
+	UpdatedAt: "2013-08-24",
+	CalledAt:  "2013-08-24",
+}
+
+var ignoreTriggerCheck = cmpopts.IgnoreFields(checkly.TriggerCheck{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "Token")
+
+func TestCreateTriggerCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		fmt.Sprintf("/v1/triggers/checks/%s", testTriggerCheck.CheckId),
+		validateEmptyBody,
+		http.StatusCreated,
+		"CreateTriggerCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotTriggerCheck, err := client.CreateTriggerCheck(context.Background(), testTriggerCheck.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck) {
+		t.Error(cmp.Diff(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck))
+	}
+}
+func TestDeleteTriggerCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		path.Join("/v1/triggers/checks/", testTriggerCheck.CheckId),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteTriggerCheck(context.Background(), testTriggerCheck.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+}
+func TestGetTriggerCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/triggers/checks/%s", testTriggerCheck.CheckId),
+		validateEmptyBody,
+		http.StatusOK,
+		"CreateTriggerCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotTriggerCheck, err := client.GetTriggerCheck(context.Background(), testTriggerCheck.CheckId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck) {
+		t.Error(cmp.Diff(testTriggerCheck, *gotTriggerCheck, ignoreTriggerCheck))
+	}
+}
+
+var testTriggerGroup = checkly.TriggerGroup{
+	ID:        1,
+	GroupId:   215,
+	Token:     "MDMnt4oPjBBZ",
+	CreatedAt: "2013-08-24",
+	UpdatedAt: "2013-08-24",
+	CalledAt:  "2013-08-24",
+}
+
+var ignoreTriggerGroup = cmpopts.IgnoreFields(checkly.TriggerGroup{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "Token")
+
+func TestCreateTriggerGroup(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		fmt.Sprintf("/v1/triggers/check-groups/%d", testTriggerGroup.GroupId),
+		validateEmptyBody,
+		http.StatusCreated,
+		"CreateTriggerGroup.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotTriggerGroup, err := client.CreateTriggerGroup(context.Background(), testTriggerGroup.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup) {
+		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
+	}
+}
+func TestDeleteTriggerGroup(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		path.Join("/v1/triggers/check-groups/", strconv.FormatInt(testTriggerGroup.GroupId, 10)),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteTriggerGroup(context.Background(), testTriggerGroup.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+}
+func TestGetTriggerGroup(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/triggers/check-groups/%d", testTriggerGroup.GroupId),
+		validateEmptyBody,
+		http.StatusOK,
+		"CreateTriggerGroup.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotTriggerGroup, err := client.GetTriggerGroup(context.Background(), testTriggerGroup.GroupId)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup) {
+		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
 	}
 }

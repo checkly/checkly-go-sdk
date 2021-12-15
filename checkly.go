@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -812,6 +813,130 @@ func (c *client) UpdateMaintenanceWindow(
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
+}
+
+// CreateTriggerCheck creates a new trigger with the specified details.
+func (c *client) CreateTriggerCheck(
+	ctx context.Context,
+	checkID string,
+) (*TriggerCheck, error) {
+	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil)
+	if err != nil {
+		return nil, err
+	}
+	var result TriggerCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK && status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	return &result, nil
+}
+
+// GetTriggerCheck takes the ID of an existing trigger, and returns the
+// corresponding trigger.
+func (c *client) GetTriggerCheck(
+	ctx context.Context,
+	checkID string,
+) (*TriggerCheck, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := TriggerCheck{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+// DeleteTriggerCheck deletes the window with the specified ID.
+func (c *client) DeleteTriggerCheck(
+	ctx context.Context,
+	checkID string,
+) error {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("triggers/checks/%s", checkID),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
+// CreateTriggerGroup creates a new trigger with the specified details.
+func (c *client) CreateTriggerGroup(
+	ctx context.Context,
+	groupID int64,
+) (*TriggerGroup, error) {
+	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
+	if err != nil {
+		return nil, err
+	}
+	var result TriggerGroup
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK && status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	return &result, nil
+}
+
+// GetTriggerGroup takes the ID of an existing trigger, and returns the
+// corresponding trigger.
+func (c *client) GetTriggerGroup(
+	ctx context.Context,
+	groupID int64,
+) (*TriggerGroup, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := TriggerGroup{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+// DeleteTriggerGroup deletes the window with the specified ID.
+func (c *client) DeleteTriggerGroup(
+	ctx context.Context,
+	groupID int64,
+) error {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("triggers/check-groups/%s", strconv.FormatInt(groupID, 10)),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
 }
 
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
