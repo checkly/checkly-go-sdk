@@ -382,7 +382,7 @@ Pull requests welcome!
 
 ## 📄 License
 
-[MIT](https://github.com/checkly/checkly-go-sdk/blob/master/LICENSE)
+[MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)
 
 <p align="center">
   <a href="https://checklyhq.com?utm_source=github&utm_medium=sponsor-logo-github&utm_campaign=headless-recorder" target="_blank">
