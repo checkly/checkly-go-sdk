@@ -833,6 +833,9 @@ func (c *client) CreateTriggerCheck(
 	if status != http.StatusOK && status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
 	}
+
+	result.URL = fmt.Sprintf("%s/checks/%s/trigger/%s", c.url, checkID, result.Token)
+
 	return &result, nil
 }
 
@@ -854,6 +857,7 @@ func (c *client) GetTriggerCheck(
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
+	result.URL = fmt.Sprintf("%s/checks/%s/trigger/%s", c.url, checkID, result.Token)
 	return &result, nil
 }
 
@@ -895,6 +899,9 @@ func (c *client) CreateTriggerGroup(
 	if status != http.StatusOK && status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
 	}
+
+	result.URL = fmt.Sprintf("%s/check-groups/%d/trigger/%s", c.url, groupID, result.Token)
+
 	return &result, nil
 }
 
@@ -916,6 +923,8 @@ func (c *client) GetTriggerGroup(
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
+
+	result.URL = fmt.Sprintf("%s/check-groups/%d/trigger/%s", c.url, groupID, result.Token)
 	return &result, nil
 }
 

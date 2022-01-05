@@ -1,14 +1,14 @@
 {
-  "customUrl": "string",
-  "customDomain": "string",
-  "logo": "string",
-  "header": "string",
+  "customUrl":  "https://custom.checklyhq.com",
+  "customDomain": "mydomian.com",
+  "logo":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
+  "header": "Status",
   "width": "FULL",
   "refreshRate": 60,
   "paginate": true,
   "paginationRate": 30,
   "hideTags": false,
   "tags": [
-    "string"
+    "api"
     ]
 }

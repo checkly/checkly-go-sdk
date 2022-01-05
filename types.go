@@ -636,21 +636,23 @@ type MaintenanceWindow struct {
 	Tags           []string `json:"tags"`
 }
 
-// Trigger defines a type for a trigger.
+// Trigger defines a type for a check trigger.
 type TriggerCheck struct {
 	ID        int64  `json:"id,omitempty"`
 	CheckId   string `json:"checkId,omitempty"`
 	Token     string `json:"token"`
+	URL       string `json:"url"`
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
-// Trigger defines a type for a trigger.
+// Trigger defines a type for a group trigger.
 type TriggerGroup struct {
 	ID        int64  `json:"id,omitempty"`
 	GroupId   int64  `json:"groupId,omitempty"`
 	Token     string `json:"token"`
+	URL       string `json:"url"`
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
 	UpdatedAt string `json:"updated_at"`

@@ -1,7 +1,8 @@
 {
-	"checkId":        "721d28d6-149f-4f32-95e1-e497b23156f4",
-	"token":       		"MDMnt4oPjBBZ",
-	"created_at":     "2013-08-24",
-	"updated_at":     "2013-08-24",
-	"called_at":    	"2013-08-24"
+	"checkId":    "721d28d6-149f-4f32-95e1-e497b23156f4",
+	"token":      "MDMnt4oPjBBZ",
+	"url":        "https://127.0.0.1:35647/checks/721d28d6-149f-4f32-95e1-e497b23156f4/trigger/MDMnt4oPjBBZ",
+	"created_at": "2013-08-24",
+	"updated_at": "2013-08-24",
+	"called_at":  "2013-08-24"
 }
