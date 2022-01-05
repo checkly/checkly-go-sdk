@@ -1011,15 +1011,15 @@ func validateDashboard(t *testing.T, body []byte) {
 
 var testDashboard = checkly.Dashboard{
 	DashboardID:    "10",
-	CustomUrl:      "string",
-	CustomDomain:   "string",
-	Logo:           "string",
-	Header:         "string",
+	CustomUrl:      "https://custom.checklyhq.com",
+	CustomDomain:   "mydomian.com",
+	Logo:           "https://www.checklyhq.com/images/text_racoon_logo.svg",
+	Header:         "Status",
 	Width:          "FULL",
 	RefreshRate:    60,
 	Paginate:       true,
 	PaginationRate: 30,
-	Tags:           []string{"string"},
+	Tags:           []string{"api"},
 	HideTags:       false,
 }
 
@@ -1208,9 +1208,10 @@ var testTriggerCheck = checkly.TriggerCheck{
 	CreatedAt: "2013-08-24",
 	UpdatedAt: "2013-08-24",
 	CalledAt:  "2013-08-24",
+	URL:       "https://127.0.0.1:35647/checks/721d28d6-149f-4f32-95e1-e497b23156f4/trigger/MDMnt4oPjBBZ",
 }
 
-var ignoreTriggerCheck = cmpopts.IgnoreFields(checkly.TriggerCheck{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "Token")
+var ignoreTriggerCheck = cmpopts.IgnoreFields(checkly.TriggerCheck{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "URL")
 
 func TestCreateTriggerCheck(t *testing.T) {
 	t.Parallel()
@@ -1274,9 +1275,10 @@ var testTriggerGroup = checkly.TriggerGroup{
 	CreatedAt: "2013-08-24",
 	UpdatedAt: "2013-08-24",
 	CalledAt:  "2013-08-24",
+	URL:       "https://127.0.0.1:35647/check-groups/215/trigger/MDMnt4oPjBBZ",
 }
 
-var ignoreTriggerGroup = cmpopts.IgnoreFields(checkly.TriggerGroup{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "Token")
+var ignoreTriggerGroup = cmpopts.IgnoreFields(checkly.TriggerGroup{}, "ID", "CreatedAt", "UpdatedAt", "CalledAt", "URL")
 
 func TestCreateTriggerGroup(t *testing.T) {
 	t.Parallel()
