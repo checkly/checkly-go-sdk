@@ -1054,6 +1054,7 @@ func (c *client) apiCall(
 
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/json")
+	req.Header.Add("x-checkly-source", "TF")
 
 	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
 		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
