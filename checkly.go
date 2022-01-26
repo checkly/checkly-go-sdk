@@ -1044,6 +1044,7 @@ func (c *client) apiCall(
 	method string,
 	URL string,
 	data []byte,
+	checklySource string,
 ) (statusCode int, response string, err error) {
 	requestURL := c.url + "/v1/" + URL
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
@@ -1052,9 +1053,13 @@ func (c *client) apiCall(
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
+	if checklySource == "" {
+		checklySource = "go-sdk"
+	}
+
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("x-checkly-source", "TF")
+	req.Header.Add("x-checkly-source", checklySource)
 
 	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
 		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
