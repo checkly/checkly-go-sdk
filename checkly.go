@@ -51,6 +51,11 @@ func (c *client) SetAccountId(ID string) {
 	c.accountId = ID
 }
 
+// SetChecklySource sets the source on a client which is required for analytics.
+func (c *client) SetChecklySource(source string) {
+	c.source = source
+}
+
 // Create creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 func (c *client) Create(
@@ -1060,6 +1065,11 @@ func (c *client) apiCall(
 	}
 	if c.accountId != "" {
 		req.Header.Add("x-checkly-account", c.accountId)
+	}
+	if c.source != "" {
+		req.Header.Add("x-checkly-source", c.source)
+	} else {
+		req.Header.Add("x-checkly-source", "go-sdk")
 	}
 
 	if c.debug != nil {
