@@ -51,6 +51,11 @@ func (c *client) SetAccountId(ID string) {
 	c.accountId = ID
 }
 
+// SetChecklySource sets the source on a client which is required for analytics.
+func (c *client) SetChecklySource(source string) {
+	c.source = source
+}
+
 // Create creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 func (c *client) Create(
@@ -1044,7 +1049,6 @@ func (c *client) apiCall(
 	method string,
 	URL string,
 	data []byte,
-	checklySource string,
 ) (statusCode int, response string, err error) {
 	requestURL := c.url + "/v1/" + URL
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
@@ -1053,19 +1057,19 @@ func (c *client) apiCall(
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
-	if checklySource == "" {
-		checklySource = "go-sdk"
-	}
-
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("x-checkly-source", checklySource)
 
 	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
 		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
 	}
 	if c.accountId != "" {
 		req.Header.Add("x-checkly-account", c.accountId)
+	}
+	if c.source != "" {
+		req.Header.Add("x-checkly-source", c.source)
+	} else {
+		req.Header.Add("x-checkly-source", "go-sdk")
 	}
 
 	if c.debug != nil {
