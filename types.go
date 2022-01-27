@@ -261,6 +261,9 @@ type Client interface {
 
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
+
+	// SetChecklySource sets the source of the check for analytics purposes.
+	SetChecklySource(source string)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
