@@ -376,6 +376,7 @@ type Request struct {
 	Method          string      `json:"method"`
 	URL             string      `json:"url"`
 	FollowRedirects bool        `json:"followRedirects"`
+	SkipSSL         bool        `json:"skipSSL"`
 	Body            string      `json:"body"`
 	BodyType        string      `json:"bodyType,omitempty"`
 	Headers         []KeyValue  `json:"headers"`
