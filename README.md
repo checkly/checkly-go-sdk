@@ -249,10 +249,6 @@ var wantGroup = checkly.Group{
 			Amount:   0,
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
-		},
 	},
 	AlertChannelSubscriptions: []checkly.Subscription{
 		{
@@ -319,7 +315,6 @@ Accept-Encoding: gzip
 "localSetupScript":"setitup","localTearDownScript":"tearitdown","alertSettings":
 {"escalationType":"RUN_BASED","runBasedEscalation":{"failedRunThreshold":1},
 "timeBasedEscalation":{"minutesFailingThreshold":5},"reminders":{"interval":5},
-"sslCertificates":{"enabled":false,"alertThreshold":30}},
 "useGlobalAlertSettings":false,"request":{"method":"GET","url":"https://example.
 com","followRedirects":false,"body":"","bodyType":"NONE","headers":[
 {"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
@@ -346,11 +341,7 @@ Via: 1.1 vegur
 "sslCheck":true,"localSetupScript":"setitup","localTearDownScript":"tearitdown",
 "alertSettings":{"escalationType":"RUN_BASED","runBasedEscalation":
 {"failedRunThreshold":1},"timeBasedEscalation":{"minutesFailingThreshold":5},
-"reminders":{"interval":5,"amount":0},"sslCertificates":{"enabled":false,
-"alertThreshold":30}},"useGlobalAlertSettings":false,"request":{"method":"GET",
-"url":"https://example.com","followRedirects":false,"body":"","bodyType":"NONE",
-"headers":[{"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
-{"key":"query","value":"foo","locked":false}],"assertions":[
+"reminders":{"interval":5,"amount":0},"useGlobalAlertSettings":false,"request":{"method":"GET","url":"https://example.com","followRedirects":false,"body":"","bodyType":"NONE","headers":[{"key":"X-Test","value":"foo","locked":false}],"queryParameters":[{"key":"query","value":"foo","locked":false}],"assertions":[
 {"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200"}],
 "basicAuth":{"username":"","password":""}},"setupSnippetId":null,
 "tearDownSnippetId":null,"groupId":null,"groupOrder":null,

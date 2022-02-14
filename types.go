@@ -426,7 +426,9 @@ type AlertSettings struct {
 	RunBasedEscalation  RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
 	TimeBasedEscalation TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
 	Reminders           Reminders           `json:"reminders,omitempty"`
-	SSLCertificates     SSLCertificates     `json:"sslCertificates,omitempty"`
+	// Deprecated: SSLCertificates field will be removed in v2.
+	// Is not longer supported by Checkly Public API and will be ignored.
+	SSLCertificates SSLCertificates `json:"sslCertificates,omitempty"`
 }
 
 // RunBasedEscalation represents an alert escalation based on a number of failed
@@ -449,6 +451,7 @@ type Reminders struct {
 }
 
 // SSLCertificates represents alert settings for expiring SSL certificates.
+// Deprecated: SSLCertificates struct will be removed in v2.
 type SSLCertificates struct {
 	Enabled        bool `json:"enabled"`
 	AlertThreshold int  `json:"alertThreshold"`
