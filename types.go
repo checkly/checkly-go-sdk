@@ -14,6 +14,9 @@ import (
 type Client interface {
 	// Create creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
+	//
+	// Deprecated: this type would be removed in future versions,
+	// use CreateCheck instead.
 	Create(
 		ctx context.Context,
 		check Check,
@@ -21,6 +24,9 @@ type Client interface {
 
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
+	//
+	// Deprecated: this type would be removed in future versions,
+	// use UpdateCheck instead.
 	Update(
 		ctx context.Context,
 		ID string,
@@ -28,6 +34,9 @@ type Client interface {
 	) (*Check, error)
 
 	// Delete deletes the check with the specified ID.
+	//
+	// Deprecated: this type would be removed in future versions,
+	// use DeleteCheck instead.
 	Delete(
 		ctx context.Context,
 		ID string,
@@ -35,7 +44,38 @@ type Client interface {
 
 	// Get takes the ID of an existing check, and returns the check parameters,
 	// or an error.
+	//
+	// Deprecated: this type would be removed in future versions,
+	// use GetCheck instead.
 	Get(
+		ctx context.Context,
+		ID string,
+	) (*Check, error)
+
+	// Create creates a new check with the specified details.
+	// It returns the newly-created check, or an error.
+	CreateCheck(
+		ctx context.Context,
+		check Check,
+	) (*Check, error)
+
+	// Update updates an existing check with the specified details.
+	// It returns the updated check, or an error.
+	UpdateCheck(
+		ctx context.Context,
+		ID string,
+		check Check,
+	) (*Check, error)
+
+	// Delete deletes the check with the specified ID.
+	DeleteCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// Get takes the ID of an existing check, and returns the check parameters,
+	// or an error.
+	GetCheck(
 		ctx context.Context,
 		ID string,
 	) (*Check, error)
