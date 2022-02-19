@@ -244,6 +244,83 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+func TestCreateCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/api?autoAssignAlerts=false",
+		validateCheck,
+		http.StatusCreated,
+		"CreateCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	}
+}
+
+func TestGetCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", wantCheckID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.GetCheck(context.Background(), wantCheckID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	}
+}
+
+func TestUpdateCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
+		validateCheck,
+		http.StatusOK,
+		"UpdateCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotCheck, err := client.UpdateCheck(context.Background(), wantCheckID, wantCheck)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
+		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	}
+}
+
+func TestDeleteCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", wantCheckID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteCheck(context.Background(), wantCheckID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 var wantGroupID int64 = 135
 
 var wantGroup = checkly.Group{
