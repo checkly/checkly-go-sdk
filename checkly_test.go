@@ -120,7 +120,7 @@ func cannedResponseServer(
 		}
 		validate(t, body)
 		w.WriteHeader(status)
-		data, err := os.Open(fmt.Sprintf("testdata/%s", filename))
+		data, err := os.Open(fmt.Sprintf("fixtures/%s", filename))
 		if err != nil {
 			t.Error(err)
 		}
