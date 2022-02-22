@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.2.0 - 2021-06-02
 ### Added
-- Support for PagerDuty alert channels integration
+- Support for PagerDuty alert channels integration [#29](https://github.com/checkly/checkly-go-sdk/pull/29)
 
 ## v1.1.0 - 2021-05-20
 ### Added
@@ -59,4 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.0.1 - 2021-02-25
 
 ### Changed
-- Set `autoAssignAlerts` as false for all request
+- Set `autoAssignAlerts` as false for all request [#23](https://github.com/checkly/checkly-go-sdk/issues/23)
