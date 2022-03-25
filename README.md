@@ -1,8 +1,3 @@
-<p align="center">
-  <img width="300px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Go_Logo_Blue.svg/1200px-Go_Logo_Blue.svg.png" alt="Golang" />
-</p>
-
-
 <p>
   <img height="128" src="https://www.checklyhq.com/images/footer-logo.svg" align="right" />
   <h1>Checkly GO SDK</h1>
@@ -18,17 +13,11 @@
 
 > 🦦 Go SDK library for use with the Checkly API
 
-<br>
-
-## 👀 Overview
-
 This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
 
 While you can manage your Checkly account entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly [Terraform provider](https://github.com/checkly/terraform-provider-checkly) (which is built on top of this library):
 
-<br>
-
-## 🔧 How to use?
+## How to use?
 
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
 
@@ -261,15 +250,10 @@ var wantGroup = checkly.Group{
 group, err := client.CreateGroup(ctx, wantGroup)
 ```
 
-<br>
+>  A complete example program! You can see an example program which creates a Checkly check in the [examples/demo](examples/demo/main.go) folder.
 
-## 👌 A complete example program!
 
-You can see an example program which creates a Checkly check in the [examples/demo](examples/demo/main.go) folder.
-
-<br>
-
-## 🧪 Testing
+## Testing
 
 There are two different set of tests: unit test and integration tests. Both can be run with the `go test` command.
 
@@ -277,10 +261,7 @@ There are two different set of tests: unit test and integration tests. Both can 
 $ go test ./... # unit tests
 $ go test ./... -tags=integration # integration tests
 ```
-
-<br>
-
-## 🐛 Debugging
+##Debugging
 
 If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
 
@@ -356,15 +337,13 @@ Via: 1.1 vegur
 
 <br>
 
-##  🚀 Release
+## Release
 
 Release process is automatically handled using tags and the `release` GitHub Action. To create a new release, you have to create and push a new version tag: `vX.X.X`
 
 >  🔢 When creating a new tag, be sure to follow [SemVer](https://semver.org/).
 
-<br>
-
-## 📝 Bugs and feature requests
+## Bugs and feature requests
 
 If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/checkly/checkly-go-sdk/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
@@ -372,11 +351,11 @@ Not all the functionality of the Checkly API is implemented yet.
 
 Pull requests welcome!
 
-<br>
-
-## 📄 License
+## License
 
 [MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)
+
+<br>
 
 <p align="center">
   <a href="https://checklyhq.com?utm_source=github&utm_medium=sponsor-logo-github&utm_campaign=headless-recorder" target="_blank">
