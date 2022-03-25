@@ -1076,6 +1076,29 @@ func (c *client) DeleteTriggerGroup(
 	return nil
 }
 
+func (c *client) GetLocations(
+	ctx context.Context,
+) (*[]Location, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("locations"),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	locations := &[]Location{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&locations)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return locations, nil
+}
+
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 	payload := map[string]interface{}{
 		"id":     ac.ID,

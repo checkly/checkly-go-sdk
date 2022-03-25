@@ -23,10 +23,6 @@ var alertSettings = checkly.AlertSettings{
 	Reminders: checkly.Reminders{
 		Interval: 5,
 	},
-	SSLCertificates: checkly.SSLCertificates{
-		Enabled:        false,
-		AlertThreshold: 3,
-	},
 }
 
 var dashboard = checkly.Dashboard{
@@ -190,10 +186,6 @@ var group = checkly.Group{
 		Reminders: checkly.Reminders{
 			Amount:   0,
 			Interval: 5,
-		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
 		},
 	},
 	LocalSetupScript:    "setup-test",

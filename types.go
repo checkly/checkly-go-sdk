@@ -299,6 +299,10 @@ type Client interface {
 		groupID int64,
 	) error
 
+	GetLocations(
+		ctx context.Context,
+	) (*[]Location, error)
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 
@@ -466,7 +470,8 @@ type AlertSettings struct {
 	RunBasedEscalation  RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
 	TimeBasedEscalation TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
 	Reminders           Reminders           `json:"reminders,omitempty"`
-	SSLCertificates     SSLCertificates     `json:"sslCertificates,omitempty"`
+	// Deprecated: this property will be removed in future versions.
+	SSLCertificates SSLCertificates `json:"sslCertificates,omitempty"`
 }
 
 // RunBasedEscalation represents an alert escalation based on a number of failed
@@ -488,6 +493,7 @@ type Reminders struct {
 	Interval int `json:"interval,omitempty"`
 }
 
+// Deprecated: this type will be removed in future versions.
 // SSLCertificates represents alert settings for expiring SSL certificates.
 type SSLCertificates struct {
 	Enabled        bool `json:"enabled"`
@@ -701,6 +707,11 @@ type TriggerGroup struct {
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
 	UpdatedAt string `json:"updated_at"`
+}
+
+type Location struct {
+	Name   string `json:"name"`
+	Region string `json:"region"`
 }
 
 //SetConfig sets config of alert channel based on it's type

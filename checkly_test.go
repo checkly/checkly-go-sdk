@@ -86,10 +86,6 @@ var wantCheck = checkly.Check{
 		Reminders: checkly.Reminders{
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        false,
-			AlertThreshold: 30,
-		},
 	},
 	UseGlobalAlertSettings:    false,
 	DegradedResponseTime:      15000,
@@ -379,10 +375,6 @@ var wantGroup = checkly.Group{
 		Reminders: checkly.Reminders{
 			Amount:   0,
 			Interval: 5,
-		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
 		},
 	},
 	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{

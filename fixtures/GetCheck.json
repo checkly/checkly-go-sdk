@@ -62,10 +62,6 @@
     "reminders": {
       "amount": 0,
       "interval": 5
-    },
-    "sslCertificates": {
-      "enabled": false,
-      "alertThreshold": 30
     }
   },
   "script": "foo",

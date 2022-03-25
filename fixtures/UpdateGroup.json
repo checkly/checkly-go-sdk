@@ -37,10 +37,6 @@
       "interval": 5
     },
     "escalationType": "RUN_BASED",
-    "sslCertificates": {
-      "enabled": true,
-      "alertThreshold": 30
-    },
     "runBasedEscalation": {
       "failedRunThreshold": 1
     },
