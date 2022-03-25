@@ -496,8 +496,8 @@ type Reminders struct {
 // Deprecated: this type will be removed in future versions.
 // SSLCertificates represents alert settings for expiring SSL certificates.
 type SSLCertificates struct {
-	Enabled        bool `json:"enabled"`
-	AlertThreshold int  `json:"alertThreshold"`
+	Enabled        bool `json:"enabled,omitempty"`
+	AlertThreshold int  `json:"alertThreshold,omitempty"`
 }
 
 // Group represents a check group.
