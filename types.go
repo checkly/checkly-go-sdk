@@ -15,7 +15,7 @@ type Client interface {
 	// Create creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: method type would be removed in future versions,
 	// use CreateCheck instead.
 	Create(
 		ctx context.Context,
@@ -25,7 +25,7 @@ type Client interface {
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use UpdateCheck instead.
 	Update(
 		ctx context.Context,
@@ -35,7 +35,7 @@ type Client interface {
 
 	// Delete deletes the check with the specified ID.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use DeleteCheck instead.
 	Delete(
 		ctx context.Context,
@@ -45,7 +45,7 @@ type Client interface {
 	// Get takes the ID of an existing check, and returns the check parameters,
 	// or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use GetCheck instead.
 	Get(
 		ctx context.Context,
@@ -298,10 +298,6 @@ type Client interface {
 		ctx context.Context,
 		groupID int64,
 	) error
-
-	GetLocations(
-		ctx context.Context,
-	) (*[]Location, error)
 
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)

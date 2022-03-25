@@ -59,7 +59,7 @@ func (c *client) SetChecklySource(source string) {
 // Create creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use CreateCheck instead.
 func (c *client) Create(
 	ctx context.Context,
@@ -91,7 +91,7 @@ func (c *client) Create(
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use UpdateCheck instead.
 func (c *client) Update(
 	ctx context.Context,
@@ -123,7 +123,7 @@ func (c *client) Update(
 
 // Delete deletes the check with the specified ID.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use DeleteCheck instead.
 func (c *client) Delete(
 	ctx context.Context,
@@ -147,7 +147,7 @@ func (c *client) Delete(
 // Get takes the ID of an existing check, and returns the check parameters, or
 // an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use GetCheck instead.
 func (c *client) Get(
 	ctx context.Context,
@@ -1074,29 +1074,6 @@ func (c *client) DeleteTriggerGroup(
 		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
-}
-
-func (c *client) GetLocations(
-	ctx context.Context,
-) (*[]Location, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("locations"),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	locations := &[]Location{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&locations)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
-	}
-	return locations, nil
 }
 
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
