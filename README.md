@@ -357,11 +357,9 @@ Not all the functionality of the Checkly API is implemented yet.
 
 Pull requests welcome!
 
-<br>
-
 ## License
 
-[MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)]
+[MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)
 
 <br>
 
