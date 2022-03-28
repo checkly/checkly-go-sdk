@@ -674,7 +674,7 @@ type MaintenanceWindow struct {
 	StartsAt       string   `json:"startsAt"`
 	EndsAt         string   `json:"endsAt"`
 	RepeatInterval int      `json:"repeatInterval,omitempty"`
-	RepeatUnit     string   `json:"repeatUnit"`
+	RepeatUnit     string   `json:"repeatUnit,omitempty"`
 	RepeatEndsAt   string   `json:"repeatEndsAt,omitempty"`
 	CreatedAt      string   `json:"created_at"`
 	UpdatedAt      string   `json:"updated_at"`
