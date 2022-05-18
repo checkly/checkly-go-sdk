@@ -494,7 +494,7 @@ func TestGetCheckResult(t *testing.T) {
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
-		t.Errorf("Expected no errors, got %w", err)
+		t.Errorf("Expected no errors, got %v", err)
 	}
 	startedAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.283Z")
 	stoppedAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.413Z")
