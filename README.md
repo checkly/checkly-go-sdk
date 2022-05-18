@@ -65,7 +65,6 @@ check := checkly.Check{
 	Muted:                false,
 	ShouldFail:           false,
 	DoubleCheck:          false,
-	SSLCheck:             true,
 	LocalSetupScript:     "",
 	LocalTearDownScript:  "",
 	Locations: []string{
@@ -124,7 +123,6 @@ check := checkly.Check{
 	Muted:         false,
 	ShouldFail:    false,
 	DoubleCheck:   false,
-	SSLCheck:      true,
 	Locations:     []string{"eu-west-1"},
 	AlertSettings: alertSettings,
 	Script: `const assert = require("chai").assert;
@@ -238,10 +236,6 @@ var wantGroup = checkly.Group{
 			Amount:   0,
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
-		},
 	},
 	AlertChannelSubscriptions: []checkly.Subscription{
 		{
@@ -300,7 +294,6 @@ Accept-Encoding: gzip
 "localSetupScript":"setitup","localTearDownScript":"tearitdown","alertSettings":
 {"escalationType":"RUN_BASED","runBasedEscalation":{"failedRunThreshold":1},
 "timeBasedEscalation":{"minutesFailingThreshold":5},"reminders":{"interval":5},
-"sslCertificates":{"enabled":false,"alertThreshold":30}},
 "useGlobalAlertSettings":false,"request":{"method":"GET","url":"https://example.
 com","followRedirects":false,"body":"","bodyType":"NONE","headers":[
 {"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
@@ -327,8 +320,7 @@ Via: 1.1 vegur
 "sslCheck":true,"localSetupScript":"setitup","localTearDownScript":"tearitdown",
 "alertSettings":{"escalationType":"RUN_BASED","runBasedEscalation":
 {"failedRunThreshold":1},"timeBasedEscalation":{"minutesFailingThreshold":5},
-"reminders":{"interval":5,"amount":0},"sslCertificates":{"enabled":false,
-"alertThreshold":30}},"useGlobalAlertSettings":false,"request":{"method":"GET",
+"reminders":{"interval":5,"amount":0},"useGlobalAlertSettings":false,"request":{"method":"GET",
 "url":"https://example.com","followRedirects":false,"body":"","bodyType":"NONE",
 "headers":[{"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
 {"key":"query","value":"foo","locked":false}],"assertions":[

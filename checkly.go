@@ -59,7 +59,7 @@ func (c *client) SetChecklySource(source string) {
 // Create creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use CreateCheck instead.
 func (c *client) Create(
 	ctx context.Context,
@@ -91,7 +91,7 @@ func (c *client) Create(
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use UpdateCheck instead.
 func (c *client) Update(
 	ctx context.Context,
@@ -123,7 +123,7 @@ func (c *client) Update(
 
 // Delete deletes the check with the specified ID.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use DeleteCheck instead.
 func (c *client) Delete(
 	ctx context.Context,
@@ -147,7 +147,7 @@ func (c *client) Delete(
 // Get takes the ID of an existing check, and returns the check parameters, or
 // an error.
 //
-// Deprecated: this type would be removed in future versions,
+// Deprecated: this method would be removed in future versions,
 // use GetCheck instead.
 func (c *client) Get(
 	ctx context.Context,
