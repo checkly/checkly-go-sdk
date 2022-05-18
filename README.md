@@ -65,7 +65,6 @@ check := checkly.Check{
 	Muted:                false,
 	ShouldFail:           false,
 	DoubleCheck:          false,
-	SSLCheck:             true,
 	LocalSetupScript:     "",
 	LocalTearDownScript:  "",
 	Locations: []string{
@@ -124,7 +123,6 @@ check := checkly.Check{
 	Muted:         false,
 	ShouldFail:    false,
 	DoubleCheck:   false,
-	SSLCheck:      true,
 	Locations:     []string{"eu-west-1"},
 	AlertSettings: alertSettings,
 	Script: `const assert = require("chai").assert;

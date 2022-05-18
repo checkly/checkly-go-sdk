@@ -30,7 +30,6 @@ var wantCheck = checkly.Check{
 	Activated:   true,
 	Muted:       false,
 	DoubleCheck: true,
-	SSLCheck:    true,
 	ShouldFail:  false,
 	Locations:   []string{"eu-west-1"},
 	Request: checkly.Request{

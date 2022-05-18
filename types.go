@@ -397,7 +397,6 @@ type Check struct {
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
-	SSLCheck                  bool                       `json:"sslCheck"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
@@ -409,6 +408,9 @@ type Check struct {
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	RuntimeID                 *string                    `json:"runtimeId"`
+
+	// Deprecated: this property will be removed in future versions.
+	SSLCheck bool `json:"sslCheck"`
 }
 
 // Request represents the parameters for the request made by the check.

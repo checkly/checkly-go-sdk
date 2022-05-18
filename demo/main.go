@@ -61,7 +61,6 @@ var apiCheck = checkly.Check{
 	Muted:                false,
 	ShouldFail:           false,
 	DoubleCheck:          false,
-	SSLCheck:             true,
 	LocalSetupScript:     "",
 	LocalTearDownScript:  "",
 	Locations: []string{
