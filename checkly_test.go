@@ -30,7 +30,6 @@ var wantCheck = checkly.Check{
 	Activated:   true,
 	Muted:       false,
 	DoubleCheck: true,
-	SSLCheck:    true,
 	ShouldFail:  false,
 	Locations:   []string{"eu-west-1"},
 	Request: checkly.Request{
@@ -85,10 +84,6 @@ var wantCheck = checkly.Check{
 		},
 		Reminders: checkly.Reminders{
 			Interval: 5,
-		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        false,
-			AlertThreshold: 30,
 		},
 	},
 	UseGlobalAlertSettings:    false,
@@ -149,7 +144,7 @@ func validateEmptyBody(t *testing.T, body []byte) {
 func validateAnything(*testing.T, []byte) {
 }
 
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset")
+var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset", "AlertSettings.SSLCertificates")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
@@ -380,10 +375,6 @@ var wantGroup = checkly.Group{
 			Amount:   0,
 			Interval: 5,
 		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
-		},
 	},
 	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
 		{
@@ -406,7 +397,7 @@ func validateGroup(t *testing.T, body []byte) {
 	}
 }
 
-var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID")
+var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertSettings.SSLCertificates")
 
 func TestCreateGroup(t *testing.T) {
 	t.Parallel()
@@ -502,7 +493,7 @@ func TestGetCheckResult(t *testing.T) {
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
-		t.Errorf("Expected no errors, got %w", err)
+		t.Errorf("Expected no errors, got %v", err)
 	}
 	startedAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.283Z")
 	stoppedAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.413Z")

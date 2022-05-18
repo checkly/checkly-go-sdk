@@ -23,10 +23,6 @@ var alertSettings = checkly.AlertSettings{
 	Reminders: checkly.Reminders{
 		Interval: 5,
 	},
-	SSLCertificates: checkly.SSLCertificates{
-		Enabled:        false,
-		AlertThreshold: 3,
-	},
 }
 
 var dashboard = checkly.Dashboard{
@@ -65,7 +61,6 @@ var apiCheck = checkly.Check{
 	Muted:                false,
 	ShouldFail:           false,
 	DoubleCheck:          false,
-	SSLCheck:             true,
 	LocalSetupScript:     "",
 	LocalTearDownScript:  "",
 	Locations: []string{
@@ -190,10 +185,6 @@ var group = checkly.Group{
 		Reminders: checkly.Reminders{
 			Amount:   0,
 			Interval: 5,
-		},
-		SSLCertificates: checkly.SSLCertificates{
-			Enabled:        true,
-			AlertThreshold: 30,
 		},
 	},
 	LocalSetupScript:    "setup-test",

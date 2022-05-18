@@ -58,10 +58,6 @@
     "reminders": {
       "amount": 0,
       "interval": 5
-    },
-    "sslCertificates": {
-      "enabled": true,
-      "alertThreshold": 30
     }
   },
   "alertChannelSubscriptions": [
