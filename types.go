@@ -408,6 +408,8 @@ type Check struct {
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	RuntimeID                 *string                    `json:"runtimeId"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
@@ -518,6 +520,8 @@ type Group struct {
 	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	RuntimeID                 *string                    `json:"runtimeId"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
@@ -540,14 +544,14 @@ type CheckResult struct {
 	IsDegraded          bool                `json:"isDegraded"`
 	OverMaxResponseTime bool                `json:"overMaxResponseTime"`
 	RunLocation         string              `json:"runLocation"`
-	StartedAt           time.Time           `json:"startedAt"`
-	StoppedAt           time.Time           `json:"stoppedAt"`
-	CreatedAt           time.Time           `json:"created_at"`
 	ResponseTime        int64               `json:"responseTime"`
 	ApiCheckResult      *ApiCheckResult     `json:"apiCheckResult"`
 	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
 	CheckRunID          int64               `json:"checkRunId"`
 	Attempts            int64               `json:"attempts"`
+	StartedAt           time.Time           `json:"startedAt"`
+	StoppedAt           time.Time           `json:"stoppedAt"`
+	CreatedAt           time.Time           `json:"created_at"`
 }
 
 // ApiCheckResult represents an API Check result
@@ -640,8 +644,6 @@ type AlertChannelWebhook struct {
 type AlertChannel struct {
 	ID                 int64                  `json:"id,omitempty"`
 	Type               string                 `json:"type"`
-	CreatedAt          time.Time              `json:"created_at"`
-	UpdatedAt          time.Time              `json:"updated_at"`
 	Email              *AlertChannelEmail     `json:"-"`
 	Slack              *AlertChannelSlack     `json:"-"`
 	SMS                *AlertChannelSMS       `json:"-"`
@@ -653,6 +655,8 @@ type AlertChannel struct {
 	SendDegraded       *bool                  `json:"sendDegraded"`
 	SSLExpiry          *bool                  `json:"sslExpiry"`
 	SSLExpiryThreshold *int                   `json:"sslExpiryThreshold"`
+	CreatedAt          string                 `json:"created_at"`
+	UpdatedAt          string                 `json:"updated_at"`
 }
 
 // Dashboard defines a type for a dashboard.
@@ -660,15 +664,17 @@ type Dashboard struct {
 	ID             int64    `json:"id,omitempty"`
 	DashboardID    string   `json:"dashboardId,omitempty"`
 	CustomUrl      string   `json:"customUrl"`
-	CustomDomain   string   `json:"customDomain"`
-	Logo           string   `json:"logo"`
-	Header         string   `json:"header"`
+	CustomDomain   string   `json:"customDomain,omitempty"`
+	Logo           string   `json:"logo,omitempty"`
+	Header         string   `json:"header,omitempty"`
 	Width          string   `json:"width,omitempty"`
 	RefreshRate    int      `json:"refreshRate"`
 	Paginate       bool     `json:"paginate"`
 	PaginationRate int      `json:"paginationRate"`
 	Tags           []string `json:"tags,omitempty"`
-	HideTags       bool     `json:"hideTags"`
+	HideTags       bool     `json:"hideTags,omitempty"`
+	CreatedAt      string   `json:"created_at"`
+	UpdatedAt      string   `json:"updated_at"`
 }
 
 // MaintenanceWindow defines a type for a maintenance window.
@@ -680,9 +686,9 @@ type MaintenanceWindow struct {
 	RepeatInterval int      `json:"repeatInterval,omitempty"`
 	RepeatUnit     string   `json:"repeatUnit,omitempty"`
 	RepeatEndsAt   string   `json:"repeatEndsAt,omitempty"`
+	Tags           []string `json:"tags,omitempty"`
 	CreatedAt      string   `json:"created_at"`
 	UpdatedAt      string   `json:"updated_at"`
-	Tags           []string `json:"tags"`
 }
 
 // Trigger defines a type for a check trigger.
@@ -691,8 +697,8 @@ type TriggerCheck struct {
 	CheckId   string `json:"checkId,omitempty"`
 	Token     string `json:"token"`
 	URL       string `json:"url"`
-	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
+	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
@@ -702,8 +708,8 @@ type TriggerGroup struct {
 	GroupId   int64  `json:"groupId,omitempty"`
 	Token     string `json:"token"`
 	URL       string `json:"url"`
-	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
+	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
