@@ -15,7 +15,7 @@ type Client interface {
 	// Create creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: method type would be removed in future versions,
 	// use CreateCheck instead.
 	Create(
 		ctx context.Context,
@@ -25,7 +25,7 @@ type Client interface {
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use UpdateCheck instead.
 	Update(
 		ctx context.Context,
@@ -35,7 +35,7 @@ type Client interface {
 
 	// Delete deletes the check with the specified ID.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use DeleteCheck instead.
 	Delete(
 		ctx context.Context,
@@ -45,7 +45,7 @@ type Client interface {
 	// Get takes the ID of an existing check, and returns the check parameters,
 	// or an error.
 	//
-	// Deprecated: this type would be removed in future versions,
+	// Deprecated: this method would be removed in future versions,
 	// use GetCheck instead.
 	Get(
 		ctx context.Context,
@@ -397,7 +397,6 @@ type Check struct {
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
-	SSLCheck                  bool                       `json:"sslCheck"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
@@ -409,6 +408,9 @@ type Check struct {
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	RuntimeID                 *string                    `json:"runtimeId"`
+
+	// Deprecated: this property will be removed in future versions.
+	SSLCheck bool `json:"sslCheck"`
 }
 
 // Request represents the parameters for the request made by the check.
@@ -466,7 +468,8 @@ type AlertSettings struct {
 	RunBasedEscalation  RunBasedEscalation  `json:"runBasedEscalation,omitempty"`
 	TimeBasedEscalation TimeBasedEscalation `json:"timeBasedEscalation,omitempty"`
 	Reminders           Reminders           `json:"reminders,omitempty"`
-	SSLCertificates     SSLCertificates     `json:"sslCertificates,omitempty"`
+	// Deprecated: this property will be removed in future versions.
+	SSLCertificates SSLCertificates `json:"sslCertificates,omitempty"`
 }
 
 // RunBasedEscalation represents an alert escalation based on a number of failed
@@ -488,10 +491,11 @@ type Reminders struct {
 	Interval int `json:"interval,omitempty"`
 }
 
+// Deprecated: this type will be removed in future versions.
 // SSLCertificates represents alert settings for expiring SSL certificates.
 type SSLCertificates struct {
-	Enabled        bool `json:"enabled"`
-	AlertThreshold int  `json:"alertThreshold"`
+	Enabled        bool `json:"enabled,omitempty"`
+	AlertThreshold int  `json:"alertThreshold,omitempty"`
 }
 
 // Group represents a check group.
@@ -701,6 +705,11 @@ type TriggerGroup struct {
 	CreatedAt string `json:"created_at"`
 	CalledAt  string `json:"called_at"`
 	UpdatedAt string `json:"updated_at"`
+}
+
+type Location struct {
+	Name   string `json:"name"`
+	Region string `json:"region"`
 }
 
 //SetConfig sets config of alert channel based on it's type
