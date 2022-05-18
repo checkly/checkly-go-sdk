@@ -4,10 +4,8 @@ addAssignees: author
 reviewers:
   - pilimartinez
   - ianaya89
-  - umutuzgur
-  - danielpaulus
 
 skipKeywords:
   - wip
 
-numberOfReviewers: 3
+numberOfReviewers: 2
