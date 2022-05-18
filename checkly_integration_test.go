@@ -25,13 +25,20 @@ func setupClient(t *testing.T) checkly.Client {
 	if apiKey == "" {
 		t.Error("'CHECKLY_API_KEY' must be set for integration tests")
 	}
-	return checkly.NewClient(
+	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
+	if accountId == "" {
+		t.Error("'CHECKLY_ACCOUNT_ID' must be set for integration tests")
+	}
+
+	client := checkly.NewClient(
 		baseUrl,
 		apiKey,
 		nil,
 		debug,
 	)
 
+	client.SetAccountId(accountId)
+	return client
 }
 
 func TestCreateIntegration(t *testing.T) {
