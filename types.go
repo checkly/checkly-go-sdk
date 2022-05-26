@@ -457,7 +457,7 @@ type KeyValue struct {
 // EnvironmentVariable represents a key-value pair for setting environment
 // values during check execution.
 type EnvironmentVariable struct {
-	Key    string `json:"key"`
+	Key    string `json:"key,omitempty"`
 	Value  string `json:"value"`
 	Locked bool   `json:"locked"`
 }
