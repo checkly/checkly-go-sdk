@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## v1.5.7 - 2022-05-26
+### Added
+- Add Dependabot GitHub action [#69b1aeb](https://github.com/checkly/checkly-go-sdk/commit/69b1aebf23a1d86d3645ef13ff20f57aafee4672)
+- Add CODEOWNERS file [#02e1ce4](https://github.com/checkly/checkly-go-sdk/commit/02e1ce4fff4e00eb0bbcbfb0e849324df4664b75)
+
+### Changed
+- Use new Public API endpoints for checks creation [#72](https://github.com/checkly/checkly-go-sdk/pull/72)
+- Improve code demo and update test cases [#ae0cc2e](https://github.com/checkly/checkly-go-sdk/commit/ae0cc2e4f2431f4862352a8dcfc61fbf0d5009d7)
+- Upgrade actions/checkout to v3 [#80](https://github.com/checkly/checkly-go-sdk/pull/80)
+- Upgrade github/codeql-action to v2  [#89](https://github.com/checkly/checkly-go-sdk/pull/83)
+- Upgrade github.com/google/go-cmp to v0.5.8 [#84](https://github.com/checkly/checkly-go-sdk/pull/84)
+- Deprecate `sslCertificates` from `AlertSettings` and `sslChecks` from `Checks` [#76](https://github.com/checkly/checkly-go-sdk/pull/76)
+- Migrate test cases to use Checkly User Keys (#88)[https://github.com/checkly/checkly-go-sdk/pull/88]
+
+### Fixed
+- Fix typos and remove emojis from docs [#41931cc](https://github.com/checkly/checkly-go-sdk/commit/41931ccd73f18344374ef1164d67fcf09a916fb7)
+- Set `omitempty` in property `RepeatInterval` of  `MaintenanceWindow` [#79](https://github.com/checkly/checkly-go-sdk/pull/79)
+- Set `omitempty` in `Key` of `EnvironmentVariable` [#90](https://github.com/checkly/checkly-go-sdk/pull/90)
+- Set missing `omitempty` in `Dashboard` and `MaintenanecWindow` [#87](https://github.com/checkly/checkly-go-sdk/pull/87)
+
 ## v1.5.6 - 2022-01-26
 ### Fixed
 - Add `skipSSL` request property [#67](https://github.com/checkly/checkly-go-sdk/pull/67)
@@ -14,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix `SetChecklySource` type definition [#66](https://github.com/checkly/checkly-go-sdk/pull/66)
 
-## v1.5.4 - Skiped 
-
+## v1.5.4 - Skipped
+N/A
 ## v1.5.3 - 2022-01-26
 ### Added
 - Add `x-checkly-source` header [#65](https://github.com/checkly/checkly-go-sdk/pull/65)
@@ -26,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## v1.5.1 - 2022-01-05
-### Chnaged
+### Changed
 - Update default branch to main [#60](https://github.com/checkly/checkly-go-sdk/issues/60)
 
 

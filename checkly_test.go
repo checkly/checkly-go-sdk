@@ -1402,3 +1402,100 @@ func TestGetTriggerGroup(t *testing.T) {
 		t.Error(cmp.Diff(testTriggerGroup, *gotTriggerGroup, ignoreTriggerGroup))
 	}
 }
+
+func validatePrivateLocation(t *testing.T, body []byte) {
+	var gotPrivateLocation checkly.PrivateLocation
+	err := json.Unmarshal(body, &gotPrivateLocation)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testPrivateLocation, gotPrivateLocation) {
+		t.Error(cmp.Diff(testPrivateLocation, gotPrivateLocation))
+	}
+}
+
+var testPrivateLocation = checkly.PrivateLocation{
+	ID:        "1",
+	Name:      "New Private Location",
+	SlugName:  "new-private-location",
+	Icon:      "location",
+	CreatedAt: "2013-08-24",
+	UpdatedAt: "2013-08-24",
+}
+
+var ignorePrivateLocationFields = cmpopts.IgnoreFields(checkly.PrivateLocation{}, "ID", "CreatedAt", "UpdatedAt", "Keys")
+
+func TestCreatePrivateLocation(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/private-locations",
+		validatePrivateLocation,
+		http.StatusCreated,
+		"CreatePrivateLocation.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	gotPrivateLocation, err := client.CreatePrivateLocation(context.Background(), testPrivateLocation)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields) {
+		t.Error(cmp.Diff(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields))
+	}
+}
+
+func TestDeletePrivateLocation(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/private-locations/%s", testPrivateLocation.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeletePrivateLocation(context.Background(), testPrivateLocation.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdatePrivateLocation(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/private-locations/%s", testPrivateLocation.ID),
+		validatePrivateLocation,
+		http.StatusOK,
+		"CreatePrivateLocation.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdatePrivateLocation(context.Background(), testPrivateLocation.ID, testPrivateLocation)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetPrivateLocation(t *testing.T) {
+	return
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/private-locations/%s", testPrivateLocation.ID),
+		validatePrivateLocation,
+		http.StatusOK,
+		"CreatePrivateLocation.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	pl, err := client.GetPrivateLocation(context.Background(), testPrivateLocation.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testPrivateLocation, *pl, ignorePrivateLocationFields) {
+		t.Error(cmp.Diff(testPrivateLocation, *pl, ignorePrivateLocationFields))
+	}
+}
