@@ -3,5 +3,3 @@ github.com/checkly/checkly-go-sdk v0.3.0/go.mod h1:wkAoXD2cVCNQEXi9lHZqy/zONIAZc
 github.com/checkly/checkly-go-sdk v0.4.0 h1:N4u5gzgIqiQ32uCuc8JUxsmNr2H8EHauT9wX7hcSjVc=
 github.com/checkly/checkly-go-sdk v0.4.0/go.mod h1:wkAoXD2cVCNQEXi9lHZqy/zONIAZc5D9frih6Gas3Rs=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
-github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
-github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
