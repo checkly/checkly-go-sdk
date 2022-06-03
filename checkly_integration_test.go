@@ -295,3 +295,33 @@ func TestGetTriggerGroupIntegration(t *testing.T) {
 		t.Error(cmp.Diff(gotGroup.ID, gotTriggerGroup.GroupId, ignoreTriggerGroup))
 	}
 }
+
+// PrivateLocations
+
+func TestCreatePrivateLocationIntegration(t *testing.T) {
+	client := setupClient(t)
+
+	gotPrivateLocation, err := client.CreatePrivateLocation(context.Background(), testPrivateLocation)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeletePrivateLocation(context.Background(), gotPrivateLocation.ID)
+	if !cmp.Equal(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields) {
+		t.Error(cmp.Diff(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields))
+	}
+}
+func TestGetPrivateLocationIntegration(t *testing.T) {
+	client := setupClient(t)
+	pl, err := client.CreatePrivateLocation(context.Background(), testPrivateLocation)
+	if err != nil {
+		t.Error(err)
+	}
+	defer client.DeletePrivateLocation(context.Background(), pl.ID)
+	gotPrivateLocation, err := client.GetPrivateLocation(context.Background(), pl.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields) {
+		t.Error(cmp.Diff(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields))
+	}
+}
