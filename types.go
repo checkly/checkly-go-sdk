@@ -509,7 +509,7 @@ type GroupPrivateLocation struct {
 type PrivateLocationKey struct {
 	Id        string `json:"id"`
 	MaskedKey string `json:"maskedKey"`
-	Key       string `json:"key"`
+	RawKey    string `json:"rawKey"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }

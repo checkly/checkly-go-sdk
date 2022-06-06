@@ -212,15 +212,15 @@ func main() {
 	// uncomment this to enable dumping of API requests and responses
 	// debug = os.Stdout
 	client := checkly.NewClient(
-		"http://localhost:3000",
-		"bd145230646c45ebac5e92a1c9eae051",
+		baseUrl,
+		apiKey,
 		nil,   //custom http client, defaults to http.DefaultClient
 		debug, //io.Writer to output debug messages
 	)
 
 	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
 	if accountId != "" {
-		client.SetAccountId("162ee1d7-af6f-4454-aa7d-6d2e6eb936d1")
+		client.SetAccountId(accountId)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
@@ -238,19 +238,4 @@ func main() {
 		}
 		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
-
-	var ID = "6b501554-d98e-42b8-ab8d-4dc2af03e77c"
-	pl, err := client.GetPrivateLocation(ctx, ID)
-	if err != nil {
-		log.Fatalf("creating group: %v", err)
-	}
-	fmt.Printf("%+v\n", pl)
-	// fmt.Print(pl)
-
-	// pl, err := client.CreatePrivateLocation(ctx, privateLocation)
-	// if err != nil {
-	// 	log.Fatalf("creating group: %v", err)
-	// }
-	// fmt.Print(pl)
-
 }
