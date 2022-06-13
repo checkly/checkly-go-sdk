@@ -408,35 +408,36 @@ const NotContains = "NOT_CONTAINS"
 
 // Check represents the parameters for an existing check.
 type Check struct {
-	ID                         string                     `json:"id"`
-	Name                       string                     `json:"name"`
-	Type                       string                     `json:"checkType"`
-	Frequency                  int                        `json:"frequency"`
-	FrequencyOffset            int                        `json:"frequencyOffset,omitempty"`
-	Activated                  bool                       `json:"activated"`
-	Muted                      bool                       `json:"muted"`
-	ShouldFail                 bool                       `json:"shouldFail"`
-	Locations                  []string                   `json:"locations,omitempty"`
-	DegradedResponseTime       int                        `json:"degradedResponseTime"`
-	MaxResponseTime            int                        `json:"maxResponseTime"`
-	Script                     string                     `json:"script,omitempty"`
-	EnvironmentVariables       []EnvironmentVariable      `json:"environmentVariables"`
-	DoubleCheck                bool                       `json:"doubleCheck"`
-	Tags                       []string                   `json:"tags,omitempty"`
-	PrivateLocationAssignments []CheckPrivateLocation     `json:"privateLocationAssignments,omitempty"`
-	SetupSnippetID             int64                      `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID          int64                      `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript           string                     `json:"localSetupScript,omitempty"`
-	LocalTearDownScript        string                     `json:"localTearDownScript,omitempty"`
-	AlertSettings              AlertSettings              `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings     bool                       `json:"useGlobalAlertSettings"`
-	Request                    Request                    `json:"request"`
-	GroupID                    int64                      `json:"groupId,omitempty"`
-	GroupOrder                 int                        `json:"groupOrder,omitempty"`
-	AlertChannelSubscriptions  []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                  *string                    `json:"runtimeId"`
-	CreatedAt                  time.Time                  `json:"createdAt"`
-	UpdatedAt                  time.Time                  `json:"updatedAt"`
+	ID                        string                     `json:"id"`
+	Name                      string                     `json:"name"`
+	Type                      string                     `json:"checkType"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	Locations                 []string                   `json:"locations,omitempty"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	Script                    string                     `json:"script,omitempty"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	PrivateLocations          []string                   `json:"privateLocations,omitempty"`
+	PrivateLocationIds        []string                   `json:"privateLocationIds,omitempty"`
+	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   Request                    `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
@@ -491,20 +492,6 @@ type EnvironmentVariable struct {
 	Locked bool   `json:"locked"`
 }
 
-// CheckPrivateLocation represents the private locations assigned to the check.
-type CheckPrivateLocation struct {
-	Id                string `json:"id,omitempty"`
-	CheckId           string `json:"checkId,omitempty"`
-	PrivateLocationId string `json:"privateLocationId"`
-}
-
-// GroupPrivateLocation represents the private locations assigned to the group.
-type GroupPrivateLocation struct {
-	Id                string `json:"id,omitempty"`
-	GroupId           string `json:"groupId,omitempty"`
-	PrivateLocationId string `json:"privateLocationId"`
-}
-
 // PrivateLocationKey represents the keys that the private location has.
 type PrivateLocationKey struct {
 	Id        string `json:"id"`
@@ -552,27 +539,28 @@ type SSLCertificates struct {
 
 // Group represents a check group.
 type Group struct {
-	ID                         int64                      `json:"id,omitempty"`
-	Name                       string                     `json:"name"`
-	Activated                  bool                       `json:"activated"`
-	Muted                      bool                       `json:"muted"`
-	Tags                       []string                   `json:"tags"`
-	Locations                  []string                   `json:"locations"`
-	Concurrency                int                        `json:"concurrency"`
-	APICheckDefaults           APICheckDefaults           `json:"apiCheckDefaults"`
-	EnvironmentVariables       []EnvironmentVariable      `json:"environmentVariables"`
-	DoubleCheck                bool                       `json:"doubleCheck"`
-	PrivateLocationAssignments []GroupPrivateLocation     `json:"privateLocationAssignments,omitempty"`
-	UseGlobalAlertSettings     bool                       `json:"useGlobalAlertSettings"`
-	AlertSettings              AlertSettings              `json:"alertSettings,omitempty"`
-	SetupSnippetID             int64                      `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID          int64                      `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript           string                     `json:"localSetupScript,omitempty"`
-	LocalTearDownScript        string                     `json:"localTearDownScript,omitempty"`
-	AlertChannelSubscriptions  []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                  *string                    `json:"runtimeId"`
-	CreatedAt                  time.Time                  `json:"createdAt"`
-	UpdatedAt                  time.Time                  `json:"updatedAt"`
+	ID                        int64                      `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	Tags                      []string                   `json:"tags"`
+	Locations                 []string                   `json:"locations"`
+	Concurrency               int                        `json:"concurrency"`
+	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	PrivateLocations          []string                   `json:"privateLocations,omitempty"`
+	PrivateLocationIds        []string                   `json:"privateLocationIds,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
