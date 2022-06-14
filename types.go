@@ -424,7 +424,6 @@ type Check struct {
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
 	PrivateLocations          []string                   `json:"privateLocations,omitempty"`
-	PrivateLocationIds        []string                   `json:"privateLocationIds,omitempty"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
@@ -550,7 +549,6 @@ type Group struct {
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	PrivateLocations          []string                   `json:"privateLocations,omitempty"`
-	PrivateLocationIds        []string                   `json:"privateLocationIds,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
