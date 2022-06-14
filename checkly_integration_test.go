@@ -128,7 +128,7 @@ func TestCreateGroupIntegration(t *testing.T) {
 	}
 	defer client.DeleteGroup(context.Background(), gotGroup.ID)
 	// These are set by the APIs
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "AlertSettings.SSLCertificates")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "AlertSettings.SSLCertificates", "PrivateLocations")
 	if !cmp.Equal(wantGroupCopy, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroupCopy, *gotGroup, ignored))
 	}
