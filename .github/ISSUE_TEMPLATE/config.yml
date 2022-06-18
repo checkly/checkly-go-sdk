@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: API Reference
+    url: https://developers.checklyhq.com
+    about: The API is also a great way to help you debugging issues
+  - name: Go Packages Registry
+    url: https://pkg.go.dev/github.com/checkly/checkly-go-sdk
+    about: The official Go registry contains all the basic information about the SDK
+  - name: Questions
+    url: https://github.com/checkly/checkly-go-sdk/discussions
+    about: Ask questions and discuss with other community members
