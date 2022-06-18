@@ -59,7 +59,7 @@ client.SetAccountId(accountId)
 
 ### Create your first checks
 
-Once you have a client, you can create a check. First, populate a Check struct with the parameters you want:
+Once you have a client, you can create a check. See here how to create your first API & Browser checks.
 
 ```go
 apiCheck := checkly.Check{
