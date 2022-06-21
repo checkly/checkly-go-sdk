@@ -20,7 +20,7 @@ jobs:
         uses: thedoctor0/zip-release@master
         with:
           filename: checkly-go-sdk.zip
-          exclusions: '*.git* *_test.go /*fixtures/* /*demo/* checkly.png MAKEFILE'
+          exclusions: '*.git* *_test.go /*fixtures/* /*demo/* MAKEFILE'
 
       -
         name: Upload Release
