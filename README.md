@@ -3,7 +3,7 @@
   <h1>Checkly GO SDK</h1>
 </p>
 
-
+![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)
 [![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
 [![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)
 [![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)
@@ -11,31 +11,40 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/checkly/checkly-go-sdk?label=Version)
 
 
-> 🦦 Go SDK library for use with the Checkly API
-
 This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
 
-While you can manage your Checkly account entirely in Go code, using this library, you may prefer to use Terraform. In that case, you can use the Checkly [Terraform provider](https://github.com/checkly/terraform-provider-checkly) (which is built on top of this library):
-
-## How to use?
+## Installation
 
 To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
 
+Make sure your project is using Go Modules (it will have a go.mod file in its root if it already is):
 
-### Import the SDK
+```bash
+$ go mod init
+```
 
+Then, add the reference of checkly-go-sdk in a Go program using `import`:
 ```go
 import checkly "github.com/checkly/checkly-go-sdk"
 ```
 
-### Create a client
+Run any of the normal go commands (`build/install/test`) and the  Go toolchain will resolve and fetch the  checkly-go-sdk module automatically.
 
-Create a new `Client` by calling `checkly.NewClient()` with your API key:
+Alternatively, you can also explicitly go get the package into a project:
+
+```bash
+$ go get -u github.com/checkly/checkly-go-sdk
+```
+
+## Getting Started
+
+Create a new checkly `Client` by calling `checkly.NewClient()` (you will need to set your Checkly API Key and Account ID)
 
 ```go
 baseUrl := "https://api.checklyhq.com"
 apiKey := os.Getenv("CHECKLY_API_KEY")
 accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
+
 client := checkly.NewClient(
 	baseUrl,
 	apiKey,
@@ -46,85 +55,35 @@ client := checkly.NewClient(
 client.SetAccountId(accountId)
 ```
 
-> ⚠️ Account ID is only required if you are using new User API keys. If you are using legacy Account API keys you can omit it.
-
 > Note: if you don't have an API key, you can create one at [here](https://app.checklyhq.com/account/api-keys)
 
-### Create a check
+### Create your first checks
 
-Once you have a client, you can create a check. First, populate a Check struct with the parameters you want:
+Once you have a client, you can create a check. See here how to create your first API & Browser checks.
 
 ```go
-check := checkly.Check{
+apiCheck := checkly.Check{
 	Name:                 "My API Check",
 	Type:                 checkly.TypeAPI,
 	Frequency:            5,
-	DegradedResponseTime: 5000,
-	MaxResponseTime:      15000,
 	Activated:            true,
-	Muted:                false,
-	ShouldFail:           false,
-	DoubleCheck:          false,
-	LocalSetupScript:     "",
-	LocalTearDownScript:  "",
 	Locations: []string{
 		"eu-west-1",
 		"ap-northeast-2",
 	},
-	Tags: []string{
-		"foo",
-		"bar",
-	},
-	AlertSettings:          alertSettings,
-	UseGlobalAlertSettings: false,
+	Tags: []string{ "production" },
 	Request: checkly.Request{
 		Method: http.MethodGet,
-		URL:    "http://example.com",
-		Headers: []checkly.KeyValue{
-			{
-				Key:   "X-Test",
-				Value: "foo",
-			},
-		},
-		QueryParameters: []checkly.KeyValue{
-			{
-				Key:   "query",
-				Value: "foo",
-			},
-		},
-		Assertions: []checkly.Assertion{
-			{
-				Source:     checkly.StatusCode,
-				Comparison: checkly.Equals,
-				Target:     "200",
-			},
-		},
-		Body:     "",
-		BodyType: "NONE",
+		URL:    "https://api.checklyhq.com/v1",
 	},
 }
-```
 
-Now you can pass it to `client.Create()` to create a check. This returns the newly-created Check object, or an error if there was a problem:
-
-```go
-ctx := context.WithTimeout(context.Background(), time.Second * 5)
-check, err := client.Create(ctx, check)
-```
-
-For browser checks, the options are slightly different:
-
-```go
-check := checkly.Check{
+browserCheck := checkly.Check{
 	Name:          "My Browser Check",
 	Type:          checkly.TypeBrowser,
 	Frequency:     5,
 	Activated:     true,
-	Muted:         false,
-	ShouldFail:    false,
-	DoubleCheck:   false,
 	Locations:     []string{"eu-west-1"},
-	AlertSettings: alertSettings,
 	Script: `const assert = require("chai").assert;
 	const puppeteer = require("puppeteer");
 
@@ -135,219 +94,23 @@ check := checkly.Check{
 
 	assert.equal(title, "Example Site");
 	await browser.close();`,
-	EnvironmentVariables: []checkly.EnvironmentVariable{
-		{
-			Key:   "HELLO",
-			Value: "Hello world",
-		},
-	},
-	Request: checkly.Request{
-		Method: http.MethodGet,
-		URL:    "http://example.com",
-	},
 }
+
+ctx := context.WithTimeout(context.Background(), time.Second * 5)
+client.CreateCheck(ctx, apiCheck)
+client.CreateCheck(ctx, browserCheck)
 ```
 
-### Retrieve a check
+>  A complete example program! You can see an example program which creates a Checkly check in the [demo](demo/main.go) folder.
 
-`client.Get(ctx, ID)` finds an existing check by ID and returns a Check struct containing its details:
+## Questions
+For questions and support please open a new  [discussion](https://github.com/checkly/checkly-go-sdk/discussions). The issue list of this repo is exclusively for bug reports and feature/docs requests.
 
-```go
-check, err := client.Get(ctx, "87dd7a8d-f6fd-46c0-b73c-b35712f56d72")
-fmt.Println(check.Name)
-// Output: My Awesome Check
+## Issues
+Please make sure to respect issue requirements and choose the proper [issue template](https://github.com/checkly/checkly-go-sdk/issues/new/choose) when opening an issue. Issues not conforming to the guidelines may be closed.
 
-```
-
-### Update a check
-
-`client.Update(ctx, ID, check)` updates an existing check with the specified details. For example, to change the name of a check:
-
-```go
-ID := "87dd7a8d-f6fd-46c0-b73c-b35712f56d72"
-check, err := client.Get(ctx, ID)
-check.Name = "My updated check name"
-updatedCheck, err = client.Update(ctx, ID, check)
-```
-
-### Delete a check
-
-Use `client.Delete(ctx, ID)` to delete a check by ID.
-
-```go
-err := client.Delete(ctx, "73d29ea2-6540-4bb5-967e-e07fa2c9465e")
-```
-
-### Create a check group
-
-Checkly checks can be combined into a group, so that you can configure default values for all the checks within it:
-
-```go
-var wantGroup = checkly.Group{
-	Name:        "test",
-	Activated:   true,
-	Muted:       false,
-	Tags:        []string{"auto"},
-	Locations:   []string{"eu-west-1"},
-	Concurrency: 3,
-	APICheckDefaults: checkly.APICheckDefaults{
-		BaseURL: "example.com/api/test",
-		Headers: []checkly.KeyValue{
-			{
-				Key:   "X-Test",
-				Value: "foo",
-			},
-		},
-		QueryParameters: []checkly.KeyValue{
-			{
-				Key:   "query",
-				Value: "foo",
-			},
-		},
-		Assertions: []checkly.Assertion{
-			{
-				Source:     checkly.StatusCode,
-				Comparison: checkly.Equals,
-				Target:     "200",
-			},
-		},
-		BasicAuth: checkly.BasicAuth{
-			Username: "user",
-			Password: "pass",
-		},
-	},
-	EnvironmentVariables: []checkly.EnvironmentVariable{
-		{
-			Key:   "ENVTEST",
-			Value: "Hello world",
-		},
-	},
-	DoubleCheck:            true,
-	UseGlobalAlertSettings: false,
-	AlertSettings: checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
-		RunBasedEscalation: checkly.RunBasedEscalation{
-			FailedRunThreshold: 1,
-		},
-		TimeBasedEscalation: checkly.TimeBasedEscalation{
-			MinutesFailingThreshold: 5,
-		},
-		Reminders: checkly.Reminders{
-			Amount:   0,
-			Interval: 5,
-		},
-	},
-	AlertChannelSubscriptions: []checkly.Subscription{
-		{
-			Activated: true,
-		},
-	},
-	LocalSetupScript:    "setup-test",
-	LocalTearDownScript: "teardown-test",
-}
-group, err := client.CreateGroup(ctx, wantGroup)
-```
-
->  A complete example program! You can see an example program which creates a Checkly check in the [examples/demo](examples/demo/main.go) folder.
-
-
-## Testing
-
-There are two different set of tests: unit test and integration tests. Both can be run with the `go test` command.
-
-```bash
-$ go test ./... # unit tests
-$ go test ./... -tags=integration # integration tests
-```
-##Debugging
-
-If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
-
-Regardless of the debug setting, if a request fails with HTTP status 400 Bad Request), the full response will be dumped (to standard error if no debug writer is set):
-
-```go
-debugOutput := os.Stderr
-client.NewClient(
-	"https://api.checklyhq.com",
-	"your-api-key",
-	nil,
-	debugOutput,
-)
-```
-
-Example request and response dump:
-
-```
-POST /v1/checks HTTP/1.1
-Host: api-test.checklyhq.com
-User-Agent: Go-http-client/1.1
-Content-Length: 1078
-Authorization: Bearer XXX
-Content-Type: application/json
-Accept-Encoding: gzip
-
-{"id":"","name":"test","checkType":"API","frequency":10,"activated":true,
-"muted":false,"shouldFail":false,"locations":["eu-west-1"],
-"degradedResponseTime":15000,"maxResponseTime":30000,"script":"foo",
-"environmentVariables":[{"key":"ENVTEST","value":"Hello world","locked":false}],
-"doubleCheck":true,"tags":["foo","bar"],"sslCheck":true,
-"localSetupScript":"setitup","localTearDownScript":"tearitdown","alertSettings":
-{"escalationType":"RUN_BASED","runBasedEscalation":{"failedRunThreshold":1},
-"timeBasedEscalation":{"minutesFailingThreshold":5},"reminders":{"interval":5},
-"useGlobalAlertSettings":false,"request":{"method":"GET","url":"https://example.
-com","followRedirects":false,"body":"","bodyType":"NONE","headers":[
-{"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
-{"key":"query","value":"foo","locked":false}],"assertions":[
-{"edit":false,"order":0,"arrayIndex":0,"arraySelector":0,
-"source":"STATUS_CODE","property":"","comparison":"EQUALS",
-"target":"200"}],"basicAuth":{"username":"","password":""}}}
-
-HTTP/1.1 201 Created
-Transfer-Encoding: chunked
-Cache-Control: no-cache
-Connection: keep-alive
-Content-Type: application/json; charset=utf-8
-Date: Thu, 28 May 2020 11:18:31 GMT
-Server: Cowboy
-Vary: origin,accept-encoding
-Via: 1.1 vegur
-
-4ea
-{"name":"test","checkType":"API","frequency":10,"activated":true,"muted":false,
-"shouldFail":false,"locations":["eu-west-1"],"degradedResponseTime":15000,
-"maxResponseTime":30000,"script":"foo","environmentVariables":[{"key":"ENVTEST",
-"value":"Hello world","locked":false}],"doubleCheck":true,"tags":["foo","bar"],
-"sslCheck":true,"localSetupScript":"setitup","localTearDownScript":"tearitdown",
-"alertSettings":{"escalationType":"RUN_BASED","runBasedEscalation":
-{"failedRunThreshold":1},"timeBasedEscalation":{"minutesFailingThreshold":5},
-"reminders":{"interval":5,"amount":0},"useGlobalAlertSettings":false,"request":{"method":"GET",
-"url":"https://example.com","followRedirects":false,"body":"","bodyType":"NONE",
-"headers":[{"key":"X-Test","value":"foo","locked":false}],"queryParameters":[
-{"key":"query","value":"foo","locked":false}],"assertions":[
-{"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200"}],
-"basicAuth":{"username":"","password":""}},"setupSnippetId":null,
-"tearDownSnippetId":null,"groupId":null,"groupOrder":null,
-"alertChannelSubscriptions":[{"activated":true,"alertChannelId":35}],
-"created_at":"2020-05-28T11:18:31.280Z",
-"id":"29815146-8ab5-492d-a092-9912c1ab8333"}
-0
-```
-
-<br>
-
-## Release
-
-Release process is automatically handled using tags and the `release` GitHub Action. To create a new release, you have to create and push a new version tag: `vX.X.X`
-
->  🔢 When creating a new tag, be sure to follow [SemVer](https://semver.org/).
-
-## Bugs and feature requests
-
-If you find a bug in the `checkly` client or library, please [open an issue](https://github.com/checkly/checkly-go-sdk/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
-
-Not all the functionality of the Checkly API is implemented yet.
-
-Pull requests welcome!
+## Contribution
+Please make sure to read the [Contributing Guide](https://github.com/checkly/checkly-go-sdk/blob/main/CONTRIBUTING.md) before making a pull request.
 
 ## License
 
