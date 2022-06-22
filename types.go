@@ -423,7 +423,6 @@ type Check struct {
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
-	PrivateLocations          []string                   `json:"privateLocations"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
@@ -434,9 +433,12 @@ type Check struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                 *string                    `json:"runtimeId"`
 	CreatedAt                 time.Time                  `json:"createdAt"`
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
+
+	// Pointers
+	PrivateLocations *[]string `json:"privateLocations"`
+	RuntimeID        *string   `json:"runtimeId"`
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
@@ -548,7 +550,6 @@ type Group struct {
 	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
-	PrivateLocations          []string                   `json:"privateLocations"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
@@ -556,9 +557,12 @@ type Group struct {
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
 	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                 *string                    `json:"runtimeId"`
 	CreatedAt                 time.Time                  `json:"createdAt"`
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
+
+	// Pointers
+	RuntimeID        *string   `json:"runtimeId"`
+	PrivateLocations *[]string `json:"privateLocations"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
