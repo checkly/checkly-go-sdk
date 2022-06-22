@@ -89,3 +89,79 @@ N/A
 
 ### Changed
 - Set `autoAssignAlerts` as false for all request [#23](https://github.com/checkly/checkly-go-sdk/issues/23)
+
+## [v1.0.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.0.0) - 2021-02-22
+### Added
+
+- Introduce go `context`
+- Introduce go `interface`
+
+### Changed
+- Set `autoAssignAlerts` as false for all request [#23](https://github.com/checkly/checkly-go-sdk/issues/23)
+
+## [v0.5.6](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.4) - 2021-02-25
+### Fixed
+- Minor bugs fixing
+
+## v0.5.5 - Skiped
+N/A
+
+## [v0.5.4](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.4) - 2021-02-25
+### Changed
+- Add `autoAssignAlerts` query to deprecate the old auto assigning (alert channels to checks)
+
+## [v0.5.3](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.3) - 2021-01-21
+### Fixed
+- Minor bugs fixing
+
+## [v0.5.2](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.2) - 2021-01-21
+### Fixed
+- Minor bugs fixing
+
+## [v0.5.1](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.1) - 2021-01-21
+
+### Added
+- `Alert Channels` flag settings
+
+## [v0.5.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.5.0) - 2021-01-11
+
+### Fixed
+
+- Minor issue when updatin `Alert Channles`
+
+## [v0.4.9](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.9) - 2021-01-11
+### Fixed
+- Minor `Alert Channels` bug fixing
+
+## [v0.4.8](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.8) - 2021-01-11
+### Added
+- Support `Alert Channels`
+
+## [v0.4.7](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.7) - 2020-09-30
+
+### Fixed
+- Check results filters from/to bug fix
+
+## [v0.4.6](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.6) - 2020-09-29
+
+### Added
+- Support for `Snippets`
+- Support for `Environment Variables`
+
+## [v0.4.5](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.5) - 2020-09-16
+
+### Changed
+- Avoid omitting tags when empty
+- Made raw check results available
+
+## [v0.4.4](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.4) - 2020-09-03
+
+### Added
+- Add `GetCheckResult`
+- Add `GetCheckResults`
+
+
+## [v0.4.3](https://github.com/checkly/checkly-go-sdk/releases/tag/v0.4.3) - 2020-07-29
+
+### Changed
+- Makes API Check's `request.basic_auth` optional
