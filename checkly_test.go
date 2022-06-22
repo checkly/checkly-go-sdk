@@ -144,7 +144,7 @@ func validateEmptyBody(t *testing.T, body []byte) {
 func validateAnything(*testing.T, []byte) {
 }
 
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset", "AlertSettings.SSLCertificates")
+var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset", "AlertSettings.SSLCertificates", "PrivateLocations")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
@@ -397,7 +397,7 @@ func validateGroup(t *testing.T, body []byte) {
 	}
 }
 
-var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertSettings.SSLCertificates")
+var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertSettings.SSLCertificates", "PrivateLocations")
 
 func TestCreateGroup(t *testing.T) {
 	t.Parallel()
