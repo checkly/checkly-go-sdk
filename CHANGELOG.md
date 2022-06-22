@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## v1.6.0 - 2022-06-21
+### Added
+- Support private locations [#92](https://github.com/checkly/checkly-go-sdk/issues/92)
+- Add CoC, more docs and issue templates [#604b9a1](https://github.com/checkly/checkly-go-sdk/commit/604b9a12bdd8a913411378f3817aabe5b00f0cee)
+
 ## v1.5.7 - 2022-05-26
 ### Added
 - Add Dependabot GitHub action [#69b1aeb](https://github.com/checkly/checkly-go-sdk/commit/69b1aebf23a1d86d3645ef13ff20f57aafee4672)
