@@ -1078,17 +1078,22 @@ func validateDashboard(t *testing.T, body []byte) {
 }
 
 var testDashboard = checkly.Dashboard{
-	DashboardID:    "10",
-	CustomUrl:      "https://custom.checklyhq.com",
-	CustomDomain:   "mydomian.com",
-	Logo:           "https://www.checklyhq.com/images/text_racoon_logo.svg",
-	Header:         "Status",
-	Width:          "FULL",
-	RefreshRate:    60,
-	Paginate:       true,
-	PaginationRate: 30,
-	Tags:           []string{"api"},
-	HideTags:       false,
+	DashboardID:        "10",
+	CustomUrl:          "https://custom.checklyhq.com",
+	CustomDomain:       "status.checkly.com",
+	Logo:               "https://www.checklyhq.com/images/text_racoon_logo.svg",
+	Favicon:            "https://www.checklyhq.com/images/text_racoon_logo.svg",
+	Link:               "https://www.checklyhq.com",
+	Description:        "Checkly status page",
+	Header:             "Status",
+	Width:              "FULL",
+	RefreshRate:        60,
+	Paginate:           true,
+	PaginationRate:     30,
+	Tags:               []string{"api"},
+	HideTags:           false,
+	ChecksPerPage:      15,
+	UseTagsAndOperator: true,
 }
 
 var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID")
