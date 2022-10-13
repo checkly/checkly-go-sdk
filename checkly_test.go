@@ -1078,9 +1078,9 @@ func validateDashboard(t *testing.T, body []byte) {
 }
 
 var testDashboard = checkly.Dashboard{
-	DashboardID:        "10",
-	CustomUrl:          "https://custom.checklyhq.com",
-	CustomDomain:       "status.checkly.com",
+	DashboardID:        "abcd1234",
+	CustomDomain:       "is.checkly.online",
+	CustomUrl:          "status-page",
 	Logo:               "https://www.checklyhq.com/images/text_racoon_logo.svg",
 	Favicon:            "https://www.checklyhq.com/images/text_racoon_logo.svg",
 	Link:               "https://www.checklyhq.com",

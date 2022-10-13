@@ -1,6 +1,6 @@
 {
-  "customUrl":  "https://custom.checklyhq.com",
-  "customDomain":  "status.checkly.com",
+  "customUrl":  "status-page",
+  "customDomain":  "is.checkly.online",
   "logo":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
   "favicon":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
   "link": "https://www.checklyhq.com",
