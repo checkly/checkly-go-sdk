@@ -1,14 +1,17 @@
 {
-  "customUrl":  "https://custom.checklyhq.com",
-  "customDomain": "mydomian.com",
+  "customUrl":  "status-page",
+  "customDomain":  "is.checkly.online",
   "logo":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
+  "favicon":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
+  "link": "https://www.checklyhq.com",
+  "description": "Checkly status page",
   "header": "Status",
   "width": "FULL",
+  "checksPerPage": 15,
+  "useTagsAndOperator": true,
   "refreshRate": 60,
   "paginate": true,
   "paginationRate": 30,
   "hideTags": false,
-  "tags": [
-    "api"
-    ]
+  "tags": ["api"]
 }
