@@ -5,3 +5,6 @@ test:
 
 demo:
 	go run ./demo/main.go
+
+fmt:
+	go fmt ./...
