@@ -673,6 +673,7 @@ type AlertChannelPagerduty struct {
 type AlertChannelWebhook struct {
 	Name            string     `json:"name"`
 	URL             string     `json:"url"`
+	WebhookType     string     `json:"webhookType,omitempty"`
 	Method          string     `json:"method,omitempty"`
 	Template        string     `json:"template,omitempty"`
 	WebhookSecret   string     `json:"webhookSecret,omitempty"`
