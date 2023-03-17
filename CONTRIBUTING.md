@@ -70,7 +70,7 @@ After you have installed  Go, you can clone the repository and start working on 
   $ go mod tidy
   ```
 
-4. Run build process to ensure that everyhing is on place
+4. Run build process to ensure that everything is on place
   ```sh
   $ go build
   ```
@@ -106,6 +106,6 @@ In order to facilitate the development process, we have a `Makefile` with a few 
 
 ## Release Process
 The release process is automatically handled with [goreleaser](https://goreleaser.com/) and GitHub `release` action.
-To trigger a new release you need to create a new git tag, using [SemVer](https://semver.org) pattenr and then push it to the `main` branch.
+To trigger a new release you need to create a new git tag, using [SemVer](https://semver.org) pattern and then push it to the `main` branch.
 
-Remember to create releases candidates releases and spend some time testing in production before publishin a final version. You can also tag the release as "Pre-Release" on GitHub until you consider it mature enough.
+Remember to create releases candidates releases and spend some time testing in production before publishing a final version. You can also tag the release as "Pre-Release" on GitHub until you consider it mature enough.

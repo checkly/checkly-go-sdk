@@ -613,7 +613,7 @@ type CheckResultsFilter struct {
 	HasFailures bool
 }
 
-//Snippet defines Snippet type
+// Snippet defines Snippet type
 type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
@@ -637,24 +637,24 @@ type AlertChannelSubscription struct {
 	Activated bool  `json:"activated"`
 }
 
-//AlertChannelEmail defines a type for an email alert channel
+// AlertChannelEmail defines a type for an email alert channel
 type AlertChannelEmail struct {
 	Address string `json:"address"`
 }
 
-//AlertChannelSlack defines a type for a slack alert channel
+// AlertChannelSlack defines a type for a slack alert channel
 type AlertChannelSlack struct {
 	WebhookURL string `json:"url"`
 	Channel    string `json:"channel"`
 }
 
-//AlertChannelSMS defines a type for a sms alert channel
+// AlertChannelSMS defines a type for a sms alert channel
 type AlertChannelSMS struct {
 	Name   string `json:"name"`
 	Number string `json:"number"`
 }
 
-//AlertChannelOpsgenie defines a type for an opsgenie alert channel
+// AlertChannelOpsgenie defines a type for an opsgenie alert channel
 type AlertChannelOpsgenie struct {
 	Name     string `json:"name"`
 	APIKey   string `json:"apiKey"`
@@ -662,14 +662,14 @@ type AlertChannelOpsgenie struct {
 	Priority string `json:"priority"`
 }
 
-//AlertChannelPagerduty defines a type for an pager duty alert channel
+// AlertChannelPagerduty defines a type for an pager duty alert channel
 type AlertChannelPagerduty struct {
 	Account     string `json:"account,omitempty"`
 	ServiceKey  string `json:"serviceKey"`
 	ServiceName string `json:"serviceName,omitempty"`
 }
 
-//AlertChannelWebhook defines a type for a webhook alert channel
+// AlertChannelWebhook defines a type for a webhook alert channel
 type AlertChannelWebhook struct {
 	Name            string     `json:"name"`
 	URL             string     `json:"url"`
@@ -777,7 +777,7 @@ type Location struct {
 	Region string `json:"region"`
 }
 
-//SetConfig sets config of alert channel based on it's type
+// SetConfig sets config of alert channel based on it's type
 func (a *AlertChannel) SetConfig(cfg interface{}) {
 	switch v := cfg.(type) {
 	case *AlertChannelEmail:
@@ -797,7 +797,7 @@ func (a *AlertChannel) SetConfig(cfg interface{}) {
 	}
 }
 
-//GetConfig gets the config of the alert channel based on it's type
+// GetConfig gets the config of the alert channel based on it's type
 func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 	byts := []byte{}
 	var err error
@@ -823,7 +823,7 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 	return cfg
 }
 
-//AlertChannelConfigFromJSON gets AlertChannel.config from JSON
+// AlertChannelConfigFromJSON gets AlertChannel.config from JSON
 func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}, error) {
 	switch channelType {
 	case AlertTypeEmail:
