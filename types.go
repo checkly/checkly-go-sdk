@@ -502,7 +502,7 @@ type PrivateLocationKey struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-// DashboardKey represents the keys that the private location has.
+// DashboardKey represents the keys that the dashboard has.
 type DashboardKey struct {
 	Id        string `json:"id"`
 	MaskedKey string `json:"maskedKey"`
