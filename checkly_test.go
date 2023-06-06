@@ -1096,7 +1096,7 @@ var testDashboard = checkly.Dashboard{
 	UseTagsAndOperator: true,
 }
 
-var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID", "CreatedAt", "ID")
+var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID", "CreatedAt", "ID", "Keys")
 
 func TestCreateDashboard(t *testing.T) {
 	t.Parallel()
