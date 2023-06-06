@@ -502,6 +502,15 @@ type PrivateLocationKey struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+// DashboardKey represents the keys that the dashboard has.
+type DashboardKey struct {
+	Id        string `json:"id"`
+	MaskedKey string `json:"maskedKey"`
+	RawKey    string `json:"rawKey"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 // AlertSettings represents an alert configuration.
 type AlertSettings struct {
 	EscalationType      string              `json:"escalationType,omitempty"`
@@ -703,25 +712,27 @@ type AlertChannel struct {
 
 // Dashboard defines a type for a dashboard.
 type Dashboard struct {
-	ID                 int64    `json:"id,omitempty"`
-	DashboardID        string   `json:"dashboardId,omitempty"`
-	CustomUrl          string   `json:"customUrl"`
-	CustomDomain       string   `json:"customDomain,omitempty"`
-	Logo               string   `json:"logo,omitempty"`
-	Link               string   `json:"link,omitempty"`
-	Description        string   `json:"description,omitempty"`
-	Favicon            string   `json:"favicon,omitempty"`
-	Header             string   `json:"header,omitempty"`
-	Width              string   `json:"width,omitempty"`
-	RefreshRate        int      `json:"refreshRate"`
-	ChecksPerPage      int      `json:"checksPerPage,omitempty"`
-	PaginationRate     int      `json:"paginationRate"`
-	Paginate           bool     `json:"paginate"`
-	Tags               []string `json:"tags,omitempty"`
-	HideTags           bool     `json:"hideTags,omitempty"`
-	UseTagsAndOperator bool     `json:"useTagsAndOperator,omitempty"`
-	CreatedAt          string   `json:"created_at"`
-	UpdatedAt          string   `json:"updated_at"`
+	ID                 int64          `json:"id,omitempty"`
+	DashboardID        string         `json:"dashboardId,omitempty"`
+	CustomUrl          string         `json:"customUrl"`
+	CustomDomain       string         `json:"customDomain,omitempty"`
+	IsPrivate          bool           `json:"isPrivate,omitempty"`
+	Logo               string         `json:"logo,omitempty"`
+	Link               string         `json:"link,omitempty"`
+	Description        string         `json:"description,omitempty"`
+	Favicon            string         `json:"favicon,omitempty"`
+	Header             string         `json:"header,omitempty"`
+	Width              string         `json:"width,omitempty"`
+	RefreshRate        int            `json:"refreshRate"`
+	ChecksPerPage      int            `json:"checksPerPage,omitempty"`
+	PaginationRate     int            `json:"paginationRate"`
+	Paginate           bool           `json:"paginate"`
+	Tags               []string       `json:"tags,omitempty"`
+	HideTags           bool           `json:"hideTags,omitempty"`
+	UseTagsAndOperator bool           `json:"useTagsAndOperator,omitempty"`
+	CreatedAt          string         `json:"created_at"`
+	UpdatedAt          string         `json:"updated_at"`
+	Keys               []DashboardKey `json:"keys,omitempty"`
 }
 
 // MaintenanceWindow defines a type for a maintenance window.
