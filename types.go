@@ -638,7 +638,7 @@ const (
 	AlertTypeSMS       = "SMS"
 	AlertTypePagerduty = "PAGERDUTY"
 	AlertTypeOpsgenie  = "OPSGENIE"
-	AlertTypeCall			 = "CALL"
+	AlertTypeCall      = "CALL"
 )
 
 // AlertChannelSubscription represents a subscription to an alert channel.
