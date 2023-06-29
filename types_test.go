@@ -96,6 +96,39 @@ func TestAlertChannelSMS(t *testing.T) {
 	}
 }
 
+func TestAlertChannelCALL(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: checkly.AlertTypeCall,
+	}
+	cfg := checkly.AlertChannelCall{
+		Name:   "foo",
+		Number: "0123456789",
+	}
+
+	ac.SetConfig(&cfg)
+
+	if ac.CALL == nil {
+		t.Error("Config shouldn't be nil")
+		return
+	}
+
+	if ac.CALL.Name != cfg.Name {
+		t.Errorf(
+			"Expected: `%s`, got: `%s`",
+			cfg.Name,
+			ac.CALL.Name,
+		)
+	}
+
+	if ac.CALL.Number != cfg.Number {
+		t.Errorf(
+			"Expected: `%s`, got: `%s`",
+			cfg.Number,
+			ac.CALL.Number,
+		)
+	}
+}
+
 func TestAlertChannelWebhook(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeWebhook,

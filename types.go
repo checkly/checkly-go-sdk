@@ -638,6 +638,7 @@ const (
 	AlertTypeSMS       = "SMS"
 	AlertTypePagerduty = "PAGERDUTY"
 	AlertTypeOpsgenie  = "OPSGENIE"
+	AlertTypeCall      = "CALL"
 )
 
 // AlertChannelSubscription represents a subscription to an alert channel.
@@ -659,6 +660,12 @@ type AlertChannelSlack struct {
 
 // AlertChannelSMS defines a type for a sms alert channel
 type AlertChannelSMS struct {
+	Name   string `json:"name"`
+	Number string `json:"number"`
+}
+
+// AlertChannelCALL defines a type for a phone call alert channel
+type AlertChannelCall struct {
 	Name   string `json:"name"`
 	Number string `json:"number"`
 }
@@ -698,6 +705,7 @@ type AlertChannel struct {
 	Email              *AlertChannelEmail     `json:"-"`
 	Slack              *AlertChannelSlack     `json:"-"`
 	SMS                *AlertChannelSMS       `json:"-"`
+	CALL               *AlertChannelCall      `json:"-"`
 	Opsgenie           *AlertChannelOpsgenie  `json:"-"`
 	Webhook            *AlertChannelWebhook   `json:"-"`
 	Pagerduty          *AlertChannelPagerduty `json:"-"`
@@ -796,6 +804,8 @@ func (a *AlertChannel) SetConfig(cfg interface{}) {
 		a.Email = cfg.(*AlertChannelEmail)
 	case *AlertChannelSMS:
 		a.SMS = cfg.(*AlertChannelSMS)
+	case *AlertChannelCall:
+		a.CALL = cfg.(*AlertChannelCall)
 	case *AlertChannelSlack:
 		a.Slack = cfg.(*AlertChannelSlack)
 	case *AlertChannelWebhook:
@@ -818,6 +828,8 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 		byts, err = json.Marshal(a.Email)
 	case AlertTypeSMS:
 		byts, err = json.Marshal(a.SMS)
+	case AlertTypeCall:
+		byts, err = json.Marshal(a.CALL)
 	case AlertTypeSlack:
 		byts, err = json.Marshal(a.Slack)
 	case AlertTypeOpsgenie:
@@ -844,6 +856,10 @@ func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}
 		return &r, nil
 	case AlertTypeSMS:
 		r := AlertChannelSMS{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeCall:
+		r := AlertChannelCall{}
 		json.Unmarshal(cfgJSON, &r)
 		return &r, nil
 	case AlertTypeSlack:
