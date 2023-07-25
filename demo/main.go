@@ -133,9 +133,27 @@ var browserCheck = checkly.Check{
 			Value: "Hello world",
 		},
 	},
-	Request: checkly.Request{
-		Method: http.MethodGet,
-		URL:    "http://example.com",
+}
+
+var heartbeatCheck = checkly.Check{
+	Name:          "My Heartbeat Check",
+	Type:          checkly.TypeHeartbeat,
+	Frequency:     10,
+	Activated:     true,
+	Muted:         false,
+	SSLCheck:      true,
+	AlertSettings: alertSettings,
+	Heartbeat: checkly.Heartbeat{
+	    Period: 30,
+	    PeriodUnit: "seconds",
+	    Grace: 0,
+	    GraceUnit: "seconds",
+	},
+	EnvironmentVariables: []checkly.EnvironmentVariable{
+		{
+			Key:   "HELLO",
+			Value: "Hello world",
+		},
 	},
 }
 
@@ -231,7 +249,7 @@ func main() {
 	}
 	fmt.Printf("New check group created with ID %d\n", group.ID)
 
-	for _, check := range []checkly.Check{apiCheck, browserCheck} {
+	for _, check := range []checkly.Check{heartbeatCheck} {
 		gotCheck, err := client.Create(ctx, check)
 		if err != nil {
 			log.Fatal(err)

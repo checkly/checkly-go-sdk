@@ -186,8 +186,10 @@ func (c *client) CreateCheck(
 	var checkType string
 	if check.Type == "BROWSER" {
 		checkType = "checks/browser"
-	} else {
+	} else if check.Type == "API" {
 		checkType = "checks/api"
+	} else if check.Type == "HEARTBEAT" {
+		checkType = "checks/heartbeat"
 	}
 	status, res, err := c.apiCall(
 		ctx,

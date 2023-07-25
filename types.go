@@ -355,6 +355,10 @@ const TypeBrowser = "BROWSER"
 // TypeAPI is used to identify an API check.
 const TypeAPI = "API"
 
+// TypeHeartbeat is used to identify a browser check.
+const TypeHeartbeat = "HEARTBEAT"
+
+
 // Escalation type constants
 
 // RunBased identifies a run-based escalation type, for use with an AlertSettings.
@@ -430,6 +434,7 @@ type Check struct {
 	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	Request                   Request                    `json:"request"`
+	Heartbeat                 Heartbeat                  `json:"heartbeat"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
@@ -442,6 +447,16 @@ type Check struct {
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
+}
+
+// Heartbeat represents the parameter for the heartbeat check.
+type Heartbeat struct {
+	Period     int          `json:"period"`
+	PeriodUnit string       `json:"periodUnit"`
+	Grace      int          `json:"grace"`
+	GraceUnit  string       `json:"graceUnit"`
+	PingToken  string       `json:"pingToken"`
+	AlertAfter string       `json:"alertAfter"`
 }
 
 // Request represents the parameters for the request made by the check.
