@@ -358,7 +358,6 @@ const TypeAPI = "API"
 // TypeHeartbeat is used to identify a browser check.
 const TypeHeartbeat = "HEARTBEAT"
 
-
 // Escalation type constants
 
 // RunBased identifies a run-based escalation type, for use with an AlertSettings.
@@ -451,12 +450,11 @@ type Check struct {
 
 // Heartbeat represents the parameter for the heartbeat check.
 type Heartbeat struct {
-	Period     int          `json:"period"`
-	PeriodUnit string       `json:"periodUnit"`
-	Grace      int          `json:"grace"`
-	GraceUnit  string       `json:"graceUnit"`
-	PingToken  string       `json:"pingToken"`
-	AlertAfter string       `json:"alertAfter"`
+	Period     int    `json:"period"`
+	PeriodUnit string `json:"periodUnit"`
+	Grace      int    `json:"grace"`
+	GraceUnit  string `json:"graceUnit"`
+	PingToken  string `json:"pingToken"`
 }
 
 // Request represents the parameters for the request made by the check.
