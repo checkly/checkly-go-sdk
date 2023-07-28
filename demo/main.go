@@ -135,25 +135,16 @@ var browserCheck = checkly.Check{
 	},
 }
 
-var heartbeatCheck = checkly.Check{
+var heartbeatCheck = checkly.HeartbeatCheck{
 	Name:          "My Heartbeat Check",
-	Type:          checkly.TypeHeartbeat,
-	Frequency:     10,
 	Activated:     true,
 	Muted:         false,
-	SSLCheck:      true,
 	AlertSettings: alertSettings,
 	Heartbeat: checkly.Heartbeat{
-	    Period: 30,
-	    PeriodUnit: "seconds",
-	    Grace: 0,
-	    GraceUnit: "seconds",
-	},
-	EnvironmentVariables: []checkly.EnvironmentVariable{
-		{
-			Key:   "HELLO",
-			Value: "Hello world",
-		},
+		Period:     30,
+		PeriodUnit: "seconds",
+		Grace:      0,
+		GraceUnit:  "seconds",
 	},
 }
 
