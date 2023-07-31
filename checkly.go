@@ -213,7 +213,7 @@ func (c *client) CreateCheck(
 func (c *client) CreateHeartbeat(
 	ctx context.Context,
 	check HeartbeatCheck,
-) (*Check, error) {
+) (*HeartbeatCheck, error) {
 	data, err := json.Marshal(check)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (c *client) CreateHeartbeat(
 	if status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result Check
+	var result HeartbeatCheck
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}

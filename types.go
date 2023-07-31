@@ -69,7 +69,7 @@ type Client interface {
 	CreateHeartbeat(
 		ctx context.Context,
 		check HeartbeatCheck,
-	) (*Check, error)
+	) (*HeartbeatCheck, error)
 
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
