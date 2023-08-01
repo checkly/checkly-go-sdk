@@ -240,11 +240,18 @@ func main() {
 	}
 	fmt.Printf("New check group created with ID %d\n", group.ID)
 
-	for _, check := range []checkly.Check{heartbeatCheck} {
+	for _, check := range []checkly.Check{browserCheck, apiCheck} {
 		gotCheck, err := client.Create(ctx, check)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
+
+	// HB
+	gotHbCheck, err := client.CreateHeartbeat(ctx, heartbeatCheck)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("New check created with ID %s\n", gotHbCheck.ID)
 }
