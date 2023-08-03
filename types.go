@@ -52,12 +52,24 @@ type Client interface {
 		ID string,
 	) (*Check, error)
 
+	GetHeartbeatCheck(
+		ctx context.Context,
+		ID string,
+	) (*HeartbeatCheck, error)
+
 	// Create creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
 	CreateCheck(
 		ctx context.Context,
 		check Check,
 	) (*Check, error)
+
+	// CreateHeartbeat creates a new heartbeat check with the specified details.
+	// It returns the newly-created check, or an error.
+	CreateHeartbeat(
+		ctx context.Context,
+		check HeartbeatCheck,
+	) (*HeartbeatCheck, error)
 
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
@@ -66,6 +78,14 @@ type Client interface {
 		ID string,
 		check Check,
 	) (*Check, error)
+
+	// UpdateHeartbeat updates an existing heartbeat check with the specified details.
+	// It returns the updated check, or an error.
+	UpdateHeartbeat(
+		ctx context.Context,
+		ID string,
+		check HeartbeatCheck,
+	) (*HeartbeatCheck, error)
 
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
@@ -355,6 +375,9 @@ const TypeBrowser = "BROWSER"
 // TypeAPI is used to identify an API check.
 const TypeAPI = "API"
 
+// TypeHeartbeat is used to identify a browser check.
+const TypeHeartbeat = "HEARTBEAT"
+
 // Escalation type constants
 
 // RunBased identifies a run-based escalation type, for use with an AlertSettings.
@@ -430,6 +453,7 @@ type Check struct {
 	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	Request                   Request                    `json:"request"`
+	Heartbeat                 Heartbeat                  `json:"heartbeat"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
@@ -442,6 +466,29 @@ type Check struct {
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
+}
+
+type HeartbeatCheck struct {
+	ID                        string                     `json:"id"`
+	Name                      string                     `json:"name"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	Heartbeat                 Heartbeat                  `json:"heartbeat"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
+}
+
+// Heartbeat represents the parameter for the heartbeat check.
+type Heartbeat struct {
+	Period     int    `json:"period"`
+	PeriodUnit string `json:"periodUnit"`
+	Grace      int    `json:"grace"`
+	GraceUnit  string `json:"graceUnit"`
+	PingToken  string `json:"pingToken"`
 }
 
 // Request represents the parameters for the request made by the check.
