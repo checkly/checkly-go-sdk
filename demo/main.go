@@ -197,6 +197,19 @@ var group = checkly.Group{
 	LocalTearDownScript: "teardown-test",
 }
 
+var heartbeatCheck = checkly.HeartbeatCheck{
+	Name:          "My Heartbeat Check",
+	Activated:     true,
+	Muted:         false,
+	AlertSettings: alertSettings,
+	Heartbeat: checkly.Heartbeat{
+		Period:     30,
+		PeriodUnit: "seconds",
+		Grace:      0,
+		GraceUnit:  "seconds",
+	},
+}
+
 func main() {
 	apiKey := os.Getenv("CHECKLY_API_KEY")
 	if apiKey == "" {
@@ -238,4 +251,11 @@ func main() {
 		}
 		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
 	}
+
+	// HB
+	gotHbCheck, err := client.CreateHeartbeat(ctx, heartbeatCheck)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("New check created with ID %s\n", gotHbCheck.ID)
 }

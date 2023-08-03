@@ -186,8 +186,10 @@ func (c *client) CreateCheck(
 	var checkType string
 	if check.Type == "BROWSER" {
 		checkType = "checks/browser"
-	} else {
+	} else if check.Type == "API" {
 		checkType = "checks/api"
+	} else if check.Type == "HEARTBEAT" {
+		checkType = "checks/heartbeat"
 	}
 	status, res, err := c.apiCall(
 		ctx,
@@ -202,6 +204,33 @@ func (c *client) CreateCheck(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Check
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) CreateHeartbeat(
+	ctx context.Context,
+	check HeartbeatCheck,
+) (*HeartbeatCheck, error) {
+	data, err := json.Marshal(check)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/heartbeat"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result HeartbeatCheck
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
@@ -231,6 +260,36 @@ func (c *client) UpdateCheck(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result Check
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// Update updates an existing check with the specified details. It returns the
+// updated check, or an error.
+func (c *client) UpdateHeartbeat(
+	ctx context.Context,
+	ID string, check HeartbeatCheck,
+) (*HeartbeatCheck, error) {
+	data, err := json.Marshal(check)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/heartbeat/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result HeartbeatCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -277,6 +336,32 @@ func (c *client) GetCheck(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	result := Check{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// Get takes the ID of an existing check, and returns the check parameters, or
+// an error.
+func (c *client) GetHeartbeatCheck(
+	ctx context.Context,
+	ID string,
+) (*HeartbeatCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := HeartbeatCheck{}
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
