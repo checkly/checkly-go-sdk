@@ -446,6 +446,7 @@ type Check struct {
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
+	SSLCheckDomain            string                     `json:"sslCheckDomain,omitempty"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
