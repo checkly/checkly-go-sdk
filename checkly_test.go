@@ -72,6 +72,7 @@ var wantCheck = checkly.Check{
 		"foo",
 		"bar",
 	},
+	SSLCheckDomain:      "example.com",
 	LocalSetupScript:    "setitup",
 	LocalTearDownScript: "tearitdown",
 	AlertSettings: checkly.AlertSettings{
@@ -144,7 +145,9 @@ func validateEmptyBody(t *testing.T, body []byte) {
 func validateAnything(*testing.T, []byte) {
 }
 
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset", "AlertSettings.SSLCertificates", "PrivateLocations")
+// TODO: adjust wantCheck to test multiple SSLCheckDomain value and remove it from this list
+var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset",
+	"AlertSettings.SSLCertificates", "PrivateLocations", "SSLCheckDomain")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
