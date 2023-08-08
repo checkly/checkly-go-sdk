@@ -107,16 +107,17 @@ var apiCheck = checkly.Check{
 }
 
 var browserCheck = checkly.Check{
-	Name:          "My Browser Check",
-	Type:          checkly.TypeBrowser,
-	Frequency:     10,
-	Activated:     true,
-	Muted:         false,
-	ShouldFail:    false,
-	DoubleCheck:   false,
-	SSLCheck:      true,
-	Locations:     []string{"eu-west-1"},
-	AlertSettings: alertSettings,
+	Name:           "My Browser Check",
+	Type:           checkly.TypeBrowser,
+	Frequency:      10,
+	Activated:      true,
+	Muted:          false,
+	ShouldFail:     false,
+	DoubleCheck:    false,
+	SSLCheck:       true,
+	SSLCheckDomain: "www.acme.com",
+	Locations:    []string{"eu-west-1"},
+	AlertSettings:  alertSettings,
 	Script: `const assert = require("chai").assert;
   const puppeteer = require("puppeteer");
 
