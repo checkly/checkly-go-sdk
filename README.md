@@ -1,7 +1,4 @@
-<p>
-  <img height="128" src="https://cdn.checklyhq.com/logos/racoon_logo.svg" align="right" />
-  <h1>Checkly Go SDK</h1>
-</p>
+# Checkly Go SDK
 
 ![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)
 [![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
@@ -115,15 +112,3 @@ Please make sure to read the [Contributing Guide](https://github.com/checkly/che
 ## License
 
 [MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)
-
-<br>
-
-<p align="center">
-  <a href="https://checklyhq.com?utm_source=github&utm_medium=sponsor-logo-github&utm_campaign=checkly-go-sdk" target="_blank">
-  <img width="100px" src="https://cdn.checklyhq.com/logos/checkly_racoon_logo_horizontal.svg" alt="Checkly" />
-  </a>
-  <br />
-  <i><sub>Code, test, and deploy synthetic monitoring at scale</sub></i>
-  <br>
-  <b><sub>From Checkly with ♥️</sub></b>
-<p>
