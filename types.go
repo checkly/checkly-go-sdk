@@ -444,7 +444,6 @@ type Check struct {
 	MaxResponseTime           int                        `json:"maxResponseTime"`
 	Script                    string                     `json:"script,omitempty"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	DoubleCheck               bool                       `json:"doubleCheck"`
 	Tags                      []string                   `json:"tags,omitempty"`
 	SSLCheckDomain            string                     `json:"sslCheckDomain"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
@@ -462,11 +461,14 @@ type Check struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Pointers
-	PrivateLocations *[]string `json:"privateLocations"`
-	RuntimeID        *string   `json:"runtimeId"`
+	PrivateLocations *[]string      `json:"privateLocations"`
+	RuntimeID        *string        `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
+	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
+	DoubleCheck bool `json:"doubleCheck"`
 }
 
 type HeartbeatCheck struct {
@@ -595,6 +597,14 @@ type SSLCertificates struct {
 	AlertThreshold int  `json:"alertThreshold,omitempty"`
 }
 
+type RetryStrategy struct {
+	Type               string `json:"type"`
+	BaseBackoffSeconds int    `json:"baseBackoffSeconds"`
+	MaxAttempts        int    `json:"maxAttempts"`
+	MaxDurationSeconds int    `json:"maxDurationSeconds"`
+	SameRegion         bool   `json:"sameRegion"`
+}
+
 // Group represents a check group.
 type Group struct {
 	ID                        int64                      `json:"id,omitempty"`
@@ -606,7 +616,6 @@ type Group struct {
 	Concurrency               int                        `json:"concurrency"`
 	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	DoubleCheck               bool                       `json:"doubleCheck"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
 	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
@@ -618,8 +627,12 @@ type Group struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Pointers
-	RuntimeID        *string   `json:"runtimeId"`
-	PrivateLocations *[]string `json:"privateLocations"`
+	RuntimeID        *string        `json:"runtimeId"`
+	PrivateLocations *[]string      `json:"privateLocations"`
+	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
+
+	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
+	DoubleCheck bool `json:"doubleCheck"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
