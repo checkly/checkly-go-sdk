@@ -600,7 +600,7 @@ type SSLCertificates struct {
 type RetryStrategy struct {
 	Type               string `json:"type"`
 	BaseBackoffSeconds int    `json:"baseBackoffSeconds"`
-	MaxAttempts        int    `json:"maxAttempts"`
+	MaxRetries         int    `json:"maxRetries"`
 	MaxDurationSeconds int    `json:"maxDurationSeconds"`
 	SameRegion         bool   `json:"sameRegion"`
 }
