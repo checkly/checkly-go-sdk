@@ -350,6 +350,12 @@ type Client interface {
 
 	// SetChecklySource sets the source of the check for analytics purposes.
 	SetChecklySource(source string)
+
+	// Get a specific runtime specs.
+	GetRuntime(
+		ctx context.Context,
+		ID string,
+	) (*Runtime, error)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -469,6 +475,34 @@ type Check struct {
 	SSLCheck bool `json:"sslCheck"`
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`
+}
+
+// Check represents the parameters for an existing check.
+type MultiStepCheck struct {
+	ID                        string                     `json:"id"`
+	Name                      string                     `json:"name"`
+	Type                      string                     `json:"checkType"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	Locations                 []string                   `json:"locations,omitempty"`
+	Script                    string                     `json:"script,omitempty"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
+
+	// Pointers
+	PrivateLocations *[]string      `json:"privateLocations"`
+	RuntimeID        *string        `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
 }
 
 type HeartbeatCheck struct {
@@ -856,6 +890,14 @@ type TriggerGroup struct {
 type Location struct {
 	Name   string `json:"name"`
 	Region string `json:"region"`
+}
+
+type Runtime struct {
+	Name             string `json:"name"`
+	MultiStepSupport bool   `json:"multiStepSupport"`
+	Stage            string `json:"stage"`
+	RuntimeEndOfLife string `json:"runtimeEndOfLife"`
+	Description      string `json:"description"`
 }
 
 // SetConfig sets config of alert channel based on it's type

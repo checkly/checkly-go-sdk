@@ -190,6 +190,8 @@ func (c *client) CreateCheck(
 		checkType = "checks/api"
 	} else if check.Type == "HEARTBEAT" {
 		checkType = "checks/heartbeat"
+	} else if check.Type == "MULTI_STEP" {
+		checkType = "checks/multistep"
 	}
 	status, res, err := c.apiCall(
 		ctx,
@@ -1337,6 +1339,31 @@ func alertChannelFromJSON(response string) (*AlertChannel, error) {
 		resultAc.SetConfig(c)
 	}
 	return resultAc, nil
+}
+
+// Get a specific runtime specs
+func (c *client) GetRuntime(
+	ctx context.Context,
+	ID string,
+) (*Runtime, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("runtimes/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	result := Runtime{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
 }
 
 // dumpResponse writes the raw response data to the debug output, if set, or
