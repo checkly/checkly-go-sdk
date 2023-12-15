@@ -445,6 +445,7 @@ type Check struct {
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations,omitempty"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
 	MaxResponseTime           int                        `json:"maxResponseTime"`
@@ -487,6 +488,7 @@ type MultiStepCheck struct {
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations,omitempty"`
 	Script                    string                     `json:"script,omitempty"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
@@ -645,6 +647,7 @@ type Group struct {
 	Name                      string                     `json:"name"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
+	RunParallel               bool                       `json:"runParallel"`
 	Tags                      []string                   `json:"tags"`
 	Locations                 []string                   `json:"locations"`
 	Concurrency               int                        `json:"concurrency"`
