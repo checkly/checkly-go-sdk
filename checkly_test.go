@@ -60,6 +60,7 @@ var wantCheck = checkly.Check{
 			Username: "",
 			Password: "",
 		},
+		IPFamily: "IPv4",
 	},
 	Script: "foo",
 	EnvironmentVariables: []checkly.EnvironmentVariable{
@@ -85,6 +86,10 @@ var wantCheck = checkly.Check{
 		},
 		Reminders: checkly.Reminders{
 			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
 		},
 	},
 	UseGlobalAlertSettings:    false,
@@ -377,6 +382,10 @@ var wantGroup = checkly.Group{
 		Reminders: checkly.Reminders{
 			Amount:   0,
 			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
 		},
 	},
 	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{

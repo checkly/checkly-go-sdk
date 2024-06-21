@@ -33,7 +33,8 @@
     "basicAuth": {
       "password": "",
       "username": ""
-    }
+    },
+    "ipFamily": "IPv4"
   },
   "frequency": 10,
   "muted": false,
@@ -62,6 +63,10 @@
     "reminders": {
       "amount": 0,
       "interval": 5
+    },
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+ 		  "percentage": 10
     }
   },
   "script": "foo",
