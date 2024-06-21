@@ -58,6 +58,10 @@
     "reminders": {
       "amount": 0,
       "interval": 5
+    },
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+ 		  "percentage": 10
     }
   },
   "alertChannelSubscriptions": [

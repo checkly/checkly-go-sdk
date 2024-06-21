@@ -36,6 +36,10 @@
       "amount": 0,
       "interval": 5
     },
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+ 		  "percentage": 10
+    },
     "escalationType": "RUN_BASED",
     "runBasedEscalation": {
       "failedRunThreshold": 1

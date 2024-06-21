@@ -383,6 +383,10 @@ var wantGroup = checkly.Group{
 			Amount:   0,
 			Interval: 5,
 		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
 	},
 	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
 		{
