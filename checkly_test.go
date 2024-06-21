@@ -60,6 +60,7 @@ var wantCheck = checkly.Check{
 			Username: "",
 			Password: "",
 		},
+		IPFamily: "IPv4",
 	},
 	Script: "foo",
 	EnvironmentVariables: []checkly.EnvironmentVariable{
