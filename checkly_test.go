@@ -87,6 +87,10 @@ var wantCheck = checkly.Check{
 		Reminders: checkly.Reminders{
 			Interval: 5,
 		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
 	},
 	UseGlobalAlertSettings:    false,
 	DegradedResponseTime:      15000,
