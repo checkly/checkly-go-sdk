@@ -356,6 +356,8 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*Runtime, error)
+
+	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -910,6 +912,12 @@ type Runtime struct {
 	Stage            string `json:"stage"`
 	RuntimeEndOfLife string `json:"runtimeEndOfLife"`
 	Description      string `json:"description"`
+}
+
+type StaticIP struct {
+	Value  string
+	Family string
+	Region string
 }
 
 // SetConfig sets config of alert channel based on it's type

@@ -1366,6 +1366,65 @@ func (c *client) GetRuntime(
 	return &result, nil
 }
 
+// Get static IP lists
+func (c *client) GetStaticIPs(
+	ctx context.Context,
+) ([]StaticIP, error) {
+	var IPs []StaticIP
+
+	// getting IPv6 first
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		"static-ipv6s-by-region",
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+
+	var datav6 map[string]string
+	err = json.Unmarshal([]byte(res), &datav6)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+
+	for region, ip := range datav6 {
+		IPs = append(IPs, StaticIP{Value: ip, Family: "IPv6", Region: region})
+	}
+
+	// and then IPv4
+	status, res, err = c.apiCall(
+		ctx,
+		http.MethodGet,
+		"static-ips-by-region",
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+
+	var datav4 map[string][]string
+	err = json.Unmarshal([]byte(res), &datav4)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+
+	for region, ips := range datav4 {
+		for _, ip := range ips {
+			IPs = append(IPs, StaticIP{Value: ip, Family: "IPv4", Region: region})
+		}
+	}
+
+	return IPs, nil
+}
+
 // dumpResponse writes the raw response data to the debug output, if set, or
 // standard error otherwise.
 func (c *client) dumpResponse(resp *http.Response) {
