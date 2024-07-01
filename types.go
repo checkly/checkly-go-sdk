@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
+	"net/netip"
 	"time"
 )
 
@@ -920,7 +920,7 @@ type Runtime struct {
 // see https://www.checklyhq.com/docs/monitoring/allowlisting/#ip-range-allowlisting
 type StaticIP struct {
 	Region  string
-	Address *net.IPNet
+	Address netip.Prefix
 }
 
 // SetConfig sets config of alert channel based on it's type
