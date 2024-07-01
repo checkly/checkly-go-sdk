@@ -915,8 +915,11 @@ type Runtime struct {
 	Description      string `json:"description"`
 }
 
+// This type is used to describe Checkly's official
+// public range of IP addresses checks are executed from
+// see https://www.checklyhq.com/docs/monitoring/allowlisting/#ip-range-allowlisting
 type StaticIP struct {
-	Region string
+	Region  string
 	Address *net.IPNet
 }
 
