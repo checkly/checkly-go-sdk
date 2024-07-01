@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -1364,6 +1365,74 @@ func (c *client) GetRuntime(
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
+}
+
+// Get static IP lists
+func (c *client) GetStaticIPs(
+	ctx context.Context,
+) ([]StaticIP, error) {
+	var IPs []StaticIP
+
+	// getting IPv6 first
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		"static-ipv6s-by-region",
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+
+	var datav6 map[string]string
+	err = json.Unmarshal([]byte(res), &datav6)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+
+	for region, ip := range datav6 {
+		addr, err := netip.ParsePrefix(ip)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+		}
+
+		IPs = append(IPs, StaticIP{Region: region, Address: addr})
+	}
+
+	// and then IPv4
+	status, res, err = c.apiCall(
+		ctx,
+		http.MethodGet,
+		"static-ips-by-region",
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+
+	var datav4 map[string][]string
+	err = json.Unmarshal([]byte(res), &datav4)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+
+	for region, ips := range datav4 {
+		for _, ip := range ips {
+			addr, err := netip.ParseAddr(ip)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+			}
+			IPs = append(IPs, StaticIP{Region: region, Address: netip.PrefixFrom(addr, 32)})
+		}
+	}
+
+	return IPs, nil
 }
 
 // dumpResponse writes the raw response data to the debug output, if set, or

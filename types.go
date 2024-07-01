@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/netip"
 	"time"
 )
 
@@ -356,6 +357,8 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*Runtime, error)
+
+	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -910,6 +913,14 @@ type Runtime struct {
 	Stage            string `json:"stage"`
 	RuntimeEndOfLife string `json:"runtimeEndOfLife"`
 	Description      string `json:"description"`
+}
+
+// This type is used to describe Checkly's official
+// public range of IP addresses checks are executed from
+// see https://www.checklyhq.com/docs/monitoring/allowlisting/#ip-range-allowlisting
+type StaticIP struct {
+	Region  string
+	Address netip.Prefix
 }
 
 // SetConfig sets config of alert channel based on it's type
