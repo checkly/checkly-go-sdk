@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1551,9 +1552,12 @@ func TestGetStaticIPs(t *testing.T) {
 		t.Error(err)
 	}
 
+	_, exampleIPv4, err := net.ParseCIDR("54.151.146.209/32")
+	_, exampleIPv6, err := net.ParseCIDR("2600:1f18:12ca:3000::/56")
+
 	expected := []checkly.StaticIP{
-		{Value: "54.151.146.209", Family: "IPv4", Region: "ap-southeast-1"},
-		{Value: "2600:1f18:12ca:3000::/56", Family: "IPv6", Region: "us-east-1"},
+		{Region: "ap-southeast-1", Address: exampleIPv4},
+		{Region: "us-east-1", Address: exampleIPv6},
 	}
 
 	for _, exp := range expected {
