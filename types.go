@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
@@ -915,9 +916,8 @@ type Runtime struct {
 }
 
 type StaticIP struct {
-	Value  string
-	Family string
 	Region string
+	Address *net.IPNet
 }
 
 // SetConfig sets config of alert channel based on it's type

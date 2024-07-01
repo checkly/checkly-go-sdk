@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -1393,7 +1394,11 @@ func (c *client) GetStaticIPs(
 	}
 
 	for region, ip := range datav6 {
-		IPs = append(IPs, StaticIP{Value: ip, Family: "IPv6", Region: region})
+		_, addr, err := net.ParseCIDR(ip)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+		}
+		IPs = append(IPs, StaticIP{Region: region, Address: addr})
 	}
 
 	// and then IPv4
@@ -1418,7 +1423,11 @@ func (c *client) GetStaticIPs(
 
 	for region, ips := range datav4 {
 		for _, ip := range ips {
-			IPs = append(IPs, StaticIP{Value: ip, Family: "IPv4", Region: region})
+			_, addr, err := net.ParseCIDR(ip + "/32")
+			if err != nil {
+				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+			}
+			IPs = append(IPs, StaticIP{Region: region, Address: addr})
 		}
 	}
 
