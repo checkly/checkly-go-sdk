@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -1394,10 +1394,11 @@ func (c *client) GetStaticIPs(
 	}
 
 	for region, ip := range datav6 {
-		_, addr, err := net.ParseCIDR(ip)
+		addr, err := netip.ParsePrefix(ip)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
 		}
+
 		IPs = append(IPs, StaticIP{Region: region, Address: addr})
 	}
 
@@ -1423,11 +1424,12 @@ func (c *client) GetStaticIPs(
 
 	for region, ips := range datav4 {
 		for _, ip := range ips {
-			_, addr, err := net.ParseCIDR(ip + "/32")
+			addr, err := netip.ParseAddr(ip)
+			//_, addr, err := net.ParseCIDR(ip + "/32")
 			if err != nil {
 				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
 			}
-			IPs = append(IPs, StaticIP{Region: region, Address: addr})
+			IPs = append(IPs, StaticIP{Region: region, Address: netip.PrefixFrom(addr, 32)})
 		}
 	}
 
