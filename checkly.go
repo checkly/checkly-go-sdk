@@ -1425,7 +1425,6 @@ func (c *client) GetStaticIPs(
 	for region, ips := range datav4 {
 		for _, ip := range ips {
 			addr, err := netip.ParseAddr(ip)
-			//_, addr, err := net.ParseCIDR(ip + "/32")
 			if err != nil {
 				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
 			}
