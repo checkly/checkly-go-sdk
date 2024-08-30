@@ -581,6 +581,7 @@ type EnvironmentVariable struct {
 	Key    string `json:"key,omitempty"`
 	Value  string `json:"value"`
 	Locked bool   `json:"locked"`
+	Secret bool   `json:"secret"`
 }
 
 // PrivateLocationKey represents the keys that the private location has.
