@@ -185,14 +185,19 @@ func (c *client) CreateCheck(
 		return nil, err
 	}
 	var checkType string
-	if check.Type == "BROWSER" {
+	switch check.Type {
+	case "BROWSER":
 		checkType = "checks/browser"
-	} else if check.Type == "API" {
+	case "API":
 		checkType = "checks/api"
-	} else if check.Type == "HEARTBEAT" {
+	case "HEARTBEAT":
 		checkType = "checks/heartbeat"
-	} else if check.Type == "MULTI_STEP" {
+	case "MULTI_STEP":
 		checkType = "checks/multistep"
+	case "TCP":
+		return nil, fmt.Errorf("user error: use CreateTCPCheck to create TCP checks")
+	default:
+		return nil, fmt.Errorf("unknown check type: %s", checkType)
 	}
 	status, res, err := c.apiCall(
 		ctx,
@@ -234,6 +239,33 @@ func (c *client) CreateHeartbeat(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result HeartbeatCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) CreateTCPCheck(
+	ctx context.Context,
+	check TCPCheck,
+) (*TCPCheck, error) {
+	data, err := json.Marshal(check)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/tcp"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TCPCheck
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
@@ -293,6 +325,44 @@ func (c *client) UpdateHeartbeat(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result HeartbeatCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateTCPCheck(
+	ctx context.Context,
+	ID string,
+	check TCPCheck,
+) (*TCPCheck, error) {
+	// Unfortunately `checkType` is required for this endpoint, so sneak it in
+	// using an anonymous struct.
+	payload := struct {
+		TCPCheck
+		Type string `json:"checkType"`
+	}{
+		TCPCheck: check,
+		Type:     "TCP",
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/tcp/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TCPCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -365,6 +435,32 @@ func (c *client) GetHeartbeatCheck(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	result := HeartbeatCheck{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetTCPCheck takes the ID of an existing TCP check, and returns the check
+// parameters, or an error.
+func (c *client) GetTCPCheck(
+	ctx context.Context,
+	ID string,
+) (*TCPCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TCPCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

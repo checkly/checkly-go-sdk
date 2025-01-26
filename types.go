@@ -72,6 +72,13 @@ type Client interface {
 		check HeartbeatCheck,
 	) (*HeartbeatCheck, error)
 
+	// CreateTCPCheck creates a new TCP check with the specified details.
+	// It returns the newly-created check, or an error.
+	CreateTCPCheck(
+		ctx context.Context,
+		check TCPCheck,
+	) (*TCPCheck, error)
+
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	UpdateCheck(
@@ -88,6 +95,14 @@ type Client interface {
 		check HeartbeatCheck,
 	) (*HeartbeatCheck, error)
 
+	// UpdateTCPCheck updates an existing TCP check with the specified details.
+	// It returns the updated check, or an error.
+	UpdateTCPCheck(
+		ctx context.Context,
+		ID string,
+		check TCPCheck,
+	) (*TCPCheck, error)
+
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
 		ctx context.Context,
@@ -100,6 +115,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*Check, error)
+
+	// Get takes the ID of an existing TCP check, and returns the check
+	// parameters, or an error.
+	GetTCPCheck(
+		ctx context.Context,
+		ID string,
+	) (*TCPCheck, error)
 
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
@@ -412,6 +434,9 @@ const Headers = "HEADERS"
 // ResponseTime identifies the response time as an assertion source.
 const ResponseTime = "RESPONSE_TIME"
 
+// ResponseData identifies the response data of a TCP check as an assertion source.
+const ResponseData = "RESPONSE_DATA"
+
 // Assertion comparison constants
 
 // Equals asserts that the source and target are equal.
@@ -524,6 +549,33 @@ type HeartbeatCheck struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
+// TCPCheck represents a TCP check.
+type TCPCheck struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Frequency                 int                        `json:"frequency,omitempty"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations,omitempty"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   TCPRequest                 `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
 // Heartbeat represents the parameter for the heartbeat check.
 type Heartbeat struct {
 	Period     int    `json:"period"`
@@ -573,6 +625,15 @@ type KeyValue struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
 	Locked bool   `json:"locked"`
+}
+
+// TCPRequest represents the parameters for a TCP check's connection.
+type TCPRequest struct {
+	Hostname   string      `json:"hostname"`
+	Port       uint16      `json:"port"`
+	Data       string      `json:"data,omitempty"`
+	Assertions []Assertion `json:"assertions,omitempty"`
+	IPFamily   string      `json:"ipFamily,omitempty"`
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
