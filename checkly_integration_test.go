@@ -325,3 +325,57 @@ func TestGetPrivateLocationIntegration(t *testing.T) {
 		t.Error(cmp.Diff(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields))
 	}
 }
+
+func TestTCPCheckCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingCheck := checkly.TCPCheck{
+		Name:      "TestTCPCheckCRUD",
+		Muted:     false,
+		Locations: []string{"eu-west-1"},
+		Request: checkly.TCPRequest{
+			Hostname: "api.checklyhq.com",
+			Port:     443,
+		},
+	}
+
+	createdCheck, err := client.CreateTCPCheck(ctx, pendingCheck)
+	if err != nil {
+		t.Fatalf("failed to create TCP check: %v", err)
+	}
+	var didDelete bool
+	defer func() {
+		if !didDelete {
+			_ = client.DeleteCheck(ctx, createdCheck.ID)
+		}
+	}()
+
+	if createdCheck.Muted != false {
+		t.Fatalf("expected Muted to be false after creation")
+	}
+
+	_, err = client.GetTCPCheck(ctx, createdCheck.ID)
+	if err != nil {
+		t.Fatalf("failed to get TCP check: %v", err)
+	}
+
+	updateCheck := *createdCheck
+	updateCheck.Muted = true
+
+	updatedCheck, err := client.UpdateTCPCheck(ctx, createdCheck.ID, updateCheck)
+	if err != nil {
+		t.Fatalf("failed to update TCP check: %v", err)
+	}
+
+	if updatedCheck.Muted != true {
+		t.Fatalf("expected Muted to be true after update")
+	}
+
+	didDelete = true
+	err = client.DeleteCheck(ctx, createdCheck.ID)
+	if err != nil {
+		t.Fatalf("failed to delete TCP check: %v", err)
+	}
+}
