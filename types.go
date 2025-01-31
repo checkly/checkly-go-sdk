@@ -474,7 +474,7 @@ type Check struct {
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations,omitempty"`
+	Locations                 []string                   `json:"locations"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
 	MaxResponseTime           int                        `json:"maxResponseTime"`
 	Script                    string                     `json:"script,omitempty"`
@@ -517,7 +517,7 @@ type MultiStepCheck struct {
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations,omitempty"`
+	Locations                 []string                   `json:"locations"`
 	Script                    string                     `json:"script,omitempty"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	Tags                      []string                   `json:"tags,omitempty"`
@@ -559,7 +559,7 @@ type TCPCheck struct {
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations,omitempty"`
+	Locations                 []string                   `json:"locations"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
 	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
 	Tags                      []string                   `json:"tags,omitempty"`
@@ -569,7 +569,7 @@ type TCPCheck struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	PrivateLocations          *[]string                  `json:"privateLocations,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
