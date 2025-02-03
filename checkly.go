@@ -66,27 +66,7 @@ func (c *client) Create(
 	ctx context.Context,
 	check Check,
 ) (*Check, error) {
-	data, err := json.Marshal(check)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result Check
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
-	}
-	return &result, nil
+	return c.CreateCheck(ctx, check)
 }
 
 // Update updates an existing check with the specified details. It returns the
@@ -98,28 +78,7 @@ func (c *client) Update(
 	ctx context.Context,
 	ID string, check Check,
 ) (*Check, error) {
-	data, err := json.Marshal(check)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result Check
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
-	}
-	return &result, nil
+	return c.UpdateCheck(ctx, ID, check)
 }
 
 // Delete deletes the check with the specified ID.
@@ -130,19 +89,7 @@ func (c *client) Delete(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	return c.DeleteCheck(ctx, ID)
 }
 
 // Get takes the ID of an existing check, and returns the check parameters, or
@@ -278,6 +225,14 @@ func (c *client) UpdateCheck(
 	ctx context.Context,
 	ID string, check Check,
 ) (*Check, error) {
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		check.Locations = []string{}
+	}
+	if check.PrivateLocations == nil {
+		check.PrivateLocations = &[]string{}
+	}
 	data, err := json.Marshal(check)
 	if err != nil {
 		return nil, err
@@ -337,6 +292,14 @@ func (c *client) UpdateTCPCheck(
 	ID string,
 	check TCPCheck,
 ) (*TCPCheck, error) {
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		check.Locations = []string{}
+	}
+	if check.PrivateLocations == nil {
+		check.PrivateLocations = &[]string{}
+	}
 	// Unfortunately `checkType` is required for this endpoint, so sneak it in
 	// using an anonymous struct.
 	payload := struct {
@@ -532,6 +495,14 @@ func (c *client) UpdateGroup(
 	ID int64,
 	group Group,
 ) (*Group, error) {
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if group.Locations == nil {
+		group.Locations = []string{}
+	}
+	if group.PrivateLocations == nil {
+		group.PrivateLocations = &[]string{}
+	}
 	data, err := json.Marshal(group)
 	if err != nil {
 		return nil, err
