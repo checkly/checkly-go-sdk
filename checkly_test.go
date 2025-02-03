@@ -27,14 +27,15 @@ import (
 var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
 
 var wantCheck = checkly.Check{
-	Name:        "test",
-	Type:        checkly.TypeAPI,
-	Frequency:   10,
-	Activated:   true,
-	Muted:       false,
-	DoubleCheck: true,
-	ShouldFail:  false,
-	Locations:   []string{"eu-west-1"},
+	Name:             "test",
+	Type:             checkly.TypeAPI,
+	Frequency:        10,
+	Activated:        true,
+	Muted:            false,
+	DoubleCheck:      true,
+	ShouldFail:       false,
+	Locations:        []string{"eu-west-1"},
+	PrivateLocations: &[]string{},
 	Request: checkly.Request{
 		Method: http.MethodGet,
 		URL:    "https://example.com",
@@ -161,14 +162,16 @@ func TestAPIError(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks?autoAssignAlerts=false",
+		"/v1/checks/api?autoAssignAlerts=false",
 		validateAnything,
 		http.StatusBadRequest,
 		"BadRequest.json",
 	)
 	defer ts.Close()
 	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	_, err := client.Create(context.Background(), checkly.Check{})
+	_, err := client.CreateCheck(context.Background(), checkly.Check{
+		Type: checkly.TypeAPI,
+	})
 	if err == nil {
 		t.Error("want error when API returns 'bad request' status, got nil")
 	}
@@ -181,7 +184,7 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks?autoAssignAlerts=false",
+		"/v1/checks/api?autoAssignAlerts=false",
 		validateCheck,
 		http.StatusCreated,
 		"CreateCheck.json",
@@ -334,12 +337,13 @@ func TestDeleteCheck(t *testing.T) {
 var wantGroupID int64 = 135
 
 var wantGroup = checkly.Group{
-	Name:        "test",
-	Activated:   true,
-	Muted:       false,
-	Tags:        []string{"auto"},
-	Locations:   []string{"eu-west-1"},
-	Concurrency: 3,
+	Name:             "test",
+	Activated:        true,
+	Muted:            false,
+	Tags:             []string{"auto"},
+	Locations:        []string{"eu-west-1"},
+	PrivateLocations: &[]string{},
+	Concurrency:      3,
 	APICheckDefaults: checkly.APICheckDefaults{
 		BaseURL: "example.com/api/test",
 		Headers: []checkly.KeyValue{
@@ -429,7 +433,7 @@ func TestCreateGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
@@ -450,7 +454,7 @@ func TestGetGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignored))
 	}
@@ -471,7 +475,7 @@ func TestUpdateGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
