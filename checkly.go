@@ -66,7 +66,9 @@ func (c *client) Create(
 	ctx context.Context,
 	check Check,
 ) (*Check, error) {
-	return c.CreateCheck(ctx, check)
+	// There are differences between /v1/checks and /v1/checks/<type>. Keep
+	// using /v1/checks here for backwards compatibility reasons.
+	return c.createCheck(ctx, check, "checks")
 }
 
 // Update updates an existing check with the specified details. It returns the
@@ -127,29 +129,37 @@ func (c *client) CreateCheck(
 	ctx context.Context,
 	check Check,
 ) (*Check, error) {
+	var endpoint string
+	switch check.Type {
+	case "BROWSER":
+		endpoint = "checks/browser"
+	case "API":
+		endpoint = "checks/api"
+	case "HEARTBEAT":
+		endpoint = "checks/heartbeat"
+	case "MULTI_STEP":
+		endpoint = "checks/multistep"
+	case "TCP":
+		return nil, fmt.Errorf("user error: use CreateTCPCheck to create TCP checks")
+	default:
+		return nil, fmt.Errorf("unknown check type: %s", endpoint)
+	}
+	return c.createCheck(ctx, check, endpoint)
+}
+
+func (c *client) createCheck(
+	ctx context.Context,
+	check Check,
+	endpoint string,
+) (*Check, error) {
 	data, err := json.Marshal(check)
 	if err != nil {
 		return nil, err
 	}
-	var checkType string
-	switch check.Type {
-	case "BROWSER":
-		checkType = "checks/browser"
-	case "API":
-		checkType = "checks/api"
-	case "HEARTBEAT":
-		checkType = "checks/heartbeat"
-	case "MULTI_STEP":
-		checkType = "checks/multistep"
-	case "TCP":
-		return nil, fmt.Errorf("user error: use CreateTCPCheck to create TCP checks")
-	default:
-		return nil, fmt.Errorf("unknown check type: %s", checkType)
-	}
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodPost,
-		withAutoAssignAlertsFlag(checkType),
+		withAutoAssignAlertsFlag(endpoint),
 		data,
 	)
 	if err != nil {

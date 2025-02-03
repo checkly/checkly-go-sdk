@@ -184,7 +184,7 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/checks/api?autoAssignAlerts=false",
+		"/v1/checks?autoAssignAlerts=false",
 		validateCheck,
 		http.StatusCreated,
 		"CreateCheck.json",
