@@ -38,7 +38,11 @@
   },
   "frequency": 10,
   "muted": false,
-  "doubleCheck": true,
+  "retryStrategy": {
+    "type": "FIXED",
+    "maxRetries": 1,
+    "maxDurationSeconds": 600
+  },
   "locations": [
     "eu-west-1"
   ],
@@ -66,7 +70,7 @@
     },
     "parallelRunFailureThreshold": {
       "enabled": false,
- 		  "percentage": 10
+      "percentage": 10
     }
   },
   "script": "foo",

@@ -27,12 +27,16 @@ import (
 var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
 
 var wantCheck = checkly.Check{
-	Name:             "test",
-	Type:             checkly.TypeAPI,
-	Frequency:        10,
-	Activated:        true,
-	Muted:            false,
-	DoubleCheck:      true,
+	Name:      "test",
+	Type:      checkly.TypeAPI,
+	Frequency: 10,
+	Activated: true,
+	Muted:     false,
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "FIXED",
+		MaxRetries:         1,
+		MaxDurationSeconds: 600,
+	},
 	ShouldFail:       false,
 	Locations:        []string{"eu-west-1"},
 	PrivateLocations: &[]string{},
@@ -376,7 +380,11 @@ var wantGroup = checkly.Group{
 			Value: "Hello world",
 		},
 	},
-	DoubleCheck:            true,
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "FIXED",
+		MaxRetries:         1,
+		MaxDurationSeconds: 600,
+	},
 	UseGlobalAlertSettings: false,
 	AlertSettings: checkly.AlertSettings{
 		EscalationType: checkly.RunBased,
