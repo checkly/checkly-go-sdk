@@ -38,7 +38,7 @@
     },
     "parallelRunFailureThreshold": {
       "enabled": false,
- 		  "percentage": 10
+      "percentage": 10
     },
     "escalationType": "RUN_BASED",
     "runBasedEscalation": {
@@ -62,7 +62,11 @@
   "activated": true,
   "muted": false,
   "useGlobalAlertSettings": false,
-  "doubleCheck": true,
+  "retryStrategy": {
+    "type": "FIXED",
+    "maxRetries": 1,
+    "maxDurationSeconds": 600
+  },
   "locations": [
     "eu-west-1"
   ],

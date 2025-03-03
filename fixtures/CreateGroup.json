@@ -45,7 +45,11 @@
       "locked": false
     }
   ],
-  "doubleCheck": true,
+  "retryStrategy": {
+    "type": "FIXED",
+    "maxRetries": 1,
+    "maxDurationSeconds": 600
+  },
   "useGlobalAlertSettings": false,
   "alertSettings": {
     "escalationType": "RUN_BASED",
@@ -61,7 +65,7 @@
     },
     "parallelRunFailureThreshold": {
       "enabled": false,
- 		  "percentage": 10
+      "percentage": 10
     }
   },
   "alertChannelSubscriptions": [
