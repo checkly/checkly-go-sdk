@@ -1337,6 +1337,62 @@ func (c *client) DeleteTriggerGroup(
 	return nil
 }
 
+func (c *client) CreateClientCertificate(
+	ctx context.Context,
+	cs ClientCertificate,
+) (*ClientCertificate, error) {
+	data, err := json.Marshal(cs)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPost, "client-certificates", data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result ClientCertificate
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) GetClientCertificate(
+	ctx context.Context,
+	ID string,
+) (*ClientCertificate, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result ClientCertificate
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) DeleteClientCertificate(
+	ctx context.Context,
+	ID string,
+) error {
+	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 	payload := map[string]interface{}{
 		"id":     ac.ID,

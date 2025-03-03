@@ -368,6 +368,25 @@ type Client interface {
 		groupID int64,
 	) error
 
+	// CreateClientCertificate creates a new client certificate and returns
+	// the created resource.
+	CreateClientCertificate(
+		ctx context.Context,
+		cs ClientCertificate,
+	) (*ClientCertificate, error)
+
+	// GetClientCertificate retrieves a client certificate.
+	GetClientCertificate(
+		ctx context.Context,
+		ID string,
+	) (*ClientCertificate, error)
+
+	// DeleteClientCertificate deletes a client certificate.
+	DeleteClientCertificate(
+		ctx context.Context,
+		ID string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 
@@ -1068,4 +1087,28 @@ func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}
 		return &r, nil
 	}
 	return nil, fmt.Errorf("Unknown AlertChannel.config type")
+}
+
+type ClientCertificate struct {
+	// ID is the Checkly identifier of the client certificate.
+	ID string `json:"id,omitempty"`
+
+	// Host is the host domain that the certificate should be used for.
+	Host string `json:"host"`
+
+	// Certificate is the client certificate in PEM format.
+	Certificate string `json:"cert"`
+
+	// PrivateKey is the private key for the certificate in PEM format.
+	PrivateKey string `json:"key"`
+
+	// Passphrase is an optional passphrase for the private key.
+	Passphrase string `json:"passphrase,omitempty"`
+
+	// TrustedCA is an optional PEM formatted bundle of CA certificates that
+	// the client should trust. The bundle may contain many CA certificates.
+	TrustedCA string `json:"ca,omitempty"`
+
+	// CreatedAt is the time when the client certificate was created.
+	CreatedAt time.Time `json:"created_at"`
 }
