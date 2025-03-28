@@ -1393,6 +1393,166 @@ func (c *client) DeleteClientCertificate(
 	return nil
 }
 
+func (c *client) CreateStatusPage(
+	ctx context.Context,
+	page StatusPage,
+) (*StatusPage, error) {
+	data, err := json.Marshal(page)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages", data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result StatusPage
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) GetStatusPage(
+	ctx context.Context,
+	ID string,
+) (*StatusPage, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result StatusPage
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateStatusPage(
+	ctx context.Context,
+	ID string,
+	page StatusPage,
+) (*StatusPage, error) {
+	data, err := json.Marshal(page)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result StatusPage
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) DeleteStatusPage(
+	ctx context.Context,
+	ID string,
+) error {
+	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
+func (c *client) CreateStatusPageService(
+	ctx context.Context,
+	service StatusPageService,
+) (*StatusPageService, error) {
+	data, err := json.Marshal(service)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages/services", data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result StatusPageService
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) GetStatusPageService(
+	ctx context.Context,
+	ID string,
+) (*StatusPageService, error) {
+	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result StatusPageService
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateStatusPageService(
+	ctx context.Context,
+	ID string,
+	service StatusPageService,
+) (*StatusPageService, error) {
+	data, err := json.Marshal(service)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), data)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
+	}
+	var result StatusPageService
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) DeleteStatusPageService(
+	ctx context.Context,
+	ID string,
+) error {
+	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusNoContent {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	return nil
+}
+
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 	payload := map[string]interface{}{
 		"id":     ac.ID,

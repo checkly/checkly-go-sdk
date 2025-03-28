@@ -1,0 +1,17 @@
+{
+  "id": "cd8d05a4-c292-4dc4-a78f-1dea65e5457e",
+  "name": "Foo status page",
+  "url": "foo-status-page",
+  "defaultTheme": "AUTO",
+  "cards": [
+    {
+      "name": "Foo card",
+      "services": [
+        {
+          "id": "8a894b49-467f-4af6-9230-cd4d3bd452f4",
+          "name": "Foo service"
+        }
+      ]
+    }
+  ]
+}
