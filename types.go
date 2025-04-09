@@ -387,6 +387,58 @@ type Client interface {
 		ID string,
 	) error
 
+	// CreateStatusPage creates a new status page and returns the created
+	// resource.
+	CreateStatusPage(
+		ctx context.Context,
+		page StatusPage,
+	) (*StatusPage, error)
+
+	// GetStatusPage retrieves a status page.
+	GetStatusPage(
+		ctx context.Context,
+		ID string,
+	) (*StatusPage, error)
+
+	// UpdateStatusPage updates a status page.
+	UpdateStatusPage(
+		ctx context.Context,
+		ID string,
+		page StatusPage,
+	) (*StatusPage, error)
+
+	// DeleteStatusPage deletes a status page.
+	DeleteStatusPage(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateStatusPageService creates a new status page service and returns
+	// the created resource.
+	CreateStatusPageService(
+		ctx context.Context,
+		service StatusPageService,
+	) (*StatusPageService, error)
+
+	// GetStatusPageService retrieves a status page service.
+	GetStatusPageService(
+		ctx context.Context,
+		ID string,
+	) (*StatusPageService, error)
+
+	// UpdateStatusPageService updates a status page service.
+	UpdateStatusPageService(
+		ctx context.Context,
+		ID string,
+		service StatusPageService,
+	) (*StatusPageService, error)
+
+	// DeleteStatusPageService deletes a status page service.
+	DeleteStatusPageService(
+		ctx context.Context,
+		ID string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 
@@ -1111,4 +1163,60 @@ type ClientCertificate struct {
 
 	// CreatedAt is the time when the client certificate was created.
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type StatusPageTheme string
+
+const (
+	StatusPageThemeAuto  StatusPageTheme = "AUTO"
+	StatusPageThemeDark  StatusPageTheme = "DARK"
+	StatusPageThemeLight StatusPageTheme = "LIGHT"
+)
+
+type StatusPage struct {
+	// ID is the Checkly identifier of the status page.
+	ID string `json:"id,omitempty"`
+
+	// Name is the name of the status page.
+	Name string `json:"name"`
+
+	// URL is the unique subdomain of the status page.
+	URL string `json:"url"`
+
+	// CustomDomain is an optional user-managed domain that hosts the status
+	// page.
+	CustomDomain string `json:"customDomain,omitempty"`
+
+	// Logo is a URL to an image file to use as the logo for the status page.
+	Logo string `json:"logo,omitempty"`
+
+	// RedirectTo is the URL the user should be redirected to when clicking
+	// the logo.
+	RedirectTo string `json:"redirectTo,omitempty"`
+
+	// Favicon is a URL to an image file to use as the favicon of the status
+	// page.
+	Favicon string `json:"favicon,omitempty"`
+
+	// DefaultTheme is the default theme of the status page.
+	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
+
+	// Cards is a list of cards to include on the status page.
+	Cards []StatusPageCard `json:"cards"`
+}
+
+type StatusPageCard struct {
+	// Name is the name of the card.
+	Name string `json:"name"`
+
+	// Services is the list of services to include in the card.
+	Services []StatusPageService `json:"services"`
+}
+
+type StatusPageService struct {
+	// ID is the Checkly identifier of the service.
+	ID string `json:"id,omitempty"`
+
+	// Name is the name of the service.
+	Name string `json:"name"`
 }

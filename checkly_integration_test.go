@@ -419,3 +419,133 @@ func TestClientCertificateCRD(t *testing.T) {
 		t.Fatalf("failed to delete client certificate: %v", err)
 	}
 }
+
+func TestStatusPageServiceCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingStatusPageService := checkly.StatusPageService{
+		Name: "Foo service",
+	}
+
+	createdStatusPageService, err := client.CreateStatusPageService(ctx, pendingStatusPageService)
+	if err != nil {
+		t.Fatalf("failed to create status page service: %v", err)
+	}
+	var didDelete bool
+	defer func() {
+		if !didDelete {
+			_ = client.DeleteStatusPageService(ctx, createdStatusPageService.ID)
+		}
+	}()
+
+	readStatusPageService, err := client.GetStatusPageService(ctx, createdStatusPageService.ID)
+	if err != nil {
+		t.Fatalf("failed to get status page service: %v", err)
+	}
+
+	if !cmp.Equal(createdStatusPageService, readStatusPageService) {
+		t.Error(cmp.Diff(createdStatusPageService, readStatusPageService, ignoreStatusPageFields))
+	}
+
+	updateStatusPageService := *createdStatusPageService
+	updateStatusPageService.Name = "Bar service"
+
+	updatedStatusPageService, err := client.UpdateStatusPageService(ctx, createdStatusPageService.ID, updateStatusPageService)
+	if err != nil {
+		t.Fatalf("failed to update status page service: %v", err)
+	}
+
+	if updatedStatusPageService.Name != "Bar service" {
+		t.Fatalf("expected Name to change after update")
+	}
+
+	didDelete = true
+	err = client.DeleteStatusPageService(ctx, createdStatusPageService.ID)
+	if err != nil {
+		t.Fatalf("failed to delete status page service: %v", err)
+	}
+}
+
+func TestStatusPageCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingStatusPageService := checkly.StatusPageService{
+		Name: "Foo service",
+	}
+
+	createdStatusPageService, err := client.CreateStatusPageService(ctx, pendingStatusPageService)
+	if err != nil {
+		t.Fatalf("failed to create status page service: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteStatusPageService(ctx, createdStatusPageService.ID)
+	}()
+
+	pendingStatusPage := checkly.StatusPage{
+		Name: "Foo status page",
+		URL:  "foo-status-page",
+		Cards: []checkly.StatusPageCard{
+			{
+				Name: "Foo card",
+				Services: []checkly.StatusPageService{
+					{
+						ID: createdStatusPageService.ID,
+					},
+				},
+			},
+		},
+	}
+
+	createdStatusPage, err := client.CreateStatusPage(ctx, pendingStatusPage)
+	if err != nil {
+		t.Fatalf("failed to create status page: %v", err)
+	}
+	var didDelete bool
+	defer func() {
+		if !didDelete {
+			_ = client.DeleteStatusPage(ctx, createdStatusPage.ID)
+		}
+	}()
+
+	readStatusPage, err := client.GetStatusPage(ctx, createdStatusPage.ID)
+	if err != nil {
+		t.Fatalf("failed to get status page: %v", err)
+	}
+
+	if len(readStatusPage.Cards) == 0 {
+		t.Fatal("Expected status page to have cards")
+	}
+
+	if len(readStatusPage.Cards[0].Services) == 0 {
+		t.Fatal("Expected status page card to have services")
+	}
+
+	// Fill out the name to allow cmp to work better.
+	readStatusPage.Cards[0].Services[0].Name = createdStatusPageService.Name
+
+	if !cmp.Equal(createdStatusPage, readStatusPage) {
+		t.Error(cmp.Diff(createdStatusPage, readStatusPage, ignoreStatusPageFields))
+	}
+
+	updateStatusPage := *createdStatusPage
+	updateStatusPage.Name = "Bar status page"
+
+	updatedStatusPage, err := client.UpdateStatusPage(ctx, createdStatusPage.ID, updateStatusPage)
+	if err != nil {
+		t.Fatalf("failed to update status page: %v", err)
+	}
+
+	if updatedStatusPage.Name != "Bar status page" {
+		t.Fatalf("expected Name to change after update")
+	}
+
+	didDelete = true
+	err = client.DeleteStatusPage(ctx, createdStatusPage.ID)
+	if err != nil {
+		t.Fatalf("failed to delete status page: %v", err)
+	}
+}
