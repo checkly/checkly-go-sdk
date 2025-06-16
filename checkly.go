@@ -103,7 +103,7 @@ func (c *client) Get(
 	ctx context.Context,
 	ID string,
 ) (*Check, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("checks/%s", ID),
@@ -156,7 +156,7 @@ func (c *client) createCheck(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPost,
 		withAutoAssignAlertsFlag(endpoint),
@@ -183,7 +183,7 @@ func (c *client) CreateHeartbeat(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPost,
 		withAutoAssignAlertsFlag("checks/heartbeat"),
@@ -210,7 +210,7 @@ func (c *client) CreateTCPCheck(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPost,
 		withAutoAssignAlertsFlag("checks/tcp"),
@@ -247,7 +247,7 @@ func (c *client) UpdateCheck(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
@@ -277,7 +277,7 @@ func (c *client) UpdateHeartbeat(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		withAutoAssignAlertsFlag(fmt.Sprintf("checks/heartbeat/%s", ID)),
@@ -323,7 +323,7 @@ func (c *client) UpdateTCPCheck(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		withAutoAssignAlertsFlag(fmt.Sprintf("checks/tcp/%s", ID)),
@@ -348,7 +348,7 @@ func (c *client) DeleteCheck(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("checks/%s", ID),
@@ -369,7 +369,7 @@ func (c *client) GetCheck(
 	ctx context.Context,
 	ID string,
 ) (*Check, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("checks/%s", ID),
@@ -395,7 +395,7 @@ func (c *client) GetHeartbeatCheck(
 	ctx context.Context,
 	ID string,
 ) (*HeartbeatCheck, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("checks/%s", ID),
@@ -421,7 +421,7 @@ func (c *client) GetTCPCheck(
 	ctx context.Context,
 	ID string,
 ) (*TCPCheck, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("checks/%s", ID),
@@ -451,7 +451,7 @@ func (c *client) CreateGroup(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPost,
 		withAutoAssignAlertsFlag("check-groups"),
@@ -471,13 +471,43 @@ func (c *client) CreateGroup(
 	return &result, nil
 }
 
+// CreateGroupV2 creates a new check group with the specified details. It
+// returns the newly-created group, or an error.
+func (c *client) CreateGroupV2(
+	ctx context.Context,
+	group GroupV2,
+) (*GroupV2, error) {
+	data, err := json.Marshal(group)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCallV2(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("check-groups"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // GetGroup takes the ID of an existing check group, and returns the
 // corresponding group, or an error.
 func (c *client) GetGroup(
 	ctx context.Context,
 	ID int64,
 ) (*Group, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("check-groups/%d", ID),
@@ -490,6 +520,34 @@ func (c *client) GetGroup(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	result := Group{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetGroupV2 takes the ID of an existing check group, and returns the
+// corresponding group, or an error.
+func (c *client) GetGroupV2(
+	ctx context.Context,
+	ID int64,
+) (*GroupV2, error) {
+	// There is no v2 API but some of the return values of the v1 endpoint
+	// have changed slightly.
+	status, res, err := c.apiCallV1(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("check-groups/%d", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
@@ -517,7 +575,7 @@ func (c *client) UpdateGroup(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
@@ -537,12 +595,52 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
+// UpdateGroupV2 takes the ID of an existing check group, and updates the
+// corresponding check group to match the supplied group. It returns the updated
+// group, or an error.
+func (c *client) UpdateGroupV2(
+	ctx context.Context,
+	ID int64,
+	group GroupV2,
+) (*GroupV2, error) {
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if group.Locations == nil {
+		group.Locations = &[]string{}
+	}
+	if group.PrivateLocations == nil {
+		group.PrivateLocations = &[]string{}
+	}
+	data, err := json.Marshal(group)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCallV2(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // DeleteGroup deletes the check group with the specified ID.
 func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("check-groups/%d", ID),
@@ -563,7 +661,7 @@ func (c *client) GetCheckResult(
 	checkID,
 	checkResultID string,
 ) (*CheckResult, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("check-results/%s/%s", checkID, checkResultID),
@@ -617,7 +715,7 @@ func (c *client) GetCheckResults(
 		uri = uri + "?" + q.Encode()
 	}
 
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		uri,
@@ -648,7 +746,7 @@ func (c *client) CreateSnippet(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "snippets", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "snippets", data)
 	if err != nil {
 		return nil, err
 	}
@@ -669,7 +767,7 @@ func (c *client) GetSnippet(
 	ctx context.Context,
 	ID int64,
 ) (*Snippet, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -696,7 +794,7 @@ func (c *client) UpdateSnippet(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut, fmt.Sprintf("snippets/%d", ID),
 		data,
@@ -720,7 +818,7 @@ func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil)
 	if err != nil {
 		return err
 	}
@@ -741,7 +839,7 @@ func (c *client) CreateEnvironmentVariable(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "variables", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "variables", data)
 	if err != nil {
 		return nil, err
 	}
@@ -762,7 +860,7 @@ func (c *client) GetEnvironmentVariable(
 	ctx context.Context,
 	key string,
 ) (*EnvironmentVariable, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("variables/%s", key),
@@ -794,7 +892,7 @@ func (c *client) UpdateEnvironmentVariable(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("variables/%s", key),
@@ -819,7 +917,7 @@ func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("variables/%s", key), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodDelete, fmt.Sprintf("variables/%s", key), nil)
 	if err != nil {
 		return err
 	}
@@ -840,7 +938,7 @@ func (c *client) CreateAlertChannel(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "alert-channels", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "alert-channels", data)
 	if err != nil {
 		return nil, err
 	}
@@ -856,7 +954,7 @@ func (c *client) GetAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) (*AlertChannel, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -883,7 +981,7 @@ func (c *client) UpdateAlertChannel(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), data)
 	if err != nil {
 		return nil, err
 	}
@@ -898,7 +996,7 @@ func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("alert-channels/%d", ID),
@@ -923,7 +1021,7 @@ func (c *client) CreateDashboard(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "dashboards", data)
 	if err != nil {
 		return nil, err
 	}
@@ -945,7 +1043,7 @@ func (c *client) GetDashboard(
 	ctx context.Context,
 	ID string,
 ) (*Dashboard, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, "dashboards/"+ID, nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, "dashboards/"+ID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -965,7 +1063,7 @@ func (c *client) DeleteDashboard(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		"dashboards/"+ID,
@@ -992,7 +1090,7 @@ func (c *client) UpdateDashboard(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut,
 		"dashboards/"+ID,
@@ -1021,7 +1119,7 @@ func (c *client) CreateMaintenanceWindow(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "maintenance-windows", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "maintenance-windows", data)
 	if err != nil {
 		return nil, err
 	}
@@ -1043,7 +1141,7 @@ func (c *client) GetMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
 ) (*MaintenanceWindow, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1063,7 +1161,7 @@ func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("maintenance-windows/%d", ID),
@@ -1089,7 +1187,7 @@ func (c *client) UpdateMaintenanceWindow(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut, fmt.Sprintf("maintenance-windows/%d", ID),
 		data,
@@ -1117,7 +1215,7 @@ func (c *client) CreatePrivateLocation(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "private-locations", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "private-locations", data)
 	if err != nil {
 		return nil, err
 	}
@@ -1139,7 +1237,7 @@ func (c *client) GetPrivateLocation(
 	ctx context.Context,
 	ID string,
 ) (*PrivateLocation, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("private-locations/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("private-locations/%s", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1159,7 +1257,7 @@ func (c *client) DeletePrivateLocation(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("private-locations/%s", ID),
@@ -1185,7 +1283,7 @@ func (c *client) UpdatePrivateLocation(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodPut, fmt.Sprintf("private-locations/%s", ID),
 		data,
@@ -1209,7 +1307,7 @@ func (c *client) CreateTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) (*TriggerCheck, error) {
-	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1234,7 +1332,7 @@ func (c *client) GetTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) (*TriggerCheck, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1255,7 +1353,7 @@ func (c *client) DeleteTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("triggers/checks/%s", checkID),
@@ -1275,7 +1373,7 @@ func (c *client) CreateTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) (*TriggerGroup, error) {
-	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1300,7 +1398,7 @@ func (c *client) GetTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) (*TriggerGroup, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1322,7 +1420,7 @@ func (c *client) DeleteTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) error {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("triggers/check-groups/%s", strconv.FormatInt(groupID, 10)),
@@ -1345,7 +1443,7 @@ func (c *client) CreateClientCertificate(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "client-certificates", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "client-certificates", data)
 	if err != nil {
 		return nil, err
 	}
@@ -1364,7 +1462,7 @@ func (c *client) GetClientCertificate(
 	ctx context.Context,
 	ID string,
 ) (*ClientCertificate, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1383,7 +1481,7 @@ func (c *client) DeleteClientCertificate(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil)
 	if err != nil {
 		return err
 	}
@@ -1401,7 +1499,7 @@ func (c *client) CreateStatusPage(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "status-pages", data)
 	if err != nil {
 		return nil, err
 	}
@@ -1420,7 +1518,7 @@ func (c *client) GetStatusPage(
 	ctx context.Context,
 	ID string,
 ) (*StatusPage, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1444,7 +1542,7 @@ func (c *client) UpdateStatusPage(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), data)
 	if err != nil {
 		return nil, err
 	}
@@ -1463,7 +1561,7 @@ func (c *client) DeleteStatusPage(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil)
 	if err != nil {
 		return err
 	}
@@ -1481,7 +1579,7 @@ func (c *client) CreateStatusPageService(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages/services", data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPost, "status-pages/services", data)
 	if err != nil {
 		return nil, err
 	}
@@ -1500,7 +1598,7 @@ func (c *client) GetStatusPageService(
 	ctx context.Context,
 	ID string,
 ) (*StatusPageService, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1524,7 +1622,7 @@ func (c *client) UpdateStatusPageService(
 	if err != nil {
 		return nil, err
 	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), data)
+	status, res, err := c.apiCallV1(ctx, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), data)
 	if err != nil {
 		return nil, err
 	}
@@ -1543,7 +1641,7 @@ func (c *client) DeleteStatusPageService(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil)
+	status, res, err := c.apiCallV1(ctx, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil)
 	if err != nil {
 		return err
 	}
@@ -1640,7 +1738,7 @@ func (c *client) GetRuntime(
 	ctx context.Context,
 	ID string,
 ) (*Runtime, error) {
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("runtimes/%s", ID),
@@ -1667,7 +1765,7 @@ func (c *client) GetStaticIPs(
 	var IPs []StaticIP
 
 	// getting IPv6 first
-	status, res, err := c.apiCall(
+	status, res, err := c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		"static-ipv6s-by-region",
@@ -1696,7 +1794,7 @@ func (c *client) GetStaticIPs(
 	}
 
 	// and then IPv4
-	status, res, err = c.apiCall(
+	status, res, err = c.apiCallV1(
 		ctx,
 		http.MethodGet,
 		"static-ips-by-region",
@@ -1737,13 +1835,32 @@ func (c *client) dumpResponse(resp *http.Response) {
 	fmt.Fprintln(c.debug)
 }
 
-func (c *client) apiCall(
+func (c *client) apiCallV1(
 	ctx context.Context,
 	method string,
 	URL string,
 	data []byte,
 ) (statusCode int, response string, err error) {
-	requestURL := c.url + "/v1/" + URL
+	return c.apiCall(ctx, 1, method, URL, data)
+}
+
+func (c *client) apiCallV2(
+	ctx context.Context,
+	method string,
+	URL string,
+	data []byte,
+) (statusCode int, response string, err error) {
+	return c.apiCall(ctx, 2, method, URL, data)
+}
+
+func (c *client) apiCall(
+	ctx context.Context,
+	version int,
+	method string,
+	URL string,
+	data []byte,
+) (statusCode int, response string, err error) {
+	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, version, URL)
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 
 	if err != nil {
