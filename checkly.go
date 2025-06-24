@@ -1680,19 +1680,22 @@ func (c *client) GetStaticIPs(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 
-	var datav6 map[string]string
+	var datav6 map[string][]string
+
 	err = json.Unmarshal([]byte(res), &datav6)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 
-	for region, ip := range datav6 {
-		addr, err := netip.ParsePrefix(ip)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
-		}
+	for region, ips := range datav6 {
+		for _, ip := range ips {
+			addr, err := netip.ParsePrefix(ip)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+			}
 
-		IPs = append(IPs, StaticIP{Region: region, Address: addr})
+			IPs = append(IPs, StaticIP{Region: region, Address: addr})
+		}
 	}
 
 	// and then IPv4
