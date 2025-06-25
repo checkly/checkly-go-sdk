@@ -1,6 +1,7 @@
 package checkly
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -130,12 +131,26 @@ type Client interface {
 		group Group,
 	) (*Group, error)
 
+	// CreateGroupV2 creates a new check group with the specified details.
+	// It returns the newly-created group, or an error.
+	CreateGroupV2(
+		ctx context.Context,
+		group GroupV2,
+	) (*GroupV2, error)
+
 	// GetGroup takes the ID of an existing check group, and returns the
 	// corresponding group, or an error.
 	GetGroup(
 		ctx context.Context,
 		ID int64,
 	) (*Group, error)
+
+	// GetGroupV2 takes the ID of an existing check group, and returns the
+	// corresponding group, or an error.
+	GetGroupV2(
+		ctx context.Context,
+		ID int64,
+	) (*GroupV2, error)
 
 	// UpdateGroup takes the ID of an existing check group, and updates the
 	// corresponding check group to match the supplied group. It returns the updated
@@ -145,6 +160,15 @@ type Client interface {
 		ID int64,
 		group Group,
 	) (*Group, error)
+
+	// UpdateGroupV2 takes the ID of an existing check group, and updates the
+	// corresponding check group to match the supplied group. It returns the updated
+	// group, or an error.
+	UpdateGroupV2(
+		ctx context.Context,
+		ID int64,
+		group GroupV2,
+	) (*GroupV2, error)
 
 	// DeleteGroup deletes the check group with the specified ID. It returns a
 	DeleteGroup(
@@ -745,6 +769,15 @@ type AlertSettings struct {
 	SSLCertificates SSLCertificates `json:"sslCertificates,omitempty"`
 }
 
+// AlertSettingsV2 represents an alert configuration.
+type AlertSettingsV2 struct {
+	EscalationType              string                       `json:"escalationType,omitempty"`
+	RunBasedEscalation          *RunBasedEscalation          `json:"runBasedEscalation,omitempty"`
+	TimeBasedEscalation         *TimeBasedEscalation         `json:"timeBasedEscalation,omitempty"`
+	Reminders                   *Reminders                   `json:"reminders,omitempty"`
+	ParallelRunFailureThreshold *ParallelRunFailureThreshold `json:"parallelRunFailureThreshold,omitempty"`
+}
+
 // ParallelRunFailureThreshold represent an alert escalation based on the number
 // of failing regions, only applicable for parallel checks
 type ParallelRunFailureThreshold struct {
@@ -786,6 +819,53 @@ type RetryStrategy struct {
 	SameRegion         bool   `json:"sameRegion"`
 }
 
+func (s *RetryStrategy) UnmarshalJSON(data []byte) error {
+	// This is a special value for a group, indicating that all checks in
+	// the group should use their own retry strategies. For the Go API we
+	// just pretend it's an actual retry strategy type.
+	if bytes.Equal(data, []byte(`"FALLBACK"`)) {
+		*s = RetryStrategy{
+			Type: "FALLBACK",
+		}
+
+		return nil
+	}
+
+	type Underlying RetryStrategy
+
+	var underlying Underlying
+
+	if err := json.Unmarshal(data, &underlying); err != nil {
+		return err
+	}
+
+	*s = RetryStrategy{
+		Type:               underlying.Type,
+		BaseBackoffSeconds: underlying.BaseBackoffSeconds,
+		MaxRetries:         underlying.MaxRetries,
+		MaxDurationSeconds: underlying.MaxDurationSeconds,
+		SameRegion:         underlying.SameRegion,
+	}
+
+	return nil
+}
+
+func (s RetryStrategy) MarshalJSON() ([]byte, error) {
+	if s.Type == "FALLBACK" {
+		return json.Marshal(s.Type)
+	}
+
+	type Underlying RetryStrategy
+
+	return json.Marshal(&Underlying{
+		Type:               s.Type,
+		BaseBackoffSeconds: s.BaseBackoffSeconds,
+		MaxRetries:         s.MaxRetries,
+		MaxDurationSeconds: s.MaxDurationSeconds,
+		SameRegion:         s.SameRegion,
+	})
+}
+
 // Group represents a check group.
 type Group struct {
 	ID                        int64                      `json:"id,omitempty"`
@@ -817,6 +897,32 @@ type Group struct {
 	DoubleCheck bool `json:"doubleCheck"`
 }
 
+// GroupV2 represents a check group.
+type GroupV2 struct {
+	ID                        int64                       `json:"id,omitempty"`
+	Name                      string                      `json:"name"`
+	Activated                 *bool                       `json:"activated,omitempty"`
+	Muted                     *bool                       `json:"muted,omitempty"`
+	RunParallel               *bool                       `json:"runParallel,omitempty"`
+	Tags                      *[]string                   `json:"tags,omitempty"`
+	Locations                 *[]string                   `json:"locations,omitempty"`
+	Concurrency               *int                        `json:"concurrency,omitempty"`
+	APICheckDefaults          *APICheckDefaultsV2         `json:"apiCheckDefaults,omitempty"`
+	EnvironmentVariables      *[]EnvironmentVariable      `json:"environmentVariables,omitempty"`
+	UseGlobalAlertSettings    *bool                       `json:"useGlobalAlertSettings,omitempty"`
+	AlertSettings             *AlertSettingsV2            `json:"alertSettings,omitempty"`
+	SetupSnippetID            *int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         *int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          *string                     `json:"localSetupScript,omitempty"`
+	LocalTearDownScript       *string                     `json:"localTearDownScript,omitempty"`
+	AlertChannelSubscriptions *[]AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	CreatedAt                 *time.Time                  `json:"createdAt,omitempty"`
+	UpdatedAt                 *time.Time                  `json:"updatedAt,omitempty"`
+	RuntimeID                 *string                     `json:"runtimeId,omitempty"`
+	PrivateLocations          *[]string                   `json:"privateLocations,omitempty"`
+	RetryStrategy             *RetryStrategy              `json:"retryStrategy,omitempty"`
+}
+
 // APICheckDefaults represents the default settings for API checks within a
 // given group.
 type APICheckDefaults struct {
@@ -825,6 +931,16 @@ type APICheckDefaults struct {
 	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
 	Assertions      []Assertion `json:"assertions,omitempty"`
 	BasicAuth       BasicAuth   `json:"basicAuth,omitempty"`
+}
+
+// APICheckDefaultsV2 represents the default settings for API checks within a
+// given group.
+type APICheckDefaultsV2 struct {
+	BaseURL         *string      `json:"url"`
+	Headers         *[]KeyValue  `json:"headers,omitempty"`
+	QueryParameters *[]KeyValue  `json:"queryParameters,omitempty"`
+	Assertions      *[]Assertion `json:"assertions,omitempty"`
+	BasicAuth       *BasicAuth   `json:"basicAuth,omitempty"`
 }
 
 // CheckResult represents a Check result

@@ -1,6 +1,8 @@
 package checkly_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -364,4 +366,122 @@ func TestAlertChannelPagerduty(t *testing.T) {
 			ac.Pagerduty.ServiceName,
 		)
 	}
+}
+
+func TestRetryStrategyUnmarshalJSON(t *testing.T) {
+	t.Run("null value", func(t *testing.T) {
+		raw := []byte(`null`)
+
+		var retryStrategy *checkly.RetryStrategy
+
+		err := json.Unmarshal(raw, &retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Unmarshal failed: %v", err)
+		}
+
+		if retryStrategy != nil {
+			t.Fatalf("expected nil, got: %v", retryStrategy)
+		}
+	})
+
+	t.Run("fallback value", func(t *testing.T) {
+		raw := []byte(`"FALLBACK"`)
+
+		var retryStrategy *checkly.RetryStrategy
+
+		err := json.Unmarshal(raw, &retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Unmarshal failed: %v", err)
+		}
+
+		if retryStrategy.Type != "FALLBACK" {
+			t.Fatalf("expected .Type == FALLBACK, got: %v", retryStrategy.Type)
+		}
+	})
+
+	t.Run("normal value", func(t *testing.T) {
+		raw := []byte(`{
+			"type": "LINEAR",
+			"baseBackoffSeconds": 60,
+			"maxRetries": 2,
+			"maxDurationSeconds": 600,
+			"sameRegion": true
+		}`)
+
+		var retryStrategy *checkly.RetryStrategy
+
+		err := json.Unmarshal(raw, &retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Unmarshal failed: %v", err)
+		}
+
+		if retryStrategy.Type != "LINEAR" {
+			t.Fatalf("expected .Type == LINEAR, got: %v", retryStrategy.Type)
+		}
+
+		if retryStrategy.BaseBackoffSeconds != 60 {
+			t.Fatalf("expected .BaseBackoffSeconds == 60, got: %v", retryStrategy.BaseBackoffSeconds)
+		}
+
+		if retryStrategy.MaxRetries != 2 {
+			t.Fatalf("expected .MaxRetries == 2, got: %v", retryStrategy.MaxRetries)
+		}
+
+		if retryStrategy.MaxDurationSeconds != 600 {
+			t.Fatalf("expected .MaxDurationSeconds == 600, got: %v", retryStrategy.MaxDurationSeconds)
+		}
+
+		if retryStrategy.SameRegion != true {
+			t.Fatalf("expected .SameRegion == true, got: %v", retryStrategy.SameRegion)
+		}
+	})
+}
+
+func TestRetryStrategyMarshalJSON(t *testing.T) {
+	testBytesEqual := func(t *testing.T, got, want []byte) {
+		if !bytes.Equal(got, want) {
+			t.Fatalf("expected: %s, got: %s", want, got)
+		}
+	}
+
+	t.Run("null value", func(t *testing.T) {
+		var retryStrategy *checkly.RetryStrategy
+
+		raw, err := json.Marshal(&retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Marshal failed: %v", err)
+		}
+
+		testBytesEqual(t, raw, []byte(`null`))
+	})
+
+	t.Run("fallback value", func(t *testing.T) {
+		retryStrategy := checkly.RetryStrategy{
+			Type: "FALLBACK",
+		}
+
+		raw, err := json.Marshal(&retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Marshal failed: %v", err)
+		}
+
+		testBytesEqual(t, raw, []byte(`"FALLBACK"`))
+	})
+
+	t.Run("normal value", func(t *testing.T) {
+		retryStrategy := checkly.RetryStrategy{
+			Type:               "LINEAR",
+			BaseBackoffSeconds: 60,
+			MaxRetries:         2,
+			MaxDurationSeconds: 600,
+			SameRegion:         true,
+		}
+
+		raw, err := json.Marshal(&retryStrategy)
+		if err != nil {
+			t.Fatalf("json.Marshal failed: %v", err)
+		}
+
+		testBytesEqual(t, raw, []byte(`{"type":"LINEAR","baseBackoffSeconds":60,"maxRetries":2,"maxDurationSeconds":600,"sameRegion":true}`))
+	})
 }
