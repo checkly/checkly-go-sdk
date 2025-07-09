@@ -140,9 +140,11 @@ func (c *client) CreateCheck(
 	case "MULTI_STEP":
 		endpoint = "checks/multistep"
 	case "TCP":
-		return nil, fmt.Errorf("user error: use CreateTCPCheck to create TCP checks")
+		return nil, fmt.Errorf("user error: use CreateTCPMonitor to create TCP monitors")
+	case "URL":
+		return nil, fmt.Errorf("user error: use CreateURLMonitor to create URL monitors")
 	default:
-		return nil, fmt.Errorf("unknown check type: %s", endpoint)
+		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
 	return c.createCheck(ctx, check, endpoint)
 }
@@ -175,11 +177,19 @@ func (c *client) createCheck(
 	return &result, nil
 }
 
+// Deprecated: Use CreateHeartbeatMonitor instead.
 func (c *client) CreateHeartbeat(
 	ctx context.Context,
 	check HeartbeatCheck,
 ) (*HeartbeatCheck, error) {
-	data, err := json.Marshal(check)
+	return c.CreateHeartbeatMonitor(ctx, check)
+}
+
+func (c *client) CreateHeartbeatMonitor(
+	ctx context.Context,
+	monitor HeartbeatMonitor,
+) (*HeartbeatMonitor, error) {
+	data, err := json.Marshal(monitor)
 	if err != nil {
 		return nil, err
 	}
@@ -195,18 +205,26 @@ func (c *client) CreateHeartbeat(
 	if status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result HeartbeatCheck
+	var result HeartbeatMonitor
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
 
+// Deprecated: Use CreateTCPMonitor instead.
 func (c *client) CreateTCPCheck(
 	ctx context.Context,
 	check TCPCheck,
 ) (*TCPCheck, error) {
-	data, err := json.Marshal(check)
+	return c.CreateTCPMonitor(ctx, check)
+}
+
+func (c *client) CreateTCPMonitor(
+	ctx context.Context,
+	monitor TCPMonitor,
+) (*TCPMonitor, error) {
+	data, err := json.Marshal(monitor)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +240,41 @@ func (c *client) CreateTCPCheck(
 	if status != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result TCPCheck
+	var result TCPMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) CreateURLMonitor(
+	ctx context.Context,
+	monitor URLMonitor,
+) (*URLMonitor, error) {
+	payload := struct {
+		URLMonitor
+		Request Request `json:"request"`
+	}{
+		URLMonitor: monitor,
+		Request:    monitor.Request.toRequest(),
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/url"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result URLMonitor
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
@@ -267,13 +319,20 @@ func (c *client) UpdateCheck(
 	return &result, nil
 }
 
-// Update updates an existing check with the specified details. It returns the
-// updated check, or an error.
+// Deprecated: Use UpdateHeartbeatMonitor instead.
 func (c *client) UpdateHeartbeat(
 	ctx context.Context,
 	ID string, check HeartbeatCheck,
 ) (*HeartbeatCheck, error) {
-	data, err := json.Marshal(check)
+	return c.UpdateHeartbeatMonitor(ctx, ID, check)
+}
+
+func (c *client) UpdateHeartbeatMonitor(
+	ctx context.Context,
+	ID string,
+	monitor HeartbeatMonitor,
+) (*HeartbeatMonitor, error) {
+	data, err := json.Marshal(monitor)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +348,7 @@ func (c *client) UpdateHeartbeat(
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result HeartbeatCheck
+	var result HeartbeatMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -297,27 +356,36 @@ func (c *client) UpdateHeartbeat(
 	return &result, nil
 }
 
+// Deprecated: Use UpdateTCPMonitor instead.
 func (c *client) UpdateTCPCheck(
 	ctx context.Context,
 	ID string,
 	check TCPCheck,
 ) (*TCPCheck, error) {
+	return c.UpdateTCPMonitor(ctx, ID, check)
+}
+
+func (c *client) UpdateTCPMonitor(
+	ctx context.Context,
+	ID string,
+	monitor TCPMonitor,
+) (*TCPMonitor, error) {
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
-	if check.Locations == nil {
-		check.Locations = []string{}
+	if monitor.Locations == nil {
+		monitor.Locations = []string{}
 	}
-	if check.PrivateLocations == nil {
-		check.PrivateLocations = &[]string{}
+	if monitor.PrivateLocations == nil {
+		monitor.PrivateLocations = &[]string{}
 	}
 	// Unfortunately `checkType` is required for this endpoint, so sneak it in
 	// using an anonymous struct.
 	payload := struct {
-		TCPCheck
+		TCPMonitor
 		Type string `json:"checkType"`
 	}{
-		TCPCheck: check,
-		Type:     "TCP",
+		TCPMonitor: monitor,
+		Type:       "TCP",
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -335,7 +403,55 @@ func (c *client) UpdateTCPCheck(
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result TCPCheck
+	var result TCPMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateURLMonitor(
+	ctx context.Context,
+	ID string,
+	monitor URLMonitor,
+) (*URLMonitor, error) {
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		monitor.Locations = []string{}
+	}
+	if monitor.PrivateLocations == nil {
+		monitor.PrivateLocations = &[]string{}
+	}
+	// Unfortunately `checkType` is required for this endpoint, so sneak it in
+	// using an anonymous struct.
+	payload := struct {
+		URLMonitor
+		Type    string  `json:"checkType"`
+		Request Request `json:"request"`
+	}{
+		URLMonitor: monitor,
+		Type:       "URL",
+		Request:    monitor.Request.toRequest(),
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/url/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result URLMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -361,6 +477,27 @@ func (c *client) DeleteCheck(
 		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
+}
+
+func (c *client) DeleteHeartbeatMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteTCPMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteURLMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
 }
 
 // Get takes the ID of an existing check, and returns the check parameters, or
@@ -389,12 +526,18 @@ func (c *client) GetCheck(
 	return &result, nil
 }
 
-// Get takes the ID of an existing check, and returns the check parameters, or
-// an error.
+// Deprecated: Use GetHeartbeatMonitor instead.
 func (c *client) GetHeartbeatCheck(
 	ctx context.Context,
 	ID string,
 ) (*HeartbeatCheck, error) {
+	return c.GetHeartbeatMonitor(ctx, ID)
+}
+
+func (c *client) GetHeartbeatMonitor(
+	ctx context.Context,
+	ID string,
+) (*HeartbeatMonitor, error) {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodGet,
@@ -407,7 +550,7 @@ func (c *client) GetHeartbeatCheck(
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	result := HeartbeatCheck{}
+	result := HeartbeatMonitor{}
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -417,10 +560,21 @@ func (c *client) GetHeartbeatCheck(
 
 // GetTCPCheck takes the ID of an existing TCP check, and returns the check
 // parameters, or an error.
+//
+// Deprecated: Use GetTCPMonitor instead.
 func (c *client) GetTCPCheck(
 	ctx context.Context,
 	ID string,
 ) (*TCPCheck, error) {
+	return c.GetTCPMonitor(ctx, ID)
+}
+
+// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetTCPMonitor(
+	ctx context.Context,
+	ID string,
+) (*TCPMonitor, error) {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodGet,
@@ -433,7 +587,33 @@ func (c *client) GetTCPCheck(
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
-	var result TCPCheck
+	var result TCPMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetURLMonitor takes the ID of an existing URL monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetURLMonitor(
+	ctx context.Context,
+	ID string,
+) (*URLMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result URLMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
