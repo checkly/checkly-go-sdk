@@ -1129,6 +1129,7 @@ type Dashboard struct {
 	Tags               []string       `json:"tags,omitempty"`
 	HideTags           bool           `json:"hideTags,omitempty"`
 	UseTagsAndOperator bool           `json:"useTagsAndOperator,omitempty"`
+	EnableIncidents    bool           `json:"enableIncidents"`
 	CreatedAt          string         `json:"created_at"`
 	UpdatedAt          string         `json:"updated_at"`
 	Keys               []DashboardKey `json:"keys,omitempty"`
