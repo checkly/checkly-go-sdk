@@ -53,10 +53,16 @@ type Client interface {
 		ID string,
 	) (*Check, error)
 
+	// Deprecated: Use GetHeartbeatMonitor instead.
 	GetHeartbeatCheck(
 		ctx context.Context,
 		ID string,
 	) (*HeartbeatCheck, error)
+
+	GetHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+	) (*HeartbeatMonitor, error)
 
 	// Create creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
@@ -67,17 +73,42 @@ type Client interface {
 
 	// CreateHeartbeat creates a new heartbeat check with the specified details.
 	// It returns the newly-created check, or an error.
+	//
+	// Deprecated: Use CreateHeartbeatMonitor instead.
 	CreateHeartbeat(
 		ctx context.Context,
 		check HeartbeatCheck,
 	) (*HeartbeatCheck, error)
 
+	// CreateHeartbeatMonitor creates a new heartbeat monitor with the
+	// specified details. It returns the newly-created monitor, or an error.
+	CreateHeartbeatMonitor(
+		ctx context.Context,
+		monitor HeartbeatMonitor,
+	) (*HeartbeatMonitor, error)
+
 	// CreateTCPCheck creates a new TCP check with the specified details.
 	// It returns the newly-created check, or an error.
+	//
+	// Deprecated: Use CreateTCPMonitor instead.
 	CreateTCPCheck(
 		ctx context.Context,
 		check TCPCheck,
 	) (*TCPCheck, error)
+
+	// CreateTCPMonitor creates a new TCP monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateTCPMonitor(
+		ctx context.Context,
+		monitor TCPMonitor,
+	) (*TCPMonitor, error)
+
+	// CreateURLMonitor creates a new URL monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateURLMonitor(
+		ctx context.Context,
+		monitor URLMonitor,
+	) (*URLMonitor, error)
 
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
@@ -89,11 +120,21 @@ type Client interface {
 
 	// UpdateHeartbeat updates an existing heartbeat check with the specified details.
 	// It returns the updated check, or an error.
+	//
+	// Deprecated: Use UpdateHeartbeatMonitor instead.
 	UpdateHeartbeat(
 		ctx context.Context,
 		ID string,
 		check HeartbeatCheck,
 	) (*HeartbeatCheck, error)
+
+	// UpdateHeartbeatMonitor updates an existing heartbeat monitor with the
+	// specified details. It returns the updated monitor, or an error.
+	UpdateHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+		monitor HeartbeatMonitor,
+	) (*HeartbeatMonitor, error)
 
 	// UpdateTCPCheck updates an existing TCP check with the specified details.
 	// It returns the updated check, or an error.
@@ -103,8 +144,42 @@ type Client interface {
 		check TCPCheck,
 	) (*TCPCheck, error)
 
+	// UpdateTCPMonitor updates an existing TCP monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateTCPMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TCPMonitor,
+	) (*TCPMonitor, error)
+
+	// UpdateURLMonitor updates an existing URL monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateURLMonitor(
+		ctx context.Context,
+		ID string,
+		monitor URLMonitor,
+	) (*URLMonitor, error)
+
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteHeartbeatMonitor deletes the monitor with the specified ID.
+	DeleteHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteTCPMonitor deletes the monitor with the specified ID.
+	DeleteTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteURLMonitor deletes the monitor with the specified ID.
+	DeleteURLMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -118,10 +193,26 @@ type Client interface {
 
 	// Get takes the ID of an existing TCP check, and returns the check
 	// parameters, or an error.
+	//
+	// Deprecated: Use GetTCPMonitor instead.
 	GetTCPCheck(
 		ctx context.Context,
 		ID string,
 	) (*TCPCheck, error)
+
+	// Get takes the ID of an existing TCP monitor, and returns the monitor
+	// parameters, or an error.
+	GetTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TCPMonitor, error)
+
+	// Get takes the ID of an existing URL monitor, and returns the monitor
+	// parameters, or an error.
+	GetURLMonitor(
+		ctx context.Context,
+		ID string,
+	) (*URLMonitor, error)
 
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
@@ -606,7 +697,7 @@ type MultiStepCheck struct {
 	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
 }
 
-type HeartbeatCheck struct {
+type HeartbeatMonitor struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
 	Activated                 bool                       `json:"activated"`
@@ -620,8 +711,14 @@ type HeartbeatCheck struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
-// TCPCheck represents a TCP check.
-type TCPCheck struct {
+// HeartbeatCheck is an alias for HeartbeatMonitor for backwards compatibility
+// purposes.
+//
+// Deprecated: Use HeartbeatMonitor instead.
+type HeartbeatCheck = HeartbeatMonitor
+
+// TCPMonitor represents a TCP monitor.
+type TCPMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
 	Frequency                 int                        `json:"frequency,omitempty"`
@@ -645,6 +742,57 @@ type TCPCheck struct {
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// TCPCheck is an alias for TCPMonitor for backwards compatibility purposes.
+//
+// Deprecated: Use TCPMonitor instead.
+type TCPCheck = TCPMonitor
+
+// URLMonitor represents a URL monitor.
+type URLMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Frequency                 int                        `json:"frequency,omitempty"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   URLRequest                 `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// URLRequest represents the parameters for the request made by a URL monitor.
+type URLRequest struct {
+	URL             string      `json:"url"`
+	FollowRedirects bool        `json:"followRedirects"`
+	SkipSSL         bool        `json:"skipSSL"`
+	Assertions      []Assertion `json:"assertions"`
+	IPFamily        string      `json:"ipFamily,omitempty"`
+}
+
+func (r *URLRequest) toRequest() Request {
+	return Request{
+		Method:          "GET",
+		URL:             r.URL,
+		FollowRedirects: r.FollowRedirects,
+		SkipSSL:         r.SkipSSL,
+		Assertions:      r.Assertions,
+		IPFamily:        r.IPFamily,
+	}
 }
 
 // Heartbeat represents the parameter for the heartbeat check.
