@@ -1121,6 +1121,7 @@ var testDashboard = checkly.Dashboard{
 	HideTags:           false,
 	ChecksPerPage:      15,
 	UseTagsAndOperator: true,
+	EnableIncidents:    true,
 }
 
 var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID", "CreatedAt", "ID", "Keys")

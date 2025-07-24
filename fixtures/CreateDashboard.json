@@ -9,6 +9,7 @@
   "width": "FULL",
   "checksPerPage": 15,
   "useTagsAndOperator": true,
+  "enableIncidents": true,
   "refreshRate": 60,
   "paginate": true,
   "paginationRate": 30,
