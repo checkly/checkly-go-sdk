@@ -1,0 +1,77 @@
+{
+  "id": "6f8f7bd5-2340-4de4-9df5-5db45b309ad4",
+  "checkType": "URL",
+  "name": "URL Monitor #1",
+  "frequency": 10,
+  "frequencyOffset": 17,
+  "activated": true,
+  "muted": false,
+  "shouldFail": false,
+  "locations": [
+    "us-east-1",
+    "us-west-1"
+  ],
+  "script": null,
+  "created_at": "2025-07-08T06:23:35.096Z",
+  "updated_at": "2025-07-08T06:26:17.839Z",
+  "environmentVariables": [],
+  "doubleCheck": false,
+  "tags": [
+    "tag-1"
+  ],
+  "sslCheckDomain": "welcome.checklyhq.com",
+  "setupSnippetId": null,
+  "tearDownSnippetId": null,
+  "localSetupScript": null,
+  "localTearDownScript": null,
+  "alertSettings": {
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "escalationType": "RUN_BASED",
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    },
+    "timeBasedEscalation": {
+      "minutesFailingThreshold": 5
+    },
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    }
+  },
+  "useGlobalAlertSettings": true,
+  "degradedResponseTime": 5000,
+  "maxResponseTime": 20000,
+  "groupId": null,
+  "groupOrder": null,
+  "runtimeId": null,
+  "scriptPath": null,
+  "retryStrategy": {
+    "type": "LINEAR",
+    "maxRetries": 2,
+    "sameRegion": true,
+    "baseBackoffSeconds": 60,
+    "maxDurationSeconds": 600
+  },
+  "runParallel": false,
+  "request": {
+    "method": "GET",
+    "url": "https://welcome.checklyhq.com",
+    "followRedirects": true,
+    "skipSSL": false,
+    "ipFamily": "IPv4",
+    "assertions": [
+      {
+        "regex": null,
+        "source": "STATUS_CODE",
+        "target": "200",
+        "property": "",
+        "comparison": "EQUALS"
+      }
+    ]
+  },
+  "alertChannelSubscriptions": [],
+  "privateLocations": []
+}

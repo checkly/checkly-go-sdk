@@ -1859,3 +1859,148 @@ func TestGetStatusPage(t *testing.T) {
 		t.Error(cmp.Diff(testStatusPage, *response, ignoreStatusPageFields))
 	}
 }
+
+func validateURLMonitor(t *testing.T, body []byte) {
+	var payload checkly.URLMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testURLMonitor, payload) {
+		t.Error(cmp.Diff(testURLMonitor, payload))
+	}
+}
+
+var testURLMonitor = checkly.URLMonitor{
+	ID:               "6f8f7bd5-2340-4de4-9df5-5db45b309ad4",
+	Name:             "URL Monitor #1",
+	Frequency:        10,
+	FrequencyOffset:  17,
+	Activated:        true,
+	Muted:            false,
+	ShouldFail:       false,
+	Locations:        []string{"us-east-1", "us-west-1"},
+	PrivateLocations: &[]string{},
+	Tags:             []string{"tag-1"},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		TimeBasedEscalation: checkly.TimeBasedEscalation{
+			MinutesFailingThreshold: 5,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: true,
+	DegradedResponseTime:   5000,
+	MaxResponseTime:        20000,
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "LINEAR",
+		MaxRetries:         2,
+		BaseBackoffSeconds: 60,
+		MaxDurationSeconds: 600,
+		SameRegion:         true,
+	},
+	Request: checkly.URLRequest{
+		URL:             "https://welcome.checklyhq.com",
+		FollowRedirects: true,
+		SkipSSL:         false,
+		IPFamily:        "IPv4",
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "STATUS_CODE",
+				Target:     "200",
+				Property:   "",
+				Comparison: "EQUALS",
+			},
+		},
+	},
+}
+
+var ignoreURLMonitorFields = cmpopts.IgnoreFields(
+	checkly.URLMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateURLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/url?autoAssignAlerts=false",
+		validateURLMonitor,
+		http.StatusCreated,
+		"CreateURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateURLMonitor(context.Background(), testURLMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testURLMonitor, *response, ignoreURLMonitorFields) {
+		t.Error(cmp.Diff(testURLMonitor, *response, ignoreURLMonitorFields))
+	}
+}
+
+func TestDeleteURLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testURLMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteURLMonitor(context.Background(), testURLMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateURLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/url/%s?autoAssignAlerts=false", testURLMonitor.ID),
+		validateURLMonitor,
+		http.StatusOK,
+		"UpdateURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateURLMonitor(context.Background(), testURLMonitor.ID, testURLMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetURLMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testURLMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetURLMonitor(context.Background(), testURLMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testURLMonitor, *response, ignoreURLMonitorFields) {
+		t.Error(cmp.Diff(testURLMonitor, *response, ignoreURLMonitorFields))
+	}
+}
