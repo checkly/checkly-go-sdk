@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -548,4 +549,92 @@ func TestStatusPageCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to delete status page: %v", err)
 	}
+}
+
+func TestURLMonitorCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingMonitor := checkly.URLMonitor{
+		Name: "Foo monitor",
+		Request: checkly.URLRequest{
+			URL: "https://welcome.checklyhq.com/foo",
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "STATUS_CODE",
+					Target:     "200",
+					Comparison: "EQUALS",
+				},
+			},
+		},
+		Locations: []string{"us-east-1"},
+	}
+
+	createdMonitor, err := client.CreateURLMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create URL monitor: %v", err)
+	}
+
+	var deleteOnce sync.Once
+	defer func() {
+		deleteOnce.Do(func() {
+			_ = client.DeleteURLMonitor(ctx, createdMonitor.ID)
+		})
+	}()
+
+	readMonitor, err := client.GetURLMonitor(ctx, createdMonitor.ID)
+	if err != nil {
+		t.Fatalf("failed to get URL monitor: %v", err)
+	}
+
+	if readMonitor.Name != "Foo monitor" {
+		t.Fatalf("wrong Name after creation")
+	}
+
+	if readMonitor.Request.URL != "https://welcome.checklyhq.com/foo" {
+		t.Fatalf("wrong URL after creation")
+	}
+
+	updateMonitor := checkly.URLMonitor{
+		Name: "Bar monitor",
+		Request: checkly.URLRequest{
+			URL: "https://welcome.checklyhq.com/bar",
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "STATUS_CODE",
+					Target:     "404",
+					Comparison: "EQUALS",
+				},
+			},
+		},
+	}
+
+	updatedMonitor, err := client.UpdateURLMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update URL monitor: %v", err)
+	}
+
+	if updatedMonitor.Name != "Bar monitor" {
+		t.Fatalf("wrong Name after update")
+	}
+
+	if updatedMonitor.Request.URL != "https://welcome.checklyhq.com/bar" {
+		t.Fatalf("wrong URL after update")
+	}
+
+	if len(updatedMonitor.Request.Assertions) != 1 {
+		t.Fatalf("wrong Assertion count after update")
+	}
+
+	if updatedMonitor.Request.Assertions[0].Target != "404" {
+		t.Fatalf("wrong Assertion.Target after update")
+	}
+
+	deleteOnce.Do(func() {
+		err := client.DeleteURLMonitor(ctx, createdMonitor.ID)
+		if err != nil {
+			t.Fatalf("failed to delete URL monitor: %v", err)
+		}
+	})
 }
