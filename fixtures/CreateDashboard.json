@@ -1,11 +1,12 @@
 {
-  "customUrl":  "status-page",
-  "customDomain":  "is.checkly.online",
-  "logo":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
-  "favicon":  "https://www.checklyhq.com/images/text_racoon_logo.svg",
+  "customUrl": "status-page",
+  "customDomain": "is.checkly.online",
+  "logo": "https://www.checklyhq.com/images/text_racoon_logo.svg",
+  "favicon": "https://www.checklyhq.com/images/text_racoon_logo.svg",
   "link": "https://www.checklyhq.com",
   "description": "Checkly status page",
   "header": "Status",
+  "showHeader": true,
   "width": "FULL",
   "checksPerPage": 15,
   "useTagsAndOperator": true,
@@ -14,5 +15,10 @@
   "paginate": true,
   "paginationRate": 30,
   "hideTags": false,
-  "tags": ["api"]
+  "tags": ["api"],
+  "customCSS": "",
+  "expandChecks": false,
+  "showCheckRunLinks": false,
+  "showP95": true,
+  "showP99": true
 }
