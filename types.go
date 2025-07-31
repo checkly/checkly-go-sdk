@@ -1121,6 +1121,7 @@ type Dashboard struct {
 	Description        string         `json:"description,omitempty"`
 	Favicon            string         `json:"favicon,omitempty"`
 	Header             string         `json:"header,omitempty"`
+	ShowHeader         *bool          `json:"showHeader,omitempty"` // If nil, defaults to true.
 	Width              string         `json:"width,omitempty"`
 	RefreshRate        int            `json:"refreshRate"`
 	ChecksPerPage      int            `json:"checksPerPage,omitempty"`
@@ -1130,6 +1131,11 @@ type Dashboard struct {
 	HideTags           bool           `json:"hideTags,omitempty"`
 	UseTagsAndOperator bool           `json:"useTagsAndOperator,omitempty"`
 	EnableIncidents    bool           `json:"enableIncidents"`
+	ExpandChecks       bool           `json:"expandChecks"`
+	ShowCheckRunLinks  bool           `json:"showCheckRunLinks"`
+	CustomCSS          string         `json:"customCSS"`
+	ShowP95            *bool          `json:"showP95,omitempty"` // If nil, defaults to true.
+	ShowP99            *bool          `json:"showP99,omitempty"` // If nil, defaults to true.
 	CreatedAt          string         `json:"created_at"`
 	UpdatedAt          string         `json:"updated_at"`
 	Keys               []DashboardKey `json:"keys,omitempty"`

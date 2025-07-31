@@ -1104,6 +1104,8 @@ func validateDashboard(t *testing.T, body []byte) {
 	}
 }
 
+var trueVal = true
+
 var testDashboard = checkly.Dashboard{
 	DashboardID:        "abcd1234",
 	CustomDomain:       "is.checkly.online",
@@ -1113,6 +1115,7 @@ var testDashboard = checkly.Dashboard{
 	Link:               "https://www.checklyhq.com",
 	Description:        "Checkly status page",
 	Header:             "Status",
+	ShowHeader:         &trueVal,
 	Width:              "FULL",
 	RefreshRate:        60,
 	Paginate:           true,
@@ -1122,6 +1125,11 @@ var testDashboard = checkly.Dashboard{
 	ChecksPerPage:      15,
 	UseTagsAndOperator: true,
 	EnableIncidents:    true,
+	CustomCSS:          "",
+	ExpandChecks:       false,
+	ShowCheckRunLinks:  false,
+	ShowP95:            &trueVal,
+	ShowP99:            &trueVal,
 }
 
 var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID", "CreatedAt", "ID", "Keys")
