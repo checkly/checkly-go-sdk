@@ -658,9 +658,10 @@ type Check struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Pointers
-	PrivateLocations *[]string      `json:"privateLocations"`
-	RuntimeID        *string        `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RuntimeID        *string          `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy,omitempty"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
 
 	// Deprecated: this property will be removed in future versions.
 	SSLCheck bool `json:"sslCheck"`
@@ -692,9 +693,10 @@ type MultiStepCheck struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 
 	// Pointers
-	PrivateLocations *[]string      `json:"privateLocations"`
-	RuntimeID        *string        `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RuntimeID        *string          `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy,omitempty"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
 }
 
 type HeartbeatMonitor struct {
@@ -707,6 +709,7 @@ type HeartbeatMonitor struct {
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	Heartbeat                 Heartbeat                  `json:"heartbeat"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"createdAt"`
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
@@ -740,6 +743,7 @@ type TCPMonitor struct {
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
 }
@@ -771,6 +775,7 @@ type URLMonitor struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
 }
@@ -1374,4 +1379,32 @@ type StatusPageService struct {
 
 	// Name is the name of the service.
 	Name string `json:"name"`
+}
+
+type IncidentSeverity string
+
+const (
+	IncidentSeverityMinor    IncidentSeverity = "MINOR"
+	IncidentSeverityMedium   IncidentSeverity = "MEDIUM"
+	IncidentSeverityMajor    IncidentSeverity = "MAJOR"
+	IncidentSeverityCritical IncidentSeverity = "CRITICAL"
+)
+
+type IncidentTrigger struct {
+	// ServiceID is the identifier of the status page service that the
+	// incident will be associated with.
+	ServiceID string `json:"serviceId"`
+
+	// Severity is the severity level of the incident.
+	Severity IncidentSeverity `json:"severity"`
+
+	// Name is the name of the incident.
+	Name string `json:"name"`
+
+	// Description is a detailed description of the incident.
+	Description string `json:"description"`
+
+	// NotifySubscribers determines whether to notify subscribers when the
+	// incident is triggered.
+	NotifySubscribers bool `json:"notifySubscribers"`
 }
