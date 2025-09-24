@@ -660,7 +660,7 @@ type Check struct {
 	// Pointers
 	PrivateLocations *[]string        `json:"privateLocations"`
 	RuntimeID        *string          `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy,omitempty"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
 	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
 
 	// Deprecated: this property will be removed in future versions.
@@ -695,7 +695,7 @@ type MultiStepCheck struct {
 	// Pointers
 	PrivateLocations *[]string        `json:"privateLocations"`
 	RuntimeID        *string          `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy,omitempty"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
 	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
 }
 
@@ -742,7 +742,7 @@ type TCPMonitor struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
@@ -774,7 +774,7 @@ type URLMonitor struct {
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy,omitempty"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
@@ -964,7 +964,7 @@ type Group struct {
 	// Pointers
 	RuntimeID        *string        `json:"runtimeId"`
 	PrivateLocations *[]string      `json:"privateLocations"`
-	RetryStrategy    *RetryStrategy `json:"retryStrategy,omitempty"`
+	RetryStrategy    *RetryStrategy `json:"retryStrategy"`
 
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`
