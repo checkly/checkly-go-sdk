@@ -939,6 +939,36 @@ type RetryStrategy struct {
 	SameRegion         bool   `json:"sameRegion"`
 }
 
+func (s RetryStrategy) MarshalJSON() ([]byte, error) {
+	type flexibleRetryStrategy struct {
+		Type               string `json:"type"`
+		BaseBackoffSeconds *int   `json:"baseBackoffSeconds,omitempty"`
+		MaxRetries         *int   `json:"maxRetries,omitempty"`
+		MaxDurationSeconds *int   `json:"maxDurationSeconds,omitempty"`
+		SameRegion         *bool  `json:"sameRegion,omitempty"`
+	}
+
+	switch s.Type {
+	case "SINGLE_RETRY":
+		// Single retries can't have MaxRetries set to 0 or backend validation
+		// will fail. We have to make sure to not send the extra properties
+		// at all.
+		return json.Marshal(flexibleRetryStrategy{
+			Type:               s.Type,
+			BaseBackoffSeconds: &s.BaseBackoffSeconds,
+			SameRegion:         &s.SameRegion,
+		})
+	default:
+		return json.Marshal(flexibleRetryStrategy{
+			Type:               s.Type,
+			BaseBackoffSeconds: &s.BaseBackoffSeconds,
+			MaxRetries:         &s.MaxRetries,
+			MaxDurationSeconds: &s.MaxDurationSeconds,
+			SameRegion:         &s.SameRegion,
+		})
+	}
+}
+
 // Group represents a check group.
 type Group struct {
 	ID                        int64                      `json:"id,omitempty"`
