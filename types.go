@@ -932,20 +932,22 @@ type SSLCertificates struct {
 }
 
 type RetryStrategy struct {
-	Type               string `json:"type"`
-	BaseBackoffSeconds int    `json:"baseBackoffSeconds"`
-	MaxRetries         int    `json:"maxRetries"`
-	MaxDurationSeconds int    `json:"maxDurationSeconds"`
-	SameRegion         bool   `json:"sameRegion"`
+	Type               string   `json:"type"`
+	BaseBackoffSeconds int      `json:"baseBackoffSeconds"`
+	MaxRetries         int      `json:"maxRetries"`
+	MaxDurationSeconds int      `json:"maxDurationSeconds"`
+	SameRegion         bool     `json:"sameRegion"`
+	OnlyOn             []string `json:"onlyOn,omitempty"`
 }
 
 func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 	type flexibleRetryStrategy struct {
-		Type               string `json:"type"`
-		BaseBackoffSeconds *int   `json:"baseBackoffSeconds,omitempty"`
-		MaxRetries         *int   `json:"maxRetries,omitempty"`
-		MaxDurationSeconds *int   `json:"maxDurationSeconds,omitempty"`
-		SameRegion         *bool  `json:"sameRegion,omitempty"`
+		Type               string   `json:"type"`
+		BaseBackoffSeconds *int     `json:"baseBackoffSeconds,omitempty"`
+		MaxRetries         *int     `json:"maxRetries,omitempty"`
+		MaxDurationSeconds *int     `json:"maxDurationSeconds,omitempty"`
+		SameRegion         *bool    `json:"sameRegion,omitempty"`
+		OnlyOn             []string `json:"onlyOn,omitempty"`
 	}
 
 	switch s.Type {
@@ -957,6 +959,7 @@ func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 			Type:               s.Type,
 			BaseBackoffSeconds: &s.BaseBackoffSeconds,
 			SameRegion:         &s.SameRegion,
+			OnlyOn:             s.OnlyOn,
 		})
 	default:
 		return json.Marshal(flexibleRetryStrategy{
@@ -965,6 +968,7 @@ func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 			MaxRetries:         &s.MaxRetries,
 			MaxDurationSeconds: &s.MaxDurationSeconds,
 			SameRegion:         &s.SameRegion,
+			OnlyOn:             s.OnlyOn,
 		})
 	}
 }
