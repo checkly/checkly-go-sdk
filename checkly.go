@@ -224,7 +224,15 @@ func (c *client) CreateTCPMonitor(
 	ctx context.Context,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
-	data, err := json.Marshal(monitor)
+	payload := struct {
+		TCPMonitor
+		DoubleCheck bool `json:"doubleCheck"`
+	}{
+		TCPMonitor: monitor,
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -253,10 +261,13 @@ func (c *client) CreateURLMonitor(
 ) (*URLMonitor, error) {
 	payload := struct {
 		URLMonitor
-		Request Request `json:"request"`
+		Request     Request `json:"request"`
+		DoubleCheck bool    `json:"doubleCheck"`
 	}{
 		URLMonitor: monitor,
 		Request:    monitor.Request.toRequest(),
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -378,14 +389,17 @@ func (c *client) UpdateTCPMonitor(
 	if monitor.PrivateLocations == nil {
 		monitor.PrivateLocations = &[]string{}
 	}
-	// Unfortunately `checkType` is required for this endpoint, so sneak it in
-	// using an anonymous struct.
 	payload := struct {
 		TCPMonitor
-		Type string `json:"checkType"`
+		Type        string `json:"checkType"`
+		DoubleCheck bool   `json:"doubleCheck"`
 	}{
 		TCPMonitor: monitor,
-		Type:       "TCP",
+		// Unfortunately `checkType` is required for this endpoint, so sneak it in
+		// using an anonymous struct.
+		Type: "TCP",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -428,12 +442,15 @@ func (c *client) UpdateURLMonitor(
 	// using an anonymous struct.
 	payload := struct {
 		URLMonitor
-		Type    string  `json:"checkType"`
-		Request Request `json:"request"`
+		Type        string  `json:"checkType"`
+		Request     Request `json:"request"`
+		DoubleCheck bool    `json:"doubleCheck"`
 	}{
 		URLMonitor: monitor,
 		Type:       "URL",
 		Request:    monitor.Request.toRequest(),
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
