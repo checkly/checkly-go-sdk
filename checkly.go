@@ -149,12 +149,41 @@ func (c *client) CreateCheck(
 	return c.createCheck(ctx, check, endpoint)
 }
 
+type checkPayload struct {
+	Check
+	GroupID *int64 `json:"groupId"`
+}
+
+func createCheckPayload(check Check) checkPayload {
+	payload := checkPayload{
+		Check: check,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if check.GroupID != 0 {
+		payload.GroupID = &check.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
 func (c *client) createCheck(
 	ctx context.Context,
 	check Check,
 	endpoint string,
 ) (*Check, error) {
-	data, err := json.Marshal(check)
+	payload := createCheckPayload(check)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -220,18 +249,45 @@ func (c *client) CreateTCPCheck(
 	return c.CreateTCPMonitor(ctx, check)
 }
 
+type tcpMonitorPayload struct {
+	TCPMonitor
+	Type        string `json:"checkType"`
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+}
+
+func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
+	payload := tcpMonitorPayload{
+		TCPMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "TCP",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
 func (c *client) CreateTCPMonitor(
 	ctx context.Context,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
-	payload := struct {
-		TCPMonitor
-		DoubleCheck bool `json:"doubleCheck"`
-	}{
-		TCPMonitor: monitor,
-		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
-	}
+	payload := createTCPMonitorPayload(monitor)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -255,20 +311,47 @@ func (c *client) CreateTCPMonitor(
 	return &result, nil
 }
 
+type urlMonitorPayload struct {
+	URLMonitor
+	Type        string  `json:"checkType"`
+	Request     Request `json:"request"`
+	DoubleCheck bool    `json:"doubleCheck"`
+	GroupID     *int64  `json:"groupId"`
+}
+
+func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
+	payload := urlMonitorPayload{
+		URLMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type:    "URL",
+		Request: monitor.Request.toRequest(),
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
 func (c *client) CreateURLMonitor(
 	ctx context.Context,
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
-	payload := struct {
-		URLMonitor
-		Request     Request `json:"request"`
-		DoubleCheck bool    `json:"doubleCheck"`
-	}{
-		URLMonitor: monitor,
-		Request:    monitor.Request.toRequest(),
-		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
-	}
+	payload := createURLMonitorPayload(monitor)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -296,17 +379,11 @@ func (c *client) CreateURLMonitor(
 // updated check, or an error.
 func (c *client) UpdateCheck(
 	ctx context.Context,
-	ID string, check Check,
+	ID string,
+	check Check,
 ) (*Check, error) {
-	// A nil value for a list will cause the backend to not update the value.
-	// We must send empty lists instead.
-	if check.Locations == nil {
-		check.Locations = []string{}
-	}
-	if check.PrivateLocations == nil {
-		check.PrivateLocations = &[]string{}
-	}
-	data, err := json.Marshal(check)
+	payload := createCheckPayload(check)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -381,26 +458,7 @@ func (c *client) UpdateTCPMonitor(
 	ID string,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
-	// A nil value for a list will cause the backend to not update the value.
-	// We must send empty lists instead.
-	if monitor.Locations == nil {
-		monitor.Locations = []string{}
-	}
-	if monitor.PrivateLocations == nil {
-		monitor.PrivateLocations = &[]string{}
-	}
-	payload := struct {
-		TCPMonitor
-		Type        string `json:"checkType"`
-		DoubleCheck bool   `json:"doubleCheck"`
-	}{
-		TCPMonitor: monitor,
-		// Unfortunately `checkType` is required for this endpoint, so sneak it in
-		// using an anonymous struct.
-		Type: "TCP",
-		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
-	}
+	payload := createTCPMonitorPayload(monitor)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -430,28 +488,7 @@ func (c *client) UpdateURLMonitor(
 	ID string,
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
-	// A nil value for a list will cause the backend to not update the value.
-	// We must send empty lists instead.
-	if monitor.Locations == nil {
-		monitor.Locations = []string{}
-	}
-	if monitor.PrivateLocations == nil {
-		monitor.PrivateLocations = &[]string{}
-	}
-	// Unfortunately `checkType` is required for this endpoint, so sneak it in
-	// using an anonymous struct.
-	payload := struct {
-		URLMonitor
-		Type        string  `json:"checkType"`
-		Request     Request `json:"request"`
-		DoubleCheck bool    `json:"doubleCheck"`
-	}{
-		URLMonitor: monitor,
-		Type:       "URL",
-		Request:    monitor.Request.toRequest(),
-		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
-	}
+	payload := createURLMonitorPayload(monitor)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -638,13 +675,36 @@ func (c *client) GetURLMonitor(
 	return &result, nil
 }
 
+type groupPayload struct {
+	Group
+}
+
+func createGroupPayload(group Group) groupPayload {
+	payload := groupPayload{
+		Group: group,
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if group.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if group.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
 // CreateGroup creates a new check group with the specified details. It returns
 // the newly-created group, or an error.
 func (c *client) CreateGroup(
 	ctx context.Context,
 	group Group,
 ) (*Group, error) {
-	data, err := json.Marshal(group)
+	payload := createGroupPayload(group)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -702,15 +762,8 @@ func (c *client) UpdateGroup(
 	ID int64,
 	group Group,
 ) (*Group, error) {
-	// A nil value for a list will cause the backend to not update the value.
-	// We must send empty lists instead.
-	if group.Locations == nil {
-		group.Locations = []string{}
-	}
-	if group.PrivateLocations == nil {
-		group.PrivateLocations = &[]string{}
-	}
-	data, err := json.Marshal(group)
+	payload := createGroupPayload(group)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
