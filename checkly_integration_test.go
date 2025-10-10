@@ -55,6 +55,79 @@ func TestCreateIntegration(t *testing.T) {
 	}
 }
 
+func TestCheckGroupUnset(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Test Group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create group for check: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	}()
+
+	pendingCheck := checkly.Check{
+		Name:      "Foo check",
+		Type:      checkly.TypeAPI,
+		Frequency: 10,
+		Request: checkly.Request{
+			Method:          "GET",
+			URL:             "https://api.checklyhq.com",
+			Headers:         []checkly.KeyValue{},
+			QueryParameters: []checkly.KeyValue{},
+			Assertions:      []checkly.Assertion{},
+		},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+		GroupID:   group.ID,
+	}
+
+	createdCheck, err := client.CreateCheck(ctx, pendingCheck)
+	if err != nil {
+		t.Fatalf("failed to create check: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteTCPMonitor(ctx, createdCheck.ID)
+	}()
+
+	if createdCheck.GroupID != group.ID {
+		t.Fatalf("wrong GroupID after creation")
+	}
+
+	updateCheck := pendingCheck
+	updateCheck.GroupID = 0
+
+	updatedCheck, err := client.UpdateCheck(ctx, createdCheck.ID, updateCheck)
+	if err != nil {
+		t.Fatalf("failed to update check: %v", err)
+	}
+
+	if updatedCheck.GroupID != 0 {
+		t.Fatalf("wrong GroupID after update")
+	}
+}
+
 func TestGetIntegration(t *testing.T) {
 	client := setupClient(t)
 	check, err := client.Create(context.Background(), wantCheck)
@@ -380,6 +453,68 @@ func TestTCPCheckCRUD(t *testing.T) {
 	}
 }
 
+func TestTCPMonitorGroupUnset(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Test Group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create group for TCP monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	}()
+
+	pendingMonitor := checkly.TCPMonitor{
+		Name: "Foo monitor",
+		Request: checkly.TCPRequest{
+			Hostname: "api.checklyhq.com",
+			Port:     443,
+		},
+		Locations: []string{"us-east-1"},
+		GroupID:   group.ID,
+	}
+
+	createdMonitor, err := client.CreateTCPMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create TCP monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteTCPMonitor(ctx, createdMonitor.ID)
+	}()
+
+	if createdMonitor.GroupID != group.ID {
+		t.Fatalf("wrong GroupID after creation")
+	}
+
+	updateMonitor := pendingMonitor
+	updateMonitor.GroupID = 0
+
+	updatedMonitor, err := client.UpdateTCPMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update TCP monitor: %v", err)
+	}
+
+	if updatedMonitor.GroupID != 0 {
+		t.Fatalf("wrong GroupID after update")
+	}
+}
+
 func TestClientCertificateCRD(t *testing.T) {
 	ctx := context.TODO()
 
@@ -636,4 +771,66 @@ func TestURLMonitorCRUD(t *testing.T) {
 			t.Fatalf("failed to delete URL monitor: %v", err)
 		}
 	})
+}
+
+func TestURLMonitorGroupUnset(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Test Group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create group for URL monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	}()
+
+	pendingMonitor := checkly.URLMonitor{
+		Name: "Foo monitor",
+		Request: checkly.URLRequest{
+			URL:        "https://welcome.checklyhq.com/foo",
+			Assertions: []checkly.Assertion{},
+		},
+		Locations: []string{"us-east-1"},
+		GroupID:   group.ID,
+	}
+
+	createdMonitor, err := client.CreateURLMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create URL monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteURLMonitor(ctx, createdMonitor.ID)
+	}()
+
+	if createdMonitor.GroupID != group.ID {
+		t.Fatalf("wrong GroupID after creation")
+	}
+
+	updateMonitor := pendingMonitor
+	updateMonitor.GroupID = 0
+
+	updatedMonitor, err := client.UpdateURLMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update URL monitor: %v", err)
+	}
+
+	if updatedMonitor.GroupID != 0 {
+		t.Fatalf("wrong GroupID after update")
+	}
 }
