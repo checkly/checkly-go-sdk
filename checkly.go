@@ -382,6 +382,7 @@ type dnsMonitorPayload struct {
 	DNSMonitor
 	Type        string     `json:"checkType"`
 	DoubleCheck bool       `json:"doubleCheck"`
+	ShouldFail  bool       `json:"shouldFail"`
 	GroupID     *int64     `json:"groupId"`
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
@@ -395,6 +396,8 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 		Type: "DNS",
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
+		// Unfortunately, this will default to true if not set.
+		ShouldFail: false,
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.

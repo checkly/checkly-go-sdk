@@ -836,7 +836,6 @@ type DNSMonitor struct {
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`

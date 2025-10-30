@@ -2032,7 +2032,6 @@ var testDNSMonitor = checkly.DNSMonitor{
 	FrequencyOffset: 80,
 	Activated:       false,
 	Muted:           false,
-	ShouldFail:      false,
 	Locations:       []string{"us-east-1"},
 	Tags: []string{
 		"tag-1",
