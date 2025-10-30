@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func getEnv(key, fallback string) string {
@@ -143,6 +144,8 @@ func (c *client) CreateCheck(
 		return nil, fmt.Errorf("user error: use CreateTCPMonitor to create TCP monitors")
 	case "URL":
 		return nil, fmt.Errorf("user error: use CreateURLMonitor to create URL monitors")
+	case "DNS":
+		return nil, fmt.Errorf("user error: use CreateDNSMonitor to create DNS monitors")
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
@@ -375,6 +378,67 @@ func (c *client) CreateURLMonitor(
 	return &result, nil
 }
 
+type dnsMonitorPayload struct {
+	DNSMonitor
+	Type        string     `json:"checkType"`
+	DoubleCheck bool       `json:"doubleCheck"`
+	GroupID     *int64     `json:"groupId"`
+	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
+	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+}
+
+func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
+	payload := dnsMonitorPayload{
+		DNSMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "DNS",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateDNSMonitor(
+	ctx context.Context,
+	monitor DNSMonitor,
+) (*DNSMonitor, error) {
+	payload := createDNSMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/dns"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result DNSMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 func (c *client) UpdateCheck(
@@ -513,6 +577,36 @@ func (c *client) UpdateURLMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdateDNSMonitor(
+	ctx context.Context,
+	ID string,
+	monitor DNSMonitor,
+) (*DNSMonitor, error) {
+	payload := createDNSMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/dns/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result DNSMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Delete deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
@@ -548,6 +642,13 @@ func (c *client) DeleteTCPMonitor(
 }
 
 func (c *client) DeleteURLMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteDNSMonitor(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -668,6 +769,32 @@ func (c *client) GetURLMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result URLMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetDNSMonitor(
+	ctx context.Context,
+	ID string,
+) (*DNSMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result DNSMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

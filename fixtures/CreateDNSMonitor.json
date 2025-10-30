@@ -1,0 +1,57 @@
+{
+  "activated": false,
+  "alertChannelSubscriptions": [],
+  "alertSettings": {
+    "escalationType": "RUN_BASED",
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    },
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    }
+  },
+  "checkType": "DNS",
+  "created_at": "2025-10-30T05:34:01.240Z",
+  "degradedResponseTime": 500,
+  "doubleCheck": false,
+  "frequency": 10,
+  "frequencyOffset": 80,
+  "groupId": null,
+  "groupOrder": null,
+  "id": "25797fe8-3b88-46f5-a3c2-448167007a68",
+  "locations": [
+    "us-east-1"
+  ],
+  "maxResponseTime": 1000,
+  "muted": false,
+  "name": "DNS Monitor #1",
+  "request": {
+    "assertions": [
+      {
+        "comparison": "EQUALS",
+        "property": "",
+        "regex": "",
+        "source": "RESPONSE_CODE",
+        "target": "NOERROR"
+      }
+    ],
+    "nameServer": "",
+    "protocol": "UDP",
+    "query": "welcome.checklyhq.com",
+    "recordType": "A"
+  },
+  "retryStrategy": null,
+  "runParallel": false,
+  "runtimeId": null,
+  "shouldFail": false,
+  "tags": [
+    "tag-1"
+  ],
+  "triggerIncident": null,
+  "useGlobalAlertSettings": false
+}
