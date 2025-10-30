@@ -110,6 +110,13 @@ type Client interface {
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
+	// CreateDNSMonitor creates a new DNS monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateDNSMonitor(
+		ctx context.Context,
+		monitor DNSMonitor,
+	) (*DNSMonitor, error)
+
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	UpdateCheck(
@@ -160,6 +167,14 @@ type Client interface {
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
+	// UpdateDNSMonitor updates an existing DNS monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateDNSMonitor(
+		ctx context.Context,
+		ID string,
+		monitor DNSMonitor,
+	) (*DNSMonitor, error)
+
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
 		ctx context.Context,
@@ -180,6 +195,12 @@ type Client interface {
 
 	// DeleteURLMonitor deletes the monitor with the specified ID.
 	DeleteURLMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteDNSMonitor deletes the monitor with the specified ID.
+	DeleteDNSMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -213,6 +234,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*URLMonitor, error)
+
+	// Get takes the ID of an existing URL monitor, and returns the monitor
+	// parameters, or an error.
+	GetDNSMonitor(
+		ctx context.Context,
+		ID string,
+	) (*DNSMonitor, error)
 
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
@@ -798,6 +826,41 @@ func (r *URLRequest) toRequest() Request {
 		Assertions:      r.Assertions,
 		IPFamily:        r.IPFamily,
 	}
+}
+
+// DNSMonitor represents a DNS monitor.
+type DNSMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Frequency                 int                        `json:"frequency,omitempty"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   DNSRequest                 `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// DNSRequest represents the parameters for the request made by a DNS monitor.
+type DNSRequest struct {
+	RecordType string      `json:"recordType"`
+	Query      string      `json:"query"`
+	NameServer string      `json:"nameServer,omitempty"`
+	Port       int         `json:"port,omitempty"`
+	Protocol   string      `json:"protocol,omitempty"`
+	Assertions []Assertion `json:"assertions"`
 }
 
 // Heartbeat represents the parameter for the heartbeat check.

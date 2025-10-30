@@ -834,3 +834,181 @@ func TestURLMonitorGroupUnset(t *testing.T) {
 		t.Fatalf("wrong GroupID after update")
 	}
 }
+
+func TestDNSMonitorCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingMonitor := checkly.DNSMonitor{
+		Name: "Foo monitor",
+		Request: checkly.DNSRequest{
+			RecordType: "A",
+			Query:      "welcome.checklyhq.com",
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "RESPONSE_CODE",
+					Target:     "NOERROR",
+					Comparison: "EQUALS",
+				},
+			},
+		},
+		Locations: []string{"us-east-1"},
+	}
+
+	createdMonitor, err := client.CreateDNSMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create DNS monitor: %v", err)
+	}
+
+	var deleteOnce sync.Once
+	defer func() {
+		deleteOnce.Do(func() {
+			_ = client.DeleteDNSMonitor(ctx, createdMonitor.ID)
+		})
+	}()
+
+	readMonitor, err := client.GetDNSMonitor(ctx, createdMonitor.ID)
+	if err != nil {
+		t.Fatalf("failed to get DNS monitor: %v", err)
+	}
+
+	if readMonitor.Name != "Foo monitor" {
+		t.Fatalf("wrong Name after creation")
+	}
+
+	if readMonitor.Request.Query != "welcome.checklyhq.com" {
+		t.Fatalf("wrong Query after creation")
+	}
+
+	if len(readMonitor.Request.Assertions) != 1 {
+		t.Fatalf("wrong Assertion count after creation")
+	}
+
+	if readMonitor.Request.Assertions[0].Target != "NOERROR" {
+		t.Fatalf("wrong Assertion.Target after creation")
+	}
+
+	if len(readMonitor.Locations) != 1 {
+		t.Fatalf("wrong Locations count after creation")
+	}
+
+	if readMonitor.Locations[0] != "us-east-1" {
+		t.Fatalf("wrong Location after creation")
+	}
+
+	updateMonitor := checkly.DNSMonitor{
+		Name: "Bar monitor",
+		Request: checkly.DNSRequest{
+			RecordType: "A",
+			Query:      "welcome2.checklyhq.com",
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "RESPONSE_CODE",
+					Target:     "NXDOMAIN",
+					Comparison: "EQUALS",
+				},
+			},
+		},
+		Locations: []string{"us-west-1"},
+	}
+
+	updatedMonitor, err := client.UpdateDNSMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update DNS monitor: %v", err)
+	}
+
+	if updatedMonitor.Name != "Bar monitor" {
+		t.Fatalf("wrong Name after update")
+	}
+
+	if updatedMonitor.Request.Query != "welcome2.checklyhq.com" {
+		t.Fatalf("wrong Query after update")
+	}
+
+	if len(updatedMonitor.Request.Assertions) != 1 {
+		t.Fatalf("wrong Assertion count after update")
+	}
+
+	if updatedMonitor.Request.Assertions[0].Target != "NXDOMAIN" {
+		t.Fatalf("wrong Assertion.Target after update")
+	}
+
+	if len(updatedMonitor.Locations) != 1 {
+		t.Fatalf("wrong Locations count after update")
+	}
+
+	if updatedMonitor.Locations[0] != "us-west-1" {
+		t.Fatalf("wrong Location after update")
+	}
+
+	deleteOnce.Do(func() {
+		err := client.DeleteDNSMonitor(ctx, createdMonitor.ID)
+		if err != nil {
+			t.Fatalf("failed to delete DNS monitor: %v", err)
+		}
+	})
+}
+
+func TestDNSMonitorGroupUnset(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Test Group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create group for DNS monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	}()
+
+	pendingMonitor := checkly.DNSMonitor{
+		Name: "Foo monitor",
+		Request: checkly.DNSRequest{
+			RecordType: "A",
+			Query:      "welcome.checklyhq.com",
+			Assertions: []checkly.Assertion{},
+		},
+		Locations: []string{"us-east-1"},
+		GroupID:   group.ID,
+	}
+
+	createdMonitor, err := client.CreateDNSMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create DNS monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteDNSMonitor(ctx, createdMonitor.ID)
+	}()
+
+	if createdMonitor.GroupID != group.ID {
+		t.Fatalf("wrong GroupID after creation")
+	}
+
+	updateMonitor := pendingMonitor
+	updateMonitor.GroupID = 0
+
+	updatedMonitor, err := client.UpdateDNSMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update DNS monitor: %v", err)
+	}
+
+	if updatedMonitor.GroupID != 0 {
+		t.Fatalf("wrong GroupID after update")
+	}
+}
