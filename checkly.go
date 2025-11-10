@@ -442,6 +442,52 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
+type playwrightCheckPayload struct {
+	PlaywrightCheck
+	Type      string     `json:"checkType"`
+	ID        *string    `json:"id,omitempty"`         // Skip, can't be changed.
+	CreatedAt *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
+	UpdatedAt *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+}
+
+func createPlaywrightCheckPayload(check PlaywrightCheck) playwrightCheckPayload {
+	payload := playwrightCheckPayload{
+		PlaywrightCheck: check,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "PLAYWRIGHT",
+	}
+
+	return payload
+}
+
+func (c *client) CreatePlaywrightCheck(
+	ctx context.Context,
+	check PlaywrightCheck,
+) (*PlaywrightCheck, error) {
+	payload := createPlaywrightCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/playwright"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 func (c *client) UpdateCheck(
@@ -610,6 +656,36 @@ func (c *client) UpdateDNSMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdatePlaywrightCheck(
+	ctx context.Context,
+	ID string,
+	check PlaywrightCheck,
+) (*PlaywrightCheck, error) {
+	payload := createPlaywrightCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/playwright/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Delete deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
@@ -652,6 +728,13 @@ func (c *client) DeleteURLMonitor(
 }
 
 func (c *client) DeleteDNSMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeletePlaywrightCheck(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -798,6 +881,31 @@ func (c *client) GetDNSMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result DNSMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetPlaywrightCheck retrieves an existing Playwright check.
+func (c *client) GetPlaywrightCheck(
+	ctx context.Context,
+	ID string,
+) (*PlaywrightCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
