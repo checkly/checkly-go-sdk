@@ -596,6 +596,13 @@ type Client interface {
 	) (*Runtime, error)
 
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
+
+	// Uploads a code bundle which can be used with Playwright checks.
+	UploadCodeBundle(
+		ctx context.Context,
+		data io.Reader,
+		size int64,
+	) (*CodeBundle, error)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -1558,4 +1565,8 @@ type PlaywrightCheck struct {
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+}
+
+type CodeBundle struct {
+	Key string `json:"key"`
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -2228,6 +2229,25 @@ func (c *client) dumpResponse(resp *http.Response) {
 	fmt.Fprintln(c.debug)
 }
 
+func (c *client) addAuthHeaders(req *http.Request) error {
+	req.Header.Add("Authorization", "Bearer "+c.apiKey)
+
+	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
+		return errors.New("missing Checkly Account ID (required when using User API Keys)")
+	}
+
+	if c.accountId != "" {
+		req.Header.Add("x-checkly-account", c.accountId)
+	}
+	if c.source != "" {
+		req.Header.Add("x-checkly-source", c.source)
+	} else {
+		req.Header.Add("x-checkly-source", "go-sdk")
+	}
+
+	return nil
+}
+
 func (c *client) apiCall(
 	ctx context.Context,
 	method string,
@@ -2241,20 +2261,12 @@ func (c *client) apiCall(
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
-	req.Header.Add("Authorization", "Bearer "+c.apiKey)
-	req.Header.Add("content-type", "application/json")
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return 0, "", err
+	}
 
-	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
-		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
-	}
-	if c.accountId != "" {
-		req.Header.Add("x-checkly-account", c.accountId)
-	}
-	if c.source != "" {
-		req.Header.Add("x-checkly-source", c.source)
-	} else {
-		req.Header.Add("x-checkly-source", "go-sdk")
-	}
+	req.Header.Add("content-type", "application/json")
 
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
@@ -2289,4 +2301,44 @@ func withAutoAssignAlertsFlag(url string) string {
 		return url + "&" + flag
 	}
 	return url + "?" + flag
+}
+
+func (c *client) UploadCodeBundle(
+	ctx context.Context,
+	data io.Reader,
+	size int64,
+) (*CodeBundle, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		"/next/checkly-storage/upload-code-bundle",
+		io.LimitReader(data, size),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("content-type", "application/octet-stream")
+	req.ContentLength = size
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+
+	var output CodeBundle
+	err = decoder.Decode(&output)
+	if err != nil {
+		return nil, err
+	}
+
+	return &output, nil
 }
