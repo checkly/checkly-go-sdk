@@ -597,11 +597,20 @@ type Client interface {
 
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
 
-	// Uploads a code bundle which can be used with Playwright checks.
+	// UploadCodeBundle uploads a code bundle which can be used with
+	// Playwright checks.
 	UploadCodeBundle(
 		ctx context.Context,
 		data io.Reader,
 		size int64,
+		options UploadCodeBundleOptions,
+	) (*CodeBundle, error)
+
+	// PeekCodeBundle peeks the associated metadata of a code bundle without
+	// downloading the code bundle.
+	PeekCodeBundle(
+		ctx context.Context,
+		key string,
 	) (*CodeBundle, error)
 }
 
@@ -1567,6 +1576,14 @@ type PlaywrightCheck struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
+type UploadCodeBundleOptions struct {
+	ChecksumSha256 string
+}
+
 type CodeBundle struct {
-	Key string `json:"key"`
+	Key            string    `json:"key"`
+	VersionID      string    `json:"versionID,omitempty"`
+	LastModified   time.Time `json:"lastModified,omitempty"`
+	ContentLength  int64     `json:"contentLength"`
+	ChecksumSha256 string    `json:"checksumSha256"`
 }

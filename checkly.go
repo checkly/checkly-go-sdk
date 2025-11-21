@@ -2307,6 +2307,7 @@ func (c *client) UploadCodeBundle(
 	ctx context.Context,
 	data io.Reader,
 	size int64,
+	options UploadCodeBundleOptions,
 ) (*CodeBundle, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
@@ -2326,19 +2327,88 @@ func (c *client) UploadCodeBundle(
 	req.Header.Add("content-type", "application/octet-stream")
 	req.ContentLength = size
 
+	if options.ChecksumSha256 != "" {
+		req.Header.Add("x-bundle-checksum-sha256", options.ChecksumSha256)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	decoder := json.NewDecoder(resp.Body)
+	switch {
+	case resp.StatusCode == 200:
+		decoder := json.NewDecoder(resp.Body)
 
-	var output CodeBundle
-	err = decoder.Decode(&output)
+		var output CodeBundle
+		err = decoder.Decode(&output)
+		if err != nil {
+			return nil, err
+		}
+
+		return &output, nil
+	default:
+		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+	}
+}
+
+type peekCodeBundlePayload struct {
+	Key string `json:"key"`
+}
+
+var ErrCodeBundleNotFound = errors.New("code bundle not found")
+
+func (c *client) PeekCodeBundle(
+	ctx context.Context,
+	key string,
+) (*CodeBundle, error) {
+	payload := peekCodeBundlePayload{
+		Key: key,
+	}
+
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	return &output, nil
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/next/checkly-storage/peek-code-bundle", c.url),
+		bytes.NewReader(data),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("content-type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch {
+	case resp.StatusCode == 404:
+		return nil, ErrCodeBundleNotFound
+	case resp.StatusCode == 200:
+		decoder := json.NewDecoder(resp.Body)
+
+		var output CodeBundle
+		err = decoder.Decode(&output)
+		if err != nil {
+			return nil, err
+		}
+
+		return &output, nil
+	default:
+		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+	}
 }
