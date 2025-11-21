@@ -2311,7 +2311,7 @@ func (c *client) UploadCodeBundle(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		"/next/checkly-storage/upload-code-bundle",
+		fmt.Sprintf("%s/next/checkly-storage/upload-code-bundle", c.url),
 		io.LimitReader(data, size),
 	)
 	if err != nil {
