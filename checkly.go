@@ -458,6 +458,10 @@ func createPlaywrightCheckPayload(check PlaywrightCheck) playwrightCheckPayload 
 		Type: "PLAYWRIGHT",
 	}
 
+	if payload.Browsers == nil {
+		payload.Browsers = []string{}
+	}
+
 	return payload
 }
 
