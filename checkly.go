@@ -2396,7 +2396,7 @@ func (c *client) PeekCodeBundle(
 	defer resp.Body.Close()
 
 	switch {
-	case resp.StatusCode == 404:
+	case resp.StatusCode == 404, resp.StatusCode == 403:
 		return nil, ErrCodeBundleNotFound
 	case resp.StatusCode == 200:
 		decoder := json.NewDecoder(resp.Body)
