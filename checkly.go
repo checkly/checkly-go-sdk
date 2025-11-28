@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -442,6 +443,56 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
+type playwrightCheckPayload struct {
+	PlaywrightCheck
+	Type      string     `json:"checkType"`
+	ID        *string    `json:"id,omitempty"`         // Skip, can't be changed.
+	CreatedAt *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
+	UpdatedAt *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+}
+
+func createPlaywrightCheckPayload(check PlaywrightCheck) playwrightCheckPayload {
+	payload := playwrightCheckPayload{
+		PlaywrightCheck: check,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "PLAYWRIGHT",
+	}
+
+	if payload.Browsers == nil {
+		payload.Browsers = []string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreatePlaywrightCheck(
+	ctx context.Context,
+	check PlaywrightCheck,
+) (*PlaywrightCheck, error) {
+	payload := createPlaywrightCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/playwright"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 func (c *client) UpdateCheck(
@@ -610,6 +661,36 @@ func (c *client) UpdateDNSMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdatePlaywrightCheck(
+	ctx context.Context,
+	ID string,
+	check PlaywrightCheck,
+) (*PlaywrightCheck, error) {
+	payload := createPlaywrightCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/playwright/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Delete deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
@@ -652,6 +733,13 @@ func (c *client) DeleteURLMonitor(
 }
 
 func (c *client) DeleteDNSMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeletePlaywrightCheck(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -798,6 +886,31 @@ func (c *client) GetDNSMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result DNSMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetPlaywrightCheck retrieves an existing Playwright check.
+func (c *client) GetPlaywrightCheck(
+	ctx context.Context,
+	ID string,
+) (*PlaywrightCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result PlaywrightCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
@@ -2120,6 +2233,25 @@ func (c *client) dumpResponse(resp *http.Response) {
 	fmt.Fprintln(c.debug)
 }
 
+func (c *client) addAuthHeaders(req *http.Request) error {
+	req.Header.Add("Authorization", "Bearer "+c.apiKey)
+
+	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
+		return errors.New("missing Checkly Account ID (required when using User API Keys)")
+	}
+
+	if c.accountId != "" {
+		req.Header.Add("x-checkly-account", c.accountId)
+	}
+	if c.source != "" {
+		req.Header.Add("x-checkly-source", c.source)
+	} else {
+		req.Header.Add("x-checkly-source", "go-sdk")
+	}
+
+	return nil
+}
+
 func (c *client) apiCall(
 	ctx context.Context,
 	method string,
@@ -2133,20 +2265,12 @@ func (c *client) apiCall(
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
-	req.Header.Add("Authorization", "Bearer "+c.apiKey)
-	req.Header.Add("content-type", "application/json")
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return 0, "", err
+	}
 
-	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
-		return 0, "", fmt.Errorf("Missing Checkly Account ID (required when using User API Keys)")
-	}
-	if c.accountId != "" {
-		req.Header.Add("x-checkly-account", c.accountId)
-	}
-	if c.source != "" {
-		req.Header.Add("x-checkly-source", c.source)
-	} else {
-		req.Header.Add("x-checkly-source", "go-sdk")
-	}
+	req.Header.Add("content-type", "application/json")
 
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
@@ -2181,4 +2305,114 @@ func withAutoAssignAlertsFlag(url string) string {
 		return url + "&" + flag
 	}
 	return url + "?" + flag
+}
+
+func (c *client) UploadCodeBundle(
+	ctx context.Context,
+	data io.Reader,
+	size int64,
+	options UploadCodeBundleOptions,
+) (*CodeBundle, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/next/checkly-storage/upload-code-bundle", c.url),
+		io.LimitReader(data, size),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("content-type", "application/octet-stream")
+	req.ContentLength = size
+
+	if options.ChecksumSha256 != "" {
+		req.Header.Add("x-bundle-checksum-sha256", options.ChecksumSha256)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch {
+	case resp.StatusCode == 200:
+		decoder := json.NewDecoder(resp.Body)
+
+		var output CodeBundle
+		err = decoder.Decode(&output)
+		if err != nil {
+			return nil, err
+		}
+
+		return &output, nil
+	default:
+		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+	}
+}
+
+type peekCodeBundlePayload struct {
+	Key string `json:"key"`
+}
+
+var ErrCodeBundleNotFound = errors.New("code bundle not found")
+
+func (c *client) PeekCodeBundle(
+	ctx context.Context,
+	key string,
+) (*CodeBundle, error) {
+	payload := peekCodeBundlePayload{
+		Key: key,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/next/checkly-storage/peek-code-bundle", c.url),
+		bytes.NewReader(data),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.addAuthHeaders(req)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("content-type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch {
+	case resp.StatusCode == 404, resp.StatusCode == 403:
+		return nil, ErrCodeBundleNotFound
+	case resp.StatusCode == 200:
+		decoder := json.NewDecoder(resp.Body)
+
+		var output CodeBundle
+		err = decoder.Decode(&output)
+		if err != nil {
+			return nil, err
+		}
+
+		return &output, nil
+	default:
+		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+	}
 }

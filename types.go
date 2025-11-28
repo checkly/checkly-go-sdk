@@ -117,6 +117,12 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
+	// CreatePlaywrightCheck creates a new Playwright check.
+	CreatePlaywrightCheck(
+		ctx context.Context,
+		check PlaywrightCheck,
+	) (*PlaywrightCheck, error)
+
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	UpdateCheck(
@@ -175,6 +181,13 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
+	// UpdatePlaywrightCheck updates an existing Playwright check.
+	UpdatePlaywrightCheck(
+		ctx context.Context,
+		ID string,
+		check PlaywrightCheck,
+	) (*PlaywrightCheck, error)
+
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
 		ctx context.Context,
@@ -201,6 +214,12 @@ type Client interface {
 
 	// DeleteDNSMonitor deletes the monitor with the specified ID.
 	DeleteDNSMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeletePlaywrightCheck deletes an existing Playwright check.
+	DeletePlaywrightCheck(
 		ctx context.Context,
 		ID string,
 	) error
@@ -241,6 +260,12 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*DNSMonitor, error)
+
+	// GetPlaywrightCheck retrieves an existing Playwright check.
+	GetPlaywrightCheck(
+		ctx context.Context,
+		ID string,
+	) (*PlaywrightCheck, error)
 
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
@@ -571,6 +596,22 @@ type Client interface {
 	) (*Runtime, error)
 
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
+
+	// UploadCodeBundle uploads a code bundle which can be used with
+	// Playwright checks.
+	UploadCodeBundle(
+		ctx context.Context,
+		data io.Reader,
+		size int64,
+		options UploadCodeBundleOptions,
+	) (*CodeBundle, error)
+
+	// PeekCodeBundle peeks the associated metadata of a code bundle without
+	// downloading the code bundle.
+	PeekCodeBundle(
+		ctx context.Context,
+		key string,
+	) (*CodeBundle, error)
 }
 
 // client represents a Checkly client. If the Debug field is set to an io.Writer
@@ -1504,4 +1545,45 @@ type IncidentTrigger struct {
 	// NotifySubscribers determines whether to notify subscribers when the
 	// incident is triggered.
 	NotifySubscribers bool `json:"notifySubscribers"`
+}
+
+// PlaywrightCheck represents a Playwright check.
+type PlaywrightCheck struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Frequency                 int                        `json:"frequency,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+
+	CacheHash         string   `json:"cacheHash"`
+	PlaywrightVersion *string  `json:"playwrightVersion"`
+	TestCommand       *string  `json:"testCommand"`
+	InstallCommand    *string  `json:"installCommand"`
+	Browsers          []string `json:"browsers"`
+	CodeBundlePath    string   `json:"codeBundlePath"`
+
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+}
+
+type UploadCodeBundleOptions struct {
+	ChecksumSha256 string
+}
+
+type CodeBundle struct {
+	Key            string    `json:"key"`
+	VersionID      string    `json:"versionID,omitempty"`
+	LastModified   time.Time `json:"lastModified,omitempty"`
+	ContentLength  int64     `json:"contentLength"`
+	ChecksumSha256 string    `json:"checksumSha256"`
 }
