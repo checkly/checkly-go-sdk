@@ -1566,8 +1566,8 @@ type PlaywrightCheck struct {
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 
 	CacheHash         string   `json:"cacheHash"`
-	PlaywrightVersion string   `json:"playwrightVersion"`
-	TestCommand       string   `json:"testCommand"`
+	PlaywrightVersion *string  `json:"playwrightVersion"`
+	TestCommand       *string  `json:"testCommand"`
 	InstallCommand    *string  `json:"installCommand"`
 	Browsers          []string `json:"browsers"`
 	CodeBundlePath    string   `json:"codeBundlePath"`
