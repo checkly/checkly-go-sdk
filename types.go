@@ -793,7 +793,7 @@ type HeartbeatCheck = HeartbeatMonitor
 type TCPMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Frequency                 int                        `json:"frequency,omitempty"`
+	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
@@ -826,7 +826,7 @@ type TCPCheck = TCPMonitor
 type URLMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Frequency                 int                        `json:"frequency,omitempty"`
+	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
@@ -873,7 +873,7 @@ func (r *URLRequest) toRequest() Request {
 type DNSMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Frequency                 int                        `json:"frequency,omitempty"`
+	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
@@ -1551,7 +1551,7 @@ type IncidentTrigger struct {
 type PlaywrightCheck struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Frequency                 int                        `json:"frequency,omitempty"`
+	Frequency                 int                        `json:"frequency"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	RunParallel               bool                       `json:"runParallel"`

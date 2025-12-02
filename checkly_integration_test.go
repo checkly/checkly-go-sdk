@@ -407,6 +407,7 @@ func TestTCPCheckCRUD(t *testing.T) {
 	pendingCheck := checkly.TCPCheck{
 		Name:      "TestTCPCheckCRUD",
 		Muted:     false,
+		Frequency: 1,
 		Locations: []string{"eu-west-1"},
 		Request: checkly.TCPRequest{
 			Hostname: "api.checklyhq.com",
@@ -480,7 +481,8 @@ func TestTCPMonitorGroupUnset(t *testing.T) {
 	}()
 
 	pendingMonitor := checkly.TCPMonitor{
-		Name: "Foo monitor",
+		Name:      "Foo monitor",
+		Frequency: 1,
 		Request: checkly.TCPRequest{
 			Hostname: "api.checklyhq.com",
 			Port:     443,
@@ -691,7 +693,8 @@ func TestURLMonitorCRUD(t *testing.T) {
 	client := setupClient(t)
 
 	pendingMonitor := checkly.URLMonitor{
-		Name: "Foo monitor",
+		Name:      "Foo monitor",
+		Frequency: 1,
 		Request: checkly.URLRequest{
 			URL: "https://welcome.checklyhq.com/foo",
 			Assertions: []checkly.Assertion{
@@ -731,7 +734,8 @@ func TestURLMonitorCRUD(t *testing.T) {
 	}
 
 	updateMonitor := checkly.URLMonitor{
-		Name: "Bar monitor",
+		Name:      "Bar monitor",
+		Frequency: 1,
 		Request: checkly.URLRequest{
 			URL: "https://welcome.checklyhq.com/bar",
 			Assertions: []checkly.Assertion{
@@ -800,7 +804,8 @@ func TestURLMonitorGroupUnset(t *testing.T) {
 	}()
 
 	pendingMonitor := checkly.URLMonitor{
-		Name: "Foo monitor",
+		Name:      "Foo monitor",
+		Frequency: 1,
 		Request: checkly.URLRequest{
 			URL:        "https://welcome.checklyhq.com/foo",
 			Assertions: []checkly.Assertion{},
@@ -841,7 +846,8 @@ func TestDNSMonitorCRUD(t *testing.T) {
 	client := setupClient(t)
 
 	pendingMonitor := checkly.DNSMonitor{
-		Name: "Foo monitor",
+		Name:      "Foo monitor",
+		Frequency: 1,
 		Request: checkly.DNSRequest{
 			RecordType: "A",
 			Query:      "welcome.checklyhq.com",
@@ -898,7 +904,8 @@ func TestDNSMonitorCRUD(t *testing.T) {
 	}
 
 	updateMonitor := checkly.DNSMonitor{
-		Name: "Bar monitor",
+		Name:      "Bar monitor",
+		Frequency: 1,
 		Request: checkly.DNSRequest{
 			RecordType: "A",
 			Query:      "welcome2.checklyhq.com",
@@ -977,7 +984,8 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 	}()
 
 	pendingMonitor := checkly.DNSMonitor{
-		Name: "Foo monitor",
+		Name:      "Foo monitor",
+		Frequency: 1,
 		Request: checkly.DNSRequest{
 			RecordType: "A",
 			Query:      "welcome.checklyhq.com",
