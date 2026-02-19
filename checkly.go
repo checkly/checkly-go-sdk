@@ -147,6 +147,8 @@ func (c *client) CreateCheck(
 		return nil, fmt.Errorf("user error: use CreateURLMonitor to create URL monitors")
 	case "DNS":
 		return nil, fmt.Errorf("user error: use CreateDNSMonitor to create DNS monitors")
+	case "ICMP":
+		return nil, fmt.Errorf("user error: use CreateICMPMonitor to create ICMP monitors")
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
@@ -443,6 +445,70 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
+type icmpMonitorPayload struct {
+	ICMPMonitor
+	Type        string     `json:"checkType"`
+	DoubleCheck bool       `json:"doubleCheck"`
+	ShouldFail  bool       `json:"shouldFail"`
+	GroupID     *int64     `json:"groupId"`
+	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
+	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+}
+
+func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
+	payload := icmpMonitorPayload{
+		ICMPMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "ICMP",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+		// Unfortunately, this will default to true if not set.
+		ShouldFail: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateICMPMonitor(
+	ctx context.Context,
+	monitor ICMPMonitor,
+) (*ICMPMonitor, error) {
+	payload := createICMPMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/icmp"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result ICMPMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 type playwrightCheckPayload struct {
 	PlaywrightCheck
 	Type      string     `json:"checkType"`
@@ -661,6 +727,36 @@ func (c *client) UpdateDNSMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdateICMPMonitor(
+	ctx context.Context,
+	ID string,
+	monitor ICMPMonitor,
+) (*ICMPMonitor, error) {
+	payload := createICMPMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/icmp/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result ICMPMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 func (c *client) UpdatePlaywrightCheck(
 	ctx context.Context,
 	ID string,
@@ -733,6 +829,13 @@ func (c *client) DeleteURLMonitor(
 }
 
 func (c *client) DeleteDNSMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteICMPMonitor(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -886,6 +989,32 @@ func (c *client) GetDNSMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result DNSMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetICMPMonitor(
+	ctx context.Context,
+	ID string,
+) (*ICMPMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result ICMPMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

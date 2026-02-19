@@ -1,0 +1,54 @@
+{
+  "activated": true,
+  "alertChannelSubscriptions": [],
+  "alertSettings": {
+    "escalationType": "RUN_BASED",
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    },
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    }
+  },
+  "checkType": "ICMP",
+  "created_at": "2025-10-30T05:34:01.240Z",
+  "degradedPacketLossThreshold": 5,
+  "doubleCheck": false,
+  "frequency": 10,
+  "frequencyOffset": 20,
+  "groupId": null,
+  "groupOrder": null,
+  "id": "a]b1c2d3-e4f5-6789-0abc-def012345678",
+  "locations": [
+    "us-east-1"
+  ],
+  "maxPacketLossThreshold": 50,
+  "muted": false,
+  "name": "ICMP Monitor #1",
+  "request": {
+    "assertions": [
+      {
+        "comparison": "LESS_THAN",
+        "property": "avg",
+        "source": "LATENCY",
+        "target": "200"
+      }
+    ],
+    "hostname": "example.com",
+    "ipFamily": "IPv4",
+    "pingCount": 5
+  },
+  "retryStrategy": null,
+  "runParallel": false,
+  "shouldFail": false,
+  "tags": [
+    "tag-1"
+  ],
+  "triggerIncident": null,
+  "useGlobalAlertSettings": false
+}

@@ -957,6 +957,210 @@ func TestDNSMonitorCRUD(t *testing.T) {
 	})
 }
 
+func TestICMPMonitorCRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingMonitor := checkly.ICMPMonitor{
+		Name:      "Foo ICMP monitor",
+		Frequency: 1,
+		Request: checkly.ICMPRequest{
+			Hostname:  "welcome.checklyhq.com",
+			IPFamily:  "IPv4",
+			PingCount: 5,
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "LATENCY",
+					Property:   "avg",
+					Target:     "500",
+					Comparison: "LESS_THAN",
+				},
+			},
+		},
+		Locations: []string{"us-east-1"},
+	}
+
+	createdMonitor, err := client.CreateICMPMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create ICMP monitor: %v", err)
+	}
+
+	var deleteOnce sync.Once
+	defer func() {
+		deleteOnce.Do(func() {
+			_ = client.DeleteICMPMonitor(ctx, createdMonitor.ID)
+		})
+	}()
+
+	readMonitor, err := client.GetICMPMonitor(ctx, createdMonitor.ID)
+	if err != nil {
+		t.Fatalf("failed to get ICMP monitor: %v", err)
+	}
+
+	if readMonitor.Name != "Foo ICMP monitor" {
+		t.Fatalf("wrong Name after creation")
+	}
+
+	if readMonitor.Request.Hostname != "welcome.checklyhq.com" {
+		t.Fatalf("wrong Hostname after creation")
+	}
+
+	if readMonitor.Request.PingCount != 5 {
+		t.Fatalf("wrong PingCount after creation, got %d", readMonitor.Request.PingCount)
+	}
+
+	if len(readMonitor.Request.Assertions) != 1 {
+		t.Fatalf("wrong Assertion count after creation")
+	}
+
+	if readMonitor.Request.Assertions[0].Source != "LATENCY" {
+		t.Fatalf("wrong Assertion.Source after creation, got %s", readMonitor.Request.Assertions[0].Source)
+	}
+
+	if readMonitor.Request.Assertions[0].Property != "avg" {
+		t.Fatalf("wrong Assertion.Property after creation, got %s", readMonitor.Request.Assertions[0].Property)
+	}
+
+	if readMonitor.Request.Assertions[0].Target != "500" {
+		t.Fatalf("wrong Assertion.Target after creation")
+	}
+
+	if len(readMonitor.Locations) != 1 {
+		t.Fatalf("wrong Locations count after creation")
+	}
+
+	if readMonitor.Locations[0] != "us-east-1" {
+		t.Fatalf("wrong Location after creation")
+	}
+
+	updateMonitor := checkly.ICMPMonitor{
+		Name:      "Bar ICMP monitor",
+		Frequency: 1,
+		Request: checkly.ICMPRequest{
+			Hostname:  "api.checklyhq.com",
+			IPFamily:  "IPv4",
+			PingCount: 3,
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "LATENCY",
+					Property:   "max",
+					Target:     "200",
+					Comparison: "LESS_THAN",
+				},
+			},
+		},
+		Locations: []string{"us-west-1"},
+	}
+
+	updatedMonitor, err := client.UpdateICMPMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update ICMP monitor: %v", err)
+	}
+
+	if updatedMonitor.Name != "Bar ICMP monitor" {
+		t.Fatalf("wrong Name after update")
+	}
+
+	if updatedMonitor.Request.Hostname != "api.checklyhq.com" {
+		t.Fatalf("wrong Hostname after update")
+	}
+
+	if updatedMonitor.Request.PingCount != 3 {
+		t.Fatalf("wrong PingCount after update, got %d", updatedMonitor.Request.PingCount)
+	}
+
+	if len(updatedMonitor.Request.Assertions) != 1 {
+		t.Fatalf("wrong Assertion count after update")
+	}
+
+	if updatedMonitor.Request.Assertions[0].Property != "max" {
+		t.Fatalf("wrong Assertion.Property after update, got %s", updatedMonitor.Request.Assertions[0].Property)
+	}
+
+	if updatedMonitor.Request.Assertions[0].Target != "200" {
+		t.Fatalf("wrong Assertion.Target after update")
+	}
+
+	if len(updatedMonitor.Locations) != 1 {
+		t.Fatalf("wrong Locations count after update")
+	}
+
+	if updatedMonitor.Locations[0] != "us-west-1" {
+		t.Fatalf("wrong Location after update")
+	}
+
+	deleteOnce.Do(func() {
+		err := client.DeleteICMPMonitor(ctx, createdMonitor.ID)
+		if err != nil {
+			t.Fatalf("failed to delete ICMP monitor: %v", err)
+		}
+	})
+}
+
+func TestICMPMonitorGroupUnset(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Test Group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create group for ICMP monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	}()
+
+	pendingMonitor := checkly.ICMPMonitor{
+		Name:      "Foo ICMP monitor",
+		Frequency: 1,
+		Request: checkly.ICMPRequest{
+			Hostname:   "welcome.checklyhq.com",
+			Assertions: []checkly.Assertion{},
+		},
+		Locations: []string{"us-east-1"},
+		GroupID:   group.ID,
+	}
+
+	createdMonitor, err := client.CreateICMPMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create ICMP monitor: %v", err)
+	}
+
+	defer func() {
+		_ = client.DeleteICMPMonitor(ctx, createdMonitor.ID)
+	}()
+
+	if createdMonitor.GroupID != group.ID {
+		t.Fatalf("wrong GroupID after creation")
+	}
+
+	updateMonitor := pendingMonitor
+	updateMonitor.GroupID = 0
+
+	updatedMonitor, err := client.UpdateICMPMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update ICMP monitor: %v", err)
+	}
+
+	if updatedMonitor.GroupID != 0 {
+		t.Fatalf("wrong GroupID after update")
+	}
+}
+
 func TestDNSMonitorGroupUnset(t *testing.T) {
 	ctx := context.TODO()
 

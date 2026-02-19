@@ -117,6 +117,13 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
+	// CreateICMPMonitor creates a new ICMP monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateICMPMonitor(
+		ctx context.Context,
+		monitor ICMPMonitor,
+	) (*ICMPMonitor, error)
+
 	// CreatePlaywrightCheck creates a new Playwright check.
 	CreatePlaywrightCheck(
 		ctx context.Context,
@@ -181,6 +188,14 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
+	// UpdateICMPMonitor updates an existing ICMP monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateICMPMonitor(
+		ctx context.Context,
+		ID string,
+		monitor ICMPMonitor,
+	) (*ICMPMonitor, error)
+
 	// UpdatePlaywrightCheck updates an existing Playwright check.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
@@ -214,6 +229,12 @@ type Client interface {
 
 	// DeleteDNSMonitor deletes the monitor with the specified ID.
 	DeleteDNSMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteICMPMonitor deletes the monitor with the specified ID.
+	DeleteICMPMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -260,6 +281,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*DNSMonitor, error)
+
+	// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
+	// monitor parameters, or an error.
+	GetICMPMonitor(
+		ctx context.Context,
+		ID string,
+	) (*ICMPMonitor, error)
 
 	// GetPlaywrightCheck retrieves an existing Playwright check.
 	GetPlaywrightCheck(
@@ -901,6 +929,39 @@ type DNSRequest struct {
 	NameServer string      `json:"nameServer,omitempty"`
 	Port       int         `json:"port,omitempty"`
 	Protocol   string      `json:"protocol,omitempty"`
+	Assertions []Assertion `json:"assertions"`
+}
+
+// ICMPMonitor represents an ICMP monitor.
+type ICMPMonitor struct {
+	ID                          string                     `json:"id,omitempty"`
+	Name                        string                     `json:"name"`
+	Frequency                   int                        `json:"frequency"`
+	FrequencyOffset             int                        `json:"frequencyOffset,omitempty"`
+	Activated                   bool                       `json:"activated"`
+	Muted                       bool                       `json:"muted"`
+	RunParallel                 bool                       `json:"runParallel"`
+	Locations                   []string                   `json:"locations"`
+	DegradedPacketLossThreshold int                        `json:"degradedPacketLossThreshold,omitempty"`
+	MaxPacketLossThreshold      int                        `json:"maxPacketLossThreshold,omitempty"`
+	Tags                        []string                   `json:"tags,omitempty"`
+	AlertSettings               *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings      bool                       `json:"useGlobalAlertSettings"`
+	Request                     ICMPRequest                `json:"request"`
+	GroupID                     int64                      `json:"groupId,omitempty"`
+	GroupOrder                  int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions   []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RetryStrategy               *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident             *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                   time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                   time.Time                  `json:"updated_at,omitempty"`
+}
+
+// ICMPRequest represents the parameters for the request made by an ICMP monitor.
+type ICMPRequest struct {
+	Hostname   string      `json:"hostname"`
+	IPFamily   string      `json:"ipFamily,omitempty"`
+	PingCount  int         `json:"pingCount,omitempty"`
 	Assertions []Assertion `json:"assertions"`
 }
 
