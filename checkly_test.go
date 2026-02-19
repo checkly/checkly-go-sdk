@@ -2148,3 +2148,138 @@ func TestGetDNSMonitor(t *testing.T) {
 		t.Error(cmp.Diff(testDNSMonitor, *response, ignoreDNSMonitorFields))
 	}
 }
+
+func validateICMPMonitor(t *testing.T, body []byte) {
+	var payload checkly.ICMPMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testICMPMonitor, payload, ignoreICMPMonitorFields) {
+		t.Error(cmp.Diff(testICMPMonitor, payload, ignoreICMPMonitorFields))
+	}
+}
+
+var testICMPMonitor = checkly.ICMPMonitor{
+	ID:              "ab1c2d3e-e4f5-6789-0abc-def012345678",
+	Name:            "ICMP Monitor #1",
+	Frequency:       10,
+	FrequencyOffset: 20,
+	Activated:       true,
+	Muted:           false,
+	Locations:       []string{"us-east-1"},
+	Tags: []string{
+		"tag-1",
+	},
+	DegradedPacketLossThreshold: 5,
+	MaxPacketLossThreshold:      50,
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: false,
+	RetryStrategy:          nil,
+	Request: checkly.ICMPRequest{
+		Hostname:  "example.com",
+		IPFamily:  "IPv4",
+		PingCount: 5,
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "LATENCY",
+				Target:     "200",
+				Property:   "avg",
+				Comparison: "LESS_THAN",
+			},
+		},
+	},
+}
+
+var ignoreICMPMonitorFields = cmpopts.IgnoreFields(
+	checkly.ICMPMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateICMPMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/icmp?autoAssignAlerts=false",
+		validateICMPMonitor,
+		http.StatusCreated,
+		"CreateICMPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateICMPMonitor(context.Background(), testICMPMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testICMPMonitor, *response, ignoreICMPMonitorFields) {
+		t.Error(cmp.Diff(testICMPMonitor, *response, ignoreICMPMonitorFields))
+	}
+}
+
+func TestDeleteICMPMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testICMPMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteICMPMonitor(context.Background(), testICMPMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateICMPMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/icmp/%s?autoAssignAlerts=false", testICMPMonitor.ID),
+		validateICMPMonitor,
+		http.StatusOK,
+		"UpdateICMPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateICMPMonitor(context.Background(), testICMPMonitor.ID, testICMPMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetICMPMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testICMPMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetICMPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetICMPMonitor(context.Background(), testICMPMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testICMPMonitor, *response, ignoreICMPMonitorFields) {
+		t.Error(cmp.Diff(testICMPMonitor, *response, ignoreICMPMonitorFields))
+	}
+}
