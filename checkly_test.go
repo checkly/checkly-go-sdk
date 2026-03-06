@@ -2283,3 +2283,144 @@ func TestGetICMPMonitor(t *testing.T) {
 		t.Error(cmp.Diff(testICMPMonitor, *response, ignoreICMPMonitorFields))
 	}
 }
+
+// Traceroute Monitor tests
+
+var ptrLookupTrue = true
+
+var testTracerouteMonitor = checkly.TracerouteMonitor{
+	ID:                   "ab1c2d3e-e4f5-6789-0abc-def012345678",
+	Name:                 "Traceroute Monitor #1",
+	Frequency:            60,
+	FrequencyOffset:      20,
+	Activated:            true,
+	Muted:                false,
+	Locations:            []string{"us-east-1"},
+	Tags:                 []string{"tag-1"},
+	DegradedResponseTime: 15000,
+	MaxResponseTime:      30000,
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: false,
+	RetryStrategy:          nil,
+	Request: checkly.TracerouteRequest{
+		Hostname:       "example.com",
+		Port:           443,
+		IPFamily:       "IPv4",
+		MaxHops:        30,
+		MaxUnknownHops: 15,
+		PtrLookup:      &ptrLookupTrue,
+		Timeout:        10,
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "RESPONSE_TIME",
+				Target:     "200",
+				Property:   "avg",
+				Comparison: "LESS_THAN",
+			},
+		},
+	},
+}
+
+var ignoreTracerouteMonitorFields = cmpopts.IgnoreFields(
+	checkly.TracerouteMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func validateTracerouteMonitor(t *testing.T, body []byte) {
+	var payload checkly.TracerouteMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, payload, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, payload, ignoreTracerouteMonitorFields))
+	}
+}
+
+func TestCreateTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/traceroute?autoAssignAlerts=false",
+		validateTracerouteMonitor,
+		http.StatusCreated,
+		"CreateTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateTracerouteMonitor(context.Background(), testTracerouteMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields))
+	}
+}
+
+func TestDeleteTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testTracerouteMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/traceroute/%s?autoAssignAlerts=false", testTracerouteMonitor.ID),
+		validateTracerouteMonitor,
+		http.StatusOK,
+		"UpdateTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, testTracerouteMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetTracerouteMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testTracerouteMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields))
+	}
+}

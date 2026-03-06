@@ -1,0 +1,58 @@
+{
+  "activated": true,
+  "alertChannelSubscriptions": [],
+  "alertSettings": {
+    "escalationType": "RUN_BASED",
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    },
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    }
+  },
+  "checkType": "TRACEROUTE",
+  "created_at": "2025-10-30T05:34:01.240Z",
+  "degradedResponseTime": 15000,
+  "doubleCheck": false,
+  "frequency": 60,
+  "frequencyOffset": 20,
+  "groupId": null,
+  "groupOrder": null,
+  "id": "ab1c2d3e-e4f5-6789-0abc-def012345678",
+  "locations": [
+    "us-east-1"
+  ],
+  "maxResponseTime": 30000,
+  "muted": false,
+  "name": "Traceroute Monitor #1",
+  "request": {
+    "assertions": [
+      {
+        "comparison": "LESS_THAN",
+        "property": "avg",
+        "source": "RESPONSE_TIME",
+        "target": "200"
+      }
+    ],
+    "hostname": "example.com",
+    "port": 443,
+    "ipFamily": "IPv4",
+    "maxHops": 30,
+    "maxUnknownHops": 15,
+    "ptrLookup": true,
+    "timeout": 10
+  },
+  "retryStrategy": null,
+  "runParallel": false,
+  "shouldFail": false,
+  "tags": [
+    "tag-1"
+  ],
+  "triggerIncident": null,
+  "useGlobalAlertSettings": false
+}

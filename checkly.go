@@ -149,6 +149,8 @@ func (c *client) CreateCheck(
 		return nil, fmt.Errorf("user error: use CreateDNSMonitor to create DNS monitors")
 	case "ICMP":
 		return nil, fmt.Errorf("user error: use CreateICMPMonitor to create ICMP monitors")
+	case "TRACEROUTE":
+		return nil, fmt.Errorf("user error: use CreateTracerouteMonitor to create traceroute monitors")
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
@@ -509,6 +511,64 @@ func (c *client) CreateICMPMonitor(
 	return &result, nil
 }
 
+type tracerouteMonitorPayload struct {
+	TracerouteMonitor
+	Type        string     `json:"checkType"`
+	DoubleCheck bool       `json:"doubleCheck"`
+	ShouldFail  bool       `json:"shouldFail"`
+	GroupID     *int64     `json:"groupId"`
+	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
+	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+}
+
+func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitorPayload {
+	payload := tracerouteMonitorPayload{
+		TracerouteMonitor: monitor,
+		Type:              "TRACEROUTE",
+		DoubleCheck:       false,
+		ShouldFail:        false,
+	}
+
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateTracerouteMonitor(
+	ctx context.Context,
+	monitor TracerouteMonitor,
+) (*TracerouteMonitor, error) {
+	payload := createTracerouteMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/traceroute"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 type playwrightCheckPayload struct {
 	PlaywrightCheck
 	Type      string     `json:"checkType"`
@@ -757,6 +817,36 @@ func (c *client) UpdateICMPMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdateTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+	monitor TracerouteMonitor,
+) (*TracerouteMonitor, error) {
+	payload := createTracerouteMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/traceroute/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 func (c *client) UpdatePlaywrightCheck(
 	ctx context.Context,
 	ID string,
@@ -836,6 +926,13 @@ func (c *client) DeleteDNSMonitor(
 }
 
 func (c *client) DeleteICMPMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteTracerouteMonitor(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -1015,6 +1112,32 @@ func (c *client) GetICMPMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result ICMPMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+) (*TracerouteMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

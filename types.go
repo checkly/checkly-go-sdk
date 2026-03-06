@@ -124,6 +124,13 @@ type Client interface {
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
+	// CreateTracerouteMonitor creates a new traceroute monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateTracerouteMonitor(
+		ctx context.Context,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
 	// CreatePlaywrightCheck creates a new Playwright check.
 	CreatePlaywrightCheck(
 		ctx context.Context,
@@ -196,6 +203,14 @@ type Client interface {
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
+	// UpdateTracerouteMonitor updates an existing traceroute monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
 	// UpdatePlaywrightCheck updates an existing Playwright check.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
@@ -235,6 +250,12 @@ type Client interface {
 
 	// DeleteICMPMonitor deletes the monitor with the specified ID.
 	DeleteICMPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
+	DeleteTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -288,6 +309,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*ICMPMonitor, error)
+
+	// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and returns the
+	// monitor parameters, or an error.
+	GetTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TracerouteMonitor, error)
 
 	// GetPlaywrightCheck retrieves an existing Playwright check.
 	GetPlaywrightCheck(
@@ -963,6 +991,43 @@ type ICMPRequest struct {
 	IPFamily   string      `json:"ipFamily,omitempty"`
 	PingCount  int         `json:"pingCount,omitempty"`
 	Assertions []Assertion `json:"assertions"`
+}
+
+// TracerouteMonitor represents a traceroute monitor.
+type TracerouteMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   TracerouteRequest          `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// TracerouteRequest represents the parameters for the request made by a traceroute monitor.
+type TracerouteRequest struct {
+	Hostname       string      `json:"hostname"`
+	Port           int         `json:"port"`
+	IPFamily       string      `json:"ipFamily,omitempty"`
+	MaxHops        int         `json:"maxHops,omitempty"`
+	MaxUnknownHops int         `json:"maxUnknownHops,omitempty"`
+	PtrLookup      *bool       `json:"ptrLookup,omitempty"`
+	Timeout        int         `json:"timeout,omitempty"`
+	Assertions     []Assertion `json:"assertions"`
 }
 
 // Heartbeat represents the parameter for the heartbeat check.

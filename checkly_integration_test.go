@@ -1224,3 +1224,85 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 		t.Fatalf("wrong GroupID after update")
 	}
 }
+
+func TestTracerouteMonitorCRUD(t *testing.T) {
+	client := setupClient(t)
+	ctx := context.Background()
+
+	ptrTrue := true
+	pendingMonitor := checkly.TracerouteMonitor{
+		Name:                 "Integration Test Traceroute",
+		Activated:            true,
+		Frequency:            60,
+		DegradedResponseTime: 15000,
+		MaxResponseTime:      30000,
+		Locations:            []string{"us-east-1"},
+		Request: checkly.TracerouteRequest{
+			Hostname:       "example.com",
+			Port:           443,
+			IPFamily:       "IPv4",
+			MaxHops:        30,
+			MaxUnknownHops: 15,
+			PtrLookup:      &ptrTrue,
+			Timeout:        10,
+			Assertions: []checkly.Assertion{
+				{
+					Source:     "RESPONSE_TIME",
+					Property:  "avg",
+					Comparison: "LESS_THAN",
+					Target:    "200",
+				},
+			},
+		},
+	}
+
+	// Create
+	createdMonitor, err := client.CreateTracerouteMonitor(ctx, pendingMonitor)
+	if err != nil {
+		t.Fatalf("failed to create traceroute monitor: %v", err)
+	}
+	if createdMonitor.ID == "" {
+		t.Fatal("expected non-empty ID after creation")
+	}
+
+	defer func() {
+		_ = client.DeleteTracerouteMonitor(ctx, createdMonitor.ID)
+	}()
+
+	// Get
+	gotMonitor, err := client.GetTracerouteMonitor(ctx, createdMonitor.ID)
+	if err != nil {
+		t.Fatalf("failed to get traceroute monitor: %v", err)
+	}
+	if gotMonitor.Name != pendingMonitor.Name {
+		t.Fatalf("expected name %q, got %q", pendingMonitor.Name, gotMonitor.Name)
+	}
+	if gotMonitor.Request.Hostname != "example.com" {
+		t.Fatalf("expected hostname 'example.com', got %q", gotMonitor.Request.Hostname)
+	}
+	if gotMonitor.Request.Port != 443 {
+		t.Fatalf("expected port 443, got %d", gotMonitor.Request.Port)
+	}
+
+	// Update
+	updateMonitor := pendingMonitor
+	updateMonitor.Name = "Updated Traceroute Monitor"
+	updateMonitor.Request.MaxHops = 20
+
+	updatedTraceroute, err := client.UpdateTracerouteMonitor(ctx, createdMonitor.ID, updateMonitor)
+	if err != nil {
+		t.Fatalf("failed to update traceroute monitor: %v", err)
+	}
+	if updatedTraceroute.Name != "Updated Traceroute Monitor" {
+		t.Fatalf("expected updated name, got %q", updatedTraceroute.Name)
+	}
+	if updatedTraceroute.Request.MaxHops != 20 {
+		t.Fatalf("expected maxHops 20, got %d", updatedTraceroute.Request.MaxHops)
+	}
+
+	// Delete
+	err = client.DeleteTracerouteMonitor(ctx, createdMonitor.ID)
+	if err != nil {
+		t.Fatalf("failed to delete traceroute monitor: %v", err)
+	}
+}
