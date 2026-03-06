@@ -1618,6 +1618,7 @@ type PlaywrightCheck struct {
 	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	Tags                      []string                   `json:"tags,omitempty"`
 	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
