@@ -1961,6 +1961,40 @@ func TestCreateURLMonitor(t *testing.T) {
 	}
 }
 
+// TestCreateURLMonitorRequestIncludesMethod ensures the serialized request body
+// includes request.method: "GET". Without the custom MarshalJSON on
+// urlMonitorPayload, the embedded URLMonitor.Request (URLRequest) would be
+// serialized and has no Method field, so the API would not receive method.
+func TestCreateURLMonitorRequestIncludesMethod(t *testing.T) {
+	t.Parallel()
+	validateRequestHasMethod := func(t *testing.T, body []byte) {
+		var payload struct {
+			Request struct {
+				Method string `json:"method"`
+			} `json:"request"`
+		}
+		if err := json.Unmarshal(body, &payload); err != nil {
+			t.Fatalf("decoding request body: %v", err)
+		}
+		if payload.Request.Method != "GET" {
+			t.Errorf("request.method: want %q, got %q", "GET", payload.Request.Method)
+		}
+	}
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/url?autoAssignAlerts=false",
+		validateRequestHasMethod,
+		http.StatusCreated,
+		"CreateURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateURLMonitor(context.Background(), testURLMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDeleteURLMonitor(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,

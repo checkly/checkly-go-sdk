@@ -325,6 +325,37 @@ type urlMonitorPayload struct {
 	GroupID     *int64  `json:"groupId"`
 }
 
+// MarshalJSON ensures the payload sends a single "request" object built from
+// toRequest() (including method: "GET"). Embedding URLMonitor would otherwise
+// produce two json keys "request"; encoding/json can ignore one, so the API
+// might get URLRequest without method.
+func (p urlMonitorPayload) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(p.URLMonitor)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	m["checkType"] = p.Type
+	m["doubleCheck"] = p.DoubleCheck
+	if p.GroupID != nil {
+		m["groupId"] = *p.GroupID
+	}
+	req := p.URLMonitor.Request.toRequest()
+	reqB, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	var reqM map[string]interface{}
+	if err := json.Unmarshal(reqB, &reqM); err != nil {
+		return nil, err
+	}
+	m["request"] = reqM
+	return json.Marshal(m)
+}
+
 func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 	payload := urlMonitorPayload{
 		URLMonitor: monitor,
