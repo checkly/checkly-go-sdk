@@ -1539,6 +1539,9 @@ type StatusPage struct {
 	// Name is the name of the status page.
 	Name string `json:"name"`
 
+	// Description is an optional introductory description. Maximum 500 characters.
+	Description string `json:"description,omitempty"`
+
 	// URL is the unique subdomain of the status page.
 	URL string `json:"url"`
 
