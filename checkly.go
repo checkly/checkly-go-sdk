@@ -1100,6 +1100,60 @@ func (c *client) CreateGroup(
 	return &result, nil
 }
 
+type groupV2Payload struct {
+	GroupV2
+}
+
+func createGroupV2Payload(group GroupV2) groupV2Payload {
+	payload := groupV2Payload{
+		GroupV2: group,
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if group.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if group.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
+// CreateGroupV2 creates a new check group with the specified details. It returns
+// the newly-created group, or an error.
+func (c *client) CreateGroupV2(
+	ctx context.Context,
+	group GroupV2,
+) (*GroupV2, error) {
+	payload := createGroupV2Payload(group)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCallV(
+		ctx,
+		2,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("check-groups"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // GetGroup takes the ID of an existing check group, and returns the
 // corresponding group, or an error.
 func (c *client) GetGroup(
@@ -1119,6 +1173,33 @@ func (c *client) GetGroup(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	result := Group{}
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetGroupV2 takes the ID of an existing check group, and returns the
+// corresponding group, or an error.
+func (c *client) GetGroupV2(
+	ctx context.Context,
+	ID int64,
+) (*GroupV2, error) {
+	status, res, err := c.apiCallV(
+		ctx,
+		1,
+		http.MethodGet,
+		fmt.Sprintf("check-groups/%d", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
@@ -1159,6 +1240,40 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
+// UpdateGroupV2 takes the ID of an existing check group, and updates the
+// corresponding check group to match the supplied group. It returns the updated
+// group, or an error.
+func (c *client) UpdateGroupV2(
+	ctx context.Context,
+	ID int64,
+	group GroupV2,
+) (*GroupV2, error) {
+	payload := createGroupV2Payload(group)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCallV(
+		ctx,
+		2,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GroupV2
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // DeleteGroup deletes the check group with the specified ID.
 func (c *client) DeleteGroup(
 	ctx context.Context,
@@ -1177,6 +1292,14 @@ func (c *client) DeleteGroup(
 		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return nil
+}
+
+// DeleteGroupV2 deletes the check group with the specified ID.
+func (c *client) DeleteGroupV2(
+	ctx context.Context,
+	ID int64,
+) error {
+	return c.DeleteGroup(ctx, ID)
 }
 
 // GetCheckResult gets a specific Check result
@@ -2387,7 +2510,26 @@ func (c *client) apiCall(
 	URL string,
 	data []byte,
 ) (statusCode int, response string, err error) {
-	requestURL := c.url + "/v1/" + URL
+	return c.apiCallV1(ctx, method, URL, data)
+}
+
+func (c *client) apiCallV1(
+	ctx context.Context,
+	method string,
+	URL string,
+	data []byte,
+) (statusCode int, response string, err error) {
+	return c.apiCallV(ctx, 1, method, URL, data)
+}
+
+func (c *client) apiCallV(
+	ctx context.Context,
+	v int,
+	method string,
+	URL string,
+	data []byte,
+) (statusCode int, response string, err error) {
+	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, v, URL)
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 
 	if err != nil {

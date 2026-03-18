@@ -302,12 +302,26 @@ type Client interface {
 		group Group,
 	) (*Group, error)
 
+	// CreateGroupV2 creates a new check group with the specified details.
+	// It returns the newly-created group, or an error.
+	CreateGroupV2(
+		ctx context.Context,
+		group GroupV2,
+	) (*GroupV2, error)
+
 	// GetGroup takes the ID of an existing check group, and returns the
 	// corresponding group, or an error.
 	GetGroup(
 		ctx context.Context,
 		ID int64,
 	) (*Group, error)
+
+	// GetGroupV2 takes the ID of an existing check group, and returns the
+	// corresponding group, or an error.
+	GetGroupV2(
+		ctx context.Context,
+		ID int64,
+	) (*GroupV2, error)
 
 	// UpdateGroup takes the ID of an existing check group, and updates the
 	// corresponding check group to match the supplied group. It returns the updated
@@ -318,8 +332,23 @@ type Client interface {
 		group Group,
 	) (*Group, error)
 
+	// UpdateGroupV2 takes the ID of an existing check group, and updates the
+	// corresponding check group to match the supplied group. It returns the updated
+	// group, or an error.
+	UpdateGroupV2(
+		ctx context.Context,
+		ID int64,
+		group GroupV2,
+	) (*GroupV2, error)
+
 	// DeleteGroup deletes the check group with the specified ID. It returns a
 	DeleteGroup(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// DeleteGroupV2 deletes the check group with the specified ID. It returns a
+	DeleteGroupV2(
 		ctx context.Context,
 		ID int64,
 	) error
@@ -1126,6 +1155,10 @@ func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 			SameRegion:         &s.SameRegion,
 			OnlyOn:             s.OnlyOn,
 		})
+	case "NO_RETRIES":
+		return json.Marshal(nil)
+	case "FALLBACK":
+		return json.Marshal("FALLBACK")
 	default:
 		return json.Marshal(flexibleRetryStrategy{
 			Type:               s.Type,
@@ -1136,6 +1169,38 @@ func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 			OnlyOn:             s.OnlyOn,
 		})
 	}
+}
+
+func (s *RetryStrategy) UnmarshalJSON(data []byte) error {
+	// Clear all fields so previous values don't leak through.
+	*s = RetryStrategy{}
+
+	// null -> NO_RETRIES (reverse of MarshalJSON which emits null for NO_RETRIES)
+	if string(data) == "null" {
+		s.Type = "NO_RETRIES"
+		return nil
+	}
+
+	// Plain string -> FALLBACK
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		if str != "FALLBACK" {
+			return fmt.Errorf("Unsupported value %q for retry strategy", str)
+		}
+		s.Type = str
+		return nil
+	}
+
+	// Object -> standard unmarshal. Use an alias type to avoid infinite
+	// recursion: the alias has the same fields but no UnmarshalJSON method,
+	// so json.Unmarshal uses the default struct decoder.
+	type retryStrategyAlias RetryStrategy
+	var alias retryStrategyAlias
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	*s = RetryStrategy(alias)
+	return nil
 }
 
 // Group represents a check group.
@@ -1167,6 +1232,32 @@ type Group struct {
 
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`
+}
+
+// Group represents a check group v2.
+type GroupV2 struct {
+	ID                        int64                      `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	RunParallel               *bool                      `json:"runParallel"`
+	Tags                      []string                   `json:"tags"`
+	Locations                 []string                   `json:"locations"`
+	Concurrency               int                        `json:"concurrency"`
+	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	UseGlobalAlertSettings    *bool                      `json:"useGlobalAlertSettings"`
+	AlertSettings             *AlertSettings             `json:"alertSettings"`
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          *string                    `json:"localSetupScript"`
+	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	CreatedAt                 time.Time                  `json:"createdAt"`
+	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
