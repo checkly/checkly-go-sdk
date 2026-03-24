@@ -1724,6 +1724,7 @@ type PlaywrightCheck struct {
 	InstallCommand    *string  `json:"installCommand"`
 	Browsers          []string `json:"browsers"`
 	CodeBundlePath    string   `json:"codeBundlePath"`
+	WorkingDir        *string  `json:"workingDir"`
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
