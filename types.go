@@ -800,6 +800,7 @@ type Check struct {
 type MultiStepCheck struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
+	Description               string                     `json:"description,omitempty"`
 	Type                      string                     `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
