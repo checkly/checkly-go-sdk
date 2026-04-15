@@ -755,7 +755,7 @@ const NotContains = "NOT_CONTAINS"
 type Check struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Type                      string                     `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
@@ -800,7 +800,7 @@ type Check struct {
 type MultiStepCheck struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Type                      string                     `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
@@ -830,7 +830,7 @@ type MultiStepCheck struct {
 type HeartbeatMonitor struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	Tags                      []string                   `json:"tags,omitempty"`
@@ -853,7 +853,7 @@ type HeartbeatCheck = HeartbeatMonitor
 type TCPMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
@@ -887,7 +887,7 @@ type TCPCheck = TCPMonitor
 type URLMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
@@ -935,7 +935,7 @@ func (r *URLRequest) toRequest() Request {
 type DNSMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
-	Description               string                     `json:"description,omitempty"`
+	Description               *string                    `json:"description"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
@@ -971,7 +971,7 @@ type DNSRequest struct {
 type ICMPMonitor struct {
 	ID                          string                     `json:"id,omitempty"`
 	Name                        string                     `json:"name"`
-	Description                 string                     `json:"description,omitempty"`
+	Description                 *string                    `json:"description"`
 	Frequency                   int                        `json:"frequency"`
 	FrequencyOffset             int                        `json:"frequencyOffset,omitempty"`
 	Activated                   bool                       `json:"activated"`
