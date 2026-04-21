@@ -1710,6 +1710,7 @@ type IncidentTrigger struct {
 type PlaywrightCheck struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
 	Frequency                 int                        `json:"frequency"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
