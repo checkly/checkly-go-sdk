@@ -1733,6 +1733,8 @@ type PlaywrightCheck struct {
 	Browsers          []string `json:"browsers"`
 	CodeBundlePath    string   `json:"codeBundlePath"`
 	WorkingDir        *string  `json:"workingDir"`
+	Engine            *string  `json:"engine"`
+	EngineVersion     *string  `json:"engineVersion"`
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
