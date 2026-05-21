@@ -1325,8 +1325,13 @@ type Snippet struct {
 }
 
 const (
-	AlertTypeEmail     = "EMAIL"
-	AlertTypeSlack     = "SLACK"
+	AlertTypeEmail = "EMAIL"
+
+	// AlertTypeSlack identifies legacy Slack webhook alert channels.
+	//
+	// Deprecated: Use [AlertTypeSlackApp] instead.
+	AlertTypeSlack = "SLACK"
+
 	AlertTypeSlackApp  = "SLACK_APP"
 	AlertTypeWebhook   = "WEBHOOK"
 	AlertTypeSMS       = "SMS"
@@ -1346,7 +1351,10 @@ type AlertChannelEmail struct {
 	Address string `json:"address"`
 }
 
-// AlertChannelSlack defines a type for a slack alert channel
+// AlertChannelSlack defines a type for a slack alert channel.
+//
+// Deprecated: Use [AlertChannelSlackApp] instead. The legacy Slack webhook
+// integration is being phased out in favor of the Checkly Slack App.
 type AlertChannelSlack struct {
 	WebhookURL string `json:"url"`
 	Channel    string `json:"channel"`
