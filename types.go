@@ -1325,8 +1325,14 @@ type Snippet struct {
 }
 
 const (
-	AlertTypeEmail     = "EMAIL"
-	AlertTypeSlack     = "SLACK"
+	AlertTypeEmail = "EMAIL"
+
+	// AlertTypeSlack identifies legacy Slack webhook alert channels.
+	//
+	// Deprecated: Use [AlertTypeSlackApp] instead.
+	AlertTypeSlack = "SLACK"
+
+	AlertTypeSlackApp  = "SLACK_APP"
 	AlertTypeWebhook   = "WEBHOOK"
 	AlertTypeSMS       = "SMS"
 	AlertTypePagerduty = "PAGERDUTY"
@@ -1345,10 +1351,29 @@ type AlertChannelEmail struct {
 	Address string `json:"address"`
 }
 
-// AlertChannelSlack defines a type for a slack alert channel
+// AlertChannelSlack defines a type for a slack alert channel.
+//
+// Deprecated: Use [AlertChannelSlackApp] instead. The legacy Slack webhook
+// integration is being phased out in favor of the Checkly Slack App.
 type AlertChannelSlack struct {
 	WebhookURL string `json:"url"`
 	Channel    string `json:"channel"`
+}
+
+// AlertChannelSlackApp defines a type for a Slack App alert channel. It targets
+// one or more Slack channels via the Checkly Slack App. SlackChannels must
+// contain at least one entry.
+type AlertChannelSlackApp struct {
+	SlackChannels []string `json:"slackChannels"`
+}
+
+// MarshalJSON enforces that SlackChannels is non-empty.
+func (a AlertChannelSlackApp) MarshalJSON() ([]byte, error) {
+	if len(a.SlackChannels) == 0 {
+		return nil, fmt.Errorf("AlertChannelSlackApp: slackChannels must contain at least one channel")
+	}
+	type alias AlertChannelSlackApp
+	return json.Marshal(alias(a))
 }
 
 // AlertChannelSMS defines a type for a sms alert channel
@@ -1397,6 +1422,7 @@ type AlertChannel struct {
 	Type               string                 `json:"type"`
 	Email              *AlertChannelEmail     `json:"-"`
 	Slack              *AlertChannelSlack     `json:"-"`
+	SlackApp           *AlertChannelSlackApp  `json:"-"`
 	SMS                *AlertChannelSMS       `json:"-"`
 	CALL               *AlertChannelCall      `json:"-"`
 	Opsgenie           *AlertChannelOpsgenie  `json:"-"`
@@ -1524,6 +1550,8 @@ func (a *AlertChannel) SetConfig(cfg interface{}) {
 		a.CALL = cfg.(*AlertChannelCall)
 	case *AlertChannelSlack:
 		a.Slack = cfg.(*AlertChannelSlack)
+	case *AlertChannelSlackApp:
+		a.SlackApp = cfg.(*AlertChannelSlackApp)
 	case *AlertChannelWebhook:
 		a.Webhook = cfg.(*AlertChannelWebhook)
 	case *AlertChannelOpsgenie:
@@ -1548,6 +1576,8 @@ func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
 		byts, err = json.Marshal(a.CALL)
 	case AlertTypeSlack:
 		byts, err = json.Marshal(a.Slack)
+	case AlertTypeSlackApp:
+		byts, err = json.Marshal(a.SlackApp)
 	case AlertTypeOpsgenie:
 		byts, err = json.Marshal(a.Opsgenie)
 	case AlertTypePagerduty:
@@ -1580,6 +1610,10 @@ func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}
 		return &r, nil
 	case AlertTypeSlack:
 		r := AlertChannelSlack{}
+		json.Unmarshal(cfgJSON, &r)
+		return &r, nil
+	case AlertTypeSlackApp:
+		r := AlertChannelSlackApp{}
 		json.Unmarshal(cfgJSON, &r)
 		return &r, nil
 	case AlertTypeOpsgenie:

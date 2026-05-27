@@ -65,6 +65,71 @@ func TestAlertChannelSlack(t *testing.T) {
 	}
 }
 
+func TestAlertChannelSlackApp(t *testing.T) {
+	ac := checkly.AlertChannel{
+		Type: checkly.AlertTypeSlackApp,
+	}
+	cfg := checkly.AlertChannelSlackApp{
+		SlackChannels: []string{"#ops", "@John"},
+	}
+
+	ac.SetConfig(&cfg)
+
+	if ac.SlackApp == nil {
+		t.Error("Config shouldn't be nil")
+		return
+	}
+
+	if !reflect.DeepEqual(ac.SlackApp.SlackChannels, cfg.SlackChannels) {
+		t.Errorf(
+			"Expected: %v, got: %v",
+			cfg.SlackChannels,
+			ac.SlackApp.SlackChannels,
+		)
+	}
+
+	got := ac.GetConfig()
+	channels, ok := got["slackChannels"].([]interface{})
+	if !ok {
+		t.Fatalf("Expected slackChannels in config, got: %v", got)
+	}
+	if len(channels) != 2 || channels[0] != "#ops" || channels[1] != "@John" {
+		t.Errorf("Unexpected slackChannels: %v", channels)
+	}
+}
+
+func TestAlertChannelSlackAppRejectsEmptyChannels(t *testing.T) {
+	cases := map[string]checkly.AlertChannelSlackApp{
+		"nil slice":   {},
+		"empty slice": {SlackChannels: []string{}},
+	}
+	for name, cfg := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := json.Marshal(cfg); err == nil {
+				t.Error("Expected error when marshaling SlackApp with empty SlackChannels, got nil")
+			}
+		})
+	}
+}
+
+func TestAlertChannelSlackAppConfigFromJSON(t *testing.T) {
+	raw := []byte(`{"slackChannels":["C123","C456"]}`)
+	v, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeSlackApp, raw)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	got, ok := v.(*checkly.AlertChannelSlackApp)
+	if !ok {
+		t.Fatalf("Expected *AlertChannelSlackApp, got %T", v)
+	}
+	want := &checkly.AlertChannelSlackApp{
+		SlackChannels: []string{"C123", "C456"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
+
 func TestAlertChannelSMS(t *testing.T) {
 	ac := checkly.AlertChannel{
 		Type: checkly.AlertTypeSMS,
