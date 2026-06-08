@@ -1367,15 +1367,6 @@ type AlertChannelSlackApp struct {
 	SlackChannels []string `json:"slackChannels"`
 }
 
-// MarshalJSON enforces that SlackChannels is non-empty.
-func (a AlertChannelSlackApp) MarshalJSON() ([]byte, error) {
-	if len(a.SlackChannels) == 0 {
-		return nil, fmt.Errorf("AlertChannelSlackApp: slackChannels must contain at least one channel")
-	}
-	type alias AlertChannelSlackApp
-	return json.Marshal(alias(a))
-}
-
 // AlertChannelSMS defines a type for a sms alert channel
 type AlertChannelSMS struct {
 	Name   string `json:"name"`

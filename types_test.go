@@ -98,20 +98,6 @@ func TestAlertChannelSlackApp(t *testing.T) {
 	}
 }
 
-func TestAlertChannelSlackAppRejectsEmptyChannels(t *testing.T) {
-	cases := map[string]checkly.AlertChannelSlackApp{
-		"nil slice":   {},
-		"empty slice": {SlackChannels: []string{}},
-	}
-	for name, cfg := range cases {
-		t.Run(name, func(t *testing.T) {
-			if _, err := json.Marshal(cfg); err == nil {
-				t.Error("Expected error when marshaling SlackApp with empty SlackChannels, got nil")
-			}
-		})
-	}
-}
-
 func TestAlertChannelSlackAppConfigFromJSON(t *testing.T) {
 	raw := []byte(`{"slackChannels":["C123","C456"]}`)
 	v, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeSlackApp, raw)
