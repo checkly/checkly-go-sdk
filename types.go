@@ -1251,12 +1251,12 @@ type TracerouteMonitor struct {
 // Port is stripped from the marshaled body when Protocol is "ICMP", mirroring
 // the public API's `Joi.any().strip()` for that case (see MarshalJSON).
 type TracerouteRequest struct {
-	URL            string      `json:"url"`
-	Protocol       string      `json:"protocol,omitempty"`
-	Port           int         `json:"port,omitempty"`
-	IPFamily       string      `json:"ipFamily,omitempty"`
-	MaxHops        int         `json:"maxHops,omitempty"`
-	MaxUnknownHops int         `json:"maxUnknownHops,omitempty"`
+	URL            string `json:"url"`
+	Protocol       string `json:"protocol,omitempty"`
+	Port           int    `json:"port,omitempty"`
+	IPFamily       string `json:"ipFamily,omitempty"`
+	MaxHops        int    `json:"maxHops,omitempty"`
+	MaxUnknownHops int    `json:"maxUnknownHops,omitempty"`
 	// PtrLookup is a pointer so that an explicit `false` can be sent; the API
 	// defaults it to true when the field is omitted.
 	PtrLookup  *bool       `json:"ptrLookup,omitempty"`
@@ -1609,11 +1609,16 @@ type CheckResult struct {
 	ResponseTime        int64               `json:"responseTime"`
 	ApiCheckResult      *ApiCheckResult     `json:"apiCheckResult"`
 	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
-	CheckRunID          int64               `json:"checkRunId"`
-	Attempts            int64               `json:"attempts"`
-	StartedAt           time.Time           `json:"startedAt"`
-	StoppedAt           time.Time           `json:"stoppedAt"`
-	CreatedAt           time.Time           `json:"created_at"`
+	// Typed failure-debug diagnostics for the uptime-monitor types. Each is nil
+	// for the other check types, mirroring the apiCheckResult sibling.
+	TracerouteCheckResult *TracerouteCheckResult `json:"tracerouteCheckResult"`
+	GRPCCheckResult       *GRPCCheckResult       `json:"grpcCheckResult"`
+	SSLCheckResult        *SSLCheckResult        `json:"sslCheckResult"`
+	CheckRunID            int64                  `json:"checkRunId"`
+	Attempts              int64                  `json:"attempts"`
+	StartedAt             time.Time              `json:"startedAt"`
+	StoppedAt             time.Time              `json:"stoppedAt"`
+	CreatedAt             time.Time              `json:"created_at"`
 }
 
 // ApiCheckResult represents an API Check result
@@ -1621,6 +1626,101 @@ type ApiCheckResult map[string]interface{}
 
 // BrowserCheckResult represents a Browser Check result
 type BrowserCheckResult map[string]interface{}
+
+// The TRACEROUTE / GRPC / SSL result types below mirror the additive optional
+// fields the public check-results response carries alongside apiCheckResult (see
+// the backend public-api check-results schemas). They are the read-path types an
+// SDK consumer decodes to debug a failing uptime-monitor result. Documented
+// scalars are typed; the open runner sub-objects (timingPhases / request /
+// assertions / certificate / securityBaseline) stay map/slice of interface{} so
+// the full runner artifact survives JSON decoding without dropping fields.
+
+// TracerouteCheckResult holds the failure-debug diagnostics for a traceroute
+// check result.
+type TracerouteCheckResult struct {
+	TotalHops          *int                     `json:"totalHops,omitempty"`
+	DestinationReached *bool                    `json:"destinationReached,omitempty"`
+	FinalHopLatency    map[string]interface{}   `json:"finalHopLatency,omitempty"`
+	TimingPhases       map[string]interface{}   `json:"timingPhases,omitempty"`
+	RequestError       *string                  `json:"requestError,omitempty"`
+	Request            map[string]interface{}   `json:"request,omitempty"`
+	Assertions         []map[string]interface{} `json:"assertions,omitempty"`
+	Response           *TracerouteCheckResponse `json:"response,omitempty"`
+}
+
+// TracerouteCheckResponse is the detailed traceroute response artifact.
+type TracerouteCheckResponse struct {
+	Hostname           string                   `json:"hostname,omitempty"`
+	ResolvedIP         string                   `json:"resolvedIp,omitempty"`
+	TotalHops          int                      `json:"totalHops,omitempty"`
+	DestinationReached bool                     `json:"destinationReached,omitempty"`
+	TruncationReason   string                   `json:"truncationReason,omitempty"`
+	FinalHopLatency    map[string]interface{}   `json:"finalHopLatency,omitempty"`
+	Hops               []map[string]interface{} `json:"hops,omitempty"`
+	Protocol           string                   `json:"protocol,omitempty"`
+	ProbeProtocol      string                   `json:"probeProtocol,omitempty"`
+}
+
+// GRPCCheckResult holds the failure-debug diagnostics for a gRPC check result.
+type GRPCCheckResult struct {
+	GRPCStatusCode *int                     `json:"grpcStatusCode,omitempty"`
+	HealthStatus   *int                     `json:"healthStatus,omitempty"`
+	TimingPhases   map[string]interface{}   `json:"timingPhases,omitempty"`
+	RequestError   *string                  `json:"requestError,omitempty"`
+	Request        map[string]interface{}   `json:"request,omitempty"`
+	Assertions     []map[string]interface{} `json:"assertions,omitempty"`
+	Response       *GRPCCheckResponse       `json:"response,omitempty"`
+}
+
+// GRPCCheckResponse is the detailed gRPC response artifact.
+type GRPCCheckResponse struct {
+	GRPCMode          string                 `json:"grpcMode,omitempty"`
+	Host              string                 `json:"host,omitempty"`
+	ResolvedIP        string                 `json:"resolvedIp,omitempty"`
+	Port              int                    `json:"port,omitempty"`
+	GRPCMethod        string                 `json:"grpcMethod,omitempty"`
+	ResponseMessage   string                 `json:"responseMessage,omitempty"`
+	GRPCStatusCode    int                    `json:"grpcStatusCode,omitempty"`
+	GRPCStatusMessage string                 `json:"grpcStatusMessage,omitempty"`
+	HealthStatus      *int                   `json:"healthStatus,omitempty"`
+	HealthStatusLabel string                 `json:"healthStatusLabel,omitempty"`
+	Metadata          []GRPCMetadata         `json:"metadata,omitempty"`
+	DiscoveredMethods []string               `json:"discoveredMethods,omitempty"`
+	RequestError      string                 `json:"requestError,omitempty"`
+	TimingPhases      map[string]interface{} `json:"timingPhases,omitempty"`
+}
+
+// SSLCheckResult holds the failure-debug diagnostics for an SSL check result.
+type SSLCheckResult struct {
+	TLSVersion       string                   `json:"tlsVersion,omitempty"`
+	CipherSuite      string                   `json:"cipherSuite,omitempty"`
+	DaysUntilExpiry  *int                     `json:"daysUntilExpiry,omitempty"`
+	HandshakeTimeMs  *float64                 `json:"handshakeTimeMs,omitempty"`
+	ChainTrusted     *bool                    `json:"chainTrusted,omitempty"`
+	HostnameVerified *bool                    `json:"hostnameVerified,omitempty"`
+	BaselineVerdict  string                   `json:"baselineVerdict,omitempty"`
+	BaselineGrade    string                   `json:"baselineGrade,omitempty"`
+	FailureCategory  string                   `json:"failureCategory,omitempty"`
+	RequestError     *string                  `json:"requestError,omitempty"`
+	Request          map[string]interface{}   `json:"request,omitempty"`
+	Assertions       []map[string]interface{} `json:"assertions,omitempty"`
+	Response         *SSLCheckResponse        `json:"response,omitempty"`
+}
+
+// SSLCheckResponse is the detailed SSL/TLS response artifact.
+type SSLCheckResponse struct {
+	ResolvedIP       string                   `json:"resolvedIp,omitempty"`
+	Protocol         string                   `json:"protocol,omitempty"`
+	CipherSuite      string                   `json:"cipherSuite,omitempty"`
+	HandshakeTimeMs  float64                  `json:"handshakeTimeMs,omitempty"`
+	HostnameVerified bool                     `json:"hostnameVerified,omitempty"`
+	ChainTrusted     bool                     `json:"chainTrusted,omitempty"`
+	DaysUntilExpiry  int                      `json:"daysUntilExpiry,omitempty"`
+	OCSPStapled      bool                     `json:"ocspStapled,omitempty"`
+	SecurityBaseline map[string]interface{}   `json:"securityBaseline,omitempty"`
+	Certificate      map[string]interface{}   `json:"certificate,omitempty"`
+	Chain            []map[string]interface{} `json:"chain,omitempty"`
+}
 
 // CheckResultsFilter represents the parameters that can be passed while
 // getting Check Results

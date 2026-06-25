@@ -1,0 +1,47 @@
+{
+    "id": "33333333-3333-3333-3333-333333333333",
+    "hasErrors": false,
+    "hasFailures": true,
+    "runLocation": "eu-central-1",
+    "startedAt": "2020-09-02T11:19:06.283Z",
+    "stoppedAt": "2020-09-02T11:19:06.413Z",
+    "responseTime": 60,
+    "sslCheckResult": {
+        "tlsVersion": "TLS 1.3",
+        "cipherSuite": "TLS_AES_256_GCM_SHA384",
+        "daysUntilExpiry": -3,
+        "handshakeTimeMs": 48.2,
+        "chainTrusted": false,
+        "hostnameVerified": false,
+        "baselineVerdict": "FAIL",
+        "baselineGrade": "C",
+        "failureCategory": "expired",
+        "requestError": null,
+        "request": { "hostname": "expired.example.com", "port": 443 },
+        "assertions": [
+            { "source": "DAYS_UNTIL_EXPIRY", "comparison": "GREATER_THAN", "target": 7, "actual": -3 }
+        ],
+        "response": {
+            "resolvedIp": "104.18.7.36",
+            "protocol": "TLS 1.3",
+            "cipherSuite": "TLS_AES_256_GCM_SHA384",
+            "handshakeTimeMs": 48.2,
+            "hostnameVerified": false,
+            "chainTrusted": false,
+            "daysUntilExpiry": -3,
+            "ocspStapled": false,
+            "securityBaseline": { "verdict": "FAIL", "grade": "C" },
+            "certificate": { "issuer": "Example CA", "subjectCN": "expired.example.com" },
+            "chain": [
+                { "subjectCN": "Example CA" }
+            ]
+        }
+    },
+    "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+    "created_at": "2020-09-02T11:19:06.681Z",
+    "name": "SSL monitor 1",
+    "checkRunId": 1599045546012,
+    "attempts": 1,
+    "isDegraded": false,
+    "overMaxResponseTime": false
+}
