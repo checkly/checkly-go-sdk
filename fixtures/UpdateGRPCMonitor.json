@@ -1,0 +1,64 @@
+{
+  "activated": false,
+  "alertChannelSubscriptions": [],
+  "alertSettings": {
+    "escalationType": "RUN_BASED",
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    },
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    }
+  },
+  "checkType": "GRPC",
+  "created_at": "2025-10-30T05:34:01.240Z",
+  "degradedResponseTime": 3000,
+  "doubleCheck": false,
+  "frequency": 10,
+  "frequencyOffset": 80,
+  "groupId": null,
+  "groupOrder": null,
+  "id": "a1b2c3d4-1111-2222-3333-444455556666",
+  "locations": [
+    "us-east-1"
+  ],
+  "maxResponseTime": 5000,
+  "muted": false,
+  "name": "gRPC Monitor #1",
+  "privateLocations": [],
+  "request": {
+    "assertions": [
+      {
+        "comparison": "EQUALS",
+        "property": "",
+        "source": "GRPC_STATUS",
+        "target": "0"
+      }
+    ],
+    "grpcConfig": {
+      "method": "/grpc.health.v1.Health/Check",
+      "mode": "BEHAVIOR",
+      "storeResponseBody": false,
+      "tls": true
+    },
+    "ipFamily": "IPv4",
+    "port": 443,
+    "skipSSL": false,
+    "timeout": 30,
+    "url": "grpc.example.com"
+  },
+  "retryStrategy": null,
+  "runParallel": false,
+  "runtimeId": null,
+  "shouldFail": false,
+  "tags": [
+    "tag-1"
+  ],
+  "triggerIncident": null,
+  "useGlobalAlertSettings": false
+}

@@ -2283,3 +2283,550 @@ func TestGetICMPMonitor(t *testing.T) {
 		t.Error(cmp.Diff(testICMPMonitor, *response, ignoreICMPMonitorFields))
 	}
 }
+
+// --- gRPC monitor -----------------------------------------------------------
+
+func validateGRPCMonitor(t *testing.T, body []byte) {
+	var payload checkly.GRPCMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testGRPCMonitor, payload, ignoreGRPCMonitorFields) {
+		t.Error(cmp.Diff(testGRPCMonitor, payload, ignoreGRPCMonitorFields))
+	}
+}
+
+var testGRPCMonitor = checkly.GRPCMonitor{
+	ID:              "a1b2c3d4-1111-2222-3333-444455556666",
+	Name:            "gRPC Monitor #1",
+	Frequency:       10,
+	FrequencyOffset: 80,
+	Activated:       false,
+	Muted:           false,
+	Locations:       []string{"us-east-1"},
+	Tags: []string{
+		"tag-1",
+	},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: false,
+	DegradedResponseTime:   3000,
+	MaxResponseTime:        5000,
+	RetryStrategy:          nil,
+	PrivateLocations:       &[]string{},
+	Request: checkly.GRPCRequest{
+		URL: "grpc.example.com",
+		// interface{} port decodes from JSON as a float64, so the expected
+		// value must use the same concrete type for cmp to match.
+		Port:     float64(443),
+		IPFamily: "IPv4",
+		SkipSSL:  false,
+		Timeout:  30,
+		GRPCConfig: checkly.GRPCConfig{
+			Mode:   "BEHAVIOR",
+			TLS:    true,
+			Method: "/grpc.health.v1.Health/Check",
+		},
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "GRPC_STATUS",
+				Target:     "0",
+				Property:   "",
+				Comparison: "EQUALS",
+			},
+		},
+	},
+}
+
+var ignoreGRPCMonitorFields = cmpopts.IgnoreFields(
+	checkly.GRPCMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateGRPCMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/grpc?autoAssignAlerts=false",
+		validateGRPCMonitor,
+		http.StatusCreated,
+		"CreateGRPCMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateGRPCMonitor(context.Background(), testGRPCMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testGRPCMonitor, *response, ignoreGRPCMonitorFields) {
+		t.Error(cmp.Diff(testGRPCMonitor, *response, ignoreGRPCMonitorFields))
+	}
+}
+
+func TestDeleteGRPCMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testGRPCMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteGRPCMonitor(context.Background(), testGRPCMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateGRPCMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/grpc/%s?autoAssignAlerts=false", testGRPCMonitor.ID),
+		validateGRPCMonitor,
+		http.StatusOK,
+		"UpdateGRPCMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateGRPCMonitor(context.Background(), testGRPCMonitor.ID, testGRPCMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetGRPCMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testGRPCMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetGRPCMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetGRPCMonitor(context.Background(), testGRPCMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testGRPCMonitor, *response, ignoreGRPCMonitorFields) {
+		t.Error(cmp.Diff(testGRPCMonitor, *response, ignoreGRPCMonitorFields))
+	}
+}
+
+// --- traceroute monitor -----------------------------------------------------
+
+func validateTracerouteMonitor(t *testing.T, body []byte) {
+	var payload checkly.TracerouteMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, payload, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, payload, ignoreTracerouteMonitorFields))
+	}
+}
+
+var testTracerouteMonitor = checkly.TracerouteMonitor{
+	ID:              "b2c3d4e5-1111-2222-3333-444455556666",
+	Name:            "Traceroute Monitor #1",
+	Frequency:       10,
+	FrequencyOffset: 80,
+	Activated:       false,
+	Muted:           false,
+	Locations:       []string{"us-east-1"},
+	Tags: []string{
+		"tag-1",
+	},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: false,
+	DegradedResponseTime:   3000,
+	MaxResponseTime:        5000,
+	RetryStrategy:          nil,
+	Request: checkly.TracerouteRequest{
+		URL:      "traceroute.example.com",
+		Protocol: "ICMP",
+		// No Port: the ICMP protocol strips it from the wire (see MarshalJSON).
+		IPFamily:       "IPv4",
+		MaxHops:        30,
+		MaxUnknownHops: 5,
+		Timeout:        30,
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "LATENCY",
+				Target:     "200",
+				Property:   "avg",
+				Comparison: "LESS_THAN",
+			},
+		},
+	},
+}
+
+var ignoreTracerouteMonitorFields = cmpopts.IgnoreFields(
+	checkly.TracerouteMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/traceroute?autoAssignAlerts=false",
+		validateTracerouteMonitor,
+		http.StatusCreated,
+		"CreateTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateTracerouteMonitor(context.Background(), testTracerouteMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields))
+	}
+}
+
+func TestDeleteTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testTracerouteMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateTracerouteMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/traceroute/%s?autoAssignAlerts=false", testTracerouteMonitor.ID),
+		validateTracerouteMonitor,
+		http.StatusOK,
+		"UpdateTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, testTracerouteMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetTracerouteMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testTracerouteMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetTracerouteMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields) {
+		t.Error(cmp.Diff(testTracerouteMonitor, *response, ignoreTracerouteMonitorFields))
+	}
+}
+
+// --- SSL monitor ------------------------------------------------------------
+
+func validateSSLMonitor(t *testing.T, body []byte) {
+	var payload checkly.SSLMonitor
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if !cmp.Equal(testSSLMonitor, payload, ignoreSSLMonitorFields) {
+		t.Error(cmp.Diff(testSSLMonitor, payload, ignoreSSLMonitorFields))
+	}
+}
+
+var testSSLMonitor = checkly.SSLMonitor{
+	ID:              "c3d4e5f6-1111-2222-3333-444455556666",
+	Name:            "SSL Monitor #1",
+	Frequency:       10,
+	FrequencyOffset: 80,
+	Activated:       false,
+	Muted:           false,
+	Locations:       []string{"us-east-1"},
+	Tags: []string{
+		"tag-1",
+	},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: false,
+	RetryStrategy:          nil,
+	PrivateLocations:       &[]string{},
+	Request: checkly.SSLRequest{
+		SSLConfig: checkly.SSLConfig{
+			Hostname:            "example.com",
+			Port:                443,
+			IPFamily:            "IPv4",
+			SkipChainValidation: false,
+			HandshakeTimeoutMs:  10000,
+			// SecurityBaseline left nil: the create body must omit
+			// `securityBaseline` so the server applies its default baseline.
+			AlertDaysBeforeExpiry:  20,
+			DegradedResponseTimeMs: 3000,
+			MaxResponseTimeMs:      10000,
+		},
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "CERT_DAYS_REMAINING",
+				Target:     "30",
+				Property:   "",
+				Comparison: "LESS_THAN",
+			},
+		},
+	},
+}
+
+var ignoreSSLMonitorFields = cmpopts.IgnoreFields(
+	checkly.SSLMonitor{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateSSLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/ssl?autoAssignAlerts=false",
+		validateSSLMonitor,
+		http.StatusCreated,
+		"CreateSSLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateSSLMonitor(context.Background(), testSSLMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testSSLMonitor, *response, ignoreSSLMonitorFields) {
+		t.Error(cmp.Diff(testSSLMonitor, *response, ignoreSSLMonitorFields))
+	}
+}
+
+func TestDeleteSSLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testSSLMonitor.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteSSLMonitor(context.Background(), testSSLMonitor.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateSSLMonitor(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/ssl/%s?autoAssignAlerts=false", testSSLMonitor.ID),
+		validateSSLMonitor,
+		http.StatusOK,
+		"UpdateSSLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateSSLMonitor(context.Background(), testSSLMonitor.ID, testSSLMonitor)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetSSLMonitor(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testSSLMonitor.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetSSLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetSSLMonitor(context.Background(), testSSLMonitor.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testSSLMonitor, *response, ignoreSSLMonitorFields) {
+		t.Error(cmp.Diff(testSSLMonitor, *response, ignoreSSLMonitorFields))
+	}
+}
+
+// --- forbidden-field (anti-pattern) tests -----------------------------------
+
+// TestTracerouteRequestStripsPortForICMP asserts the wire body omits `port`
+// for an ICMP probe (mirroring the public API's Joi `.strip()`), while keeping
+// it for non-ICMP protocols.
+func TestTracerouteRequestStripsPortForICMP(t *testing.T) {
+	t.Parallel()
+	icmp, err := json.Marshal(checkly.TracerouteRequest{
+		URL:      "traceroute.example.com",
+		Protocol: "ICMP",
+		Port:     33434,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var icmpBody map[string]interface{}
+	if err := json.Unmarshal(icmp, &icmpBody); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := icmpBody["port"]; ok {
+		t.Errorf("ICMP traceroute body must omit `port`, got: %s", icmp)
+	}
+
+	tcp, err := json.Marshal(checkly.TracerouteRequest{
+		URL:      "traceroute.example.com",
+		Protocol: "TCP",
+		Port:     33434,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tcpBody map[string]interface{}
+	if err := json.Unmarshal(tcp, &tcpBody); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := tcpBody["port"]; !ok {
+		t.Errorf("non-ICMP traceroute body must keep `port`, got: %s", tcp)
+	}
+}
+
+// TestGRPCConfigModeForbiddenFields asserts the BEHAVIOR-only keys are dropped
+// from a HEALTH-mode config and the HEALTH-only `service` key is dropped from a
+// BEHAVIOR-mode config — the mode-exclusive fields must never reach the wire.
+func TestGRPCConfigModeForbiddenFields(t *testing.T) {
+	t.Parallel()
+	health, err := json.Marshal(checkly.GRPCConfig{
+		Mode:    "HEALTH",
+		TLS:     true,
+		Service: "grpc.health.v1.Health",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var healthBody map[string]interface{}
+	if err := json.Unmarshal(health, &healthBody); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"method", "serviceDefinition", "protoContent", "message"} {
+		if _, ok := healthBody[k]; ok {
+			t.Errorf("HEALTH-mode gRPC config must omit %q, got: %s", k, health)
+		}
+	}
+	if _, ok := healthBody["service"]; !ok {
+		t.Errorf("HEALTH-mode gRPC config must keep `service`, got: %s", health)
+	}
+
+	behavior, err := json.Marshal(checkly.GRPCConfig{
+		Mode:              "BEHAVIOR",
+		TLS:               true,
+		Method:            "/grpc.health.v1.Health/Check",
+		ServiceDefinition: "syntax = \"proto3\";",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var behaviorBody map[string]interface{}
+	if err := json.Unmarshal(behavior, &behaviorBody); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := behaviorBody["service"]; ok {
+		t.Errorf("BEHAVIOR-mode gRPC config must omit `service`, got: %s", behavior)
+	}
+	for _, k := range []string{"method", "serviceDefinition"} {
+		if _, ok := behaviorBody[k]; !ok {
+			t.Errorf("BEHAVIOR-mode gRPC config must keep %q, got: %s", k, behavior)
+		}
+	}
+}
+
+// TestSSLConfigOmitsSecurityBaselineWhenNil asserts a create body with a nil
+// SecurityBaseline omits the `securityBaseline` key so the server applies its
+// default baseline rather than receiving an empty override.
+func TestSSLConfigOmitsSecurityBaselineWhenNil(t *testing.T) {
+	t.Parallel()
+	body, err := json.Marshal(testSSLMonitor.Request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reqBody map[string]interface{}
+	if err := json.Unmarshal(body, &reqBody); err != nil {
+		t.Fatal(err)
+	}
+	sslConfig, ok := reqBody["sslConfig"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected `sslConfig` object in request body, got: %s", body)
+	}
+	if _, ok := sslConfig["securityBaseline"]; ok {
+		t.Errorf("SSL config must omit `securityBaseline` when nil, got: %s", body)
+	}
+	if _, ok := reqBody["sslClientCertificateId"]; ok {
+		t.Errorf("SSL request must omit `sslClientCertificateId` when nil, got: %s", body)
+	}
+}
