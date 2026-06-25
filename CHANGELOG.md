@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-06-25
+### Added
+- Add `GRPCMonitor` type + `Create/Get/Update/Delete` client methods (`checks/grpc`) [#c0f841a](https://github.com/checkly/checkly-go-sdk/commit/c0f841a)
+- Add `TracerouteMonitor` type + `Create/Get/Update/Delete` client methods (`checks/traceroute`) [#85860b0](https://github.com/checkly/checkly-go-sdk/commit/85860b0)
+- Add `SSLMonitor` type + `Create/Get/Update/Delete` client methods (`checks/ssl`) [#e30a577](https://github.com/checkly/checkly-go-sdk/commit/e30a577)
+
 ## [v1.6.1](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.6.1) - 2022-06-22
 ### Added
 - Allow check/group private location assigments using pointers [#90d4a59](https://github.com/checkly/checkly-go-sdk/commit/90d4a598596329a22c413b10b12b74673c337bfd)
