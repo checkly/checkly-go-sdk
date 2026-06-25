@@ -117,6 +117,13 @@ type Client interface {
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
+	// CreateSSLMonitor creates a new SSL monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateSSLMonitor(
+		ctx context.Context,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
 	// CreateURLMonitor creates a new URL monitor with the specified details.
 	// It returns the newly-created monitor, or an error.
 	CreateURLMonitor(
@@ -202,6 +209,14 @@ type Client interface {
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
+	// UpdateSSLMonitor updates an existing SSL monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateSSLMonitor(
+		ctx context.Context,
+		ID string,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
 	// UpdateURLMonitor updates an existing URL monitor with the specified details.
 	// It returns the updated monitor, or an error.
 	UpdateURLMonitor(
@@ -259,6 +274,12 @@ type Client interface {
 
 	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
 	DeleteTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteSSLMonitor deletes the monitor with the specified ID.
+	DeleteSSLMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -323,6 +344,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*TracerouteMonitor, error)
+
+	// Get takes the ID of an existing SSL monitor, and returns the monitor
+	// parameters, or an error.
+	GetSSLMonitor(
+		ctx context.Context,
+		ID string,
+	) (*SSLMonitor, error)
 
 	// Get takes the ID of an existing URL monitor, and returns the monitor
 	// parameters, or an error.
@@ -1246,6 +1274,110 @@ func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
 		r.Port = 0
 	}
 	return json.Marshal(alias(r))
+}
+
+// SSLMonitor represents an SSL/TLS certificate monitor.
+//
+// Unlike the other connection monitors it has no top-level
+// DegradedResponseTime/MaxResponseTime fields: the SSL response-time limits are
+// nested inside the request as `degradedResponseTimeMs`/`maxResponseTimeMs` on
+// the SSLConfig (the public create schema spreads no top-level response-time
+// fields for SSL). SSL monitors do support private locations.
+type SSLMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   SSLRequest                 `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// SSLRequest represents the parameters for an SSL monitor's connection.
+//
+// SSLConfig is required by the public API (the wire schema is `.required()`),
+// so it is sent as a value rather than an optional pointer.
+type SSLRequest struct {
+	SSLConfig SSLConfig `json:"sslConfig"`
+	// SSLClientCertificateId is the FK to a stored client certificate. It is
+	// required when SSLConfig.ClientCertificateMode is "explicit" and omitted
+	// otherwise, so it is a pointer with omitempty.
+	SSLClientCertificateId *string     `json:"sslClientCertificateId,omitempty"`
+	Assertions             []Assertion `json:"assertions,omitempty"`
+}
+
+// SSLConfig represents the SSL-specific configuration nested inside an SSL
+// monitor's request. The response-time limits live here (not at the top level
+// like the other monitor types). SecurityBaseline is an optional pointer:
+// leave it nil to inherit the server-side default baseline.
+type SSLConfig struct {
+	Hostname string `json:"hostname"`
+	Port     int    `json:"port,omitempty"`
+	// ServerName is an optional SNI override (nullable in the API).
+	ServerName            *string           `json:"serverName,omitempty"`
+	IPFamily              string            `json:"ipFamily,omitempty"`
+	SkipChainValidation   bool              `json:"skipChainValidation"`
+	HandshakeTimeoutMs    int               `json:"handshakeTimeoutMs,omitempty"`
+	AlertDaysBeforeExpiry int               `json:"alertDaysBeforeExpiry,omitempty"`
+	SecurityBaseline      *SecurityBaseline `json:"securityBaseline,omitempty"`
+	// ClientCertificateMode is "auto" or "explicit" (optional).
+	ClientCertificateMode  string `json:"clientCertificateMode,omitempty"`
+	DegradedResponseTimeMs int    `json:"degradedResponseTimeMs,omitempty"`
+	MaxResponseTimeMs      int    `json:"maxResponseTimeMs,omitempty"`
+}
+
+// SecurityBaseline represents the SSL security baseline — a set of enforceable
+// and advisory rules, each with an optional value and a severity. Construct one
+// only to override the server defaults; a nil *SecurityBaseline on SSLConfig
+// inherits them. Enabled is a pointer so an explicit `false` can be sent while
+// an unset value is omitted (the server defaults it to true).
+type SecurityBaseline struct {
+	Enabled *bool `json:"enabled,omitempty"`
+	// Enforceable rules — server default severity "fail".
+	MinTLSVersion          *SSLBaselineTLSRule      `json:"minTLSVersion,omitempty"`
+	MinKeySizeBits         *SSLBaselineKeySizeRule  `json:"minKeySizeBits,omitempty"`
+	WeakSignatureAlgorithm *SSLBaselineSeverityRule `json:"weakSignatureAlgorithm,omitempty"`
+	WeakCipherSuite        *SSLBaselineSeverityRule `json:"weakCipherSuite,omitempty"`
+	KnownBadCA             *SSLBaselineSeverityRule `json:"knownBadCA,omitempty"`
+	// Advisory rules — server default severity "ignore".
+	RecommendedTLSVersion   *SSLBaselineTLSRule      `json:"recommendedTLSVersion,omitempty"`
+	RecommendedKeySizeBits  *SSLBaselineKeySizeRule  `json:"recommendedKeySizeBits,omitempty"`
+	OCSPMustStapleRespected *SSLBaselineSeverityRule `json:"ocspMustStapleRespected,omitempty"`
+	SCTPresent              *SSLBaselineSeverityRule `json:"sctPresent,omitempty"`
+}
+
+// SSLBaselineTLSRule is a baseline rule whose value is a TLS version string
+// (e.g. "TLS1.2"/"TLS1.3").
+type SSLBaselineTLSRule struct {
+	Value    string `json:"value,omitempty"`
+	Severity string `json:"severity,omitempty"`
+}
+
+// SSLBaselineKeySizeRule is a baseline rule whose value is a key size in bits.
+type SSLBaselineKeySizeRule struct {
+	Value    int    `json:"value,omitempty"`
+	Severity string `json:"severity,omitempty"`
+}
+
+// SSLBaselineSeverityRule is a baseline rule that only carries a severity.
+type SSLBaselineSeverityRule struct {
+	Severity string `json:"severity,omitempty"`
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
