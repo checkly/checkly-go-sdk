@@ -103,6 +103,13 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
+	// CreateGRPCMonitor creates a new gRPC monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateGRPCMonitor(
+		ctx context.Context,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
 	// CreateURLMonitor creates a new URL monitor with the specified details.
 	// It returns the newly-created monitor, or an error.
 	CreateURLMonitor(
@@ -172,6 +179,14 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
+	// UpdateGRPCMonitor updates an existing gRPC monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateGRPCMonitor(
+		ctx context.Context,
+		ID string,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
 	// UpdateURLMonitor updates an existing URL monitor with the specified details.
 	// It returns the updated monitor, or an error.
 	UpdateURLMonitor(
@@ -217,6 +232,12 @@ type Client interface {
 
 	// DeleteTCPMonitor deletes the monitor with the specified ID.
 	DeleteTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteGRPCMonitor deletes the monitor with the specified ID.
+	DeleteGRPCMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -267,6 +288,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*TCPMonitor, error)
+
+	// Get takes the ID of an existing gRPC monitor, and returns the monitor
+	// parameters, or an error.
+	GetGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) (*GRPCMonitor, error)
 
 	// Get takes the ID of an existing URL monitor, and returns the monitor
 	// parameters, or an error.
@@ -1059,6 +1087,75 @@ type TCPRequest struct {
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
 	IPFamily   string      `json:"ipFamily,omitempty"`
+}
+
+// GRPCMonitor represents a gRPC monitor.
+type GRPCMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   GRPCRequest                `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// GRPCRequest represents the parameters for a gRPC monitor's connection.
+//
+// GRPCConfig is required by the public API (the wire schema is `.required()`),
+// so it is sent as a value rather than an optional pointer.
+type GRPCRequest struct {
+	URL string `json:"url"`
+	// Port accepts a number or a `{{template}}` string, mirroring the public
+	// API's `Joi.alternatives`, so its type is intentionally open.
+	Port       interface{} `json:"port"`
+	IPFamily   string      `json:"ipFamily,omitempty"`
+	SkipSSL    bool        `json:"skipSSL"`
+	Timeout    int         `json:"timeout,omitempty"`
+	GRPCConfig GRPCConfig  `json:"grpcConfig"`
+	Assertions []Assertion `json:"assertions,omitempty"`
+}
+
+// GRPCConfig represents the gRPC-specific configuration nested inside a gRPC
+// monitor's request. `Mode` defaults to "BEHAVIOR" (which requires `Method`);
+// the "HEALTH" mode forbids the BEHAVIOR-only fields, so they are tagged
+// omitempty to drop them from the marshaled body when unset.
+type GRPCConfig struct {
+	Mode              string         `json:"mode,omitempty"`
+	TLS               bool           `json:"tls"`
+	Metadata          []GRPCMetadata `json:"metadata,omitempty"`
+	StoreResponseBody bool           `json:"storeResponseBody"`
+	// BEHAVIOR-mode only (forbidden in HEALTH mode).
+	ServiceDefinition string `json:"serviceDefinition,omitempty"`
+	Method            string `json:"method,omitempty"`
+	ProtoContent      string `json:"protoContent,omitempty"`
+	Message           string `json:"message,omitempty"`
+	// HEALTH-mode only (forbidden in BEHAVIOR mode).
+	Service string `json:"service,omitempty"`
+}
+
+// GRPCMetadata represents a single gRPC metadata key/value pair.
+type GRPCMetadata struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
