@@ -110,6 +110,13 @@ type Client interface {
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
+	// CreateTracerouteMonitor creates a new traceroute monitor with the
+	// specified details. It returns the newly-created monitor, or an error.
+	CreateTracerouteMonitor(
+		ctx context.Context,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
 	// CreateURLMonitor creates a new URL monitor with the specified details.
 	// It returns the newly-created monitor, or an error.
 	CreateURLMonitor(
@@ -187,6 +194,14 @@ type Client interface {
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
+	// UpdateTracerouteMonitor updates an existing traceroute monitor with the
+	// specified details. It returns the updated monitor, or an error.
+	UpdateTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
 	// UpdateURLMonitor updates an existing URL monitor with the specified details.
 	// It returns the updated monitor, or an error.
 	UpdateURLMonitor(
@@ -238,6 +253,12 @@ type Client interface {
 
 	// DeleteGRPCMonitor deletes the monitor with the specified ID.
 	DeleteGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
+	DeleteTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -295,6 +316,13 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*GRPCMonitor, error)
+
+	// Get takes the ID of an existing traceroute monitor, and returns the
+	// monitor parameters, or an error.
+	GetTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TracerouteMonitor, error)
 
 	// Get takes the ID of an existing URL monitor, and returns the monitor
 	// parameters, or an error.
@@ -1156,6 +1184,68 @@ type GRPCConfig struct {
 type GRPCMetadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+// TracerouteMonitor represents a traceroute monitor.
+//
+// Unlike the other monitor types it has no PrivateLocations field: the public
+// create schema marks `privateLocations` as forbidden ("Traceroute monitors do
+// not support private locations"), so the field must never reach the wire.
+type TracerouteMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   TracerouteRequest          `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// TracerouteRequest represents the parameters for a traceroute monitor's probe.
+//
+// Port is stripped from the marshaled body when Protocol is "ICMP", mirroring
+// the public API's `Joi.any().strip()` for that case (see MarshalJSON).
+type TracerouteRequest struct {
+	URL            string      `json:"url"`
+	Protocol       string      `json:"protocol,omitempty"`
+	Port           int         `json:"port,omitempty"`
+	IPFamily       string      `json:"ipFamily,omitempty"`
+	MaxHops        int         `json:"maxHops,omitempty"`
+	MaxUnknownHops int         `json:"maxUnknownHops,omitempty"`
+	// PtrLookup is a pointer so that an explicit `false` can be sent; the API
+	// defaults it to true when the field is omitted.
+	PtrLookup  *bool       `json:"ptrLookup,omitempty"`
+	Timeout    int         `json:"timeout,omitempty"`
+	Assertions []Assertion `json:"assertions,omitempty"`
+}
+
+// MarshalJSON drops the `port` field when the probe protocol is "ICMP",
+// mirroring the public API schema which strips `port` for ICMP traceroutes.
+func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
+	type alias TracerouteRequest
+	if r.Protocol == "ICMP" {
+		// Zero value combined with the `omitempty` tag drops `port` from the
+		// marshaled body, matching the Joi `.strip()` behavior.
+		r.Port = 0
+	}
+	return json.Marshal(alias(r))
 }
 
 // EnvironmentVariable represents a key-value pair for setting environment
