@@ -1278,11 +1278,9 @@ func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
 
 // SSLMonitor represents an SSL/TLS certificate monitor.
 //
-// Unlike the other connection monitors it has no top-level
-// DegradedResponseTime/MaxResponseTime fields: the SSL response-time limits are
-// nested inside the request as `degradedResponseTimeMs`/`maxResponseTimeMs` on
-// the SSLConfig (the public create schema spreads no top-level response-time
-// fields for SSL). SSL monitors do support private locations.
+// Like the other connection monitors (gRPC, traceroute), the response-time
+// thresholds are top-level DegradedResponseTime/MaxResponseTime fields. SSL
+// monitors do support private locations.
 type SSLMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
@@ -1294,6 +1292,8 @@ type SSLMonitor struct {
 	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
 	Tags                      []string                   `json:"tags,omitempty"`
 	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
@@ -1323,8 +1323,7 @@ type SSLRequest struct {
 }
 
 // SSLConfig represents the SSL-specific configuration nested inside an SSL
-// monitor's request. The response-time limits live here (not at the top level
-// like the other monitor types). SecurityBaseline is an optional pointer:
+// monitor's request. SecurityBaseline is an optional pointer:
 // leave it nil to inherit the server-side default baseline.
 type SSLConfig struct {
 	Hostname string `json:"hostname"`
@@ -1337,9 +1336,7 @@ type SSLConfig struct {
 	AlertDaysBeforeExpiry int               `json:"alertDaysBeforeExpiry,omitempty"`
 	SecurityBaseline      *SecurityBaseline `json:"securityBaseline,omitempty"`
 	// ClientCertificateMode is "auto" or "explicit" (optional).
-	ClientCertificateMode  string `json:"clientCertificateMode,omitempty"`
-	DegradedResponseTimeMs int    `json:"degradedResponseTimeMs,omitempty"`
-	MaxResponseTimeMs      int    `json:"maxResponseTimeMs,omitempty"`
+	ClientCertificateMode string `json:"clientCertificateMode,omitempty"`
 }
 
 // SecurityBaseline represents the SSL security baseline — a set of enforceable

@@ -2721,6 +2721,8 @@ var testSSLMonitor = checkly.SSLMonitor{
 		},
 	},
 	UseGlobalAlertSettings: false,
+	DegradedResponseTime:   3000,
+	MaxResponseTime:        10000,
 	RetryStrategy:          nil,
 	PrivateLocations:       &[]string{},
 	Request: checkly.SSLRequest{
@@ -2732,9 +2734,7 @@ var testSSLMonitor = checkly.SSLMonitor{
 			HandshakeTimeoutMs:  10000,
 			// SecurityBaseline left nil: the create body must omit
 			// `securityBaseline` so the server applies its default baseline.
-			AlertDaysBeforeExpiry:  20,
-			DegradedResponseTimeMs: 3000,
-			MaxResponseTimeMs:      10000,
+			AlertDaysBeforeExpiry: 20,
 		},
 		Assertions: []checkly.Assertion{
 			{

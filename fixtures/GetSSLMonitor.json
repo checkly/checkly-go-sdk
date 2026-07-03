@@ -17,6 +17,7 @@
   },
   "checkType": "SSL",
   "created_at": "2025-10-30T05:34:01.240Z",
+  "degradedResponseTime": 3000,
   "doubleCheck": false,
   "frequency": 10,
   "frequencyOffset": 80,
@@ -26,6 +27,7 @@
   "locations": [
     "us-east-1"
   ],
+  "maxResponseTime": 10000,
   "muted": false,
   "name": "SSL Monitor #1",
   "privateLocations": [],
@@ -40,11 +42,9 @@
     ],
     "sslConfig": {
       "alertDaysBeforeExpiry": 20,
-      "degradedResponseTimeMs": 3000,
       "handshakeTimeoutMs": 10000,
       "hostname": "example.com",
       "ipFamily": "IPv4",
-      "maxResponseTimeMs": 10000,
       "port": 443,
       "skipChainValidation": false
     }
