@@ -3544,3 +3544,611 @@ func TestStatusPageAutomationRuleV3OmitsEmptyComponents(t *testing.T) {
 		}
 	}
 }
+
+// assertRawBodyField asserts that the raw JSON request body contains the
+// given key with exactly the given serialized value. This catches fields
+// added or normalized by the payload wrappers, which a round trip through
+// the public struct cannot verify.
+func assertRawBodyField(t *testing.T, body []byte, key, want string) {
+	t.Helper()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	got, ok := raw[key]
+	if !ok {
+		t.Errorf("missing key %q in request body", key)
+		return
+	}
+	if string(got) != want {
+		t.Errorf("key %q in request body: want %s, got %s", key, want, got)
+	}
+}
+
+func validateAPICheck(t *testing.T, body []byte) {
+	var payload checkly.APICheck
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	// The payload wrapper normalizes nil lists to empty lists, so treat them
+	// as equal here; the exact serialization is asserted on the raw body
+	// below.
+	if !cmp.Equal(testAPICheck, payload, cmpopts.EquateEmpty()) {
+		t.Error(cmp.Diff(testAPICheck, payload, cmpopts.EquateEmpty()))
+	}
+	assertRawBodyField(t, body, "checkType", `"API"`)
+	assertRawBodyField(t, body, "doubleCheck", `false`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	assertRawBodyField(t, body, "tags", `["tag-1"]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "setupSnippetId", `123`)
+	assertRawBodyField(t, body, "tearDownSnippetId", `456`)
+}
+
+var (
+	testAPICheckDescription         = "API check description"
+	testAPICheckLocalSetupScript    = "console.log('setup')"
+	testAPICheckLocalTearDownScript = "console.log('teardown')"
+)
+
+var testAPICheck = checkly.APICheck{
+	ID:               "80f57ec9-2ee7-4152-b6ae-e1f5c47eae86",
+	Name:             "API Check #1",
+	Description:      &testAPICheckDescription,
+	Frequency:        10,
+	FrequencyOffset:  17,
+	Activated:        true,
+	Muted:            false,
+	ShouldFail:       false,
+	Locations:        []string{"us-east-1", "us-west-1"},
+	PrivateLocations: &[]string{},
+	Tags:             []string{"tag-1"},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		TimeBasedEscalation: checkly.TimeBasedEscalation{
+			MinutesFailingThreshold: 5,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: true,
+	DegradedResponseTime:   5000,
+	MaxResponseTime:        20000,
+	SetupSnippetID:         123,
+	TearDownSnippetID:      456,
+	LocalSetupScript:       &testAPICheckLocalSetupScript,
+	LocalTearDownScript:    &testAPICheckLocalTearDownScript,
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "LINEAR",
+		MaxRetries:         2,
+		BaseBackoffSeconds: 60,
+		MaxDurationSeconds: 600,
+		SameRegion:         true,
+	},
+	Request: checkly.Request{
+		Method:          "GET",
+		URL:             "https://api.checklyhq.com",
+		FollowRedirects: true,
+		SkipSSL:         false,
+		Headers: []checkly.KeyValue{
+			{
+				Key:   "X-Test",
+				Value: "foo",
+			},
+		},
+		QueryParameters: []checkly.KeyValue{
+			{
+				Key:   "query",
+				Value: "param",
+			},
+		},
+		Assertions: []checkly.Assertion{
+			{
+				Source:     "STATUS_CODE",
+				Comparison: "EQUALS",
+				Target:     "200",
+			},
+		},
+	},
+}
+
+var ignoreAPICheckFields = cmpopts.IgnoreFields(
+	checkly.APICheck{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+func TestCreateAPICheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/api?autoAssignAlerts=false",
+		validateAPICheck,
+		http.StatusCreated,
+		"CreateAPICheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateAPICheck(context.Background(), testAPICheck)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testAPICheck, *response, ignoreAPICheckFields) {
+		t.Error(cmp.Diff(testAPICheck, *response, ignoreAPICheckFields))
+	}
+}
+
+func TestDeleteAPICheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testAPICheck.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteAPICheck(context.Background(), testAPICheck.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateAPICheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/api/%s?autoAssignAlerts=false", testAPICheck.ID),
+		validateAPICheck,
+		http.StatusOK,
+		"UpdateAPICheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateAPICheck(context.Background(), testAPICheck.ID, testAPICheck)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetAPICheck(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s", testAPICheck.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetAPICheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetAPICheck(context.Background(), testAPICheck.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testAPICheck, *response, ignoreAPICheckFields) {
+		t.Error(cmp.Diff(testAPICheck, *response, ignoreAPICheckFields))
+	}
+}
+
+func validateBrowserCheck(t *testing.T, body []byte) {
+	var payload checkly.BrowserCheck
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	// The payload wrapper normalizes nil lists to empty lists, so treat them
+	// as equal here; the exact serialization is asserted on the raw body
+	// below.
+	if !cmp.Equal(testBrowserCheck, payload, cmpopts.EquateEmpty()) {
+		t.Error(cmp.Diff(testBrowserCheck, payload, cmpopts.EquateEmpty()))
+	}
+	assertRawBodyField(t, body, "checkType", `"BROWSER"`)
+	assertRawBodyField(t, body, "doubleCheck", `false`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	assertRawBodyField(t, body, "tags", `["tag-1"]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "scriptPath", `"__checks__/browser.spec.js"`)
+	assertRawBodyField(t, body, "dependencies", `[{"path":"helpers.js","content":"module.exports = {}"}]`)
+}
+
+var testBrowserCheckScriptPath = "__checks__/browser.spec.js"
+
+var testBrowserCheck = checkly.BrowserCheck{
+	ID:               "0895dfd1-6b18-4cc9-a2c9-67ec9b45f7bd",
+	Name:             "Browser Check #1",
+	Frequency:        10,
+	Activated:        true,
+	Muted:            false,
+	ShouldFail:       false,
+	Locations:        []string{"us-east-1", "us-west-1"},
+	PrivateLocations: &[]string{},
+	Tags:             []string{"tag-1"},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		TimeBasedEscalation: checkly.TimeBasedEscalation{
+			MinutesFailingThreshold: 5,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: true,
+	Script:                 "console.log('test')",
+	ScriptPath:             &testBrowserCheckScriptPath,
+	Dependencies: []checkly.ScriptDependency{
+		{
+			Path:    "helpers.js",
+			Content: "module.exports = {}",
+		},
+	},
+	EnvironmentVariables: []checkly.EnvironmentVariable{
+		{
+			Key:   "FOO",
+			Value: "bar",
+		},
+	},
+	SSLCheckDomain: "www.example.com",
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "LINEAR",
+		MaxRetries:         2,
+		BaseBackoffSeconds: 60,
+		MaxDurationSeconds: 600,
+		SameRegion:         true,
+	},
+}
+
+var ignoreBrowserCheckFields = cmpopts.IgnoreFields(
+	checkly.BrowserCheck{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+// The create and update endpoints don't include scriptPath or dependencies in
+// their responses; only GET /v1/checks/{id} returns them.
+var ignoreBrowserCheckWriteResponseFields = cmpopts.IgnoreFields(
+	checkly.BrowserCheck{},
+	"ScriptPath",
+	"Dependencies",
+)
+
+func TestCreateBrowserCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/browser?autoAssignAlerts=false",
+		validateBrowserCheck,
+		http.StatusCreated,
+		"CreateBrowserCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateBrowserCheck(context.Background(), testBrowserCheck)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testBrowserCheck, *response, ignoreBrowserCheckFields, ignoreBrowserCheckWriteResponseFields) {
+		t.Error(cmp.Diff(testBrowserCheck, *response, ignoreBrowserCheckFields, ignoreBrowserCheckWriteResponseFields))
+	}
+}
+
+func TestDeleteBrowserCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testBrowserCheck.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteBrowserCheck(context.Background(), testBrowserCheck.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateBrowserCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/browser/%s?autoAssignAlerts=false", testBrowserCheck.ID),
+		validateBrowserCheck,
+		http.StatusOK,
+		"UpdateBrowserCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateBrowserCheck(context.Background(), testBrowserCheck.ID, testBrowserCheck)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetBrowserCheck(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testBrowserCheck.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetBrowserCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetBrowserCheck(context.Background(), testBrowserCheck.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testBrowserCheck, *response, ignoreBrowserCheckFields) {
+		t.Error(cmp.Diff(testBrowserCheck, *response, ignoreBrowserCheckFields))
+	}
+}
+
+func validateMultiStepCheck(t *testing.T, body []byte) {
+	var payload checkly.MultiStepCheck
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	// The payload wrapper normalizes nil lists to empty lists, so treat them
+	// as equal here; the exact serialization is asserted on the raw body
+	// below.
+	if !cmp.Equal(testMultiStepCheck, payload, cmpopts.EquateEmpty()) {
+		t.Error(cmp.Diff(testMultiStepCheck, payload, cmpopts.EquateEmpty()))
+	}
+	assertRawBodyField(t, body, "checkType", `"MULTI_STEP"`)
+	assertRawBodyField(t, body, "doubleCheck", `false`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	assertRawBodyField(t, body, "tags", `["tag-1"]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "scriptPath", `"__checks__/multistep.spec.js"`)
+	assertRawBodyField(t, body, "dependencies", `[{"path":"helpers.js","content":"module.exports = {}"}]`)
+}
+
+var testMultiStepCheckScriptPath = "__checks__/multistep.spec.js"
+
+var testMultiStepCheck = checkly.MultiStepCheck{
+	ID:               "3013e5f5-b950-4364-b1a4-6b3ecb1e1c2e",
+	Name:             "Multi-step Check #1",
+	Frequency:        10,
+	Activated:        true,
+	Muted:            false,
+	ShouldFail:       false,
+	Locations:        []string{"us-east-1", "us-west-1"},
+	PrivateLocations: &[]string{},
+	Tags:             []string{"tag-1"},
+	AlertSettings: &checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+		TimeBasedEscalation: checkly.TimeBasedEscalation{
+			MinutesFailingThreshold: 5,
+		},
+		Reminders: checkly.Reminders{
+			Interval: 5,
+		},
+		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+			Enabled:    false,
+			Percentage: 10,
+		},
+	},
+	UseGlobalAlertSettings: true,
+	Script:                 "console.log('test')",
+	ScriptPath:             &testMultiStepCheckScriptPath,
+	Dependencies: []checkly.ScriptDependency{
+		{
+			Path:    "helpers.js",
+			Content: "module.exports = {}",
+		},
+	},
+	EnvironmentVariables: []checkly.EnvironmentVariable{
+		{
+			Key:   "FOO",
+			Value: "bar",
+		},
+	},
+	RetryStrategy: &checkly.RetryStrategy{
+		Type:               "LINEAR",
+		MaxRetries:         2,
+		BaseBackoffSeconds: 60,
+		MaxDurationSeconds: 600,
+		SameRegion:         true,
+	},
+}
+
+var ignoreMultiStepCheckFields = cmpopts.IgnoreFields(
+	checkly.MultiStepCheck{},
+	"ID",
+	"AlertChannelSubscriptions",
+	"CreatedAt",
+	"UpdatedAt",
+)
+
+// The create and update endpoints don't include scriptPath or dependencies in
+// their responses; only GET /v1/checks/{id} returns them.
+var ignoreMultiStepCheckWriteResponseFields = cmpopts.IgnoreFields(
+	checkly.MultiStepCheck{},
+	"ScriptPath",
+	"Dependencies",
+)
+
+func TestCreateMultiStepCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/multistep?autoAssignAlerts=false",
+		validateMultiStepCheck,
+		http.StatusCreated,
+		"CreateMultiStepCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.CreateMultiStepCheck(context.Background(), testMultiStepCheck)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(testMultiStepCheck, *response, ignoreMultiStepCheckFields, ignoreMultiStepCheckWriteResponseFields) {
+		t.Error(cmp.Diff(testMultiStepCheck, *response, ignoreMultiStepCheckFields, ignoreMultiStepCheckWriteResponseFields))
+	}
+}
+
+func TestDeleteMultiStepCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/checks/%s", testMultiStepCheck.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	err := client.DeleteMultiStepCheck(context.Background(), testMultiStepCheck.ID)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateMultiStepCheck(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/multistep/%s?autoAssignAlerts=false", testMultiStepCheck.ID),
+		validateMultiStepCheck,
+		http.StatusOK,
+		"UpdateMultiStepCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateMultiStepCheck(context.Background(), testMultiStepCheck.ID, testMultiStepCheck)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetMultiStepCheck(t *testing.T) {
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testMultiStepCheck.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetMultiStepCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	response, err := client.GetMultiStepCheck(context.Background(), testMultiStepCheck.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(testMultiStepCheck, *response, ignoreMultiStepCheckFields) {
+		t.Error(cmp.Diff(testMultiStepCheck, *response, ignoreMultiStepCheckFields))
+	}
+}
+
+// The update endpoints are PATCH-style: keys omitted from the payload keep
+// their server-side value. The following tests verify that clearable fields
+// are always serialized, using null or an empty list, when unset on the
+// struct, so that they can actually be reset via an update.
+
+func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	assertRawBodyField(t, body, "setupSnippetId", `null`)
+	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
+	assertRawBodyField(t, body, "localSetupScript", `null`)
+	assertRawBodyField(t, body, "localTearDownScript", `null`)
+}
+
+func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/api?autoAssignAlerts=false",
+		validateAPICheckEmptyPayload,
+		http.StatusCreated,
+		"CreateAPICheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateAPICheck(context.Background(), checkly.APICheck{
+		Name: "API Check #1",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateBrowserCheckEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	assertRawBodyField(t, body, "dependencies", `[]`)
+	assertRawBodyField(t, body, "scriptPath", `null`)
+}
+
+func TestCreateBrowserCheckSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/browser?autoAssignAlerts=false",
+		validateBrowserCheckEmptyPayload,
+		http.StatusCreated,
+		"CreateBrowserCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateBrowserCheck(context.Background(), checkly.BrowserCheck{
+		Name:   "Browser Check #1",
+		Script: "console.log('test')",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCreateMultiStepCheckSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/multistep?autoAssignAlerts=false",
+		validateBrowserCheckEmptyPayload,
+		http.StatusCreated,
+		"CreateMultiStepCheck.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateMultiStepCheck(context.Background(), checkly.MultiStepCheck{
+		Name:   "Multi-step Check #1",
+		Script: "console.log('test')",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}

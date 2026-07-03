@@ -151,6 +151,27 @@ type Client interface {
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
+	// CreateAPICheck creates a new API check with the specified details.
+	// It returns the newly-created check, or an error.
+	CreateAPICheck(
+		ctx context.Context,
+		check APICheck,
+	) (*APICheck, error)
+
+	// CreateBrowserCheck creates a new browser check with the specified
+	// details. It returns the newly-created check, or an error.
+	CreateBrowserCheck(
+		ctx context.Context,
+		check BrowserCheck,
+	) (*BrowserCheck, error)
+
+	// CreateMultiStepCheck creates a new multi-step check with the specified
+	// details. It returns the newly-created check, or an error.
+	CreateMultiStepCheck(
+		ctx context.Context,
+		check MultiStepCheck,
+	) (*MultiStepCheck, error)
+
 	// Update updates an existing check with the specified details.
 	// It returns the updated check, or an error.
 	UpdateCheck(
@@ -248,6 +269,30 @@ type Client interface {
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
+	// UpdateAPICheck updates an existing API check with the specified details.
+	// It returns the updated check, or an error.
+	UpdateAPICheck(
+		ctx context.Context,
+		ID string,
+		check APICheck,
+	) (*APICheck, error)
+
+	// UpdateBrowserCheck updates an existing browser check with the specified
+	// details. It returns the updated check, or an error.
+	UpdateBrowserCheck(
+		ctx context.Context,
+		ID string,
+		check BrowserCheck,
+	) (*BrowserCheck, error)
+
+	// UpdateMultiStepCheck updates an existing multi-step check with the
+	// specified details. It returns the updated check, or an error.
+	UpdateMultiStepCheck(
+		ctx context.Context,
+		ID string,
+		check MultiStepCheck,
+	) (*MultiStepCheck, error)
+
 	// Delete deletes the check with the specified ID.
 	DeleteCheck(
 		ctx context.Context,
@@ -304,6 +349,24 @@ type Client interface {
 
 	// DeletePlaywrightCheck deletes an existing Playwright check.
 	DeletePlaywrightCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteAPICheck deletes the API check with the specified ID.
+	DeleteAPICheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteBrowserCheck deletes the browser check with the specified ID.
+	DeleteBrowserCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteMultiStepCheck deletes the multi-step check with the specified ID.
+	DeleteMultiStepCheck(
 		ctx context.Context,
 		ID string,
 	) error
@@ -378,6 +441,27 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*PlaywrightCheck, error)
+
+	// GetAPICheck takes the ID of an existing API check, and returns the
+	// check parameters, or an error.
+	GetAPICheck(
+		ctx context.Context,
+		ID string,
+	) (*APICheck, error)
+
+	// GetBrowserCheck takes the ID of an existing browser check, and returns
+	// the check parameters, or an error.
+	GetBrowserCheck(
+		ctx context.Context,
+		ID string,
+	) (*BrowserCheck, error)
+
+	// GetMultiStepCheck takes the ID of an existing multi-step check, and
+	// returns the check parameters, or an error.
+	GetMultiStepCheck(
+		ctx context.Context,
+		ID string,
+	) (*MultiStepCheck, error)
 
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
@@ -995,35 +1079,109 @@ type Check struct {
 	DoubleCheck bool `json:"doubleCheck"`
 }
 
-// Check represents the parameters for an existing check.
-type MultiStepCheck struct {
-	ID                        string                     `json:"id"`
+// APICheck represents an API check.
+type APICheck struct {
+	ID              string   `json:"id,omitempty"`
+	Name            string   `json:"name"`
+	Description     *string  `json:"description"`
+	Frequency       int      `json:"frequency"`
+	FrequencyOffset int      `json:"frequencyOffset,omitempty"`
+	Activated       bool     `json:"activated"`
+	Muted           bool     `json:"muted"`
+	ShouldFail      bool     `json:"shouldFail"`
+	RunParallel     bool     `json:"runParallel"`
+	Locations       []string `json:"locations"`
+	// DegradedResponseTime is the response time in milliseconds where the
+	// check should be considered degraded. The API accepts values between 0
+	// and 30000, defaulting to 5000 if unset.
+	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
+	// MaxResponseTime is the response time in milliseconds where the check
+	// should be considered failing. The API accepts values between 0 and
+	// 30000, defaulting to 20000 if unset.
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   Request                    `json:"request"`
+	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
+	LocalSetupScript          *string                    `json:"localSetupScript"`
+	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// ScriptDependency represents a dependency file attached to a browser or
+// multi-step check script.
+type ScriptDependency struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
+
+// BrowserCheck represents a browser check.
+type BrowserCheck struct {
+	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
 	Description               *string                    `json:"description"`
-	Type                      string                     `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
 	Muted                     bool                       `json:"muted"`
 	ShouldFail                bool                       `json:"shouldFail"`
 	RunParallel               bool                       `json:"runParallel"`
 	Locations                 []string                   `json:"locations"`
-	Script                    string                     `json:"script,omitempty"`
+	Script                    string                     `json:"script"`
+	ScriptPath                *string                    `json:"scriptPath"`
+	Dependencies              []ScriptDependency         `json:"dependencies,omitempty"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	SSLCheckDomain            string                     `json:"sslCheckDomain"`
 	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	CreatedAt                 time.Time                  `json:"createdAt"`
-	UpdatedAt                 time.Time                  `json:"updatedAt"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
 
-	// Pointers
-	PrivateLocations *[]string        `json:"privateLocations"`
-	RuntimeID        *string          `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
-	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+// MultiStepCheck represents a multi-step check.
+type MultiStepCheck struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	Script                    string                     `json:"script"`
+	ScriptPath                *string                    `json:"scriptPath"`
+	Dependencies              []ScriptDependency         `json:"dependencies,omitempty"`
+	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
 }
 
 type HeartbeatMonitor struct {

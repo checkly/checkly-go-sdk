@@ -793,6 +793,270 @@ func (c *client) CreatePlaywrightCheck(
 	return &result, nil
 }
 
+type apiCheckPayload struct {
+	APICheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted (or serialized in a way that cannot clear
+	// the server-side value) so that they are always sent.
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	GroupID                   *int64                     `json:"groupId"`
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+}
+
+func createAPICheckPayload(check APICheck) apiCheckPayload {
+	payload := apiCheckPayload{
+		APICheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "API",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if check.GroupID != 0 {
+		payload.GroupID = &check.GroupID
+	}
+
+	// The snippet IDs must be null if empty or they will not get unset on
+	// update.
+	if check.SetupSnippetID != 0 {
+		payload.SetupSnippetID = &check.SetupSnippetID
+	}
+
+	if check.TearDownSnippetID != 0 {
+		payload.TearDownSnippetID = &check.TearDownSnippetID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = check.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateAPICheck(
+	ctx context.Context,
+	check APICheck,
+) (*APICheck, error) {
+	payload := createAPICheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/api"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result APICheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type browserCheckPayload struct {
+	BrowserCheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted (or serialized in a way that cannot clear
+	// the server-side value) so that they are always sent.
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	GroupID                   *int64                     `json:"groupId"`
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	Dependencies              []ScriptDependency         `json:"dependencies"`
+}
+
+func createBrowserCheckPayload(check BrowserCheck) browserCheckPayload {
+	payload := browserCheckPayload{
+		BrowserCheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "BROWSER",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if check.GroupID != 0 {
+		payload.GroupID = &check.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = check.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	payload.Dependencies = check.Dependencies
+	if payload.Dependencies == nil {
+		payload.Dependencies = []ScriptDependency{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateBrowserCheck(
+	ctx context.Context,
+	check BrowserCheck,
+) (*BrowserCheck, error) {
+	payload := createBrowserCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/browser"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result BrowserCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type multiStepCheckPayload struct {
+	MultiStepCheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted (or serialized in a way that cannot clear
+	// the server-side value) so that they are always sent.
+	DoubleCheck               bool                       `json:"doubleCheck"`
+	GroupID                   *int64                     `json:"groupId"`
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	Dependencies              []ScriptDependency         `json:"dependencies"`
+}
+
+func createMultiStepCheckPayload(check MultiStepCheck) multiStepCheckPayload {
+	payload := multiStepCheckPayload{
+		MultiStepCheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "MULTI_STEP",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if check.GroupID != 0 {
+		payload.GroupID = &check.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if check.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = check.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	payload.Dependencies = check.Dependencies
+	if payload.Dependencies == nil {
+		payload.Dependencies = []ScriptDependency{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateMultiStepCheck(
+	ctx context.Context,
+	check MultiStepCheck,
+) (*MultiStepCheck, error) {
+	payload := createMultiStepCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/multistep"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MultiStepCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 func (c *client) UpdateCheck(
@@ -1111,6 +1375,96 @@ func (c *client) UpdatePlaywrightCheck(
 	return &result, nil
 }
 
+func (c *client) UpdateAPICheck(
+	ctx context.Context,
+	ID string,
+	check APICheck,
+) (*APICheck, error) {
+	payload := createAPICheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/api/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result APICheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateBrowserCheck(
+	ctx context.Context,
+	ID string,
+	check BrowserCheck,
+) (*BrowserCheck, error) {
+	payload := createBrowserCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/browser/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result BrowserCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateMultiStepCheck(
+	ctx context.Context,
+	ID string,
+	check MultiStepCheck,
+) (*MultiStepCheck, error) {
+	payload := createMultiStepCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/multistep/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MultiStepCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Delete deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
@@ -1188,6 +1542,27 @@ func (c *client) DeleteICMPMonitor(
 }
 
 func (c *client) DeletePlaywrightCheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteAPICheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteBrowserCheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteMultiStepCheck(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -1463,6 +1838,86 @@ func (c *client) GetPlaywrightCheck(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result PlaywrightCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetAPICheck takes the ID of an existing API check, and returns the check
+// parameters, or an error.
+func (c *client) GetAPICheck(
+	ctx context.Context,
+	ID string,
+) (*APICheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result APICheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetBrowserCheck takes the ID of an existing browser check, and returns the
+// check parameters, or an error. The includeDependencies query parameter is
+// required for the response to contain the check's script dependencies.
+func (c *client) GetBrowserCheck(
+	ctx context.Context,
+	ID string,
+) (*BrowserCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s?includeDependencies=true", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result BrowserCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetMultiStepCheck takes the ID of an existing multi-step check, and returns
+// the check parameters, or an error. The includeDependencies query parameter
+// is required for the response to contain the check's script dependencies.
+func (c *client) GetMultiStepCheck(
+	ctx context.Context,
+	ID string,
+) (*MultiStepCheck, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s?includeDependencies=true", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MultiStepCheck
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
