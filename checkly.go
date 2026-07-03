@@ -806,6 +806,8 @@ type apiCheckPayload struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	SetupSnippetID            *int64                     `json:"setupSnippetId"`
 	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
 }
 
 func createAPICheckPayload(check APICheck) apiCheckPayload {
@@ -853,6 +855,12 @@ func createAPICheckPayload(check APICheck) apiCheckPayload {
 	if payload.AlertChannelSubscriptions == nil {
 		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
 	}
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = check.DegradedResponseTime
+	payload.MaxResponseTime = check.MaxResponseTime
 
 	return payload
 }

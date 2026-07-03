@@ -3584,6 +3584,8 @@ func validateAPICheck(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "setupSnippetId", `123`)
 	assertRawBodyField(t, body, "tearDownSnippetId", `456`)
+	assertRawBodyField(t, body, "degradedResponseTime", `5000`)
+	assertRawBodyField(t, body, "maxResponseTime", `20000`)
 }
 
 var (
@@ -4082,6 +4084,10 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
 	assertRawBodyField(t, body, "localSetupScript", `null`)
 	assertRawBodyField(t, body, "localTearDownScript", `null`)
+	// 0 is a schema-valid response time limit and must be serialized, or the
+	// backend would default (create) or keep (update) the previous values.
+	assertRawBodyField(t, body, "degradedResponseTime", `0`)
+	assertRawBodyField(t, body, "maxResponseTime", `0`)
 }
 
 func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
