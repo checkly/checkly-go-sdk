@@ -1378,8 +1378,12 @@ type Request struct {
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
-	BasicAuth       *BasicAuth  `json:"basicAuth,omitempty"`
-	IPFamily        string      `json:"ipFamily,omitempty"`
+	// BasicAuth must always be serialized (as null when absent): the check
+	// update endpoints are PATCH-style and keep the server-side credentials
+	// when the key is omitted, so omitting it would make it impossible to
+	// remove previously configured credentials.
+	BasicAuth *BasicAuth `json:"basicAuth"`
+	IPFamily  string     `json:"ipFamily,omitempty"`
 }
 
 // Assertion represents an assertion about an API response, which will be

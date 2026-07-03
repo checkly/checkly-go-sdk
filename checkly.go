@@ -227,11 +227,35 @@ func (c *client) CreateHeartbeat(
 	return c.CreateHeartbeatMonitor(ctx, check)
 }
 
+type heartbeatMonitorPayload struct {
+	HeartbeatMonitor
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The field below shadows an embedded field
+	// whose zero value would be omitted so that it is always sent and can
+	// actually be cleared via an update. AlertChannelSubscriptions is not
+	// shadowed: this endpoint verifiably clears subscriptions when the key
+	// is omitted.
+	Tags []string `json:"tags"`
+}
+
+func createHeartbeatMonitorPayload(monitor HeartbeatMonitor) heartbeatMonitorPayload {
+	payload := heartbeatMonitorPayload{
+		HeartbeatMonitor: monitor,
+	}
+
+	payload.Tags = monitor.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	return payload
+}
+
 func (c *client) CreateHeartbeatMonitor(
 	ctx context.Context,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(monitor)
+	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
 	if err != nil {
 		return nil, err
 	}
@@ -262,11 +286,37 @@ func (c *client) CreateTCPCheck(
 	return c.CreateTCPMonitor(ctx, check)
 }
 
+// tcpRequestPayload wraps TCPRequest for create and update payloads. The
+// endpoints are PATCH-style down to the nested request object: request keys
+// omitted from the payload keep their server-side value. Assertions shadows
+// the embedded field, whose omitempty would drop the key for an empty list,
+// so that removing all assertions reliably clears them. Data is not shadowed
+// because the backend rejects an empty string ("request.data is not allowed
+// to be empty") and silently keeps the previous value on null, so a data
+// value can never be cleared, only changed. IPFamily is not shadowed because
+// an empty string is not a valid value for it either; it can only be changed
+// to another valid value.
+type tcpRequestPayload struct {
+	TCPRequest
+	Assertions []Assertion `json:"assertions"`
+}
+
 type tcpMonitorPayload struct {
 	TCPMonitor
 	Type        string `json:"checkType"`
 	DoubleCheck bool   `json:"doubleCheck"`
 	GroupID     *int64 `json:"groupId"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update. AlertChannelSubscriptions is not
+	// shadowed: this endpoint verifiably clears subscriptions when the key
+	// is omitted.
+	Tags                 []string          `json:"tags"`
+	DegradedResponseTime int               `json:"degradedResponseTime"`
+	MaxResponseTime      int               `json:"maxResponseTime"`
+	GroupOrder           int               `json:"groupOrder"`
+	Request              tcpRequestPayload `json:"request"`
 }
 
 func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
@@ -291,6 +341,31 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 
 	if monitor.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = monitor.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// The group order must always be sent: 0 is the value it resets to, and
+	// omitting the key would make the backend keep the previous value on
+	// update. Note that the URL, DNS and ICMP monitor endpoints differ:
+	// they only reset the order on an explicit null, not 0.
+	payload.GroupOrder = monitor.GroupOrder
+
+	payload.Request = tcpRequestPayload{
+		TCPRequest: monitor.Request,
+		Assertions: monitor.Request.Assertions,
+	}
+	if payload.Request.Assertions == nil {
+		payload.Request.Assertions = []Assertion{}
 	}
 
 	return payload
@@ -557,6 +632,15 @@ type urlMonitorPayload struct {
 	Request     Request `json:"request"`
 	DoubleCheck bool    `json:"doubleCheck"`
 	GroupID     *int64  `json:"groupId"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	GroupOrder                *int                       `json:"groupOrder"`
 }
 
 func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
@@ -582,6 +666,29 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 
 	if monitor.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = monitor.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	if monitor.GroupOrder != 0 {
+		payload.GroupOrder = &monitor.GroupOrder
 	}
 
 	return payload
@@ -624,6 +731,15 @@ type dnsMonitorPayload struct {
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	GroupOrder                *int                       `json:"groupOrder"`
 }
 
 func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
@@ -646,6 +762,29 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	// We must send empty lists instead.
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
+	}
+
+	payload.Tags = monitor.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	if monitor.GroupOrder != 0 {
+		payload.GroupOrder = &monitor.GroupOrder
 	}
 
 	return payload
@@ -688,6 +827,15 @@ type icmpMonitorPayload struct {
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                        []string                   `json:"tags"`
+	AlertChannelSubscriptions   []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedPacketLossThreshold int                        `json:"degradedPacketLossThreshold"`
+	MaxPacketLossThreshold      int                        `json:"maxPacketLossThreshold"`
+	GroupOrder                  *int                       `json:"groupOrder"`
 }
 
 func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
@@ -710,6 +858,30 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 	// We must send empty lists instead.
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
+	}
+
+	payload.Tags = monitor.Tags
+	if payload.Tags == nil {
+		payload.Tags = []string{}
+	}
+
+	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
+	}
+
+	// The packet loss thresholds must always be sent: omitting the keys
+	// would make the backend default them on create and keep the previous
+	// values on update. Note that although the public schema allows 0, the
+	// backend currently rejects an explicit 0 with a validation error.
+	payload.DegradedPacketLossThreshold = monitor.DegradedPacketLossThreshold
+	payload.MaxPacketLossThreshold = monitor.MaxPacketLossThreshold
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	if monitor.GroupOrder != 0 {
+		payload.GroupOrder = &monitor.GroupOrder
 	}
 
 	return payload
@@ -804,6 +976,7 @@ type apiCheckPayload struct {
 	GroupID                   *int64                     `json:"groupId"`
 	Tags                      []string                   `json:"tags"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	GroupOrder                int                        `json:"groupOrder"`
 	SetupSnippetID            *int64                     `json:"setupSnippetId"`
 	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
@@ -825,6 +998,10 @@ func createAPICheckPayload(check APICheck) apiCheckPayload {
 	if check.GroupID != 0 {
 		payload.GroupID = &check.GroupID
 	}
+
+	// The group order must always be sent, or the backend would keep the
+	// previous value on update instead of resetting it to 0.
+	payload.GroupOrder = check.GroupOrder
 
 	// The snippet IDs must be null if empty or they will not get unset on
 	// update.
@@ -902,6 +1079,7 @@ type browserCheckPayload struct {
 	// the server-side value) so that they are always sent.
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	GroupID                   *int64                     `json:"groupId"`
+	GroupOrder                int                        `json:"groupOrder"`
 	Tags                      []string                   `json:"tags"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	Dependencies              []ScriptDependency         `json:"dependencies"`
@@ -922,6 +1100,10 @@ func createBrowserCheckPayload(check BrowserCheck) browserCheckPayload {
 	if check.GroupID != 0 {
 		payload.GroupID = &check.GroupID
 	}
+
+	// The group order must always be sent, or the backend would keep the
+	// previous value on update instead of resetting it to 0.
+	payload.GroupOrder = check.GroupOrder
 
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
@@ -988,6 +1170,7 @@ type multiStepCheckPayload struct {
 	// the server-side value) so that they are always sent.
 	DoubleCheck               bool                       `json:"doubleCheck"`
 	GroupID                   *int64                     `json:"groupId"`
+	GroupOrder                int                        `json:"groupOrder"`
 	Tags                      []string                   `json:"tags"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	Dependencies              []ScriptDependency         `json:"dependencies"`
@@ -1008,6 +1191,10 @@ func createMultiStepCheckPayload(check MultiStepCheck) multiStepCheckPayload {
 	if check.GroupID != 0 {
 		payload.GroupID = &check.GroupID
 	}
+
+	// The group order must always be sent, or the backend would keep the
+	// previous value on update instead of resetting it to 0.
+	payload.GroupOrder = check.GroupOrder
 
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
@@ -1110,7 +1297,7 @@ func (c *client) UpdateHeartbeatMonitor(
 	ID string,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(monitor)
+	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1935,6 +2122,15 @@ func (c *client) GetMultiStepCheck(
 
 type groupPayload struct {
 	Group
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          *string                    `json:"localSetupScript"`
+	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createGroupPayload(group Group) groupPayload {
@@ -1950,6 +2146,31 @@ func createGroupPayload(group Group) groupPayload {
 
 	if group.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
+	}
+
+	// The snippet IDs must be null if empty or they will not get unset on
+	// update.
+	if group.SetupSnippetID != 0 {
+		payload.SetupSnippetID = &group.SetupSnippetID
+	}
+
+	if group.TearDownSnippetID != 0 {
+		payload.TearDownSnippetID = &group.TearDownSnippetID
+	}
+
+	// The local scripts must be null if empty or they will not get unset on
+	// update.
+	if group.LocalSetupScript != "" {
+		payload.LocalSetupScript = &group.LocalSetupScript
+	}
+
+	if group.LocalTearDownScript != "" {
+		payload.LocalTearDownScript = &group.LocalTearDownScript
+	}
+
+	payload.AlertChannelSubscriptions = group.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
 	}
 
 	return payload
@@ -1988,6 +2209,11 @@ func (c *client) CreateGroup(
 
 type groupV2Payload struct {
 	GroupV2
+	// The embedded field's omitempty would drop the key for nil and empty
+	// slices, leaving it up to the backend whether the server-side value is
+	// kept or cleared. Shadow the field so an explicit empty list is always
+	// sent and removing all subscriptions reliably clears them.
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createGroupV2Payload(group GroupV2) groupV2Payload {
@@ -2003,6 +2229,11 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 
 	if group.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.AlertChannelSubscriptions = group.AlertChannelSubscriptions
+	if payload.AlertChannelSubscriptions == nil {
+		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
 	}
 
 	return payload

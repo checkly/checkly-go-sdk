@@ -2478,6 +2478,9 @@ var testURLMonitor = checkly.URLMonitor{
 	Locations:        []string{"us-east-1", "us-west-1"},
 	PrivateLocations: &[]string{},
 	Tags:             []string{"tag-1"},
+	// The payload wrapper always serializes the subscriptions, sending an
+	// empty list when unset, so that they can be cleared via an update.
+	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{},
 	AlertSettings: &checkly.AlertSettings{
 		EscalationType: checkly.RunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
@@ -3565,6 +3568,34 @@ func assertRawBodyField(t *testing.T, body []byte, key, want string) {
 	}
 }
 
+// assertRawNestedBodyField asserts that the JSON object at the given
+// top-level key of the raw request body contains the given nested key with
+// exactly the given serialized value.
+func assertRawNestedBodyField(t *testing.T, body []byte, key, nestedKey, want string) {
+	t.Helper()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	outer, ok := raw[key]
+	if !ok {
+		t.Errorf("missing key %q in request body", key)
+		return
+	}
+	var nested map[string]json.RawMessage
+	if err := json.Unmarshal(outer, &nested); err != nil {
+		t.Fatalf("decoding error for key %q data %q: %v", key, outer, err)
+	}
+	got, ok := nested[nestedKey]
+	if !ok {
+		t.Errorf("missing key %q.%q in request body", key, nestedKey)
+		return
+	}
+	if string(got) != want {
+		t.Errorf("key %q.%q in request body: want %s, got %s", key, nestedKey, want, got)
+	}
+}
+
 func validateAPICheck(t *testing.T, body []byte) {
 	var payload checkly.APICheck
 	err := json.Unmarshal(body, &payload)
@@ -4080,6 +4111,9 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
+	// The group order must always be serialized, or the backend would keep
+	// the previous value on update instead of resetting it to 0.
+	assertRawBodyField(t, body, "groupOrder", `0`)
 	assertRawBodyField(t, body, "setupSnippetId", `null`)
 	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
 	assertRawBodyField(t, body, "localSetupScript", `null`)
@@ -4088,6 +4122,10 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	// backend would default (create) or keep (update) the previous values.
 	assertRawBodyField(t, body, "degradedResponseTime", `0`)
 	assertRawBodyField(t, body, "maxResponseTime", `0`)
+	// Absent basic auth credentials must be serialized as null inside the
+	// request object, or the backend would keep previously configured
+	// credentials on update.
+	assertRawNestedBodyField(t, body, "request", "basicAuth", `null`)
 }
 
 func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
@@ -4115,6 +4153,9 @@ func validateBrowserCheckEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
+	// The group order must always be serialized, or the backend would keep
+	// the previous value on update instead of resetting it to 0.
+	assertRawBodyField(t, body, "groupOrder", `0`)
 	assertRawBodyField(t, body, "dependencies", `[]`)
 	assertRawBodyField(t, body, "scriptPath", `null`)
 }
@@ -4154,6 +4195,424 @@ func TestCreateMultiStepCheckSerializesEmptyValues(t *testing.T) {
 		Name:   "Multi-step Check #1",
 		Script: "console.log('test')",
 	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateGroupEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "setupSnippetId", `null`)
+	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
+	assertRawBodyField(t, body, "localSetupScript", `null`)
+	assertRawBodyField(t, body, "localTearDownScript", `null`)
+}
+
+func TestCreateGroupSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/check-groups?autoAssignAlerts=false",
+		validateGroupEmptyPayload,
+		http.StatusCreated,
+		"CreateGroup.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateGroup(context.Background(), checkly.Group{
+		Name: "Group #1",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateGroupSerializesSetValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v1/check-groups/17?autoAssignAlerts=false",
+		func(t *testing.T, body []byte) {
+			assertRawBodyField(t, body, "setupSnippetId", `5`)
+			assertRawBodyField(t, body, "tearDownSnippetId", `6`)
+			assertRawBodyField(t, body, "localSetupScript", `"setup"`)
+			assertRawBodyField(t, body, "localTearDownScript", `"teardown"`)
+			assertRawBodyField(t, body, "alertChannelSubscriptions", `[{"alertChannelId":42,"activated":true}]`)
+		},
+		http.StatusOK,
+		"UpdateGroup.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateGroup(context.Background(), 17, checkly.Group{
+		Name:                "Group #1",
+		SetupSnippetID:      5,
+		TearDownSnippetID:   6,
+		LocalSetupScript:    "setup",
+		LocalTearDownScript: "teardown",
+		AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
+			{
+				ChannelID: 42,
+				Activated: true,
+			},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v2/check-groups?autoAssignAlerts=false",
+		func(t *testing.T, body []byte) {
+			assertRawBodyField(t, body, "locations", `[]`)
+			assertRawBodyField(t, body, "privateLocations", `[]`)
+			assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+		},
+		http.StatusCreated,
+		"CreateGroup.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateGroupV2(context.Background(), checkly.GroupV2{
+		Name: "Group #1",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	// 0 is a schema-valid response time limit and must be serialized, or the
+	// backend would default (create) or keep (update) the previous values.
+	assertRawBodyField(t, body, "degradedResponseTime", `0`)
+	assertRawBodyField(t, body, "maxResponseTime", `0`)
+	// 0 is the value the group order resets to and must be serialized, or
+	// the backend would keep the previous value on update.
+	assertRawBodyField(t, body, "groupOrder", `0`)
+
+	// The endpoints are PATCH-style down to the nested request object, so
+	// clearable request keys must always be serialized as well.
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	request, ok := raw["request"]
+	if !ok {
+		t.Error(`missing key "request" in request body`)
+		return
+	}
+	assertRawBodyField(t, request, "assertions", `[]`)
+	// data must NOT be present: the backend rejects an empty string and a
+	// null value cannot clear it either, so an empty data value is omitted.
+	var rawRequest map[string]json.RawMessage
+	if err := json.Unmarshal(request, &rawRequest); err != nil {
+		t.Fatalf("decoding error for data %q: %v", request, err)
+	}
+	if _, ok := rawRequest["data"]; ok {
+		t.Error(`unexpected key "data" in request body`)
+	}
+}
+
+func TestCreateTCPMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/tcp?autoAssignAlerts=false",
+		validateTCPMonitorEmptyPayload,
+		http.StatusCreated,
+		"CreateTCPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateTCPMonitor(context.Background(), checkly.TCPMonitor{
+		Name: "TCP Monitor #1",
+		Request: checkly.TCPRequest{
+			Hostname: "example.com",
+			Port:     443,
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateTCPMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v1/checks/tcp/26900d4d-a852-4e34-9bd0-e40a7a5a2495?autoAssignAlerts=false",
+		validateTCPMonitorEmptyPayload,
+		http.StatusOK,
+		"CreateTCPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateTCPMonitor(
+		context.Background(),
+		"26900d4d-a852-4e34-9bd0-e40a7a5a2495",
+		checkly.TCPMonitor{
+			Name: "TCP Monitor #1",
+			Request: checkly.TCPRequest{
+				Hostname: "example.com",
+				Port:     443,
+			},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateHeartbeatMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+}
+
+func TestCreateHeartbeatMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/heartbeat?autoAssignAlerts=false",
+		validateHeartbeatMonitorEmptyPayload,
+		http.StatusCreated,
+		"CreateHeartbeatMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateHeartbeatMonitor(context.Background(), checkly.HeartbeatMonitor{
+		Name: "Heartbeat Monitor #1",
+		Heartbeat: checkly.Heartbeat{
+			Period:     5,
+			PeriodUnit: "days",
+			Grace:      0,
+			GraceUnit:  "seconds",
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateHeartbeatMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v1/checks/heartbeat/850cd536-a63b-4d33-9a12-8b125718f4e2?autoAssignAlerts=false",
+		validateHeartbeatMonitorEmptyPayload,
+		http.StatusOK,
+		"CreateHeartbeatMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateHeartbeatMonitor(
+		context.Background(),
+		"850cd536-a63b-4d33-9a12-8b125718f4e2",
+		checkly.HeartbeatMonitor{
+			Name: "Heartbeat Monitor #1",
+			Heartbeat: checkly.Heartbeat{
+				Period:     5,
+				PeriodUnit: "days",
+				Grace:      0,
+				GraceUnit:  "seconds",
+			},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateURLMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	// 0 is a schema-valid response time limit and must be serialized, or the
+	// backend would default (create) or keep (update) the previous values.
+	assertRawBodyField(t, body, "degradedResponseTime", `0`)
+	assertRawBodyField(t, body, "maxResponseTime", `0`)
+}
+
+func TestCreateURLMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/url?autoAssignAlerts=false",
+		validateURLMonitorEmptyPayload,
+		http.StatusCreated,
+		"CreateURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateURLMonitor(context.Background(), checkly.URLMonitor{
+		Name: "URL Monitor #1",
+		Request: checkly.URLRequest{
+			URL: "https://example.com",
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateURLMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/url/%s?autoAssignAlerts=false", testURLMonitor.ID),
+		validateURLMonitorEmptyPayload,
+		http.StatusOK,
+		"UpdateURLMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateURLMonitor(
+		context.Background(),
+		testURLMonitor.ID,
+		checkly.URLMonitor{
+			ID:   testURLMonitor.ID,
+			Name: "URL Monitor #1",
+			Request: checkly.URLRequest{
+				URL: "https://example.com",
+			},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateDNSMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	// 0 is a schema-valid response time limit and must be serialized, or the
+	// backend would default (create) or keep (update) the previous values.
+	assertRawBodyField(t, body, "degradedResponseTime", `0`)
+	assertRawBodyField(t, body, "maxResponseTime", `0`)
+}
+
+func TestCreateDNSMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/dns?autoAssignAlerts=false",
+		validateDNSMonitorEmptyPayload,
+		http.StatusCreated,
+		"CreateDNSMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateDNSMonitor(context.Background(), checkly.DNSMonitor{
+		Name: "DNS Monitor #1",
+		Request: checkly.DNSRequest{
+			RecordType: "A",
+			Query:      "example.com",
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateDNSMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/dns/%s?autoAssignAlerts=false", testDNSMonitor.ID),
+		validateDNSMonitorEmptyPayload,
+		http.StatusOK,
+		"UpdateDNSMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateDNSMonitor(
+		context.Background(),
+		testDNSMonitor.ID,
+		checkly.DNSMonitor{
+			ID:   testDNSMonitor.ID,
+			Name: "DNS Monitor #1",
+			Request: checkly.DNSRequest{
+				RecordType: "A",
+				Query:      "example.com",
+			},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func validateICMPMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "groupId", `null`)
+	// 0 is a schema-valid packet loss threshold and must be serialized, or
+	// the backend would default (create) or keep (update) the previous
+	// values.
+	assertRawBodyField(t, body, "degradedPacketLossThreshold", `0`)
+	assertRawBodyField(t, body, "maxPacketLossThreshold", `0`)
+}
+
+func TestCreateICMPMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/checks/icmp?autoAssignAlerts=false",
+		validateICMPMonitorEmptyPayload,
+		http.StatusCreated,
+		"CreateICMPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.CreateICMPMonitor(context.Background(), checkly.ICMPMonitor{
+		Name: "ICMP Monitor #1",
+		Request: checkly.ICMPRequest{
+			Hostname: "example.com",
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateICMPMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/checks/icmp/%s?autoAssignAlerts=false", testICMPMonitor.ID),
+		validateICMPMonitorEmptyPayload,
+		http.StatusOK,
+		"UpdateICMPMonitor.json",
+	)
+	defer ts.Close()
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	_, err := client.UpdateICMPMonitor(
+		context.Background(),
+		testICMPMonitor.ID,
+		checkly.ICMPMonitor{
+			ID:   testICMPMonitor.ID,
+			Name: "ICMP Monitor #1",
+			Request: checkly.ICMPRequest{
+				Hostname: "example.com",
+			},
+		},
+	)
 	if err != nil {
 		t.Error(err)
 	}
