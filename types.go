@@ -809,6 +809,22 @@ const ResponseTime = "RESPONSE_TIME"
 // ResponseData identifies the response data of a TCP check as an assertion source.
 const ResponseData = "RESPONSE_DATA"
 
+// Certificate identifies a certificate field selector (via the assertion
+// property) as an assertion source, for use with an SSL monitor.
+const Certificate = "CERTIFICATE"
+
+// Connection identifies a connection/handshake field selector (via the
+// assertion property) as an assertion source, for use with an SSL monitor.
+const Connection = "CONNECTION"
+
+// JSONResponse identifies a JSONPath over the response (via the assertion
+// property) as an assertion source, for use with SSL, ICMP and DNS monitors.
+const JSONResponse = "JSON_RESPONSE"
+
+// TextResponse identifies a regex applied to the serialized response (via the
+// assertion property) as an assertion source, for use with an SSL monitor.
+const TextResponse = "TEXT_RESPONSE"
+
 // Assertion comparison constants
 
 // Equals asserts that the source and target are equal.
@@ -834,6 +850,12 @@ const Contains = "CONTAINS"
 
 // NotContains asserts that the source does not contain a specified value.
 const NotContains = "NOT_CONTAINS"
+
+// IsNull asserts that the source is null.
+const IsNull = "IS_NULL"
+
+// NotNull asserts that the source is not null.
+const NotNull = "NOT_NULL"
 
 // Check represents the parameters for an existing check.
 type Check struct {

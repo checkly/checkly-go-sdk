@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br>
 
+## [Unreleased]
+### Added
+- Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
+
 ## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-06-25
 ### Added
 - Add `GRPCMonitor` type + `Create/Get/Update/Delete` client methods (`checks/grpc`) [#c0f841a](https://github.com/checkly/checkly-go-sdk/commit/c0f841a)

@@ -34,10 +34,28 @@
   "request": {
     "assertions": [
       {
-        "comparison": "LESS_THAN",
-        "property": "",
-        "source": "CERT_DAYS_REMAINING",
-        "target": "30"
+        "comparison": "GREATER_THAN",
+        "property": "daysUntilExpiry",
+        "source": "CERTIFICATE",
+        "target": "14"
+      },
+      {
+        "comparison": "EQUALS",
+        "property": "tlsVersion",
+        "source": "CONNECTION",
+        "target": "TLSv1.3"
+      },
+      {
+        "comparison": "GREATER_THAN",
+        "property": "$.certificate.keySizeBits",
+        "source": "JSON_RESPONSE",
+        "target": "2048"
+      },
+      {
+        "comparison": "CONTAINS",
+        "property": "Issuer:.*Let's Encrypt",
+        "source": "TEXT_RESPONSE",
+        "target": "true"
       }
     ],
     "sslConfig": {
