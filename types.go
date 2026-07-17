@@ -1217,10 +1217,9 @@ type GRPCRequest struct {
 // the "HEALTH" mode forbids the BEHAVIOR-only fields, so they are tagged
 // omitempty to drop them from the marshaled body when unset.
 type GRPCConfig struct {
-	Mode              string         `json:"mode,omitempty"`
-	TLS               bool           `json:"tls"`
-	Metadata          []GRPCMetadata `json:"metadata,omitempty"`
-	StoreResponseBody bool           `json:"storeResponseBody"`
+	Mode     string         `json:"mode,omitempty"`
+	TLS      bool           `json:"tls"`
+	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// BEHAVIOR-mode only (forbidden in HEALTH mode).
 	ServiceDefinition string `json:"serviceDefinition,omitempty"`
 	Method            string `json:"method,omitempty"`
