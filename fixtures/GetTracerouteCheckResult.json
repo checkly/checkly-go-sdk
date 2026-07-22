@@ -1,0 +1,40 @@
+{
+    "id": "11111111-1111-1111-1111-111111111111",
+    "hasErrors": false,
+    "hasFailures": true,
+    "runLocation": "eu-central-1",
+    "startedAt": "2020-09-02T11:19:06.283Z",
+    "stoppedAt": "2020-09-02T11:19:06.413Z",
+    "responseTime": 240,
+    "tracerouteCheckResult": {
+        "totalHops": 12,
+        "destinationReached": false,
+        "finalHopLatency": { "avgMs": 24.1, "bestMs": 22.0, "worstMs": 31.4 },
+        "timingPhases": { "dns": 1.2, "total": 240.0 },
+        "requestError": null,
+        "request": { "url": "api.checklyhq.com", "protocol": "TCP" },
+        "assertions": [
+            { "source": "HOPS", "comparison": "LESS_THAN", "target": 10, "actual": 12 }
+        ],
+        "response": {
+            "hostname": "api.checklyhq.com",
+            "resolvedIp": "104.18.7.36",
+            "totalHops": 12,
+            "destinationReached": false,
+            "truncationReason": "max-hops",
+            "finalHopLatency": { "avgMs": 24.1 },
+            "hops": [
+                { "hop": 1, "address": "10.0.0.1", "lossPercent": 0, "rttMs": 1.1 }
+            ],
+            "protocol": "TCP",
+            "probeProtocol": "TCP"
+        }
+    },
+    "checkId": "73d29e72-6540-4bb5-967e-e07fa2c9465e",
+    "created_at": "2020-09-02T11:19:06.681Z",
+    "name": "Traceroute monitor 1",
+    "checkRunId": 1599045546010,
+    "attempts": 1,
+    "isDegraded": false,
+    "overMaxResponseTime": false
+}

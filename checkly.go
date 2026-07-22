@@ -149,6 +149,12 @@ func (c *client) CreateCheck(
 		return nil, fmt.Errorf("user error: use CreateDNSMonitor to create DNS monitors")
 	case "ICMP":
 		return nil, fmt.Errorf("user error: use CreateICMPMonitor to create ICMP monitors")
+	case "GRPC":
+		return nil, fmt.Errorf("user error: use CreateGRPCMonitor to create GRPC monitors")
+	case "TRACEROUTE":
+		return nil, fmt.Errorf("user error: use CreateTracerouteMonitor to create TRACEROUTE monitors")
+	case "SSL":
+		return nil, fmt.Errorf("user error: use CreateSSLMonitor to create SSL monitors")
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
@@ -311,6 +317,193 @@ func (c *client) CreateTCPMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result TCPMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type grpcMonitorPayload struct {
+	GRPCMonitor
+	Type        string `json:"checkType"`
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+}
+
+func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
+	payload := grpcMonitorPayload{
+		GRPCMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "GRPC",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateGRPCMonitor(
+	ctx context.Context,
+	monitor GRPCMonitor,
+) (*GRPCMonitor, error) {
+	payload := createGRPCMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/grpc"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GRPCMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type tracerouteMonitorPayload struct {
+	TracerouteMonitor
+	Type        string `json:"checkType"`
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+}
+
+func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitorPayload {
+	payload := tracerouteMonitorPayload{
+		TracerouteMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "TRACEROUTE",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	// NOTE: traceroute monitors forbid private locations (the create schema
+	// marks `privateLocations` as forbidden), so — unlike the other monitor
+	// payloads — we must not emit that field at all. TracerouteMonitor has no
+	// PrivateLocations field, so nothing to set here.
+
+	return payload
+}
+
+func (c *client) CreateTracerouteMonitor(
+	ctx context.Context,
+	monitor TracerouteMonitor,
+) (*TracerouteMonitor, error) {
+	payload := createTracerouteMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/traceroute"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type sslMonitorPayload struct {
+	SSLMonitor
+	Type        string `json:"checkType"`
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+}
+
+func createSSLMonitorPayload(monitor SSLMonitor) sslMonitorPayload {
+	payload := sslMonitorPayload{
+		SSLMonitor: monitor,
+		// Unfortunately `checkType` is required for this endpoint.
+		Type: "SSL",
+		// Unfortunately, this will default to true if not set.
+		DoubleCheck: false,
+	}
+
+	// GroupID must be null if empty or the group will not get unset on update.
+	if monitor.GroupID != 0 {
+		payload.GroupID = &monitor.GroupID
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	if monitor.Locations == nil {
+		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+
+	return payload
+}
+
+func (c *client) CreateSSLMonitor(
+	ctx context.Context,
+	monitor SSLMonitor,
+) (*SSLMonitor, error) {
+	payload := createSSLMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/ssl"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result SSLMonitor
 	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
@@ -667,6 +860,96 @@ func (c *client) UpdateTCPMonitor(
 	return &result, nil
 }
 
+func (c *client) UpdateGRPCMonitor(
+	ctx context.Context,
+	ID string,
+	monitor GRPCMonitor,
+) (*GRPCMonitor, error) {
+	payload := createGRPCMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/grpc/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GRPCMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+	monitor TracerouteMonitor,
+) (*TracerouteMonitor, error) {
+	payload := createTracerouteMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/traceroute/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateSSLMonitor(
+	ctx context.Context,
+	ID string,
+	monitor SSLMonitor,
+) (*SSLMonitor, error) {
+	payload := createSSLMonitorPayload(monitor)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/ssl/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result SSLMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateURLMonitor(
 	ctx context.Context,
 	ID string,
@@ -821,6 +1104,27 @@ func (c *client) DeleteTCPMonitor(
 	return c.DeleteCheck(ctx, ID)
 }
 
+func (c *client) DeleteGRPCMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteSSLMonitor(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
 func (c *client) DeleteURLMonitor(
 	ctx context.Context,
 	ID string,
@@ -937,6 +1241,84 @@ func (c *client) GetTCPMonitor(
 		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var result TCPMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetGRPCMonitor(
+	ctx context.Context,
+	ID string,
+) (*GRPCMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result GRPCMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
+// returns the monitor parameters, or an error.
+func (c *client) GetTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+) (*TracerouteMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result TracerouteMonitor
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetSSLMonitor(
+	ctx context.Context,
+	ID string,
+) (*SSLMonitor, error) {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("checks/%s", ID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result SSLMonitor
 	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)

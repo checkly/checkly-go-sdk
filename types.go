@@ -103,6 +103,27 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
+	// CreateGRPCMonitor creates a new gRPC monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateGRPCMonitor(
+		ctx context.Context,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
+	// CreateTracerouteMonitor creates a new traceroute monitor with the
+	// specified details. It returns the newly-created monitor, or an error.
+	CreateTracerouteMonitor(
+		ctx context.Context,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
+	// CreateSSLMonitor creates a new SSL monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateSSLMonitor(
+		ctx context.Context,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
 	// CreateURLMonitor creates a new URL monitor with the specified details.
 	// It returns the newly-created monitor, or an error.
 	CreateURLMonitor(
@@ -172,6 +193,30 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
+	// UpdateGRPCMonitor updates an existing gRPC monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateGRPCMonitor(
+		ctx context.Context,
+		ID string,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
+	// UpdateTracerouteMonitor updates an existing traceroute monitor with the
+	// specified details. It returns the updated monitor, or an error.
+	UpdateTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
+	// UpdateSSLMonitor updates an existing SSL monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateSSLMonitor(
+		ctx context.Context,
+		ID string,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
 	// UpdateURLMonitor updates an existing URL monitor with the specified details.
 	// It returns the updated monitor, or an error.
 	UpdateURLMonitor(
@@ -217,6 +262,24 @@ type Client interface {
 
 	// DeleteTCPMonitor deletes the monitor with the specified ID.
 	DeleteTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteGRPCMonitor deletes the monitor with the specified ID.
+	DeleteGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
+	DeleteTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// DeleteSSLMonitor deletes the monitor with the specified ID.
+	DeleteSSLMonitor(
 		ctx context.Context,
 		ID string,
 	) error
@@ -267,6 +330,27 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*TCPMonitor, error)
+
+	// Get takes the ID of an existing gRPC monitor, and returns the monitor
+	// parameters, or an error.
+	GetGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) (*GRPCMonitor, error)
+
+	// Get takes the ID of an existing traceroute monitor, and returns the
+	// monitor parameters, or an error.
+	GetTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TracerouteMonitor, error)
+
+	// Get takes the ID of an existing SSL monitor, and returns the monitor
+	// parameters, or an error.
+	GetSSLMonitor(
+		ctx context.Context,
+		ID string,
+	) (*SSLMonitor, error)
 
 	// Get takes the ID of an existing URL monitor, and returns the monitor
 	// parameters, or an error.
@@ -725,6 +809,22 @@ const ResponseTime = "RESPONSE_TIME"
 // ResponseData identifies the response data of a TCP check as an assertion source.
 const ResponseData = "RESPONSE_DATA"
 
+// Certificate identifies a certificate field selector (via the assertion
+// property) as an assertion source, for use with an SSL monitor.
+const Certificate = "CERTIFICATE"
+
+// Connection identifies a connection/handshake field selector (via the
+// assertion property) as an assertion source, for use with an SSL monitor.
+const Connection = "CONNECTION"
+
+// JSONResponse identifies a JSONPath over the response (via the assertion
+// property) as an assertion source, for use with SSL, ICMP and DNS monitors.
+const JSONResponse = "JSON_RESPONSE"
+
+// TextResponse identifies a regex applied to the serialized response (via the
+// assertion property) as an assertion source, for use with an SSL monitor.
+const TextResponse = "TEXT_RESPONSE"
+
 // Assertion comparison constants
 
 // Equals asserts that the source and target are equal.
@@ -750,6 +850,12 @@ const Contains = "CONTAINS"
 
 // NotContains asserts that the source does not contain a specified value.
 const NotContains = "NOT_CONTAINS"
+
+// IsNull asserts that the source is null.
+const IsNull = "IS_NULL"
+
+// NotNull asserts that the source is not null.
+const NotNull = "NOT_NULL"
 
 // Check represents the parameters for an existing check.
 type Check struct {
@@ -1061,6 +1167,237 @@ type TCPRequest struct {
 	IPFamily   string      `json:"ipFamily,omitempty"`
 }
 
+// GRPCMonitor represents a gRPC monitor.
+type GRPCMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   GRPCRequest                `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// GRPCRequest represents the parameters for a gRPC monitor's connection.
+//
+// GRPCConfig is required by the public API (the wire schema is `.required()`),
+// so it is sent as a value rather than an optional pointer.
+type GRPCRequest struct {
+	URL string `json:"url"`
+	// Port accepts a number or a `{{template}}` string, mirroring the public
+	// API's `Joi.alternatives`, so its type is intentionally open.
+	Port       interface{} `json:"port"`
+	IPFamily   string      `json:"ipFamily,omitempty"`
+	SkipSSL    bool        `json:"skipSSL"`
+	Timeout    int         `json:"timeout,omitempty"`
+	GRPCConfig GRPCConfig  `json:"grpcConfig"`
+	Assertions []Assertion `json:"assertions,omitempty"`
+}
+
+// GRPCConfig represents the gRPC-specific configuration nested inside a gRPC
+// monitor's request. `Mode` defaults to "BEHAVIOR" (which requires `Method`);
+// the "HEALTH" mode forbids the BEHAVIOR-only fields, so they are tagged
+// omitempty to drop them from the marshaled body when unset.
+type GRPCConfig struct {
+	Mode     string         `json:"mode,omitempty"`
+	TLS      bool           `json:"tls"`
+	Metadata []GRPCMetadata `json:"metadata,omitempty"`
+	// BEHAVIOR-mode only (forbidden in HEALTH mode).
+	ServiceDefinition string `json:"serviceDefinition,omitempty"`
+	Method            string `json:"method,omitempty"`
+	ProtoContent      string `json:"protoContent,omitempty"`
+	Message           string `json:"message,omitempty"`
+	// HEALTH-mode only (forbidden in BEHAVIOR mode).
+	Service string `json:"service,omitempty"`
+}
+
+// GRPCMetadata represents a single gRPC metadata key/value pair.
+type GRPCMetadata struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// TracerouteMonitor represents a traceroute monitor.
+//
+// Unlike the other monitor types it has no PrivateLocations field: the public
+// create schema marks `privateLocations` as forbidden ("Traceroute monitors do
+// not support private locations"), so the field must never reach the wire.
+type TracerouteMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   TracerouteRequest          `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// TracerouteRequest represents the parameters for a traceroute monitor's probe.
+//
+// Port is stripped from the marshaled body when Protocol is "ICMP", mirroring
+// the public API's `Joi.any().strip()` for that case (see MarshalJSON).
+type TracerouteRequest struct {
+	URL            string `json:"url"`
+	Protocol       string `json:"protocol,omitempty"`
+	Port           int    `json:"port,omitempty"`
+	IPFamily       string `json:"ipFamily,omitempty"`
+	MaxHops        int    `json:"maxHops,omitempty"`
+	MaxUnknownHops int    `json:"maxUnknownHops,omitempty"`
+	// PtrLookup is a pointer so that an explicit `false` can be sent; the API
+	// defaults it to true when the field is omitted.
+	PtrLookup  *bool       `json:"ptrLookup,omitempty"`
+	Timeout    int         `json:"timeout,omitempty"`
+	Assertions []Assertion `json:"assertions,omitempty"`
+}
+
+// MarshalJSON drops the `port` field when the probe protocol is "ICMP",
+// mirroring the public API schema which strips `port` for ICMP traceroutes.
+func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
+	type alias TracerouteRequest
+	if r.Protocol == "ICMP" {
+		// Zero value combined with the `omitempty` tag drops `port` from the
+		// marshaled body, matching the Joi `.strip()` behavior.
+		r.Port = 0
+	}
+	return json.Marshal(alias(r))
+}
+
+// SSLMonitor represents an SSL/TLS certificate monitor.
+//
+// Like the other connection monitors (gRPC, traceroute), the response-time
+// thresholds are top-level DegradedResponseTime/MaxResponseTime fields. SSL
+// monitors do support private locations.
+type SSLMonitor struct {
+	ID                        string                     `json:"id,omitempty"`
+	Name                      string                     `json:"name"`
+	Description               *string                    `json:"description"`
+	Frequency                 int                        `json:"frequency"`
+	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
+	Activated                 bool                       `json:"activated"`
+	Muted                     bool                       `json:"muted"`
+	ShouldFail                bool                       `json:"shouldFail"`
+	RunParallel               bool                       `json:"runParallel"`
+	Locations                 []string                   `json:"locations"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
+	Tags                      []string                   `json:"tags,omitempty"`
+	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
+	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	Request                   SSLRequest                 `json:"request"`
+	GroupID                   int64                      `json:"groupId,omitempty"`
+	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
+	RuntimeID                 *string                    `json:"runtimeId"`
+	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
+	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
+	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+}
+
+// SSLRequest represents the parameters for an SSL monitor's connection.
+//
+// SSLConfig is required by the public API (the wire schema is `.required()`),
+// so it is sent as a value rather than an optional pointer.
+type SSLRequest struct {
+	SSLConfig SSLConfig `json:"sslConfig"`
+	// SSLClientCertificateId is the FK to a stored client certificate. It is
+	// required when SSLConfig.ClientCertificateMode is "explicit" and omitted
+	// otherwise, so it is a pointer with omitempty.
+	SSLClientCertificateId *string     `json:"sslClientCertificateId,omitempty"`
+	Assertions             []Assertion `json:"assertions,omitempty"`
+}
+
+// SSLConfig represents the SSL-specific configuration nested inside an SSL
+// monitor's request. SecurityBaseline is an optional pointer:
+// leave it nil to inherit the server-side default baseline.
+type SSLConfig struct {
+	Hostname string `json:"hostname"`
+	Port     int    `json:"port,omitempty"`
+	// ServerName is an optional SNI override (nullable in the API).
+	ServerName            *string           `json:"serverName,omitempty"`
+	IPFamily              string            `json:"ipFamily,omitempty"`
+	SkipChainValidation   bool              `json:"skipChainValidation"`
+	HandshakeTimeoutMs    int               `json:"handshakeTimeoutMs,omitempty"`
+	AlertDaysBeforeExpiry int               `json:"alertDaysBeforeExpiry,omitempty"`
+	SecurityBaseline      *SecurityBaseline `json:"securityBaseline,omitempty"`
+	// ClientCertificateMode is "auto" or "explicit" (optional).
+	ClientCertificateMode string `json:"clientCertificateMode,omitempty"`
+}
+
+// SecurityBaseline represents the SSL security baseline — a set of enforceable
+// and advisory rules, each with an optional value and a severity. Construct one
+// only to override the server defaults; a nil *SecurityBaseline on SSLConfig
+// inherits them. Enabled is a pointer so an explicit `false` can be sent while
+// an unset value is omitted (the server defaults it to true).
+type SecurityBaseline struct {
+	Enabled *bool `json:"enabled,omitempty"`
+	// Enforceable rules — server default severity "fail".
+	MinTLSVersion          *SSLBaselineTLSRule      `json:"minTLSVersion,omitempty"`
+	MinKeySizeBits         *SSLBaselineKeySizeRule  `json:"minKeySizeBits,omitempty"`
+	WeakSignatureAlgorithm *SSLBaselineSeverityRule `json:"weakSignatureAlgorithm,omitempty"`
+	WeakCipherSuite        *SSLBaselineSeverityRule `json:"weakCipherSuite,omitempty"`
+	KnownBadCA             *SSLBaselineSeverityRule `json:"knownBadCA,omitempty"`
+	// Advisory rules — server default severity "ignore".
+	RecommendedTLSVersion   *SSLBaselineTLSRule      `json:"recommendedTLSVersion,omitempty"`
+	RecommendedKeySizeBits  *SSLBaselineKeySizeRule  `json:"recommendedKeySizeBits,omitempty"`
+	OCSPMustStapleRespected *SSLBaselineSeverityRule `json:"ocspMustStapleRespected,omitempty"`
+	SCTPresent              *SSLBaselineSeverityRule `json:"sctPresent,omitempty"`
+}
+
+// SSLBaselineTLSRule is a baseline rule whose value is a TLS version string
+// (e.g. "TLS1.2"/"TLS1.3").
+type SSLBaselineTLSRule struct {
+	Value    string `json:"value,omitempty"`
+	Severity string `json:"severity,omitempty"`
+}
+
+// SSLBaselineKeySizeRule is a baseline rule whose value is a key size in bits.
+type SSLBaselineKeySizeRule struct {
+	Value    int    `json:"value,omitempty"`
+	Severity string `json:"severity,omitempty"`
+}
+
+// SSLBaselineSeverityRule is a baseline rule that only carries a severity.
+type SSLBaselineSeverityRule struct {
+	Severity string `json:"severity,omitempty"`
+}
+
 // EnvironmentVariable represents a key-value pair for setting environment
 // values during check execution.
 type EnvironmentVariable struct {
@@ -1290,11 +1627,16 @@ type CheckResult struct {
 	ResponseTime        int64               `json:"responseTime"`
 	ApiCheckResult      *ApiCheckResult     `json:"apiCheckResult"`
 	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
-	CheckRunID          int64               `json:"checkRunId"`
-	Attempts            int64               `json:"attempts"`
-	StartedAt           time.Time           `json:"startedAt"`
-	StoppedAt           time.Time           `json:"stoppedAt"`
-	CreatedAt           time.Time           `json:"created_at"`
+	// Typed failure-debug diagnostics for the uptime-monitor types. Each is nil
+	// for the other check types, mirroring the apiCheckResult sibling.
+	TracerouteCheckResult *TracerouteCheckResult `json:"tracerouteCheckResult"`
+	GRPCCheckResult       *GRPCCheckResult       `json:"grpcCheckResult"`
+	SSLCheckResult        *SSLCheckResult        `json:"sslCheckResult"`
+	CheckRunID            int64                  `json:"checkRunId"`
+	Attempts              int64                  `json:"attempts"`
+	StartedAt             time.Time              `json:"startedAt"`
+	StoppedAt             time.Time              `json:"stoppedAt"`
+	CreatedAt             time.Time              `json:"created_at"`
 }
 
 // ApiCheckResult represents an API Check result
@@ -1302,6 +1644,101 @@ type ApiCheckResult map[string]interface{}
 
 // BrowserCheckResult represents a Browser Check result
 type BrowserCheckResult map[string]interface{}
+
+// The TRACEROUTE / GRPC / SSL result types below mirror the additive optional
+// fields the public check-results response carries alongside apiCheckResult (see
+// the backend public-api check-results schemas). They are the read-path types an
+// SDK consumer decodes to debug a failing uptime-monitor result. Documented
+// scalars are typed; the open runner sub-objects (timingPhases / request /
+// assertions / certificate / securityBaseline) stay map/slice of interface{} so
+// the full runner artifact survives JSON decoding without dropping fields.
+
+// TracerouteCheckResult holds the failure-debug diagnostics for a traceroute
+// check result.
+type TracerouteCheckResult struct {
+	TotalHops          *int                     `json:"totalHops,omitempty"`
+	DestinationReached *bool                    `json:"destinationReached,omitempty"`
+	FinalHopLatency    map[string]interface{}   `json:"finalHopLatency,omitempty"`
+	TimingPhases       map[string]interface{}   `json:"timingPhases,omitempty"`
+	RequestError       *string                  `json:"requestError,omitempty"`
+	Request            map[string]interface{}   `json:"request,omitempty"`
+	Assertions         []map[string]interface{} `json:"assertions,omitempty"`
+	Response           *TracerouteCheckResponse `json:"response,omitempty"`
+}
+
+// TracerouteCheckResponse is the detailed traceroute response artifact.
+type TracerouteCheckResponse struct {
+	Hostname           string                   `json:"hostname,omitempty"`
+	ResolvedIP         string                   `json:"resolvedIp,omitempty"`
+	TotalHops          int                      `json:"totalHops,omitempty"`
+	DestinationReached bool                     `json:"destinationReached,omitempty"`
+	TruncationReason   string                   `json:"truncationReason,omitempty"`
+	FinalHopLatency    map[string]interface{}   `json:"finalHopLatency,omitempty"`
+	Hops               []map[string]interface{} `json:"hops,omitempty"`
+	Protocol           string                   `json:"protocol,omitempty"`
+	ProbeProtocol      string                   `json:"probeProtocol,omitempty"`
+}
+
+// GRPCCheckResult holds the failure-debug diagnostics for a gRPC check result.
+type GRPCCheckResult struct {
+	GRPCStatusCode *int                     `json:"grpcStatusCode,omitempty"`
+	HealthStatus   *int                     `json:"healthStatus,omitempty"`
+	TimingPhases   map[string]interface{}   `json:"timingPhases,omitempty"`
+	RequestError   *string                  `json:"requestError,omitempty"`
+	Request        map[string]interface{}   `json:"request,omitempty"`
+	Assertions     []map[string]interface{} `json:"assertions,omitempty"`
+	Response       *GRPCCheckResponse       `json:"response,omitempty"`
+}
+
+// GRPCCheckResponse is the detailed gRPC response artifact.
+type GRPCCheckResponse struct {
+	GRPCMode          string                 `json:"grpcMode,omitempty"`
+	Host              string                 `json:"host,omitempty"`
+	ResolvedIP        string                 `json:"resolvedIp,omitempty"`
+	Port              int                    `json:"port,omitempty"`
+	GRPCMethod        string                 `json:"grpcMethod,omitempty"`
+	ResponseMessage   string                 `json:"responseMessage,omitempty"`
+	GRPCStatusCode    int                    `json:"grpcStatusCode,omitempty"`
+	GRPCStatusMessage string                 `json:"grpcStatusMessage,omitempty"`
+	HealthStatus      *int                   `json:"healthStatus,omitempty"`
+	HealthStatusLabel string                 `json:"healthStatusLabel,omitempty"`
+	Metadata          []GRPCMetadata         `json:"metadata,omitempty"`
+	DiscoveredMethods []string               `json:"discoveredMethods,omitempty"`
+	RequestError      string                 `json:"requestError,omitempty"`
+	TimingPhases      map[string]interface{} `json:"timingPhases,omitempty"`
+}
+
+// SSLCheckResult holds the failure-debug diagnostics for an SSL check result.
+type SSLCheckResult struct {
+	TLSVersion       string                   `json:"tlsVersion,omitempty"`
+	CipherSuite      string                   `json:"cipherSuite,omitempty"`
+	DaysUntilExpiry  *int                     `json:"daysUntilExpiry,omitempty"`
+	HandshakeTimeMs  *float64                 `json:"handshakeTimeMs,omitempty"`
+	ChainTrusted     *bool                    `json:"chainTrusted,omitempty"`
+	HostnameVerified *bool                    `json:"hostnameVerified,omitempty"`
+	BaselineVerdict  string                   `json:"baselineVerdict,omitempty"`
+	BaselineGrade    string                   `json:"baselineGrade,omitempty"`
+	FailureCategory  string                   `json:"failureCategory,omitempty"`
+	RequestError     *string                  `json:"requestError,omitempty"`
+	Request          map[string]interface{}   `json:"request,omitempty"`
+	Assertions       []map[string]interface{} `json:"assertions,omitempty"`
+	Response         *SSLCheckResponse        `json:"response,omitempty"`
+}
+
+// SSLCheckResponse is the detailed SSL/TLS response artifact.
+type SSLCheckResponse struct {
+	ResolvedIP       string                   `json:"resolvedIp,omitempty"`
+	Protocol         string                   `json:"protocol,omitempty"`
+	CipherSuite      string                   `json:"cipherSuite,omitempty"`
+	HandshakeTimeMs  float64                  `json:"handshakeTimeMs,omitempty"`
+	HostnameVerified bool                     `json:"hostnameVerified,omitempty"`
+	ChainTrusted     bool                     `json:"chainTrusted,omitempty"`
+	DaysUntilExpiry  int                      `json:"daysUntilExpiry,omitempty"`
+	OCSPStapled      bool                     `json:"ocspStapled,omitempty"`
+	SecurityBaseline map[string]interface{}   `json:"securityBaseline,omitempty"`
+	Certificate      map[string]interface{}   `json:"certificate,omitempty"`
+	Chain            []map[string]interface{} `json:"chain,omitempty"`
+}
 
 // CheckResultsFilter represents the parameters that can be passed while
 // getting Check Results
