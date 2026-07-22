@@ -2738,10 +2738,28 @@ var testSSLMonitor = checkly.SSLMonitor{
 		},
 		Assertions: []checkly.Assertion{
 			{
-				Source:     "CERT_DAYS_REMAINING",
-				Target:     "30",
-				Property:   "",
-				Comparison: "LESS_THAN",
+				Source:     checkly.Certificate,
+				Property:   "daysUntilExpiry",
+				Comparison: checkly.GreaterThan,
+				Target:     "14",
+			},
+			{
+				Source:     checkly.Connection,
+				Property:   "tlsVersion",
+				Comparison: checkly.Equals,
+				Target:     "TLSv1.3",
+			},
+			{
+				Source:     checkly.JSONResponse,
+				Property:   "$.certificate.keySizeBits",
+				Comparison: checkly.GreaterThan,
+				Target:     "2048",
+			},
+			{
+				Source:     checkly.TextResponse,
+				Property:   "Issuer:.*Let's Encrypt",
+				Comparison: checkly.Contains,
+				Target:     "true",
 			},
 		},
 	},
