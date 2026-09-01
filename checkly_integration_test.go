@@ -687,6 +687,163 @@ func TestStatusPageCRUD(t *testing.T) {
 	}
 }
 
+func TestStatusPageV3CRUD(t *testing.T) {
+	ctx := context.TODO()
+
+	client := setupClient(t)
+
+	pendingStatusPage := checkly.StatusPageV3{
+		Name:          "Foo v3 status page",
+		URL:           "foo-v3-status-page",
+		Description:   "All Foo systems",
+		FooterText:    "Foo Inc.",
+		AllowIndexing: true,
+	}
+
+	createdStatusPage, err := client.CreateStatusPageV3(ctx, pendingStatusPage)
+	if err != nil {
+		t.Fatalf("failed to create v3 status page: %v", err)
+	}
+	var didDelete bool
+	defer func() {
+		if !didDelete {
+			_ = client.DeleteStatusPageV3(ctx, createdStatusPage.ID)
+		}
+	}()
+
+	readStatusPage, err := client.GetStatusPageV3(ctx, createdStatusPage.ID)
+	if err != nil {
+		t.Fatalf("failed to get v3 status page: %v", err)
+	}
+	if !cmp.Equal(createdStatusPage, readStatusPage) {
+		t.Fatal(cmp.Diff(createdStatusPage, readStatusPage))
+	}
+
+	updateStatusPage := *createdStatusPage
+	updateStatusPage.Name = "Bar v3 status page"
+	// The update endpoint only touches fields present in the payload; the
+	// optional fields serialize even when empty, so zeroing them here must
+	// clear the values set on create.
+	updateStatusPage.Description = ""
+	updateStatusPage.FooterText = ""
+
+	updatedStatusPage, err := client.UpdateStatusPageV3(ctx, createdStatusPage.ID, updateStatusPage)
+	if err != nil {
+		t.Fatalf("failed to update v3 status page: %v", err)
+	}
+	if updatedStatusPage.Name != "Bar v3 status page" {
+		t.Fatalf("expected Name to change after update")
+	}
+	if updatedStatusPage.Description != "" || updatedStatusPage.FooterText != "" {
+		t.Fatalf("expected cleared optional fields to be unset, got description %q, footerText %q",
+			updatedStatusPage.Description, updatedStatusPage.FooterText)
+	}
+
+	group, err := client.CreateStatusPageComponentV3(ctx, createdStatusPage.ID, checkly.StatusPageComponentV3{
+		Type:         checkly.StatusPageComponentV3TypeGroup,
+		Name:         "Foo group",
+		DisplayOrder: 0,
+	})
+	if err != nil {
+		t.Fatalf("failed to create GROUP component: %v", err)
+	}
+
+	pendingComponent := checkly.StatusPageComponentV3{
+		Name:         "Foo API",
+		DisplayOrder: 1,
+		ParentID:     group.ID,
+	}
+
+	createdComponent, err := client.CreateStatusPageComponentV3(ctx, createdStatusPage.ID, pendingComponent)
+	if err != nil {
+		t.Fatalf("failed to create SERVICE component: %v", err)
+	}
+	if createdComponent.Type != checkly.StatusPageComponentV3TypeService {
+		t.Fatalf("expected component type to default to SERVICE, got %q", createdComponent.Type)
+	}
+	if createdComponent.ParentID != group.ID {
+		t.Fatalf("expected component to sit under the group")
+	}
+
+	readComponent, err := client.GetStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID)
+	if err != nil {
+		t.Fatalf("failed to get component: %v", err)
+	}
+	if !cmp.Equal(createdComponent, readComponent) {
+		t.Fatal(cmp.Diff(createdComponent, readComponent))
+	}
+
+	updateComponent := *createdComponent
+	updateComponent.Name = "Bar API"
+
+	updatedComponent, err := client.UpdateStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID, updateComponent)
+	if err != nil {
+		t.Fatalf("failed to update component: %v", err)
+	}
+	if updatedComponent.Name != "Bar API" {
+		t.Fatalf("expected component Name to change after update")
+	}
+
+	pendingRule := checkly.StatusPageAutomationRuleV3{
+		Name:                  "Foo API outage",
+		Enabled:               true,
+		FirstUpdate:           "We are investigating an issue.",
+		LastUpdate:            "The issue has been resolved.",
+		NotifySubscribers:     true,
+		CoolDownWindowMinutes: 5,
+		Tags:                  []string{"foo-api"},
+		Components: []checkly.StatusPageAutomationRuleComponentV3{
+			{
+				ComponentID:  createdComponent.ID,
+				TargetImpact: checkly.StatusPageTargetImpactV3MajorOutage,
+			},
+		},
+	}
+
+	createdRule, err := client.CreateStatusPageAutomationRuleV3(ctx, createdStatusPage.ID, pendingRule)
+	if err != nil {
+		t.Fatalf("failed to create automation rule: %v", err)
+	}
+
+	readRule, err := client.GetStatusPageAutomationRuleV3(ctx, createdStatusPage.ID, createdRule.ID)
+	if err != nil {
+		t.Fatalf("failed to get automation rule: %v", err)
+	}
+	if !cmp.Equal(createdRule, readRule) {
+		t.Fatal(cmp.Diff(createdRule, readRule))
+	}
+
+	updateRule := *createdRule
+	updateRule.Name = "Bar API outage"
+
+	updatedRule, err := client.UpdateStatusPageAutomationRuleV3(ctx, createdStatusPage.ID, createdRule.ID, updateRule)
+	if err != nil {
+		t.Fatalf("failed to update automation rule: %v", err)
+	}
+	if updatedRule.Name != "Bar API outage" {
+		t.Fatalf("expected rule Name to change after update")
+	}
+
+	err = client.DeleteStatusPageAutomationRuleV3(ctx, createdStatusPage.ID, createdRule.ID)
+	if err != nil {
+		t.Fatalf("failed to delete automation rule: %v", err)
+	}
+	err = client.DeleteStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID)
+	if err != nil {
+		t.Fatalf("failed to delete component: %v", err)
+	}
+	err = client.DeleteStatusPageComponentV3(ctx, createdStatusPage.ID, group.ID)
+	if err != nil {
+		t.Fatalf("failed to delete group component: %v", err)
+	}
+
+	didDelete = true
+	err = client.DeleteStatusPageV3(ctx, createdStatusPage.ID)
+	if err != nil {
+		t.Fatalf("failed to delete v3 status page: %v", err)
+	}
+}
+
 func TestURLMonitorCRUD(t *testing.T) {
 	ctx := context.TODO()
 

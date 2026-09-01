@@ -1,0 +1,19 @@
+{
+  "id": "5b0a9a1e-8e29-4b71-92e1-0db9b3b41f0a",
+  "statusPageId": "e35f7e14-91b2-4d24-b7b6-e0f9e2f8e51c",
+  "name": "Foo API outage",
+  "enabled": true,
+  "firstUpdate": "We are investigating an issue with the Foo API.",
+  "lastUpdate": "The issue has been resolved.",
+  "notifySubscribers": true,
+  "coolDownWindowMinutes": 5,
+  "tags": ["foo-api"],
+  "incidentId": null,
+  "components": [
+    {
+      "id": "b7a2f0cd-4f8e-4ec0-8f5a-1c9a7e2d3b40",
+      "componentId": "0e4f5a72-6a5c-42a1-9a8a-5f7d38c8a9d1",
+      "targetImpact": "MAJOR_OUTAGE"
+    }
+  ]
+}
