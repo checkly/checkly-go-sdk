@@ -724,6 +724,96 @@ type Client interface {
 		ID string,
 	) error
 
+	// CreateStatusPageV3 creates a new v3 status page and returns the
+	// created resource.
+	CreateStatusPageV3(
+		ctx context.Context,
+		page StatusPageV3,
+	) (*StatusPageV3, error)
+
+	// GetStatusPageV3 retrieves a v3 status page.
+	GetStatusPageV3(
+		ctx context.Context,
+		ID string,
+	) (*StatusPageV3, error)
+
+	// UpdateStatusPageV3 updates a v3 status page.
+	UpdateStatusPageV3(
+		ctx context.Context,
+		ID string,
+		page StatusPageV3,
+	) (*StatusPageV3, error)
+
+	// DeleteStatusPageV3 deletes a v3 status page.
+	DeleteStatusPageV3(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateStatusPageComponentV3 creates a new component on a v3 status
+	// page and returns the created resource.
+	CreateStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		component StatusPageComponentV3,
+	) (*StatusPageComponentV3, error)
+
+	// GetStatusPageComponentV3 retrieves a component of a v3 status page.
+	GetStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) (*StatusPageComponentV3, error)
+
+	// UpdateStatusPageComponentV3 updates a component of a v3 status page.
+	UpdateStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+		component StatusPageComponentV3,
+	) (*StatusPageComponentV3, error)
+
+	// DeleteStatusPageComponentV3 deletes a component of a v3 status page.
+	// Child components are detached from a deleted GROUP, not deleted.
+	DeleteStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) error
+
+	// CreateStatusPageAutomationRuleV3 creates a new automation rule on a
+	// v3 status page and returns the created resource.
+	CreateStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		rule StatusPageAutomationRuleV3,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// GetStatusPageAutomationRuleV3 retrieves an automation rule of a v3
+	// status page.
+	GetStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// UpdateStatusPageAutomationRuleV3 updates an automation rule of a v3
+	// status page.
+	UpdateStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+		rule StatusPageAutomationRuleV3,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// DeleteStatusPageAutomationRuleV3 deletes an automation rule of a v3
+	// status page.
+	DeleteStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 
@@ -2138,6 +2228,175 @@ type StatusPageService struct {
 
 	// Name is the name of the service.
 	Name string `json:"name"`
+}
+
+// StatusPageV3 represents a v3 (components-based) status page. Unlike
+// StatusPage, a v3 page has no cards or services: its structure is managed
+// through StatusPageComponentV3 resources, and incidents can be automated
+// with StatusPageAutomationRuleV3 resources.
+type StatusPageV3 struct {
+	// ID is the Checkly identifier of the status page.
+	ID string `json:"id,omitempty"`
+
+	// Name is the name of the status page.
+	Name string `json:"name"`
+
+	// URL is the unique subdomain of the status page.
+	URL string `json:"url"`
+
+	// CustomDomain is an optional user-managed domain that hosts the status
+	// page.
+	CustomDomain string `json:"customDomain,omitempty"`
+
+	// Description is a short description shown on the status page.
+	Description string `json:"description,omitempty"`
+
+	// Logo is a URL to an image file to use as the logo for the status page.
+	Logo string `json:"logo,omitempty"`
+
+	// LogoDark is a URL to an image file to use as the logo in dark mode.
+	LogoDark string `json:"logoDark,omitempty"`
+
+	// RedirectTo is the URL the user should be redirected to when clicking
+	// the logo.
+	RedirectTo string `json:"redirectTo,omitempty"`
+
+	// Favicon is a URL to an image file to use as the favicon of the status
+	// page.
+	Favicon string `json:"favicon,omitempty"`
+
+	// DefaultTheme is the default theme of the status page.
+	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
+
+	// PrivacyPolicyLink is a link to a privacy policy, shown in the page
+	// footer.
+	PrivacyPolicyLink string `json:"privacyPolicyLink,omitempty"`
+
+	// TermsOfServiceLink is a link to terms of service, shown in the page
+	// footer.
+	TermsOfServiceLink string `json:"termsOfServiceLink,omitempty"`
+
+	// FooterText is free-form footer text.
+	FooterText string `json:"footerText,omitempty"`
+
+	// GoogleAnalyticsTag is a Google Analytics tag ID (e.g. "G-XXXXXXXXXX")
+	// to embed on the public page.
+	GoogleAnalyticsTag string `json:"googleAnalyticsTag,omitempty"`
+
+	// AllowIndexing determines whether search engines may index the public
+	// page.
+	AllowIndexing bool `json:"allowIndexing"`
+}
+
+type StatusPageComponentV3Type string
+
+const (
+	StatusPageComponentV3TypeService StatusPageComponentV3Type = "SERVICE"
+	StatusPageComponentV3TypeGroup   StatusPageComponentV3Type = "GROUP"
+)
+
+// StatusPageComponentV3 represents a component of a v3 status page: either a
+// SERVICE (a monitored thing with its own status) or a GROUP (a container
+// for other components).
+type StatusPageComponentV3 struct {
+	// ID is the Checkly identifier of the component.
+	ID string `json:"id,omitempty"`
+
+	// StatusPageID is the identifier of the v3 status page the component
+	// belongs to. It is read-only: on writes the page is addressed through
+	// the URL path instead.
+	StatusPageID string `json:"statusPageId,omitempty"`
+
+	// Type is the type of the component, SERVICE or GROUP. Defaults to
+	// SERVICE.
+	Type StatusPageComponentV3Type `json:"type,omitempty"`
+
+	// Name is the name shown on the status page.
+	Name string `json:"name"`
+
+	// Description is an optional description shown next to the name.
+	Description string `json:"description,omitempty"`
+
+	// DisplayOrder is the position among siblings; lower comes first.
+	DisplayOrder int `json:"displayOrder"`
+
+	// Hidden hides the component from the public page while keeping it
+	// available for incidents and automation.
+	Hidden bool `json:"hidden"`
+
+	// ParentID is the identifier of the GROUP component this component sits
+	// under. It must belong to the same status page. Updates replace the
+	// component wholesale, so omitting it detaches the component from its
+	// parent.
+	ParentID string `json:"parentId,omitempty"`
+}
+
+// StatusPageTargetImpactV3 is the impact an automated incident sets on a
+// component: every component status except OPERATIONAL.
+type StatusPageTargetImpactV3 string
+
+const (
+	StatusPageTargetImpactV3UnderMaintenance    StatusPageTargetImpactV3 = "UNDER_MAINTENANCE"
+	StatusPageTargetImpactV3DegradedPerformance StatusPageTargetImpactV3 = "DEGRADED_PERFORMANCE"
+	StatusPageTargetImpactV3PartialOutage       StatusPageTargetImpactV3 = "PARTIAL_OUTAGE"
+	StatusPageTargetImpactV3MajorOutage         StatusPageTargetImpactV3 = "MAJOR_OUTAGE"
+)
+
+// StatusPageAutomationRuleComponentV3 links an automation rule to a
+// component of the same status page, with the impact an automated incident
+// sets on it.
+type StatusPageAutomationRuleComponentV3 struct {
+	// ComponentID is the identifier of the impacted component.
+	ComponentID string `json:"componentId"`
+
+	// TargetImpact is the impact set on the component while the automated
+	// incident is open.
+	TargetImpact StatusPageTargetImpactV3 `json:"targetImpact"`
+}
+
+// StatusPageAutomationRuleV3 represents an automation rule of a v3 status
+// page. When a check whose tags overlap with the rule's tags fails, Checkly
+// opens one incident on the page impacting the listed components, and
+// resolves it when the check recovers.
+type StatusPageAutomationRuleV3 struct {
+	// ID is the Checkly identifier of the automation rule.
+	ID string `json:"id,omitempty"`
+
+	// StatusPageID is the identifier of the v3 status page the rule belongs
+	// to. It is read-only: on writes the page is addressed through the URL
+	// path instead.
+	StatusPageID string `json:"statusPageId,omitempty"`
+
+	// Name is the name of the rule.
+	Name string `json:"name"`
+
+	// Enabled determines whether the rule may open incidents. A disabled
+	// rule never opens incidents.
+	Enabled bool `json:"enabled"`
+
+	// FirstUpdate is the body of the status update that opens the incident.
+	FirstUpdate string `json:"firstUpdate"`
+
+	// LastUpdate is the body of the status update that resolves the
+	// incident.
+	LastUpdate string `json:"lastUpdate"`
+
+	// NotifySubscribers determines whether subscribers are notified of the
+	// automated updates.
+	NotifySubscribers bool `json:"notifySubscribers"`
+
+	// CoolDownWindowMinutes is the minimum number of minutes after an
+	// automated incident before this rule may open the next one. 0 disables
+	// the cool down.
+	CoolDownWindowMinutes int `json:"coolDownWindowMinutes"`
+
+	// Tags is the list of tags the rule matches on. A failing check matches
+	// when it, or its group, carries ANY of these tags.
+	Tags []string `json:"tags"`
+
+	// Components is the list of components an automated incident impacts,
+	// with the impact each gets.
+	Components []StatusPageAutomationRuleComponentV3 `json:"components"`
 }
 
 type IncidentSeverity string

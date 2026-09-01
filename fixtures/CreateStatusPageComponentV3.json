@@ -1,0 +1,10 @@
+{
+  "id": "0e4f5a72-6a5c-42a1-9a8a-5f7d38c8a9d1",
+  "statusPageId": "e35f7e14-91b2-4d24-b7b6-e0f9e2f8e51c",
+  "type": "SERVICE",
+  "name": "Foo API",
+  "description": "The Foo public API",
+  "displayOrder": 1,
+  "hidden": false,
+  "parentId": "0a2f26fb-47cc-42b7-91c6-40de3ec91a52"
+}
