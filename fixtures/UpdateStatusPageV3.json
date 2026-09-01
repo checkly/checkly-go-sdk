@@ -1,0 +1,10 @@
+{
+  "id": "e35f7e14-91b2-4d24-b7b6-e0f9e2f8e51c",
+  "name": "Foo v3 status page",
+  "url": "foo-v3-status-page",
+  "description": "All Foo systems",
+  "defaultTheme": "AUTO",
+  "footerText": "Foo Inc.",
+  "allowIndexing": true,
+  "version": 3
+}
