@@ -2234,6 +2234,12 @@ type StatusPageService struct {
 // StatusPage, a v3 page has no cards or services: its structure is managed
 // through StatusPageComponentV3 resources, and incidents can be automated
 // with StatusPageAutomationRuleV3 resources.
+//
+// The update endpoint only touches the fields present in the payload, so
+// the optional fields are serialized even when empty: an empty string
+// clears a previously set value, while omitting the field would leave it
+// unchanged. DefaultTheme is the exception — the API rejects an empty
+// value, so it is omitted when unset and the server defaults it to AUTO.
 type StatusPageV3 struct {
 	// ID is the Checkly identifier of the status page.
 	ID string `json:"id,omitempty"`
@@ -2246,42 +2252,42 @@ type StatusPageV3 struct {
 
 	// CustomDomain is an optional user-managed domain that hosts the status
 	// page.
-	CustomDomain string `json:"customDomain,omitempty"`
+	CustomDomain string `json:"customDomain"`
 
 	// Description is a short description shown on the status page.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 
 	// Logo is a URL to an image file to use as the logo for the status page.
-	Logo string `json:"logo,omitempty"`
+	Logo string `json:"logo"`
 
 	// LogoDark is a URL to an image file to use as the logo in dark mode.
-	LogoDark string `json:"logoDark,omitempty"`
+	LogoDark string `json:"logoDark"`
 
 	// RedirectTo is the URL the user should be redirected to when clicking
 	// the logo.
-	RedirectTo string `json:"redirectTo,omitempty"`
+	RedirectTo string `json:"redirectTo"`
 
 	// Favicon is a URL to an image file to use as the favicon of the status
 	// page.
-	Favicon string `json:"favicon,omitempty"`
+	Favicon string `json:"favicon"`
 
 	// DefaultTheme is the default theme of the status page.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
 
 	// PrivacyPolicyLink is a link to a privacy policy, shown in the page
 	// footer.
-	PrivacyPolicyLink string `json:"privacyPolicyLink,omitempty"`
+	PrivacyPolicyLink string `json:"privacyPolicyLink"`
 
 	// TermsOfServiceLink is a link to terms of service, shown in the page
 	// footer.
-	TermsOfServiceLink string `json:"termsOfServiceLink,omitempty"`
+	TermsOfServiceLink string `json:"termsOfServiceLink"`
 
 	// FooterText is free-form footer text.
-	FooterText string `json:"footerText,omitempty"`
+	FooterText string `json:"footerText"`
 
 	// GoogleAnalyticsTag is a Google Analytics tag ID (e.g. "G-XXXXXXXXXX")
 	// to embed on the public page.
-	GoogleAnalyticsTag string `json:"googleAnalyticsTag,omitempty"`
+	GoogleAnalyticsTag string `json:"googleAnalyticsTag"`
 
 	// AllowIndexing determines whether search engines may index the public
 	// page.
