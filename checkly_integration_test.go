@@ -695,6 +695,8 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	pendingStatusPage := checkly.StatusPageV3{
 		Name:          "Foo v3 status page",
 		URL:           "foo-v3-status-page",
+		Description:   "All Foo systems",
+		FooterText:    "Foo Inc.",
 		AllowIndexing: true,
 	}
 
@@ -719,6 +721,11 @@ func TestStatusPageV3CRUD(t *testing.T) {
 
 	updateStatusPage := *createdStatusPage
 	updateStatusPage.Name = "Bar v3 status page"
+	// The update endpoint only touches fields present in the payload; the
+	// optional fields serialize even when empty, so zeroing them here must
+	// clear the values set on create.
+	updateStatusPage.Description = ""
+	updateStatusPage.FooterText = ""
 
 	updatedStatusPage, err := client.UpdateStatusPageV3(ctx, createdStatusPage.ID, updateStatusPage)
 	if err != nil {
@@ -726,6 +733,10 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	}
 	if updatedStatusPage.Name != "Bar v3 status page" {
 		t.Fatalf("expected Name to change after update")
+	}
+	if updatedStatusPage.Description != "" || updatedStatusPage.FooterText != "" {
+		t.Fatalf("expected cleared optional fields to be unset, got description %q, footerText %q",
+			updatedStatusPage.Description, updatedStatusPage.FooterText)
 	}
 
 	group, err := client.CreateStatusPageComponentV3(ctx, createdStatusPage.ID, checkly.StatusPageComponentV3{
