@@ -1907,8 +1907,27 @@ type MaintenanceWindow struct {
 	RepeatUnit     string   `json:"repeatUnit,omitempty"`
 	RepeatEndsAt   string   `json:"repeatEndsAt,omitempty"`
 	Tags           []string `json:"tags,omitempty"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
+
+	// Timezone is the named IANA time zone used for recurring maintenance
+	// scheduling, e.g. "America/New_York". UTC offset identifiers such as
+	// "+05:00" are not accepted. Empty means UTC.
+	Timezone string `json:"timezone,omitempty"`
+
+	// PauseAllChecks pauses every check in the account regardless of Tags.
+	// A pointer so that an explicit false is sent rather than omitted.
+	PauseAllChecks *bool `json:"pauseAllChecks,omitempty"`
+
+	// SilenceAlertsTags selects which checks have their alerts silenced.
+	// Ignored when SilenceAllAlerts is true.
+	SilenceAlertsTags []string `json:"silenceAlertsTags,omitempty"`
+
+	// SilenceAllAlerts silences alerts for every check in the account,
+	// overriding SilenceAlertsTags. A pointer so that an explicit false is
+	// sent rather than omitted.
+	SilenceAllAlerts *bool `json:"silenceAllAlerts,omitempty"`
+
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // PrivateLocation defines a type for a private location.
