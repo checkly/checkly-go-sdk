@@ -7,5 +7,9 @@
 	"repeatInterval": 10,
 	"created_at":     "2013-08-24",
 	"updated_at":     "2015-08-24",
-	"tags":           ["string"]
+	"tags":           ["string"],
+	"timezone":          "America/New_York",
+	"pauseAllChecks":    true,
+	"silenceAlertsTags": ["string"],
+	"silenceAllAlerts":  false
 }
