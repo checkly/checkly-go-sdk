@@ -2065,7 +2065,16 @@ type ClientCertificate struct {
 	ID string `json:"id,omitempty"`
 
 	// Host is the host domain that the certificate should be used for.
+	// Wildcards are supported, e.g. "*.acme.com".
 	Host string `json:"host"`
+
+	// Path is an optional URL path prefix that limits the certificate to
+	// requests under that path, e.g. "/partner/api". Matching is on whole
+	// path segments: "/partner" applies to "/partner" and "/partner/orders"
+	// but not to "/partnership". API checks and Multistep checks match on
+	// path; gRPC, SSL and TCP monitors only use certificates without one.
+	// Leave it empty to use the certificate for every path on the host.
+	Path string `json:"path,omitempty"`
 
 	// Certificate is the client certificate in PEM format.
 	Certificate string `json:"cert"`
