@@ -1331,17 +1331,28 @@ func validateMaintenanceWindow(t *testing.T, body []byte) {
 	}
 }
 
+// Covers both pointer states: pause is true, silence is an explicit false,
+// which must still be transmitted rather than omitted.
+var (
+	testMaintenanceWindowPauseAllChecks   = true
+	testMaintenanceWindowSilenceAllAlerts = false
+)
+
 var testMaintenanceWindow = checkly.MaintenanceWindow{
-	ID:             1,
-	Name:           "TEST",
-	StartsAt:       "2014-08-24T00:00:00.000Z",
-	EndsAt:         "2014-08-24T00:00:00.000Z",
-	RepeatUnit:     "MONTH",
-	RepeatEndsAt:   "2014-08-24T00:00:00.000Z",
-	RepeatInterval: 10,
-	CreatedAt:      "2013-08-24",
-	UpdatedAt:      "2014-08-24",
-	Tags:           []string{"string"},
+	ID:                1,
+	Name:              "TEST",
+	StartsAt:          "2014-08-24T00:00:00.000Z",
+	EndsAt:            "2014-08-24T00:00:00.000Z",
+	RepeatUnit:        "MONTH",
+	RepeatEndsAt:      "2014-08-24T00:00:00.000Z",
+	RepeatInterval:    10,
+	CreatedAt:         "2013-08-24",
+	UpdatedAt:         "2014-08-24",
+	Tags:              []string{"string"},
+	Timezone:          "America/New_York",
+	PauseAllChecks:    &testMaintenanceWindowPauseAllChecks,
+	SilenceAlertsTags: []string{"string"},
+	SilenceAllAlerts:  &testMaintenanceWindowSilenceAllAlerts,
 }
 
 var ignoreMaintenanceWindowFields = cmpopts.IgnoreFields(checkly.MaintenanceWindow{}, "ID", "CreatedAt", "UpdatedAt")
