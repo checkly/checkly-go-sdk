@@ -696,6 +696,7 @@ func TestStatusPageV3CRUD(t *testing.T) {
 		Name:          "Foo v3 status page",
 		URL:           "foo-v3-status-page",
 		Description:   "All Foo systems",
+		SupportLink:   "mailto:support@example.org",
 		FooterText:    "Foo Inc.",
 		AllowIndexing: true,
 	}
@@ -725,6 +726,7 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	// optional fields serialize even when empty, so zeroing them here must
 	// clear the values set on create.
 	updateStatusPage.Description = ""
+	updateStatusPage.SupportLink = ""
 	updateStatusPage.FooterText = ""
 
 	updatedStatusPage, err := client.UpdateStatusPageV3(ctx, createdStatusPage.ID, updateStatusPage)
@@ -734,18 +736,28 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	if updatedStatusPage.Name != "Bar v3 status page" {
 		t.Fatalf("expected Name to change after update")
 	}
-	if updatedStatusPage.Description != "" || updatedStatusPage.FooterText != "" {
-		t.Fatalf("expected cleared optional fields to be unset, got description %q, footerText %q",
-			updatedStatusPage.Description, updatedStatusPage.FooterText)
+	if updatedStatusPage.Description != "" || updatedStatusPage.SupportLink != "" || updatedStatusPage.FooterText != "" {
+		t.Fatalf("expected cleared optional fields to be unset, got description %q, supportLink %q, footerText %q",
+			updatedStatusPage.Description, updatedStatusPage.SupportLink, updatedStatusPage.FooterText)
 	}
 
+	// A partial configuration is filled up with the type's defaults.
+	expandedByDefault := true
 	group, err := client.CreateStatusPageComponentV3(ctx, createdStatusPage.ID, checkly.StatusPageComponentV3{
 		Type:         checkly.StatusPageComponentV3TypeGroup,
 		Name:         "Foo group",
 		DisplayOrder: 0,
+		Configuration: &checkly.StatusPageComponentV3Configuration{
+			ExpandedByDefault: &expandedByDefault,
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to create GROUP component: %v", err)
+	}
+	if group.Configuration == nil ||
+		group.Configuration.ExpandedByDefault == nil || !*group.Configuration.ExpandedByDefault ||
+		group.Configuration.ShowHistoricalData == nil || !*group.Configuration.ShowHistoricalData {
+		t.Fatalf("expected GROUP configuration {expandedByDefault: true, showHistoricalData: true}, got %+v", group.Configuration)
 	}
 
 	pendingComponent := checkly.StatusPageComponentV3{
@@ -763,6 +775,12 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	}
 	if createdComponent.ParentID != group.ID {
 		t.Fatalf("expected component to sit under the group")
+	}
+	// A component created without a configuration carries its type's
+	// defaults.
+	if createdComponent.Configuration == nil ||
+		createdComponent.Configuration.ShowHistoricalData == nil || !*createdComponent.Configuration.ShowHistoricalData {
+		t.Fatalf("expected SERVICE configuration {showHistoricalData: true}, got %+v", createdComponent.Configuration)
 	}
 
 	readComponent, err := client.GetStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID)
@@ -828,13 +846,16 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to delete automation rule: %v", err)
 	}
-	err = client.DeleteStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID)
-	if err != nil {
-		t.Fatalf("failed to delete component: %v", err)
-	}
+	// A group must never be empty, so its last member cannot be deleted (or
+	// detached) directly: delete the group first, which detaches its
+	// children, then the component.
 	err = client.DeleteStatusPageComponentV3(ctx, createdStatusPage.ID, group.ID)
 	if err != nil {
 		t.Fatalf("failed to delete group component: %v", err)
+	}
+	err = client.DeleteStatusPageComponentV3(ctx, createdStatusPage.ID, createdComponent.ID)
+	if err != nil {
+		t.Fatalf("failed to delete component: %v", err)
 	}
 
 	didDelete = true
