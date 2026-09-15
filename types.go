@@ -2291,6 +2291,10 @@ type StatusPageV3 struct {
 	// footer.
 	TermsOfServiceLink string `json:"termsOfServiceLink"`
 
+	// SupportLink is a support contact link, shown in the page footer. It
+	// accepts http, https and mailto URLs.
+	SupportLink string `json:"supportLink"`
+
 	// FooterText is free-form footer text.
 	FooterText string `json:"footerText"`
 
@@ -2309,6 +2313,21 @@ const (
 	StatusPageComponentV3TypeService StatusPageComponentV3Type = "SERVICE"
 	StatusPageComponentV3TypeGroup   StatusPageComponentV3Type = "GROUP"
 )
+
+// StatusPageComponentV3Configuration holds a component's type-specific
+// settings. A SERVICE component only supports ShowHistoricalData; a GROUP
+// component supports both. Unset (nil) properties take the type's default
+// on writes; the API rejects a property the component's type does not
+// support. Reads always return every property the type supports.
+type StatusPageComponentV3Configuration struct {
+	// ShowHistoricalData shows the historical status (the uptime bar) of
+	// the component on the status page. Defaults to true.
+	ShowHistoricalData *bool `json:"showHistoricalData,omitempty"`
+
+	// ExpandedByDefault renders the group expanded when the status page
+	// loads. GROUP components only. Defaults to false.
+	ExpandedByDefault *bool `json:"expandedByDefault,omitempty"`
+}
 
 // StatusPageComponentV3 represents a component of a v3 status page: either a
 // SERVICE (a monitored thing with its own status) or a GROUP (a container
@@ -2338,6 +2357,11 @@ type StatusPageComponentV3 struct {
 	// Hidden hides the component from the public page while keeping it
 	// available for incidents and automation.
 	Hidden bool `json:"hidden"`
+
+	// Configuration holds the component's type-specific settings. Omitted
+	// (nil) on a write, the component gets (or is reset to, on update) the
+	// defaults of its type.
+	Configuration *StatusPageComponentV3Configuration `json:"configuration,omitempty"`
 
 	// ParentID is the identifier of the GROUP component this component sits
 	// under. It must belong to the same status page. Updates replace the

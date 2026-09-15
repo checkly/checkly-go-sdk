@@ -1998,6 +1998,7 @@ var testStatusPageV3 = checkly.StatusPageV3{
 	URL:           "foo-v3-status-page",
 	Description:   "All Foo systems",
 	DefaultTheme:  checkly.StatusPageThemeAuto,
+	SupportLink:   "mailto:support@example.org",
 	FooterText:    "Foo Inc.",
 	AllowIndexing: true,
 }
@@ -2089,6 +2090,8 @@ func validateStatusPageComponentV3(t *testing.T, body []byte) {
 	}
 }
 
+var testStatusPageComponentV3ShowHistoricalData = false
+
 var testStatusPageComponentV3 = checkly.StatusPageComponentV3{
 	ID:           "0e4f5a72-6a5c-42a1-9a8a-5f7d38c8a9d1",
 	StatusPageID: testStatusPageV3.ID,
@@ -2097,7 +2100,10 @@ var testStatusPageComponentV3 = checkly.StatusPageComponentV3{
 	Description:  "The Foo public API",
 	DisplayOrder: 1,
 	Hidden:       false,
-	ParentID:     "0a2f26fb-47cc-42b7-91c6-40de3ec91a52",
+	Configuration: &checkly.StatusPageComponentV3Configuration{
+		ShowHistoricalData: &testStatusPageComponentV3ShowHistoricalData,
+	},
+	ParentID: "0a2f26fb-47cc-42b7-91c6-40de3ec91a52",
 }
 
 var ignoreStatusPageComponentV3Fields = cmpopts.IgnoreFields(checkly.StatusPageComponentV3{}, "ID")

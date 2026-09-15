@@ -6,5 +6,8 @@
   "description": "The Foo public API",
   "displayOrder": 1,
   "hidden": false,
-  "parentId": "0a2f26fb-47cc-42b7-91c6-40de3ec91a52"
+  "parentId": "0a2f26fb-47cc-42b7-91c6-40de3ec91a52",
+  "configuration": {
+    "showHistoricalData": false
+  }
 }

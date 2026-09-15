@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Add status pages v3 support: `StatusPageV3` (incl. `supportLink`), `StatusPageComponentV3` (incl. the typed per-type `configuration`) and `StatusPageAutomationRuleV3` types + `Create/Get/Update/Delete` client methods (`/v3/status-pages`, `/v3/status-pages/{id}/components`, `/v3/status-pages/{id}/automation-rules`)
 - Add optional `Path` field to `ClientCertificate` (URL path prefix that limits the certificate to API and Multistep check requests under that path)
 - Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
 
