@@ -2305,6 +2305,68 @@ type StatusPageV3 struct {
 	// AllowIndexing determines whether search engines may index the public
 	// page.
 	AllowIndexing bool `json:"allowIndexing"`
+
+	// ThemeColors are custom colors for the light and dark theme of the
+	// page. Setting them requires custom theme colors to be part of the
+	// account's plan; the API rejects them otherwise. A nil value clears
+	// the custom colors on writes. Reads always return a complete palette:
+	// the stored colors, or the defaults when none are stored or the plan
+	// does not include them.
+	ThemeColors *StatusPageV3ThemeColors `json:"themeColors"`
+}
+
+// StatusPageV3ThemeColors holds the custom colors of a v3 status page, one
+// group per theme. The API requires both groups, with every color set, when
+// custom colors are given.
+type StatusPageV3ThemeColors struct {
+	// Light are the colors used when the page renders in light mode.
+	Light StatusPageV3ThemeColorGroup `json:"light"`
+
+	// Dark are the colors used when the page renders in dark mode.
+	Dark StatusPageV3ThemeColorGroup `json:"dark"`
+}
+
+// StatusPageV3ThemeColorGroup holds the colors of one theme of a v3 status
+// page. Each color is a hex string such as "#FF0000" or "#F00".
+type StatusPageV3ThemeColorGroup struct {
+	// BodyBackgroundColor is the background of the page.
+	BodyBackgroundColor string `json:"bodyBackgroundColor"`
+
+	// HeaderBackgroundColor is the background of the page header.
+	HeaderBackgroundColor string `json:"headerBackgroundColor"`
+
+	// HeaderFontColor is the color of text in the page header.
+	HeaderFontColor string `json:"headerFontColor"`
+
+	// TitleFontColor is the color of titles and headings.
+	TitleFontColor string `json:"titleFontColor"`
+
+	// BodyFontColor is the color of regular body text.
+	BodyFontColor string `json:"bodyFontColor"`
+
+	// BodyFontColorMuted is the color of de-emphasized body text, such as
+	// timestamps.
+	BodyFontColorMuted string `json:"bodyFontColorMuted"`
+
+	// NavigationFontColor is the color of navigation links.
+	NavigationFontColor string `json:"navigationFontColor"`
+
+	// LinkFontColor is the color of links in the page content.
+	LinkFontColor string `json:"linkFontColor"`
+
+	// CardBackgroundColor is the background of component and incident
+	// cards.
+	CardBackgroundColor string `json:"cardBackgroundColor"`
+
+	// BorderColor is the color of borders and dividers.
+	BorderColor string `json:"borderColor"`
+
+	// PrimaryButtonBackgroundColor is the background of primary buttons,
+	// such as "Subscribe".
+	PrimaryButtonBackgroundColor string `json:"primaryButtonBackgroundColor"`
+
+	// PrimaryButtonFontColor is the color of text on primary buttons.
+	PrimaryButtonFontColor string `json:"primaryButtonFontColor"`
 }
 
 type StatusPageComponentV3Type string
