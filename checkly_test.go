@@ -2140,6 +2140,36 @@ var testStatusPageV3 = checkly.StatusPageV3{
 	SupportLink:   "mailto:support@example.org",
 	FooterText:    "Foo Inc.",
 	AllowIndexing: true,
+	ThemeColors: &checkly.StatusPageV3ThemeColors{
+		Light: checkly.StatusPageV3ThemeColorGroup{
+			BodyBackgroundColor:          "#F9FAFB",
+			HeaderBackgroundColor:        "#FFFFFF",
+			HeaderFontColor:              "#151A1E",
+			TitleFontColor:               "#212930",
+			BodyFontColor:                "#475766",
+			BodyFontColorMuted:           "#60758A",
+			NavigationFontColor:          "#151A1E",
+			LinkFontColor:                "#FF0000",
+			CardBackgroundColor:          "#FFFFFF",
+			BorderColor:                  "#E0E5EB",
+			PrimaryButtonBackgroundColor: "#151A1E",
+			PrimaryButtonFontColor:       "#FFFFFF",
+		},
+		Dark: checkly.StatusPageV3ThemeColorGroup{
+			BodyBackgroundColor:          "#14171C",
+			HeaderBackgroundColor:        "#171B21",
+			HeaderFontColor:              "#FFFFFF",
+			TitleFontColor:               "#ECEEF2",
+			BodyFontColor:                "#C6CDD7",
+			BodyFontColorMuted:           "#A3B3C2",
+			NavigationFontColor:          "#FFFFFF",
+			LinkFontColor:                "#248AFF",
+			CardBackgroundColor:          "#171B21",
+			BorderColor:                  "#242B34",
+			PrimaryButtonBackgroundColor: "#242B34",
+			PrimaryButtonFontColor:       "#FFFFFF",
+		},
+	},
 }
 
 var ignoreStatusPageV3Fields = cmpopts.IgnoreFields(checkly.StatusPageV3{}, "ID")

@@ -719,6 +719,10 @@ func TestStatusPageV3CRUD(t *testing.T) {
 	if !cmp.Equal(createdStatusPage, readStatusPage) {
 		t.Fatal(cmp.Diff(createdStatusPage, readStatusPage))
 	}
+	// Reads always carry a complete palette, the defaults when none is set.
+	if readStatusPage.ThemeColors == nil || readStatusPage.ThemeColors.Light.LinkFontColor == "" {
+		t.Fatalf("expected a complete default theme colors palette, got %+v", readStatusPage.ThemeColors)
+	}
 
 	updateStatusPage := *createdStatusPage
 	updateStatusPage.Name = "Bar v3 status page"
