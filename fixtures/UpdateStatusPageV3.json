@@ -1,0 +1,41 @@
+{
+  "id": "e35f7e14-91b2-4d24-b7b6-e0f9e2f8e51c",
+  "name": "Foo v3 status page",
+  "url": "foo-v3-status-page",
+  "description": "All Foo systems",
+  "defaultTheme": "AUTO",
+  "footerText": "Foo Inc.",
+  "allowIndexing": true,
+  "version": 3,
+  "supportLink": "mailto:support@example.org",
+  "themeColors": {
+    "light": {
+      "bodyBackgroundColor": "#F9FAFB",
+      "headerBackgroundColor": "#FFFFFF",
+      "headerFontColor": "#151A1E",
+      "titleFontColor": "#212930",
+      "bodyFontColor": "#475766",
+      "bodyFontColorMuted": "#60758A",
+      "navigationFontColor": "#151A1E",
+      "linkFontColor": "#FF0000",
+      "cardBackgroundColor": "#FFFFFF",
+      "borderColor": "#E0E5EB",
+      "primaryButtonBackgroundColor": "#151A1E",
+      "primaryButtonFontColor": "#FFFFFF"
+    },
+    "dark": {
+      "bodyBackgroundColor": "#14171C",
+      "headerBackgroundColor": "#171B21",
+      "headerFontColor": "#FFFFFF",
+      "titleFontColor": "#ECEEF2",
+      "bodyFontColor": "#C6CDD7",
+      "bodyFontColorMuted": "#A3B3C2",
+      "navigationFontColor": "#FFFFFF",
+      "linkFontColor": "#248AFF",
+      "cardBackgroundColor": "#171B21",
+      "borderColor": "#242B34",
+      "primaryButtonBackgroundColor": "#242B34",
+      "primaryButtonFontColor": "#FFFFFF"
+    }
+  }
+}
