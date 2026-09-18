@@ -2904,7 +2904,7 @@ func TestGRPCConfigModeForbiddenFields(t *testing.T) {
 	if err := json.Unmarshal(health, &healthBody); err != nil {
 		t.Fatal(err)
 	}
-	for _, k := range []string{"method", "serviceDefinition", "protoContent", "message"} {
+	for _, k := range []string{"encoding", "method", "serviceDefinition", "protoContent", "bfbsContent", "message"} {
 		if _, ok := healthBody[k]; ok {
 			t.Errorf("HEALTH-mode gRPC config must omit %q, got: %s", k, health)
 		}
@@ -2932,6 +2932,43 @@ func TestGRPCConfigModeForbiddenFields(t *testing.T) {
 	for _, k := range []string{"method", "serviceDefinition"} {
 		if _, ok := behaviorBody[k]; !ok {
 			t.Errorf("BEHAVIOR-mode gRPC config must keep %q, got: %s", k, behavior)
+		}
+	}
+}
+
+func TestGRPCConfigFlatBuffersRoundTrip(t *testing.T) {
+	t.Parallel()
+	want := checkly.GRPCConfig{
+		Mode:        "BEHAVIOR",
+		TLS:         true,
+		Encoding:    "FLATBUFFERS",
+		Method:      "example.Greeter/Greet",
+		BfbsContent: "RkxBVF9CVUZGRVJTX1NDSEVNQQ==",
+		Message:     `{"name":"Checkly"}`,
+	}
+
+	body, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got checkly.GRPCConfig
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+
+	var wire map[string]interface{}
+	if err := json.Unmarshal(body, &wire); err != nil {
+		t.Fatal(err)
+	}
+	if wire["encoding"] != "FLATBUFFERS" || wire["bfbsContent"] != want.BfbsContent {
+		t.Fatalf("FlatBuffers fields were not preserved on the wire: %s", body)
+	}
+	for _, k := range []string{"service", "serviceDefinition", "protoContent"} {
+		if _, ok := wire[k]; ok {
+			t.Errorf("FlatBuffers gRPC config must omit %q, got: %s", k, body)
 		}
 	}
 }
