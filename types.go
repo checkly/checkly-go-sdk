@@ -1221,9 +1221,11 @@ type GRPCConfig struct {
 	TLS      bool           `json:"tls"`
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// BEHAVIOR-mode only (forbidden in HEALTH mode).
+	Encoding          string `json:"encoding,omitempty"`
 	ServiceDefinition string `json:"serviceDefinition,omitempty"`
 	Method            string `json:"method,omitempty"`
 	ProtoContent      string `json:"protoContent,omitempty"`
+	BfbsContent       string `json:"bfbsContent,omitempty"`
 	Message           string `json:"message,omitempty"`
 	// HEALTH-mode only (forbidden in BEHAVIOR mode).
 	Service string `json:"service,omitempty"`
