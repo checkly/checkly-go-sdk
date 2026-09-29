@@ -15,5 +15,20 @@
   "silenceAlertsTags": [
     "string"
   ],
-  "silenceAllAlerts": false
+  "silenceAllAlerts": false,
+  "description": "Planned database upgrade",
+  "statusPageVisibility": {
+    "enabled": false,
+    "severity": null,
+    "affectAllServices": false,
+    "notifyOnStart": false,
+    "notifyOnEnd": false,
+    "suppressAutoIncidents": false,
+    "reminderMinutesBefore": [],
+    "autoStart": true,
+    "autoEnd": true,
+    "showAffectedServices": true,
+    "statusPageIds": [],
+    "serviceIds": []
+  }
 }
