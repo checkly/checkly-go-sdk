@@ -1910,7 +1910,8 @@ type MaintenanceWindow struct {
 
 	// Timezone is the named IANA time zone used for recurring maintenance
 	// scheduling, e.g. "America/New_York". UTC offset identifiers such as
-	// "+05:00" are not accepted. Empty means UTC.
+	// "+05:00" are not accepted. An empty value is omitted: it means UTC on
+	// create and keeps the stored zone on update. Set "UTC" to reset it.
 	Timezone string `json:"timezone,omitempty"`
 
 	// PauseAllChecks pauses every check in the account regardless of Tags.
