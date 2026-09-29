@@ -1918,8 +1918,10 @@ type MaintenanceWindow struct {
 	PauseAllChecks *bool `json:"pauseAllChecks,omitempty"`
 
 	// SilenceAlertsTags selects which checks have their alerts silenced.
-	// Ignored when SilenceAllAlerts is true.
-	SilenceAlertsTags []string `json:"silenceAlertsTags,omitempty"`
+	// Ignored when SilenceAllAlerts is true. A pointer so that an empty list
+	// can be sent to clear the tags: the API keeps the stored list when the
+	// field is omitted on update and does not accept null.
+	SilenceAlertsTags *[]string `json:"silenceAlertsTags,omitempty"`
 
 	// SilenceAllAlerts silences alerts for every check in the account,
 	// overriding SilenceAlertsTags. A pointer so that an explicit false is

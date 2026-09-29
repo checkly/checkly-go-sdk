@@ -1334,8 +1334,9 @@ func validateMaintenanceWindow(t *testing.T, body []byte) {
 // Covers both pointer states: pause is true, silence is an explicit false,
 // which must still be transmitted rather than omitted.
 var (
-	testMaintenanceWindowPauseAllChecks   = true
-	testMaintenanceWindowSilenceAllAlerts = false
+	testMaintenanceWindowPauseAllChecks    = true
+	testMaintenanceWindowSilenceAlertsTags = []string{"string"}
+	testMaintenanceWindowSilenceAllAlerts  = false
 )
 
 var testMaintenanceWindow = checkly.MaintenanceWindow{
@@ -1351,8 +1352,30 @@ var testMaintenanceWindow = checkly.MaintenanceWindow{
 	Tags:              []string{"string"},
 	Timezone:          "America/New_York",
 	PauseAllChecks:    &testMaintenanceWindowPauseAllChecks,
-	SilenceAlertsTags: []string{"string"},
+	SilenceAlertsTags: &testMaintenanceWindowSilenceAlertsTags,
 	SilenceAllAlerts:  &testMaintenanceWindowSilenceAllAlerts,
+}
+
+func TestMaintenanceWindowSilenceAlertsTagsJSON(t *testing.T) {
+	t.Parallel()
+
+	// A nil list is omitted, so an update keeps the stored tags.
+	body, err := json.Marshal(checkly.MaintenanceWindow{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(body), "silenceAlertsTags") {
+		t.Errorf("expected silenceAlertsTags to be omitted, got %s", body)
+	}
+
+	// An empty list is sent, so an update clears the stored tags.
+	body, err = json.Marshal(checkly.MaintenanceWindow{SilenceAlertsTags: &[]string{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), `"silenceAlertsTags":[]`) {
+		t.Errorf("expected an empty silenceAlertsTags list, got %s", body)
+	}
 }
 
 var ignoreMaintenanceWindowFields = cmpopts.IgnoreFields(checkly.MaintenanceWindow{}, "ID", "CreatedAt", "UpdatedAt")

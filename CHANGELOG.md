@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Add `Timezone`, `PauseAllChecks`, `SilenceAlertsTags` and `SilenceAllAlerts` to `MaintenanceWindow`. Unset fields are omitted, so an update keeps their stored values; set `Timezone` to `"UTC"` or `SilenceAlertsTags` to an empty list to reset them
 - Add optional `Path` field to `ClientCertificate` (URL path prefix that limits the certificate to API and Multistep check requests under that path)
 - Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
 
