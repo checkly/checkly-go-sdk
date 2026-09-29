@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Add `Timezone`, `PauseAllChecks`, `SilenceAlertsTags`, `SilenceAllAlerts`, `Description` and `StatusPageVisibility` (`MaintenanceWindowStatusPageVisibility`) to `MaintenanceWindow`
 - Add optional `Path` field to `ClientCertificate` (URL path prefix that limits the certificate to API and Multistep check requests under that path)
 - Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
+
+### Changed
+- **Breaking:** `CreateMaintenanceWindow` and `UpdateMaintenanceWindow` now send every `MaintenanceWindow` field, so an update replaces the whole window. A field left at its zero value is reset to the API default: no repeat, UTC, no description, empty tag lists, nothing paused or silenced, and a zero `StatusPageVisibility` hides the window and unlinks its status pages and services. Previously the repeat fields and `Tags` were omitted when empty, which kept their stored values. To change part of a window, call `GetMaintenanceWindow`, modify the result and pass it to `UpdateMaintenanceWindow`
 
 ## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-06-25
 ### Added
