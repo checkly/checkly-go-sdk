@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
 
 ### Changed
+- gRPC monitor create/update payloads send empty `assertions` and `grpcConfig.metadata` as `[]`, and always send `grpcConfig.message` (`grpcConfig.service` in `HEALTH` mode), even when empty. The update endpoint keeps the stored value of an omitted field, so these empty values now clear the stored value instead of leaving it unchanged
 - API requests rejected with HTTP 429 are retried up to 4 times (code bundle upload and peek excepted), waiting as long as `Retry-After` or `X-RateLimit-Reset` asks (capped at 60s, plus up to 1.5s of padding and jitter) or with exponential backoff and jitter otherwise. A wait that would not leave enough of the request context's deadline for the re-sent request is skipped and the 429 is returned at once, so callers with short per-call deadlines need to allow for the wait to benefit; cancelling the context during a wait returns the context error
 
 ## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-06-25
