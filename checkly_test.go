@@ -3472,3 +3472,37 @@ func TestSSLConfigOmitsSecurityBaselineWhenNil(t *testing.T) {
 		t.Errorf("SSL request must omit `sslClientCertificateId` when nil, got: %s", body)
 	}
 }
+
+// The v3 endpoints differ in how they treat a missing key: the page update
+// only writes the keys present, while component and automation rule updates
+// replace the resource wholesale. These tests pin the raw JSON, because
+// decoding it back into the struct cannot tell an omitted key from an empty
+// one.
+func marshalToMap(t *testing.T, v interface{}) map[string]interface{} {
+	t.Helper()
+	data, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatal(err)
+	}
+	return m
+}
+
+func TestStatusPageAutomationRuleV3OmitsEmptyComponents(t *testing.T) {
+	for _, components := range [][]checkly.StatusPageAutomationRuleComponentV3{nil, {}} {
+		m := marshalToMap(t, checkly.StatusPageAutomationRuleV3{
+			Name:        "foo",
+			FirstUpdate: "Investigating.",
+			LastUpdate:  "Resolved.",
+			Tags:        []string{"foo"},
+			Components:  components,
+		})
+		// The API rejects a null list; omitted, it defaults to none.
+		if value, ok := m["components"]; ok {
+			t.Errorf("expected an empty component list to be omitted, got %#v", value)
+		}
+	}
+}

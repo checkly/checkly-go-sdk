@@ -2643,8 +2643,10 @@ type StatusPageAutomationRuleV3 struct {
 	Tags []string `json:"tags"`
 
 	// Components is the list of components an automated incident impacts,
-	// with the impact each gets.
-	Components []StatusPageAutomationRuleComponentV3 `json:"components"`
+	// with the impact each gets. The API rejects null, so an empty list is
+	// omitted; updates replace the rule wholesale, so that removes every
+	// component.
+	Components []StatusPageAutomationRuleComponentV3 `json:"components,omitempty"`
 }
 
 type IncidentSeverity string
