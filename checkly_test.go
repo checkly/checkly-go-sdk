@@ -2879,8 +2879,10 @@ func validateGRPCMonitor(t *testing.T, body []byte) {
 	if err != nil {
 		t.Fatalf("decoding error for data %q: %v", body, err)
 	}
-	if !cmp.Equal(testGRPCMonitor, payload, ignoreGRPCMonitorFields) {
-		t.Error(cmp.Diff(testGRPCMonitor, payload, ignoreGRPCMonitorFields))
+	// The payload sends empty lists rather than omitting them, which decode
+	// to empty rather than nil slices.
+	if !cmp.Equal(testGRPCMonitor, payload, ignoreGRPCMonitorFields, cmpopts.EquateEmpty()) {
+		t.Error(cmp.Diff(testGRPCMonitor, payload, ignoreGRPCMonitorFields, cmpopts.EquateEmpty()))
 	}
 }
 

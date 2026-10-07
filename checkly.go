@@ -326,9 +326,44 @@ func (c *client) CreateTCPMonitor(
 
 type grpcMonitorPayload struct {
 	GRPCMonitor
-	Type        string `json:"checkType"`
-	DoubleCheck bool   `json:"doubleCheck"`
-	GroupID     *int64 `json:"groupId"`
+	Type        string             `json:"checkType"`
+	DoubleCheck bool               `json:"doubleCheck"`
+	Request     grpcRequestPayload `json:"request"`
+	GroupID     *int64             `json:"groupId"`
+}
+
+// grpcRequestPayload sends empty lists rather than omitting them, as the
+// update endpoint keeps the stored value of an omitted field.
+type grpcRequestPayload struct {
+	GRPCRequest
+	Assertions []Assertion       `json:"assertions"`
+	GRPCConfig grpcConfigPayload `json:"grpcConfig"`
+}
+
+// grpcConfigPayload sends empty metadata as an empty list, and always sends
+// the free-text field of the configured mode, even when it is empty: the
+// update endpoint keeps the stored value of an omitted field, so an empty
+// value would otherwise never clear the old one. The free-text field of the
+// other mode stays omitted, as the API discards it anyway.
+type grpcConfigPayload struct {
+	GRPCConfig
+	Metadata []GRPCMetadata `json:"metadata"`
+	Message  *string        `json:"message,omitempty"`
+	Service  *string        `json:"service,omitempty"`
+}
+
+func createGRPCConfigPayload(config GRPCConfig) grpcConfigPayload {
+	payload := grpcConfigPayload{
+		GRPCConfig: config,
+		Metadata:   emptyIfNil(config.Metadata),
+	}
+	// An empty mode means BEHAVIOR, the API's default.
+	if config.Mode == "HEALTH" {
+		payload.Service = &config.Service
+	} else {
+		payload.Message = &config.Message
+	}
+	return payload
 }
 
 func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
@@ -338,6 +373,11 @@ func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
 		Type: "GRPC",
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
+		Request: grpcRequestPayload{
+			GRPCRequest: monitor.Request,
+			Assertions:  emptyIfNil(monitor.Request.Assertions),
+			GRPCConfig:  createGRPCConfigPayload(monitor.Request.GRPCConfig),
+		},
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.
