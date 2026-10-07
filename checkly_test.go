@@ -3491,6 +3491,42 @@ func marshalToMap(t *testing.T, v interface{}) map[string]interface{} {
 	return m
 }
 
+func TestStatusPageV3SerializesClearableFields(t *testing.T) {
+	m := marshalToMap(t, checkly.StatusPageV3{Name: "foo", URL: "foo"})
+	for _, key := range []string{
+		"customDomain", "description", "logo", "logoDark", "redirectTo",
+		"favicon", "privacyPolicyLink", "termsOfServiceLink", "supportLink",
+		"footerText", "googleAnalyticsTag",
+	} {
+		value, ok := m[key]
+		if !ok || value != "" {
+			t.Errorf("expected %q to be sent as an empty string so the update clears it, got %#v (present: %v)", key, value, ok)
+		}
+	}
+	if value, ok := m["themeColors"]; !ok || value != nil {
+		t.Errorf("expected themeColors to be sent as null so the update clears it, got %#v (present: %v)", value, ok)
+	}
+	if value, ok := m["allowIndexing"]; !ok || value != false {
+		t.Errorf("expected allowIndexing to always be sent, got %#v (present: %v)", value, ok)
+	}
+	// The API rejects an empty defaultTheme; omitted, it resets to AUTO.
+	if value, ok := m["defaultTheme"]; ok {
+		t.Errorf("expected an unset defaultTheme to be omitted, got %#v", value)
+	}
+}
+
+func TestStatusPageComponentV3OmitsUnsetFields(t *testing.T) {
+	m := marshalToMap(t, checkly.StatusPageComponentV3{Name: "foo"})
+	// The update replaces the component wholesale, so an omitted key clears
+	// it; configuration in particular must not be null, which the API
+	// rejects.
+	for _, key := range []string{"id", "statusPageId", "type", "description", "configuration", "parentId"} {
+		if value, ok := m[key]; ok {
+			t.Errorf("expected unset %q to be omitted, got %#v", key, value)
+		}
+	}
+}
+
 func TestStatusPageAutomationRuleV3OmitsEmptyComponents(t *testing.T) {
 	for _, components := range [][]checkly.StatusPageAutomationRuleComponentV3{nil, {}} {
 		m := marshalToMap(t, checkly.StatusPageAutomationRuleV3{

@@ -2458,7 +2458,10 @@ type StatusPageV3 struct {
 	// account's plan; the API rejects them otherwise. A nil value clears
 	// the custom colors on writes. Reads always return a complete palette:
 	// the stored colors, or the defaults when none are stored or the plan
-	// does not include them.
+	// does not include them. A page that was read therefore cannot be sent
+	// back unchanged: set ThemeColors to nil, or to the colors that should
+	// be stored, before updating it, or the defaults are stored as custom
+	// colors (and rejected on plans without them).
 	ThemeColors *StatusPageV3ThemeColors `json:"themeColors"`
 }
 
