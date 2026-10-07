@@ -1221,6 +1221,9 @@ type GRPCConfig struct {
 	TLS      bool           `json:"tls"`
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// BEHAVIOR-mode only (forbidden in HEALTH mode).
+	// Encoding is PROTOBUF or FLATBUFFERS. An update that omits it keeps the
+	// stored encoding, so send PROTOBUF explicitly to switch a FLATBUFFERS
+	// monitor back; that also clears the stored BfbsContent.
 	Encoding          string `json:"encoding,omitempty"`
 	ServiceDefinition string `json:"serviceDefinition,omitempty"`
 	Method            string `json:"method,omitempty"`
