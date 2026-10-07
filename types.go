@@ -767,6 +767,9 @@ type client struct {
 	source     string
 	httpClient *http.Client
 	debug      io.Writer
+	// sleep waits between rate-limit retries, returning early with ctx.Err()
+	// when ctx is done. Tests replace it to avoid real delays.
+	sleep func(context.Context, time.Duration) error
 }
 
 // Check type constants

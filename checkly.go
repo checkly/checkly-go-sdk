@@ -40,6 +40,7 @@ func NewClient(
 		url:        baseURL,
 		httpClient: httpClient,
 		debug:      debug,
+		sleep:      sleepContext,
 	}
 	if httpClient != nil {
 		c.httpClient = httpClient
@@ -2912,15 +2913,47 @@ func (c *client) apiCallV(
 	data []byte,
 ) (statusCode int, response string, err error) {
 	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, v, URL)
+	for retry := 0; ; retry++ {
+		var header http.Header
+		statusCode, response, header, err = c.doRequest(ctx, method, requestURL, data)
+		if err != nil || statusCode != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
+			return statusCode, response, err
+		}
+
+		// Rate limited: wait and re-send, unless the wait would leave too
+		// little of the caller's deadline for the re-sent request, in which
+		// case the caller sees the 429 itself.
+		now := time.Now()
+		wait := rateLimitWait(header, retry, now)
+		if deadline, ok := ctx.Deadline(); ok && now.Add(wait+rateLimitRequestMargin).After(deadline) {
+			return statusCode, response, nil
+		}
+		if c.debug != nil {
+			fmt.Fprintf(c.debug, "rate limited, retrying in %v (retry %d of %d)\n\n", wait, retry+1, rateLimitMaxRetries)
+		}
+		if err := c.sleep(ctx, wait); err != nil {
+			return statusCode, response, err
+		}
+	}
+}
+
+// doRequest sends a single API request. The request is rebuilt from data on
+// every call so that it can be re-sent after a rate-limited response.
+func (c *client) doRequest(
+	ctx context.Context,
+	method string,
+	requestURL string,
+	data []byte,
+) (statusCode int, response string, header http.Header, err error) {
 	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
 
 	if err != nil {
-		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
+		return 0, "", nil, fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 
 	err = c.addAuthHeaders(req)
 	if err != nil {
-		return 0, "", err
+		return 0, "", nil, err
 	}
 
 	req.Header.Add("content-type", "application/json")
@@ -2928,7 +2961,7 @@ func (c *client) apiCallV(
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
-			return 0, "", fmt.Errorf("error dumping HTTP request: %v", err)
+			return 0, "", nil, fmt.Errorf("error dumping HTTP request: %v", err)
 		}
 		fmt.Fprintln(c.debug, string(requestDump))
 		fmt.Fprintln(c.debug)
@@ -2937,7 +2970,7 @@ func (c *client) apiCallV(
 	req = req.WithContext(ctx)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return 0, "", fmt.Errorf("HTTP request failed with: %v", err)
+		return 0, "", nil, fmt.Errorf("HTTP request failed with: %v", err)
 	}
 
 	defer resp.Body.Close()
@@ -2947,9 +2980,9 @@ func (c *client) apiCallV(
 
 	res, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, "", fmt.Errorf("HTTP request failed: %v", err)
+		return resp.StatusCode, "", resp.Header, fmt.Errorf("HTTP request failed: %v", err)
 	}
-	return resp.StatusCode, string(res), nil
+	return resp.StatusCode, string(res), resp.Header, nil
 }
 
 func withAutoAssignAlertsFlag(url string) string {
