@@ -2920,11 +2920,12 @@ func (c *client) apiCallV(
 			return statusCode, response, err
 		}
 
-		// Rate limited: wait and re-send, unless the wait would outlive the
-		// caller's deadline, in which case the caller sees the 429 itself.
+		// Rate limited: wait and re-send, unless the wait would leave too
+		// little of the caller's deadline for the re-sent request, in which
+		// case the caller sees the 429 itself.
 		now := time.Now()
 		wait := rateLimitWait(header, retry, now)
-		if deadline, ok := ctx.Deadline(); ok && now.Add(wait).After(deadline) {
+		if deadline, ok := ctx.Deadline(); ok && now.Add(wait+rateLimitRequestMargin).After(deadline) {
 			return statusCode, response, nil
 		}
 		if c.debug != nil {

@@ -201,6 +201,29 @@ func TestRateLimitDoesNotWaitPastDeadline(t *testing.T) {
 	}
 }
 
+func TestRateLimitLeavesTimeForTheRetriedRequest(t *testing.T) {
+	srv := newRateLimitServer(t,
+		cannedReply{status: 429, headers: map[string]string{"Retry-After": "10"}, body: "limited"},
+		cannedReply{status: 200},
+	)
+	c, waits := newTestClient(srv.URL)
+
+	// The wait (10s plus padding and jitter) fits before the deadline, but
+	// would leave less than rateLimitRequestMargin for the re-sent request.
+	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
+	defer cancel()
+	status, body, err := c.apiCall(ctx, http.MethodGet, "things", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != 429 || body != "limited" {
+		t.Errorf("want immediate 429, got %d %q", status, body)
+	}
+	if len(*waits) != 0 {
+		t.Errorf("want no waits, got %v", *waits)
+	}
+}
+
 func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 	srv := newRateLimitServer(t,
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "30"}, body: "limited"},

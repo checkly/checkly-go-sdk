@@ -18,6 +18,11 @@ const (
 	// rateLimitMaxRetries is how many times a request is re-sent after a 429
 	// before the 429 is returned to the caller.
 	rateLimitMaxRetries = 4
+	// rateLimitRequestMargin is the time that must be left before the
+	// context deadline after a wait, so the re-sent request has a chance to
+	// complete. Otherwise the caller gets the 429 instead of a request that
+	// fails on the deadline after a long wait.
+	rateLimitRequestMargin = 5 * time.Second
 	// rateLimitMaxWait caps a server hint and a backoff step. Rate-limit
 	// windows are at most a minute long, so a longer hint is clamped rather
 	// than obeyed. Padding and jitter are added on top of a clamped hint.
