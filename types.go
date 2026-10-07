@@ -724,6 +724,96 @@ type Client interface {
 		ID string,
 	) error
 
+	// CreateStatusPageV3 creates a new v3 status page and returns the
+	// created resource.
+	CreateStatusPageV3(
+		ctx context.Context,
+		page StatusPageV3,
+	) (*StatusPageV3, error)
+
+	// GetStatusPageV3 retrieves a v3 status page.
+	GetStatusPageV3(
+		ctx context.Context,
+		ID string,
+	) (*StatusPageV3, error)
+
+	// UpdateStatusPageV3 updates a v3 status page.
+	UpdateStatusPageV3(
+		ctx context.Context,
+		ID string,
+		page StatusPageV3,
+	) (*StatusPageV3, error)
+
+	// DeleteStatusPageV3 deletes a v3 status page.
+	DeleteStatusPageV3(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateStatusPageComponentV3 creates a new component on a v3 status
+	// page and returns the created resource.
+	CreateStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		component StatusPageComponentV3,
+	) (*StatusPageComponentV3, error)
+
+	// GetStatusPageComponentV3 retrieves a component of a v3 status page.
+	GetStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) (*StatusPageComponentV3, error)
+
+	// UpdateStatusPageComponentV3 updates a component of a v3 status page.
+	UpdateStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+		component StatusPageComponentV3,
+	) (*StatusPageComponentV3, error)
+
+	// DeleteStatusPageComponentV3 deletes a component of a v3 status page.
+	// Child components are detached from a deleted GROUP, not deleted.
+	DeleteStatusPageComponentV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) error
+
+	// CreateStatusPageAutomationRuleV3 creates a new automation rule on a
+	// v3 status page and returns the created resource.
+	CreateStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		rule StatusPageAutomationRuleV3,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// GetStatusPageAutomationRuleV3 retrieves an automation rule of a v3
+	// status page.
+	GetStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// UpdateStatusPageAutomationRuleV3 updates an automation rule of a v3
+	// status page.
+	UpdateStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+		rule StatusPageAutomationRuleV3,
+	) (*StatusPageAutomationRuleV3, error)
+
+	// DeleteStatusPageAutomationRuleV3 deletes an automation rule of a v3
+	// status page.
+	DeleteStatusPageAutomationRuleV3(
+		ctx context.Context,
+		statusPageID string,
+		ID string,
+	) error
+
 	// SetAccountId sets ID on a client which is required when using User API keys.
 	SetAccountId(ID string)
 
@@ -2294,6 +2384,272 @@ type StatusPageService struct {
 
 	// Name is the name of the service.
 	Name string `json:"name"`
+}
+
+// StatusPageV3 represents a v3 (components-based) status page. Unlike
+// StatusPage, a v3 page has no cards or services: its structure is managed
+// through StatusPageComponentV3 resources, and incidents can be automated
+// with StatusPageAutomationRuleV3 resources.
+//
+// The update endpoint only touches the fields present in the payload, so
+// the optional fields are serialized even when empty: an empty string
+// clears a previously set value, while omitting the field would leave it
+// unchanged. DefaultTheme is the exception — the API rejects an empty
+// value, so it is omitted when unset and the server defaults it to AUTO.
+type StatusPageV3 struct {
+	// ID is the Checkly identifier of the status page.
+	ID string `json:"id,omitempty"`
+
+	// Name is the name of the status page.
+	Name string `json:"name"`
+
+	// URL is the unique subdomain of the status page.
+	URL string `json:"url"`
+
+	// CustomDomain is an optional user-managed domain that hosts the status
+	// page.
+	CustomDomain string `json:"customDomain"`
+
+	// Description is a short description shown on the status page.
+	Description string `json:"description"`
+
+	// Logo is a URL to an image file to use as the logo for the status page.
+	Logo string `json:"logo"`
+
+	// LogoDark is a URL to an image file to use as the logo in dark mode.
+	LogoDark string `json:"logoDark"`
+
+	// RedirectTo is the URL the user should be redirected to when clicking
+	// the logo.
+	RedirectTo string `json:"redirectTo"`
+
+	// Favicon is a URL to an image file to use as the favicon of the status
+	// page.
+	Favicon string `json:"favicon"`
+
+	// DefaultTheme is the default theme of the status page.
+	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
+
+	// PrivacyPolicyLink is a link to a privacy policy, shown in the page
+	// footer.
+	PrivacyPolicyLink string `json:"privacyPolicyLink"`
+
+	// TermsOfServiceLink is a link to terms of service, shown in the page
+	// footer.
+	TermsOfServiceLink string `json:"termsOfServiceLink"`
+
+	// SupportLink is a support contact link, shown in the page footer. It
+	// accepts http, https and mailto URLs.
+	SupportLink string `json:"supportLink"`
+
+	// FooterText is free-form footer text.
+	FooterText string `json:"footerText"`
+
+	// GoogleAnalyticsTag is a Google Analytics tag ID (e.g. "G-XXXXXXXXXX")
+	// to embed on the public page.
+	GoogleAnalyticsTag string `json:"googleAnalyticsTag"`
+
+	// AllowIndexing determines whether search engines may index the public
+	// page.
+	AllowIndexing bool `json:"allowIndexing"`
+
+	// ThemeColors are custom colors for the light and dark theme of the
+	// page. Setting them requires custom theme colors to be part of the
+	// account's plan; the API rejects them otherwise. A nil value clears
+	// the custom colors on writes. Reads always return a complete palette:
+	// the stored colors, or the defaults when none are stored or the plan
+	// does not include them. A page that was read therefore cannot be sent
+	// back unchanged: set ThemeColors to nil, or to the colors that should
+	// be stored, before updating it, or the defaults are stored as custom
+	// colors (and rejected on plans without them).
+	ThemeColors *StatusPageV3ThemeColors `json:"themeColors"`
+}
+
+// StatusPageV3ThemeColors holds the custom colors of a v3 status page, one
+// group per theme. The API requires both groups, with every color set, when
+// custom colors are given.
+type StatusPageV3ThemeColors struct {
+	// Light are the colors used when the page renders in light mode.
+	Light StatusPageV3ThemeColorGroup `json:"light"`
+
+	// Dark are the colors used when the page renders in dark mode.
+	Dark StatusPageV3ThemeColorGroup `json:"dark"`
+}
+
+// StatusPageV3ThemeColorGroup holds the colors of one theme of a v3 status
+// page. Each color is a hex string such as "#FF0000" or "#F00".
+type StatusPageV3ThemeColorGroup struct {
+	// BodyBackgroundColor is the background of the page.
+	BodyBackgroundColor string `json:"bodyBackgroundColor"`
+
+	// HeaderBackgroundColor is the background of the page header.
+	HeaderBackgroundColor string `json:"headerBackgroundColor"`
+
+	// HeaderFontColor is the color of text in the page header.
+	HeaderFontColor string `json:"headerFontColor"`
+
+	// TitleFontColor is the color of titles and headings.
+	TitleFontColor string `json:"titleFontColor"`
+
+	// BodyFontColor is the color of regular body text.
+	BodyFontColor string `json:"bodyFontColor"`
+
+	// BodyFontColorMuted is the color of de-emphasized body text, such as
+	// timestamps.
+	BodyFontColorMuted string `json:"bodyFontColorMuted"`
+
+	// NavigationFontColor is the color of navigation links.
+	NavigationFontColor string `json:"navigationFontColor"`
+
+	// LinkFontColor is the color of links in the page content.
+	LinkFontColor string `json:"linkFontColor"`
+
+	// CardBackgroundColor is the background of component and incident
+	// cards.
+	CardBackgroundColor string `json:"cardBackgroundColor"`
+
+	// BorderColor is the color of borders and dividers.
+	BorderColor string `json:"borderColor"`
+
+	// PrimaryButtonBackgroundColor is the background of primary buttons,
+	// such as "Subscribe".
+	PrimaryButtonBackgroundColor string `json:"primaryButtonBackgroundColor"`
+
+	// PrimaryButtonFontColor is the color of text on primary buttons.
+	PrimaryButtonFontColor string `json:"primaryButtonFontColor"`
+}
+
+type StatusPageComponentV3Type string
+
+const (
+	StatusPageComponentV3TypeService StatusPageComponentV3Type = "SERVICE"
+	StatusPageComponentV3TypeGroup   StatusPageComponentV3Type = "GROUP"
+)
+
+// StatusPageComponentV3Configuration holds a component's type-specific
+// settings. A SERVICE component only supports ShowHistoricalData; a GROUP
+// component supports both. Unset (nil) properties take the type's default
+// on writes; the API rejects a property the component's type does not
+// support. Reads always return every property the type supports.
+type StatusPageComponentV3Configuration struct {
+	// ShowHistoricalData shows the historical status (the uptime bar) of
+	// the component on the status page. Defaults to true.
+	ShowHistoricalData *bool `json:"showHistoricalData,omitempty"`
+
+	// ExpandedByDefault renders the group expanded when the status page
+	// loads. GROUP components only. Defaults to false.
+	ExpandedByDefault *bool `json:"expandedByDefault,omitempty"`
+}
+
+// StatusPageComponentV3 represents a component of a v3 status page: either a
+// SERVICE (a monitored thing with its own status) or a GROUP (a container
+// for other components).
+type StatusPageComponentV3 struct {
+	// ID is the Checkly identifier of the component.
+	ID string `json:"id,omitempty"`
+
+	// StatusPageID is the identifier of the v3 status page the component
+	// belongs to. It is read-only: on writes the page is addressed through
+	// the URL path instead.
+	StatusPageID string `json:"statusPageId,omitempty"`
+
+	// Type is the type of the component, SERVICE or GROUP. Defaults to
+	// SERVICE.
+	Type StatusPageComponentV3Type `json:"type,omitempty"`
+
+	// Name is the name shown on the status page.
+	Name string `json:"name"`
+
+	// Description is an optional description shown next to the name.
+	Description string `json:"description,omitempty"`
+
+	// DisplayOrder is the position among siblings; lower comes first.
+	DisplayOrder int `json:"displayOrder"`
+
+	// Hidden hides the component from the public page while keeping it
+	// available for incidents and automation.
+	Hidden bool `json:"hidden"`
+
+	// Configuration holds the component's type-specific settings. Omitted
+	// (nil) on a write, the component gets (or is reset to, on update) the
+	// defaults of its type.
+	Configuration *StatusPageComponentV3Configuration `json:"configuration,omitempty"`
+
+	// ParentID is the identifier of the GROUP component this component sits
+	// under. It must belong to the same status page. Updates replace the
+	// component wholesale, so omitting it detaches the component from its
+	// parent.
+	ParentID string `json:"parentId,omitempty"`
+}
+
+// StatusPageTargetImpactV3 is the impact an automated incident sets on a
+// component: every component status except OPERATIONAL.
+type StatusPageTargetImpactV3 string
+
+const (
+	StatusPageTargetImpactV3UnderMaintenance    StatusPageTargetImpactV3 = "UNDER_MAINTENANCE"
+	StatusPageTargetImpactV3DegradedPerformance StatusPageTargetImpactV3 = "DEGRADED_PERFORMANCE"
+	StatusPageTargetImpactV3PartialOutage       StatusPageTargetImpactV3 = "PARTIAL_OUTAGE"
+	StatusPageTargetImpactV3MajorOutage         StatusPageTargetImpactV3 = "MAJOR_OUTAGE"
+)
+
+// StatusPageAutomationRuleComponentV3 links an automation rule to a
+// component of the same status page, with the impact an automated incident
+// sets on it.
+type StatusPageAutomationRuleComponentV3 struct {
+	// ComponentID is the identifier of the impacted component.
+	ComponentID string `json:"componentId"`
+
+	// TargetImpact is the impact set on the component while the automated
+	// incident is open.
+	TargetImpact StatusPageTargetImpactV3 `json:"targetImpact"`
+}
+
+// StatusPageAutomationRuleV3 represents an automation rule of a v3 status
+// page. When a check whose tags overlap with the rule's tags fails, Checkly
+// opens one incident on the page impacting the listed components, and
+// resolves it when the check recovers.
+type StatusPageAutomationRuleV3 struct {
+	// ID is the Checkly identifier of the automation rule.
+	ID string `json:"id,omitempty"`
+
+	// StatusPageID is the identifier of the v3 status page the rule belongs
+	// to. It is read-only: on writes the page is addressed through the URL
+	// path instead.
+	StatusPageID string `json:"statusPageId,omitempty"`
+
+	// Name is the name of the rule.
+	Name string `json:"name"`
+
+	// Enabled determines whether the rule may open incidents. A disabled
+	// rule never opens incidents.
+	Enabled bool `json:"enabled"`
+
+	// FirstUpdate is the body of the status update that opens the incident.
+	FirstUpdate string `json:"firstUpdate"`
+
+	// LastUpdate is the body of the status update that resolves the
+	// incident.
+	LastUpdate string `json:"lastUpdate"`
+
+	// NotifySubscribers determines whether subscribers are notified of the
+	// automated updates.
+	NotifySubscribers bool `json:"notifySubscribers"`
+
+	// CoolDownWindowMinutes is the minimum number of minutes after an
+	// automated incident before this rule may open the next one. 0 disables
+	// the cool down.
+	CoolDownWindowMinutes int `json:"coolDownWindowMinutes"`
+
+	// Tags is the list of tags the rule matches on. A failing check matches
+	// when it, or its group, carries ANY of these tags.
+	Tags []string `json:"tags"`
+
+	// Components is the list of components an automated incident impacts,
+	// with the impact each gets. The API rejects null, so an empty list is
+	// omitted; updates replace the rule wholesale, so that removes every
+	// component.
+	Components []StatusPageAutomationRuleComponentV3 `json:"components,omitempty"`
 }
 
 type IncidentSeverity string
