@@ -1221,14 +1221,24 @@ type GRPCConfig struct {
 	TLS      bool           `json:"tls"`
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// BEHAVIOR-mode only (forbidden in HEALTH mode).
-	Encoding          string `json:"encoding,omitempty"`
-	ServiceDefinition string `json:"serviceDefinition,omitempty"`
-	Method            string `json:"method,omitempty"`
-	ProtoContent      string `json:"protoContent,omitempty"`
-	BfbsContent       string `json:"bfbsContent,omitempty"`
-	Message           string `json:"message,omitempty"`
+	Encoding          string                 `json:"encoding,omitempty"`
+	ServiceDefinition string                 `json:"serviceDefinition,omitempty"`
+	Method            string                 `json:"method,omitempty"`
+	ProtoContent      string                 `json:"protoContent,omitempty"`
+	BfbsContent       string                 `json:"bfbsContent,omitempty"`
+	Message           string                 `json:"message,omitempty"`
+	Messages          []json.RawMessage      `json:"messages,omitempty"`
+	StreamTermination *GRPCStreamTermination `json:"streamTermination,omitempty"`
 	// HEALTH-mode only (forbidden in BEHAVIOR mode).
 	Service string `json:"service,omitempty"`
+}
+
+// GRPCStreamTermination completes observation after a duration or received-message
+// count. When both are specified, the first reached wins. Request.Timeout remains
+// an independent failure deadline. Applicable to server and bidi streams only.
+type GRPCStreamTermination struct {
+	DurationSeconds float64 `json:"durationSeconds,omitempty"`
+	MaxMessages     int     `json:"maxMessages,omitempty"`
 }
 
 // GRPCMetadata represents a single gRPC metadata key/value pair.
@@ -1694,20 +1704,24 @@ type GRPCCheckResult struct {
 
 // GRPCCheckResponse is the detailed gRPC response artifact.
 type GRPCCheckResponse struct {
-	GRPCMode          string                 `json:"grpcMode,omitempty"`
-	Host              string                 `json:"host,omitempty"`
-	ResolvedIP        string                 `json:"resolvedIp,omitempty"`
-	Port              int                    `json:"port,omitempty"`
-	GRPCMethod        string                 `json:"grpcMethod,omitempty"`
-	ResponseMessage   string                 `json:"responseMessage,omitempty"`
-	GRPCStatusCode    int                    `json:"grpcStatusCode,omitempty"`
-	GRPCStatusMessage string                 `json:"grpcStatusMessage,omitempty"`
-	HealthStatus      *int                   `json:"healthStatus,omitempty"`
-	HealthStatusLabel string                 `json:"healthStatusLabel,omitempty"`
-	Metadata          []GRPCMetadata         `json:"metadata,omitempty"`
-	DiscoveredMethods []string               `json:"discoveredMethods,omitempty"`
-	RequestError      string                 `json:"requestError,omitempty"`
-	TimingPhases      map[string]interface{} `json:"timingPhases,omitempty"`
+	MessageCount            *int                   `json:"messageCount,omitempty"`
+	SentMessageCount        *int                   `json:"sentMessageCount,omitempty"`
+	StreamTruncated         bool                   `json:"streamTruncated,omitempty"`
+	StreamTerminationReason string                 `json:"streamTerminationReason,omitempty"`
+	GRPCMode                string                 `json:"grpcMode,omitempty"`
+	Host                    string                 `json:"host,omitempty"`
+	ResolvedIP              string                 `json:"resolvedIp,omitempty"`
+	Port                    int                    `json:"port,omitempty"`
+	GRPCMethod              string                 `json:"grpcMethod,omitempty"`
+	ResponseMessage         string                 `json:"responseMessage,omitempty"`
+	GRPCStatusCode          int                    `json:"grpcStatusCode,omitempty"`
+	GRPCStatusMessage       string                 `json:"grpcStatusMessage,omitempty"`
+	HealthStatus            *int                   `json:"healthStatus,omitempty"`
+	HealthStatusLabel       string                 `json:"healthStatusLabel,omitempty"`
+	Metadata                []GRPCMetadata         `json:"metadata,omitempty"`
+	DiscoveredMethods       []string               `json:"discoveredMethods,omitempty"`
+	RequestError            string                 `json:"requestError,omitempty"`
+	TimingPhases            map[string]interface{} `json:"timingPhases,omitempty"`
 }
 
 // SSLCheckResult holds the failure-debug diagnostics for an SSL check result.
