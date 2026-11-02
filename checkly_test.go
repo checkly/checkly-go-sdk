@@ -3568,6 +3568,19 @@ func assertRawBodyField(t *testing.T, body []byte, key, want string) {
 	}
 }
 
+// assertRawBodyKeyAbsent asserts that the raw JSON request body does not
+// contain the given key.
+func assertRawBodyKeyAbsent(t *testing.T, body []byte, key string) {
+	t.Helper()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		t.Fatalf("decoding error for data %q: %v", body, err)
+	}
+	if got, ok := raw[key]; ok {
+		t.Errorf("expected key %q to be absent from request body, got %s", key, got)
+	}
+}
+
 // assertRawNestedBodyField asserts that the JSON object at the given
 // top-level key of the raw request body contains the given nested key with
 // exactly the given serialized value.
@@ -4302,25 +4315,14 @@ func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
 
 	// The endpoints are PATCH-style down to the nested request object, so
 	// clearable request keys must always be serialized as well.
+	assertRawNestedBodyField(t, body, "request", "assertions", `[]`)
+	// data must NOT be present: the backend rejects an empty string and a
+	// null value cannot clear it either, so an empty data value is omitted.
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(body, &raw); err != nil {
 		t.Fatalf("decoding error for data %q: %v", body, err)
 	}
-	request, ok := raw["request"]
-	if !ok {
-		t.Error(`missing key "request" in request body`)
-		return
-	}
-	assertRawBodyField(t, request, "assertions", `[]`)
-	// data must NOT be present: the backend rejects an empty string and a
-	// null value cannot clear it either, so an empty data value is omitted.
-	var rawRequest map[string]json.RawMessage
-	if err := json.Unmarshal(request, &rawRequest); err != nil {
-		t.Fatalf("decoding error for data %q: %v", request, err)
-	}
-	if _, ok := rawRequest["data"]; ok {
-		t.Error(`unexpected key "data" in request body`)
-	}
+	assertRawBodyKeyAbsent(t, raw["request"], "data")
 }
 
 func TestCreateTCPMonitorSerializesEmptyValues(t *testing.T) {
@@ -4562,9 +4564,8 @@ func validateICMPMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
-	// 0 is a schema-valid packet loss threshold and must be serialized, or
-	// the backend would default (create) or keep (update) the previous
-	// values.
+	// The thresholds are always sent, so a 0 reaches the backend, which
+	// rejects it, instead of being replaced by the default or prior value.
 	assertRawBodyField(t, body, "degradedPacketLossThreshold", `0`)
 	assertRawBodyField(t, body, "maxPacketLossThreshold", `0`)
 }
@@ -4615,5 +4616,55 @@ func TestUpdateICMPMonitorSerializesEmptyValues(t *testing.T) {
 	)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestGetPerTypeCheckRejectsOtherCheckTypes(t *testing.T) {
+	t.Parallel()
+	// Each getter is served a check of another type and must refuse it
+	// instead of decoding a mostly empty check.
+	tests := []struct {
+		name    string
+		path    string
+		fixture string
+		get     func(client checkly.Client) error
+	}{
+		{
+			name:    "GetAPICheck",
+			path:    fmt.Sprintf("/v1/checks/%s", testBrowserCheck.ID),
+			fixture: "GetBrowserCheck.json",
+			get: func(client checkly.Client) error {
+				_, err := client.GetAPICheck(context.Background(), testBrowserCheck.ID)
+				return err
+			},
+		},
+		{
+			name:    "GetBrowserCheck",
+			path:    fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testAPICheck.ID),
+			fixture: "GetAPICheck.json",
+			get: func(client checkly.Client) error {
+				_, err := client.GetBrowserCheck(context.Background(), testAPICheck.ID)
+				return err
+			},
+		},
+		{
+			name:    "GetMultiStepCheck",
+			path:    fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testAPICheck.ID),
+			fixture: "GetAPICheck.json",
+			get: func(client checkly.Client) error {
+				_, err := client.GetMultiStepCheck(context.Background(), testAPICheck.ID)
+				return err
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := cannedResponseServer(t, http.MethodGet, tt.path, validateEmptyBody, http.StatusOK, tt.fixture)
+			defer ts.Close()
+			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+			if err := tt.get(client); err == nil || !strings.Contains(err.Error(), "check is of type") {
+				t.Errorf("expected a check type error, got %v", err)
+			}
+		})
 	}
 }

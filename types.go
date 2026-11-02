@@ -353,19 +353,22 @@ type Client interface {
 		ID string,
 	) error
 
-	// DeleteAPICheck deletes the API check with the specified ID.
+	// DeleteAPICheck deletes the API check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
 	DeleteAPICheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// DeleteBrowserCheck deletes the browser check with the specified ID.
+	// DeleteBrowserCheck deletes the browser check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
 	DeleteBrowserCheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// DeleteMultiStepCheck deletes the multi-step check with the specified ID.
+	// DeleteMultiStepCheck deletes the multi-step check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
 	DeleteMultiStepCheck(
 		ctx context.Context,
 		ID string,
@@ -1080,6 +1083,11 @@ type Check struct {
 }
 
 // APICheck represents an API check.
+//
+// The per-type check update endpoints are PATCH-style: keys omitted from the
+// payload keep their server-side value. Clearable fields of APICheck,
+// BrowserCheck and MultiStepCheck are therefore serialized even when empty,
+// and the client sends nil slices as empty lists.
 type APICheck struct {
 	ID              string   `json:"id,omitempty"`
 	Name            string   `json:"name"`
@@ -1093,13 +1101,15 @@ type APICheck struct {
 	Locations       []string `json:"locations"`
 	// DegradedResponseTime is the response time in milliseconds where the
 	// check should be considered degraded. The API accepts values between 0
-	// and 30000, defaulting to 5000 if unset.
-	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
+	// and 30000. It is always sent, so leaving it at 0 sets a limit of 0
+	// rather than the API's default of 5000.
+	DegradedResponseTime int `json:"degradedResponseTime"`
 	// MaxResponseTime is the response time in milliseconds where the check
 	// should be considered failing. The API accepts values between 0 and
-	// 30000, defaulting to 20000 if unset.
-	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
-	Tags                      []string                   `json:"tags,omitempty"`
+	// 30000. It is always sent, so leaving it at 0 sets a limit of 0 rather
+	// than the API's default of 20000.
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	Tags                      []string                   `json:"tags"`
 	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	Request                   Request                    `json:"request"`
@@ -1108,8 +1118,8 @@ type APICheck struct {
 	LocalSetupScript          *string                    `json:"localSetupScript"`
 	LocalTearDownScript       *string                    `json:"localTearDownScript"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	GroupOrder                int                        `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
@@ -1138,15 +1148,15 @@ type BrowserCheck struct {
 	Locations                 []string                   `json:"locations"`
 	Script                    string                     `json:"script"`
 	ScriptPath                *string                    `json:"scriptPath"`
-	Dependencies              []ScriptDependency         `json:"dependencies,omitempty"`
+	Dependencies              []ScriptDependency         `json:"dependencies"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
 	SSLCheckDomain            string                     `json:"sslCheckDomain"`
-	Tags                      []string                   `json:"tags,omitempty"`
+	Tags                      []string                   `json:"tags"`
 	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	GroupOrder                int                        `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
@@ -1168,14 +1178,14 @@ type MultiStepCheck struct {
 	Locations                 []string                   `json:"locations"`
 	Script                    string                     `json:"script"`
 	ScriptPath                *string                    `json:"scriptPath"`
-	Dependencies              []ScriptDependency         `json:"dependencies,omitempty"`
+	Dependencies              []ScriptDependency         `json:"dependencies"`
 	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	Tags                      []string                   `json:"tags,omitempty"`
+	Tags                      []string                   `json:"tags"`
 	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
 	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
 	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	GroupOrder                int                        `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RuntimeID                 *string                    `json:"runtimeId"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`

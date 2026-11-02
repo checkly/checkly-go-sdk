@@ -243,10 +243,7 @@ func createHeartbeatMonitorPayload(monitor HeartbeatMonitor) heartbeatMonitorPay
 		HeartbeatMonitor: monitor,
 	}
 
-	payload.Tags = monitor.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
+	payload.Tags = emptyIfNil(monitor.Tags)
 
 	return payload
 }
@@ -343,10 +340,7 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 		payload.PrivateLocations = &[]string{}
 	}
 
-	payload.Tags = monitor.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
+	payload.Tags = emptyIfNil(monitor.Tags)
 
 	// The response time limits must always be sent: 0 is a valid value, and
 	// omitting the keys would make the backend default them on create and
@@ -362,10 +356,7 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 
 	payload.Request = tcpRequestPayload{
 		TCPRequest: monitor.Request,
-		Assertions: monitor.Request.Assertions,
-	}
-	if payload.Request.Assertions == nil {
-		payload.Request.Assertions = []Assertion{}
+		Assertions: emptyIfNil(monitor.Request.Assertions),
 	}
 
 	return payload
@@ -668,15 +659,9 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 		payload.PrivateLocations = &[]string{}
 	}
 
-	payload.Tags = monitor.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
+	payload.Tags = emptyIfNil(monitor.Tags)
 
-	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
 
 	// The response time limits must always be sent: 0 is a valid value, and
 	// omitting the keys would make the backend default them on create and
@@ -687,9 +672,7 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 	// GroupOrder must be null if empty or the order will not get unset on
 	// update. Note that the check and TCP monitor endpoints differ: they
 	// accept and reset on a literal 0.
-	if monitor.GroupOrder != 0 {
-		payload.GroupOrder = &monitor.GroupOrder
-	}
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -764,15 +747,9 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 		payload.Locations = []string{}
 	}
 
-	payload.Tags = monitor.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
+	payload.Tags = emptyIfNil(monitor.Tags)
 
-	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
 
 	// The response time limits must always be sent: 0 is a valid value, and
 	// omitting the keys would make the backend default them on create and
@@ -783,9 +760,7 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	// GroupOrder must be null if empty or the order will not get unset on
 	// update. Note that the check and TCP monitor endpoints differ: they
 	// accept and reset on a literal 0.
-	if monitor.GroupOrder != 0 {
-		payload.GroupOrder = &monitor.GroupOrder
-	}
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -860,29 +835,22 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 		payload.Locations = []string{}
 	}
 
-	payload.Tags = monitor.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
+	payload.Tags = emptyIfNil(monitor.Tags)
 
-	payload.AlertChannelSubscriptions = monitor.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
 
 	// The packet loss thresholds must always be sent: omitting the keys
 	// would make the backend default them on create and keep the previous
-	// values on update. Note that although the public schema allows 0, the
-	// backend currently rejects an explicit 0 with a validation error.
+	// values on update. The backend rejects an explicit 0, and sending it
+	// surfaces that as a validation error rather than silently storing a
+	// different value.
 	payload.DegradedPacketLossThreshold = monitor.DegradedPacketLossThreshold
 	payload.MaxPacketLossThreshold = monitor.MaxPacketLossThreshold
 
 	// GroupOrder must be null if empty or the order will not get unset on
 	// update. Note that the check and TCP monitor endpoints differ: they
 	// accept and reset on a literal 0.
-	if monitor.GroupOrder != 0 {
-		payload.GroupOrder = &monitor.GroupOrder
-	}
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -970,17 +938,11 @@ type apiCheckPayload struct {
 	Type string `json:"checkType"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
-	// zero value would be omitted (or serialized in a way that cannot clear
-	// the server-side value) so that they are always sent.
-	DoubleCheck               bool                       `json:"doubleCheck"`
-	GroupID                   *int64                     `json:"groupId"`
-	Tags                      []string                   `json:"tags"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
-	GroupOrder                int                        `json:"groupOrder"`
-	SetupSnippetID            *int64                     `json:"setupSnippetId"`
-	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime"`
-	MaxResponseTime           int                        `json:"maxResponseTime"`
+	// Go type cannot express the value that clears them.
+	DoubleCheck       bool   `json:"doubleCheck"`
+	GroupID           *int64 `json:"groupId"`
+	SetupSnippetID    *int64 `json:"setupSnippetId"`
+	TearDownSnippetID *int64 `json:"tearDownSnippetId"`
 }
 
 func createAPICheckPayload(check APICheck) apiCheckPayload {
@@ -991,53 +953,20 @@ func createAPICheckPayload(check APICheck) apiCheckPayload {
 		// Unfortunately, this will default to true if not set. Always sending
 		// false also clears the deprecated doubleCheck flag on updates of
 		// checks that still have it set; retryStrategy is its replacement.
-		DoubleCheck: false,
-	}
-
-	// GroupID must be null if empty or the group will not get unset on update.
-	if check.GroupID != 0 {
-		payload.GroupID = &check.GroupID
-	}
-
-	// The group order must always be sent, or the backend would keep the
-	// previous value on update instead of resetting it to 0.
-	payload.GroupOrder = check.GroupOrder
-
-	// The snippet IDs must be null if empty or they will not get unset on
-	// update.
-	if check.SetupSnippetID != 0 {
-		payload.SetupSnippetID = &check.SetupSnippetID
-	}
-
-	if check.TearDownSnippetID != 0 {
-		payload.TearDownSnippetID = &check.TearDownSnippetID
+		DoubleCheck:       false,
+		GroupID:           nullIfZero(check.GroupID),
+		SetupSnippetID:    nullIfZero(check.SetupSnippetID),
+		TearDownSnippetID: nullIfZero(check.TearDownSnippetID),
 	}
 
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
-	if check.Locations == nil {
-		payload.Locations = []string{}
-	}
-
+	payload.Locations = emptyIfNil(check.Locations)
 	if check.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
-
-	payload.Tags = check.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
-
-	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
-
-	// The response time limits must always be sent: 0 is a valid value, and
-	// omitting the keys would make the backend default them on create and
-	// keep the previous values on update.
-	payload.DegradedResponseTime = check.DegradedResponseTime
-	payload.MaxResponseTime = check.MaxResponseTime
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
 
 	return payload
 }
@@ -1075,14 +1004,12 @@ type browserCheckPayload struct {
 	Type string `json:"checkType"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
-	// zero value would be omitted (or serialized in a way that cannot clear
-	// the server-side value) so that they are always sent.
-	DoubleCheck               bool                       `json:"doubleCheck"`
-	GroupID                   *int64                     `json:"groupId"`
-	GroupOrder                int                        `json:"groupOrder"`
-	Tags                      []string                   `json:"tags"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
-	Dependencies              []ScriptDependency         `json:"dependencies"`
+	// Go type cannot express the value that clears them.
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+	// Script is null rather than empty when unset: the API rejects an empty
+	// script, and a check that runs ScriptPath has no inline script.
+	Script *string `json:"script"`
 }
 
 func createBrowserCheckPayload(check BrowserCheck) browserCheckPayload {
@@ -1094,41 +1021,19 @@ func createBrowserCheckPayload(check BrowserCheck) browserCheckPayload {
 		// false also clears the deprecated doubleCheck flag on updates of
 		// checks that still have it set; retryStrategy is its replacement.
 		DoubleCheck: false,
+		GroupID:     nullIfZero(check.GroupID),
+		Script:      nullIfZero(check.Script),
 	}
-
-	// GroupID must be null if empty or the group will not get unset on update.
-	if check.GroupID != 0 {
-		payload.GroupID = &check.GroupID
-	}
-
-	// The group order must always be sent, or the backend would keep the
-	// previous value on update instead of resetting it to 0.
-	payload.GroupOrder = check.GroupOrder
 
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
-	if check.Locations == nil {
-		payload.Locations = []string{}
-	}
-
+	payload.Locations = emptyIfNil(check.Locations)
 	if check.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
-
-	payload.Tags = check.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
-
-	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
-
-	payload.Dependencies = check.Dependencies
-	if payload.Dependencies == nil {
-		payload.Dependencies = []ScriptDependency{}
-	}
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
+	payload.Dependencies = emptyIfNil(check.Dependencies)
 
 	return payload
 }
@@ -1166,14 +1071,12 @@ type multiStepCheckPayload struct {
 	Type string `json:"checkType"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
-	// zero value would be omitted (or serialized in a way that cannot clear
-	// the server-side value) so that they are always sent.
-	DoubleCheck               bool                       `json:"doubleCheck"`
-	GroupID                   *int64                     `json:"groupId"`
-	GroupOrder                int                        `json:"groupOrder"`
-	Tags                      []string                   `json:"tags"`
-	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
-	Dependencies              []ScriptDependency         `json:"dependencies"`
+	// Go type cannot express the value that clears them.
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+	// Script is null rather than empty when unset: the API rejects an empty
+	// script, and a check that runs ScriptPath has no inline script.
+	Script *string `json:"script"`
 }
 
 func createMultiStepCheckPayload(check MultiStepCheck) multiStepCheckPayload {
@@ -1185,41 +1088,19 @@ func createMultiStepCheckPayload(check MultiStepCheck) multiStepCheckPayload {
 		// false also clears the deprecated doubleCheck flag on updates of
 		// checks that still have it set; retryStrategy is its replacement.
 		DoubleCheck: false,
+		GroupID:     nullIfZero(check.GroupID),
+		Script:      nullIfZero(check.Script),
 	}
-
-	// GroupID must be null if empty or the group will not get unset on update.
-	if check.GroupID != 0 {
-		payload.GroupID = &check.GroupID
-	}
-
-	// The group order must always be sent, or the backend would keep the
-	// previous value on update instead of resetting it to 0.
-	payload.GroupOrder = check.GroupOrder
 
 	// A nil value for a list will cause the backend to not update the value.
 	// We must send empty lists instead.
-	if check.Locations == nil {
-		payload.Locations = []string{}
-	}
-
+	payload.Locations = emptyIfNil(check.Locations)
 	if check.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
-
-	payload.Tags = check.Tags
-	if payload.Tags == nil {
-		payload.Tags = []string{}
-	}
-
-	payload.AlertChannelSubscriptions = check.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
-
-	payload.Dependencies = check.Dependencies
-	if payload.Dependencies == nil {
-		payload.Dependencies = []ScriptDependency{}
-	}
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
+	payload.Dependencies = emptyIfNil(check.Dependencies)
 
 	return payload
 }
@@ -2040,82 +1921,83 @@ func (c *client) GetPlaywrightCheck(
 	return &result, nil
 }
 
+// getCheckOfType fetches the check at path and decodes it into result. The
+// generic check endpoint returns checks of every type, so the response's
+// checkType is compared with the expected one: decoding a check of another
+// type would silently drop its type-specific fields.
+func (c *client) getCheckOfType(
+	ctx context.Context,
+	path string,
+	checkType string,
+	result any,
+) error {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		path,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusOK {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var header struct {
+		CheckType string `json:"checkType"`
+	}
+	if err := json.Unmarshal([]byte(res), &header); err != nil {
+		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	if header.CheckType != checkType {
+		return fmt.Errorf("check is of type %q, not %q", header.CheckType, checkType)
+	}
+	if err := json.Unmarshal([]byte(res), result); err != nil {
+		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return nil
+}
+
 // GetAPICheck takes the ID of an existing API check, and returns the check
-// parameters, or an error.
+// parameters, or an error. It returns an error when the ID belongs to a check
+// of another type.
 func (c *client) GetAPICheck(
 	ctx context.Context,
 	ID string,
 ) (*APICheck, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result APICheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s", ID), "API", &result); err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
 
 // GetBrowserCheck takes the ID of an existing browser check, and returns the
-// check parameters, or an error. The includeDependencies query parameter is
-// required for the response to contain the check's script dependencies.
+// check parameters, or an error. It returns an error when the ID belongs to a
+// check of another type. The includeDependencies query parameter is required
+// for the response to contain the check's script dependencies.
 func (c *client) GetBrowserCheck(
 	ctx context.Context,
 	ID string,
 ) (*BrowserCheck, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s?includeDependencies=true", ID),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result BrowserCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
 
 // GetMultiStepCheck takes the ID of an existing multi-step check, and returns
-// the check parameters, or an error. The includeDependencies query parameter
-// is required for the response to contain the check's script dependencies.
+// the check parameters, or an error. It returns an error when the ID belongs
+// to a check of another type. The includeDependencies query parameter is
+// required for the response to contain the check's script dependencies.
 func (c *client) GetMultiStepCheck(
 	ctx context.Context,
 	ID string,
 ) (*MultiStepCheck, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s?includeDependencies=true", ID),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result MultiStepCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2150,28 +2032,17 @@ func createGroupPayload(group Group) groupPayload {
 
 	// The snippet IDs must be null if empty or they will not get unset on
 	// update.
-	if group.SetupSnippetID != 0 {
-		payload.SetupSnippetID = &group.SetupSnippetID
-	}
+	payload.SetupSnippetID = nullIfZero(group.SetupSnippetID)
 
-	if group.TearDownSnippetID != 0 {
-		payload.TearDownSnippetID = &group.TearDownSnippetID
-	}
+	payload.TearDownSnippetID = nullIfZero(group.TearDownSnippetID)
 
 	// The local scripts must be null if empty or they will not get unset on
 	// update.
-	if group.LocalSetupScript != "" {
-		payload.LocalSetupScript = &group.LocalSetupScript
-	}
+	payload.LocalSetupScript = nullIfZero(group.LocalSetupScript)
 
-	if group.LocalTearDownScript != "" {
-		payload.LocalTearDownScript = &group.LocalTearDownScript
-	}
+	payload.LocalTearDownScript = nullIfZero(group.LocalTearDownScript)
 
-	payload.AlertChannelSubscriptions = group.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
+	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
 
 	return payload
 }
@@ -2231,10 +2102,7 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 		payload.PrivateLocations = &[]string{}
 	}
 
-	payload.AlertChannelSubscriptions = group.AlertChannelSubscriptions
-	if payload.AlertChannelSubscriptions == nil {
-		payload.AlertChannelSubscriptions = []AlertChannelSubscription{}
-	}
+	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
 
 	return payload
 }
