@@ -74,15 +74,6 @@ func (c *client) GetDashboard(
 	return &result, nil
 }
 
-// DeleteDashboard deletes the dashboard with the specified ID.
-func (c *client) DeleteDashboard(
-	ctx context.Context,
-	ID string,
-) error {
-	_, err := c.call(ctx, http.MethodDelete, "/v1/dashboards/"+ID, nil, http.StatusNoContent)
-	return err
-}
-
 // UpdateDashboard takes the ID of an existing dashboard, and updates the
 // corresponding dashboard to match the supplied dashboard. It returns the updated
 // dashboard, or an error.
@@ -97,4 +88,13 @@ func (c *client) UpdateDashboard(
 		return nil, err
 	}
 	return &result, nil
+}
+
+// DeleteDashboard deletes the dashboard with the specified ID.
+func (c *client) DeleteDashboard(
+	ctx context.Context,
+	ID string,
+) error {
+	_, err := c.call(ctx, http.MethodDelete, "/v1/dashboards/"+ID, nil, http.StatusNoContent)
+	return err
 }

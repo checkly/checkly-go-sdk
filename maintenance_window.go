@@ -166,15 +166,6 @@ func (c *client) GetMaintenanceWindow(
 	return &result, nil
 }
 
-// DeleteMaintenanceWindow deletes the window with the specified ID.
-func (c *client) DeleteMaintenanceWindow(
-	ctx context.Context,
-	ID int64,
-) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, http.StatusNoContent)
-	return err
-}
-
 // UpdateMaintenanceWindow takes the ID of an existing window, and updates the
 // corresponding window to match the supplied one.
 func (c *client) UpdateMaintenanceWindow(
@@ -188,4 +179,13 @@ func (c *client) UpdateMaintenanceWindow(
 		return nil, err
 	}
 	return &result, nil
+}
+
+// DeleteMaintenanceWindow deletes the window with the specified ID.
+func (c *client) DeleteMaintenanceWindow(
+	ctx context.Context,
+	ID int64,
+) error {
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, http.StatusNoContent)
+	return err
 }

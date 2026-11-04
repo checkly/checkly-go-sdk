@@ -117,6 +117,20 @@ func (c *client) CreateTracerouteMonitor(
 	return &result, nil
 }
 
+// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
+// returns the monitor parameters, or an error.
+func (c *client) GetTracerouteMonitor(
+	ctx context.Context,
+	ID string,
+) (*TracerouteMonitor, error) {
+	var result TracerouteMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateTracerouteMonitor(
 	ctx context.Context,
 	ID string,
@@ -135,18 +149,4 @@ func (c *client) DeleteTracerouteMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
-// returns the monitor parameters, or an error.
-func (c *client) GetTracerouteMonitor(
-	ctx context.Context,
-	ID string,
-) (*TracerouteMonitor, error) {
-	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

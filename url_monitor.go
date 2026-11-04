@@ -127,6 +127,20 @@ func (c *client) CreateURLMonitor(
 	return &result, nil
 }
 
+// GetURLMonitor takes the ID of an existing URL monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetURLMonitor(
+	ctx context.Context,
+	ID string,
+) (*URLMonitor, error) {
+	var result URLMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateURLMonitor(
 	ctx context.Context,
 	ID string,
@@ -145,18 +159,4 @@ func (c *client) DeleteURLMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetURLMonitor takes the ID of an existing URL monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetURLMonitor(
-	ctx context.Context,
-	ID string,
-) (*URLMonitor, error) {
-	var result URLMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

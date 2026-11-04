@@ -115,6 +115,20 @@ func (c *client) CreateICMPMonitor(
 	return &result, nil
 }
 
+// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetICMPMonitor(
+	ctx context.Context,
+	ID string,
+) (*ICMPMonitor, error) {
+	var result ICMPMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateICMPMonitor(
 	ctx context.Context,
 	ID string,
@@ -133,18 +147,4 @@ func (c *client) DeleteICMPMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetICMPMonitor(
-	ctx context.Context,
-	ID string,
-) (*ICMPMonitor, error) {
-	var result ICMPMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

@@ -154,6 +154,20 @@ func (c *client) CreateSSLMonitor(
 	return &result, nil
 }
 
+// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetSSLMonitor(
+	ctx context.Context,
+	ID string,
+) (*SSLMonitor, error) {
+	var result SSLMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateSSLMonitor(
 	ctx context.Context,
 	ID string,
@@ -172,18 +186,4 @@ func (c *client) DeleteSSLMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetSSLMonitor(
-	ctx context.Context,
-	ID string,
-) (*SSLMonitor, error) {
-	var result SSLMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

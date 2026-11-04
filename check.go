@@ -135,6 +135,20 @@ func createCheckPayload(check Check) checkPayload {
 	return payload
 }
 
+// GetCheck takes the ID of an existing check, and returns the check
+// parameters, or an error.
+func (c *client) GetCheck(
+	ctx context.Context,
+	ID string,
+) (*Check, error) {
+	result := Check{}
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // UpdateCheck updates an existing check with the specified details. It
 // returns the updated check, or an error.
 func (c *client) UpdateCheck(
@@ -157,20 +171,6 @@ func (c *client) DeleteCheck(
 ) error {
 	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/checks/%s", ID), nil, http.StatusNoContent)
 	return err
-}
-
-// GetCheck takes the ID of an existing check, and returns the check
-// parameters, or an error.
-func (c *client) GetCheck(
-	ctx context.Context,
-	ID string,
-) (*Check, error) {
-	result := Check{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }
 
 // getCheckOfType fetches the check at path and decodes it into result. The

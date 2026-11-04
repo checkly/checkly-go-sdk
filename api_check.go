@@ -136,6 +136,20 @@ func (c *client) CreateAPICheck(
 	return &result, nil
 }
 
+// GetAPICheck takes the ID of an existing API check, and returns the check
+// parameters, or an error. It returns an error when the ID belongs to a check
+// of another type.
+func (c *client) GetAPICheck(
+	ctx context.Context,
+	ID string,
+) (*APICheck, error) {
+	var result APICheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "API", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateAPICheck(
 	ctx context.Context,
 	ID string,
@@ -154,18 +168,4 @@ func (c *client) DeleteAPICheck(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetAPICheck takes the ID of an existing API check, and returns the check
-// parameters, or an error. It returns an error when the ID belongs to a check
-// of another type.
-func (c *client) GetAPICheck(
-	ctx context.Context,
-	ID string,
-) (*APICheck, error) {
-	var result APICheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "API", &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

@@ -136,6 +136,20 @@ func (c *client) CreateTCPMonitor(
 	return &result, nil
 }
 
+// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetTCPMonitor(
+	ctx context.Context,
+	ID string,
+) (*TCPMonitor, error) {
+	var result TCPMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateTCPMonitor(
 	ctx context.Context,
 	ID string,
@@ -154,18 +168,4 @@ func (c *client) DeleteTCPMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetTCPMonitor(
-	ctx context.Context,
-	ID string,
-) (*TCPMonitor, error) {
-	var result TCPMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

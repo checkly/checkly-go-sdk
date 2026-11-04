@@ -166,6 +166,20 @@ func (c *client) CreateGRPCMonitor(
 	return &result, nil
 }
 
+// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetGRPCMonitor(
+	ctx context.Context,
+	ID string,
+) (*GRPCMonitor, error) {
+	var result GRPCMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateGRPCMonitor(
 	ctx context.Context,
 	ID string,
@@ -184,18 +198,4 @@ func (c *client) DeleteGRPCMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetGRPCMonitor(
-	ctx context.Context,
-	ID string,
-) (*GRPCMonitor, error) {
-	var result GRPCMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

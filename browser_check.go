@@ -95,6 +95,21 @@ func (c *client) CreateBrowserCheck(
 	return &result, nil
 }
 
+// GetBrowserCheck takes the ID of an existing browser check, and returns the
+// check parameters, or an error. It returns an error when the ID belongs to a
+// check of another type. The includeDependencies query parameter is required
+// for the response to contain the check's script dependencies.
+func (c *client) GetBrowserCheck(
+	ctx context.Context,
+	ID string,
+) (*BrowserCheck, error) {
+	var result BrowserCheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateBrowserCheck(
 	ctx context.Context,
 	ID string,
@@ -113,19 +128,4 @@ func (c *client) DeleteBrowserCheck(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetBrowserCheck takes the ID of an existing browser check, and returns the
-// check parameters, or an error. It returns an error when the ID belongs to a
-// check of another type. The includeDependencies query parameter is required
-// for the response to contain the check's script dependencies.
-func (c *client) GetBrowserCheck(
-	ctx context.Context,
-	ID string,
-) (*BrowserCheck, error) {
-	var result BrowserCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

@@ -87,6 +87,21 @@ func (c *client) CreateMultiStepCheck(
 	return &result, nil
 }
 
+// GetMultiStepCheck takes the ID of an existing multi-step check, and returns
+// the check parameters, or an error. It returns an error when the ID belongs
+// to a check of another type. The includeDependencies query parameter is
+// required for the response to contain the check's script dependencies.
+func (c *client) GetMultiStepCheck(
+	ctx context.Context,
+	ID string,
+) (*MultiStepCheck, error) {
+	var result MultiStepCheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateMultiStepCheck(
 	ctx context.Context,
 	ID string,
@@ -105,19 +120,4 @@ func (c *client) DeleteMultiStepCheck(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetMultiStepCheck takes the ID of an existing multi-step check, and returns
-// the check parameters, or an error. It returns an error when the ID belongs
-// to a check of another type. The includeDependencies query parameter is
-// required for the response to contain the check's script dependencies.
-func (c *client) GetMultiStepCheck(
-	ctx context.Context,
-	ID string,
-) (*MultiStepCheck, error) {
-	var result MultiStepCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

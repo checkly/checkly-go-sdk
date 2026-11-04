@@ -75,6 +75,19 @@ func (c *client) CreatePlaywrightCheck(
 	return &result, nil
 }
 
+// GetPlaywrightCheck retrieves an existing Playwright check.
+func (c *client) GetPlaywrightCheck(
+	ctx context.Context,
+	ID string,
+) (*PlaywrightCheck, error) {
+	var result PlaywrightCheck
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdatePlaywrightCheck(
 	ctx context.Context,
 	ID string,
@@ -93,17 +106,4 @@ func (c *client) DeletePlaywrightCheck(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetPlaywrightCheck retrieves an existing Playwright check.
-func (c *client) GetPlaywrightCheck(
-	ctx context.Context,
-	ID string,
-) (*PlaywrightCheck, error) {
-	var result PlaywrightCheck
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

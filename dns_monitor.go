@@ -115,6 +115,20 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
+// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
+// monitor parameters, or an error.
+func (c *client) GetDNSMonitor(
+	ctx context.Context,
+	ID string,
+) (*DNSMonitor, error) {
+	var result DNSMonitor
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateDNSMonitor(
 	ctx context.Context,
 	ID string,
@@ -133,18 +147,4 @@ func (c *client) DeleteDNSMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-// monitor parameters, or an error.
-func (c *client) GetDNSMonitor(
-	ctx context.Context,
-	ID string,
-) (*DNSMonitor, error) {
-	var result DNSMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

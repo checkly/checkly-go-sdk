@@ -162,20 +162,6 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 	return payload
 }
 
-// CreateGroupV2 creates a new check group with the specified details. It returns
-// the newly-created group, or an error.
-func (c *client) CreateGroupV2(
-	ctx context.Context,
-	group GroupV2,
-) (*GroupV2, error) {
-	var result GroupV2
-	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v2/check-groups"), createGroupV2Payload(group), &result, http.StatusCreated)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 // GetGroup takes the ID of an existing check group, and returns the
 // corresponding group, or an error.
 func (c *client) GetGroup(
@@ -183,20 +169,6 @@ func (c *client) GetGroup(
 	ID int64,
 ) (*Group, error) {
 	result := Group{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetGroupV2 takes the ID of an existing check group, and returns the
-// corresponding group, or an error.
-func (c *client) GetGroupV2(
-	ctx context.Context,
-	ID int64,
-) (*GroupV2, error) {
-	var result GroupV2
 	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
@@ -220,6 +192,43 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
+// DeleteGroup deletes the check group with the specified ID.
+func (c *client) DeleteGroup(
+	ctx context.Context,
+	ID int64,
+) error {
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/check-groups/%d", ID), nil, http.StatusNoContent)
+	return err
+}
+
+// CreateGroupV2 creates a new check group with the specified details. It returns
+// the newly-created group, or an error.
+func (c *client) CreateGroupV2(
+	ctx context.Context,
+	group GroupV2,
+) (*GroupV2, error) {
+	var result GroupV2
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v2/check-groups"), createGroupV2Payload(group), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetGroupV2 takes the ID of an existing check group, and returns the
+// corresponding group, or an error.
+func (c *client) GetGroupV2(
+	ctx context.Context,
+	ID int64,
+) (*GroupV2, error) {
+	var result GroupV2
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // UpdateGroupV2 takes the ID of an existing check group, and updates the
 // corresponding check group to match the supplied group. It returns the updated
 // group, or an error.
@@ -234,15 +243,6 @@ func (c *client) UpdateGroupV2(
 		return nil, err
 	}
 	return &result, nil
-}
-
-// DeleteGroup deletes the check group with the specified ID.
-func (c *client) DeleteGroup(
-	ctx context.Context,
-	ID int64,
-) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/check-groups/%d", ID), nil, http.StatusNoContent)
-	return err
 }
 
 // DeleteGroupV2 deletes the check group with the specified ID.

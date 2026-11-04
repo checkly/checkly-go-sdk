@@ -55,15 +55,6 @@ func (c *client) GetPrivateLocation(
 	return &result, nil
 }
 
-// DeletePrivateLocation deletes the private location with the specified ID.
-func (c *client) DeletePrivateLocation(
-	ctx context.Context,
-	ID string,
-) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/private-locations/%s", ID), nil, http.StatusNoContent)
-	return err
-}
-
 // UpdatePrivateLocation takes the ID of an existing private location and updates it
 // to match the new one.
 func (c *client) UpdatePrivateLocation(
@@ -77,4 +68,13 @@ func (c *client) UpdatePrivateLocation(
 		return nil, err
 	}
 	return &result, nil
+}
+
+// DeletePrivateLocation deletes the private location with the specified ID.
+func (c *client) DeletePrivateLocation(
+	ctx context.Context,
+	ID string,
+) error {
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/private-locations/%s", ID), nil, http.StatusNoContent)
+	return err
 }

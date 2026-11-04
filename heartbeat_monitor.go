@@ -65,6 +65,18 @@ func (c *client) CreateHeartbeatMonitor(
 	return &result, nil
 }
 
+func (c *client) GetHeartbeatMonitor(
+	ctx context.Context,
+	ID string,
+) (*HeartbeatMonitor, error) {
+	result := HeartbeatMonitor{}
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *client) UpdateHeartbeatMonitor(
 	ctx context.Context,
 	ID string,
@@ -83,16 +95,4 @@ func (c *client) DeleteHeartbeatMonitor(
 	ID string,
 ) error {
 	return c.DeleteCheck(ctx, ID)
-}
-
-func (c *client) GetHeartbeatMonitor(
-	ctx context.Context,
-	ID string,
-) (*HeartbeatMonitor, error) {
-	result := HeartbeatMonitor{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }
