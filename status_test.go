@@ -607,46 +607,6 @@ var statusCases = map[string]statusCase{
 		call:     func(ctx context.Context, c checkly.Client) error { return c.DeletePrivateLocation(ctx, testID) },
 	},
 
-	// Triggers
-	"CreateTriggerCheck": {
-		requests: []string{"POST /v1/triggers/checks/id1"},
-		accept:   statusOKOrCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateTriggerCheck(ctx, testID))
-		},
-	},
-	"GetTriggerCheck": {
-		requests: []string{"GET /v1/triggers/checks/id1"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.GetTriggerCheck(ctx, testID))
-		},
-	},
-	"DeleteTriggerCheck": {
-		requests: []string{"DELETE /v1/triggers/checks/id1"},
-		accept:   statusNoContent,
-		call:     func(ctx context.Context, c checkly.Client) error { return c.DeleteTriggerCheck(ctx, testID) },
-	},
-	"CreateTriggerGroup": {
-		requests: []string{"POST /v1/triggers/check-groups/7"},
-		accept:   statusOKOrCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateTriggerGroup(ctx, testIntID))
-		},
-	},
-	"GetTriggerGroup": {
-		requests: []string{"GET /v1/triggers/check-groups/7"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.GetTriggerGroup(ctx, testIntID))
-		},
-	},
-	"DeleteTriggerGroup": {
-		requests: []string{"DELETE /v1/triggers/check-groups/7"},
-		accept:   statusNoContent,
-		call:     func(ctx context.Context, c checkly.Client) error { return c.DeleteTriggerGroup(ctx, testIntID) },
-	},
-
 	// Client certificates
 	"CreateClientCertificate": {
 		requests: []string{"POST /v1/client-certificates"},
