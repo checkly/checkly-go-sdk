@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Alert channel responses with a `null` or wrongly typed field no longer panic: `null` leaves the field unset, and a wrong type returns an error that names the field; a `null` config leaves every config unset
 - `GetStaticIPs` reports an invalid IPv4 address as `could not parse IP address from …` instead of `could not parse CIDR from …`
 - The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
+- **Breaking:** exported names use Go's initialism casing, with JSON tags unchanged: `SSLRequest.SSLClientCertificateId` is now `SSLClientCertificateID`, `Dashboard.CustomUrl` is `CustomURL`, `PrivateLocationKey.Id` and `DashboardKey.Id` are `ID`, and the type `ApiCheckResult` and the field `CheckResult.ApiCheckResult` are `APICheckResult`
 
 ### Removed
 - **Breaking:** the deprecated `Create`, `Update`, `Delete` and `Get` client methods. Use `CreateCheck`, `UpdateCheck`, `DeleteCheck` and `GetCheck`. Unlike `Create`, which posted every check to `/v1/checks`, `CreateCheck` posts to the endpoint of the check's type and rejects monitor types, which have their own create methods. The API check endpoint ignores `script` and `environmentVariables`, so `CreateCheck` does not store them for API checks

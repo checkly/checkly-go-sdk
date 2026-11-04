@@ -532,7 +532,7 @@ func TestGetCheckResult(t *testing.T) {
 	stoppedAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.413Z")
 	createdAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.681Z")
 	// Ignore api check result comparison for now
-	result.ApiCheckResult = &checkly.ApiCheckResult{}
+	result.APICheckResult = &checkly.APICheckResult{}
 	expectedResult := checkly.CheckResult{
 		ID:                  "580c4e71-0109-45ba-9130-887ff01e1a7f",
 		HasErrors:           false,
@@ -541,7 +541,7 @@ func TestGetCheckResult(t *testing.T) {
 		StartedAt:           startedAt,
 		StoppedAt:           stoppedAt,
 		ResponseTime:        129,
-		ApiCheckResult:      &checkly.ApiCheckResult{},
+		APICheckResult:      &checkly.APICheckResult{},
 		BrowserCheckResult:  nil,
 		CheckID:             "73d29e72-6540-4bb5-967e-e07fa2c9465e",
 		CreatedAt:           createdAt,
@@ -694,7 +694,7 @@ func TestGetCheckResults(t *testing.T) {
 	createdAt, _ := time.Parse(time.RFC3339, "2020-09-02T11:19:06.681Z")
 	actualFirstResult := results[0]
 	// Ignore api check result comparison for now
-	actualFirstResult.ApiCheckResult = &checkly.ApiCheckResult{}
+	actualFirstResult.APICheckResult = &checkly.APICheckResult{}
 	expectedFirstResult := checkly.CheckResult{
 		ID:                  "580c4e71-0109-45ba-9130-887ff01e1a7f",
 		HasErrors:           false,
@@ -703,7 +703,7 @@ func TestGetCheckResults(t *testing.T) {
 		StartedAt:           startedAt,
 		StoppedAt:           stoppedAt,
 		ResponseTime:        129,
-		ApiCheckResult:      &checkly.ApiCheckResult{},
+		APICheckResult:      &checkly.APICheckResult{},
 		BrowserCheckResult:  nil,
 		CheckID:             "73d29e72-6540-4bb5-967e-e07fa2c9465e",
 		CreatedAt:           createdAt,
@@ -1226,7 +1226,7 @@ var trueVal = true
 var testDashboard = checkly.Dashboard{
 	DashboardID:        "abcd1234",
 	CustomDomain:       "is.checkly.online",
-	CustomUrl:          "status-page",
+	CustomURL:          "status-page",
 	Logo:               "https://www.checklyhq.com/images/text_racoon_logo.svg",
 	Favicon:            "https://www.checklyhq.com/images/text_racoon_logo.svg",
 	Link:               "https://www.checklyhq.com",

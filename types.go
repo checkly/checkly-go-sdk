@@ -1461,10 +1461,10 @@ type SSLMonitor struct {
 // so it is sent as a value rather than an optional pointer.
 type SSLRequest struct {
 	SSLConfig SSLConfig `json:"sslConfig"`
-	// SSLClientCertificateId is the FK to a stored client certificate. It is
+	// SSLClientCertificateID is the FK to a stored client certificate. It is
 	// required when SSLConfig.ClientCertificateMode is "explicit" and omitted
 	// otherwise, so it is a pointer with omitempty.
-	SSLClientCertificateId *string     `json:"sslClientCertificateId,omitempty"`
+	SSLClientCertificateID *string     `json:"sslClientCertificateId,omitempty"`
 	Assertions             []Assertion `json:"assertions,omitempty"`
 }
 
@@ -1534,7 +1534,7 @@ type EnvironmentVariable struct {
 
 // PrivateLocationKey represents the keys that the private location has.
 type PrivateLocationKey struct {
-	Id        string `json:"id"`
+	ID        string `json:"id"`
 	MaskedKey string `json:"maskedKey"`
 	RawKey    string `json:"rawKey"`
 	CreatedAt string `json:"created_at"`
@@ -1543,7 +1543,7 @@ type PrivateLocationKey struct {
 
 // DashboardKey represents the keys that the dashboard has.
 type DashboardKey struct {
-	Id        string `json:"id"`
+	ID        string `json:"id"`
 	MaskedKey string `json:"maskedKey"`
 	RawKey    string `json:"rawKey"`
 	CreatedAt string `json:"created_at"`
@@ -1741,7 +1741,7 @@ type CheckResult struct {
 	OverMaxResponseTime bool                `json:"overMaxResponseTime"`
 	RunLocation         string              `json:"runLocation"`
 	ResponseTime        int64               `json:"responseTime"`
-	ApiCheckResult      *ApiCheckResult     `json:"apiCheckResult"`
+	APICheckResult      *APICheckResult     `json:"apiCheckResult"`
 	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
 	// Typed failure-debug diagnostics for the uptime-monitor types. Each is nil
 	// for the other check types, mirroring the apiCheckResult sibling.
@@ -1755,8 +1755,8 @@ type CheckResult struct {
 	CreatedAt             time.Time              `json:"created_at"`
 }
 
-// ApiCheckResult represents an API Check result
-type ApiCheckResult map[string]interface{}
+// APICheckResult represents an API Check result
+type APICheckResult map[string]interface{}
 
 // BrowserCheckResult represents a Browser Check result
 type BrowserCheckResult map[string]interface{}
@@ -1985,7 +1985,7 @@ type AlertChannel struct {
 type Dashboard struct {
 	ID                 int64          `json:"id,omitempty"`
 	DashboardID        string         `json:"dashboardId,omitempty"`
-	CustomUrl          string         `json:"customUrl"`
+	CustomURL          string         `json:"customUrl"`
 	CustomDomain       string         `json:"customDomain,omitempty"`
 	IsPrivate          bool           `json:"isPrivate,omitempty"`
 	Logo               string         `json:"logo,omitempty"`
