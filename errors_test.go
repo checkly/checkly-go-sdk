@@ -565,14 +565,6 @@ func TestCreateChecksStatusBeforeDecoding(t *testing.T) {
 			_, err := c.CreatePrivateLocation(ctx, checkly.PrivateLocation{})
 			return err
 		},
-		"POST /v1/triggers/checks/abc": func(ctx context.Context, c checkly.Client) error {
-			_, err := c.CreateTriggerCheck(ctx, "abc")
-			return err
-		},
-		"POST /v1/triggers/check-groups/7": func(ctx context.Context, c checkly.Client) error {
-			_, err := c.CreateTriggerGroup(ctx, 7)
-			return err
-		},
 	}
 	for request, call := range calls {
 		request, call := request, call

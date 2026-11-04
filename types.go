@@ -706,42 +706,6 @@ type Client interface {
 		ID string,
 	) error
 
-	// CreateTriggerCheck creates a new trigger with the specified details.
-	CreateTriggerCheck(
-		ctx context.Context,
-		checkID string,
-	) (*TriggerCheck, error)
-
-	// GetTriggerCheck takes the ID of an existing trigger and returns it
-	GetTriggerCheck(
-		ctx context.Context,
-		checkID string,
-	) (*TriggerCheck, error)
-
-	// DeleteTriggerCheck deletes the trigger with the specified ID.
-	DeleteTriggerCheck(
-		ctx context.Context,
-		checkID string,
-	) error
-
-	// CreateTriggerGroup creates a new trigger with the specified details.
-	CreateTriggerGroup(
-		ctx context.Context,
-		groupID int64,
-	) (*TriggerGroup, error)
-
-	// GetTriggerGroup takes the ID of an existing trigger and returns it
-	GetTriggerGroup(
-		ctx context.Context,
-		groupID int64,
-	) (*TriggerGroup, error)
-
-	// DeleteTriggerGroup deletes the trigger with the specified ID.
-	DeleteTriggerGroup(
-		ctx context.Context,
-		groupID int64,
-	) error
-
 	// CreateClientCertificate creates a new client certificate and returns
 	// the created resource.
 	CreateClientCertificate(
@@ -2330,28 +2294,6 @@ type PrivateLocation struct {
 	AgentCount int                  `json:"agentCount,omitempty"`
 	CreatedAt  string               `json:"created_at"`
 	UpdatedAt  string               `json:"updated_at"`
-}
-
-// Trigger defines a type for a check trigger.
-type TriggerCheck struct {
-	ID        int64  `json:"id,omitempty"`
-	CheckId   string `json:"checkId,omitempty"`
-	Token     string `json:"token"`
-	URL       string `json:"url"`
-	CalledAt  string `json:"called_at"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-// Trigger defines a type for a group trigger.
-type TriggerGroup struct {
-	ID        int64  `json:"id,omitempty"`
-	GroupId   int64  `json:"groupId,omitempty"`
-	Token     string `json:"token"`
-	URL       string `json:"url"`
-	CalledAt  string `json:"called_at"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
 }
 
 type Location struct {

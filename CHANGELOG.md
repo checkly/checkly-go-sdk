@@ -25,13 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cancelling the context during a rate-limit wait returns an error that matches both `ErrRateLimited` and the context error, so check it with `errors.Is` rather than `==`
 - `PeekCodeBundle` is retried on HTTP 429 like the other requests; `UploadCodeBundle`, which streams its body, still is not
 - Code bundle upload and peek errors keep the backend's message, such as the payload size limit, instead of reporting only the status
-- `CreateDashboard`, `CreateMaintenanceWindow`, `CreatePrivateLocation`, `CreateTriggerCheck` and `CreateTriggerGroup` check the status before decoding the response, so an error body that is not JSON, such as a proxy's HTML page, returns an `*APIError` instead of a JSON syntax error
+- `CreateDashboard`, `CreateMaintenanceWindow` and `CreatePrivateLocation` check the status before decoding the response, so an error body that is not JSON, such as a proxy's HTML page, returns an `*APIError` instead of a JSON syntax error
 - Alert channel responses with a `null` or wrongly typed field no longer panic: `null` leaves the field unset, and a wrong type returns an error that names the field; a `null` config leaves every config unset
 - `GetStaticIPs` reports an invalid IPv4 address as `could not parse IP address from …` instead of `could not parse CIDR from …`
 - The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
 
 ### Deprecated
 - The `debug` argument of `NewClient` is ignored: the client no longer dumps requests and responses, which included the API key and secret values in plain text. To inspect API traffic, route it through an intercepting HTTPS proxy, for example with the `HTTPS_PROXY` environment variable. Pass `nil`
+
+### Removed
+- **Breaking:** check and group triggers are no longer supported: `CreateTriggerCheck`, `GetTriggerCheck`, `DeleteTriggerCheck`, `CreateTriggerGroup`, `GetTriggerGroup`, `DeleteTriggerGroup` and the `TriggerCheck` and `TriggerGroup` types are removed. To run checks on demand, use the Checkly CLI (`checkly trigger`) or `POST /v1/check-sessions/trigger`
 
 ## [v1.27.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.27.0) - 2026-10-07
 ### Changed
