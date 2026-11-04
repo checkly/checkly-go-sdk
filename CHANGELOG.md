@@ -36,8 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
 - **Breaking:** exported names use Go's initialism casing, with JSON tags unchanged: `SSLRequest.SSLClientCertificateId` is now `SSLClientCertificateID`, `Dashboard.CustomUrl` is `CustomURL`, `PrivateLocationKey.Id` and `DashboardKey.Id` are `ID`, and the type `ApiCheckResult` and the field `CheckResult.ApiCheckResult` are `APICheckResult`
 
+### Deprecated
+- `CreateCheck`, `UpdateCheck`, `GetCheck`, `DeleteCheck` and the `Check` type. Use the per-type methods and types instead: `CreateAPICheck`, `UpdateAPICheck`, `GetAPICheck` and `DeleteAPICheck` with `APICheck`, their browser and multi-step counterparts, and the methods of each monitor type
+
 ### Removed
-- **Breaking:** the deprecated `Create`, `Update`, `Delete` and `Get` client methods. Use `CreateCheck`, `UpdateCheck`, `DeleteCheck` and `GetCheck`. Unlike `Create`, which posted every check to `/v1/checks`, `CreateCheck` posts to the endpoint of the check's type and rejects monitor types, which have their own create methods. The API check endpoint ignores `script` and `environmentVariables`, so `CreateCheck` does not store them for API checks
+- **Breaking:** the deprecated `Create`, `Update`, `Delete` and `Get` client methods. Use the per-type methods, such as `CreateAPICheck`, `UpdateAPICheck`, `DeleteAPICheck` and `GetAPICheck`. Unlike `Create`, which posted every check to `/v1/checks`, `CreateCheck` posts to the endpoint of the check's type and rejects monitor types, which have their own create methods. The API check endpoint ignores `script` and `environmentVariables`, so `CreateCheck` does not store them for API checks
 - **Breaking:** the deprecated `CreateHeartbeat`, `UpdateHeartbeat`, `GetHeartbeatCheck`, `CreateTCPCheck`, `UpdateTCPCheck` and `GetTCPCheck` client methods and the `HeartbeatCheck` and `TCPCheck` type aliases. Use `CreateHeartbeatMonitor`, `UpdateHeartbeatMonitor`, `GetHeartbeatMonitor`, `CreateTCPMonitor`, `UpdateTCPMonitor` and `GetTCPMonitor` with `HeartbeatMonitor` and `TCPMonitor`
 - **Breaking:** `Check.SSLCheck`, which the public API no longer has
 - **Breaking:** `AlertSettings.SSLCertificates` and the `SSLCertificates` type, which the public API no longer has

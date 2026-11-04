@@ -68,11 +68,12 @@ if err != nil {
 Once you have a client, you can create a check. See here how to create your first API & Browser checks.
 
 ```go
-apiCheck := checkly.Check{
+apiCheck := checkly.APICheck{
 	Name:                 "My API Check",
-	Type:                 checkly.TypeAPI,
 	Frequency:            5,
 	Activated:            true,
+	DegradedResponseTime: 5000,
+	MaxResponseTime:      20000,
 	Locations: []string{
 		"eu-west-1",
 		"ap-northeast-2",
@@ -84,9 +85,8 @@ apiCheck := checkly.Check{
 	},
 }
 
-browserCheck := checkly.Check{
+browserCheck := checkly.BrowserCheck{
 	Name:          "My Browser Check",
-	Type:          checkly.TypeBrowser,
 	Frequency:     5,
 	Activated:     true,
 	Locations:     []string{"eu-west-1"},
@@ -103,8 +103,8 @@ browserCheck := checkly.Check{
 }
 
 ctx := context.WithTimeout(context.Background(), time.Second * 5)
-client.CreateCheck(ctx, apiCheck)
-client.CreateCheck(ctx, browserCheck)
+client.CreateAPICheck(ctx, apiCheck)
+client.CreateBrowserCheck(ctx, browserCheck)
 ```
 
 >  A complete example program! You can see an example program which creates a Checkly check in the [demo](demo/main.go) folder.
@@ -114,7 +114,7 @@ client.CreateCheck(ctx, browserCheck)
 When the API answers with a status a method does not accept, the method returns a `*checkly.APIError`. Its text names the request, the status and the backend's message, for example `GET /v1/checks/abc: 404 Not Found`. Match it with `errors.Is` and the sentinel errors such as `checkly.ErrNotFound`, `checkly.ErrForbidden` or `checkly.ErrRateLimited`, or inspect it with `errors.As`, rather than matching the text:
 
 ```go
-_, err := client.GetCheck(ctx, id)
+_, err := client.GetAPICheck(ctx, id)
 if errors.Is(err, checkly.ErrNotFound) { // or checkly.IsNotFound(err)
 	// The check no longer exists.
 }

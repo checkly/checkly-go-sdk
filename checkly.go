@@ -1010,8 +1010,8 @@ func (c *client) CreateMultiStepCheck(
 	return &result, nil
 }
 
-// Update updates an existing check with the specified details. It returns the
-// updated check, or an error.
+// UpdateCheck updates an existing check with the specified details. It
+// returns the updated check, or an error.
 func (c *client) UpdateCheck(
 	ctx context.Context,
 	ID string,
@@ -1181,7 +1181,7 @@ func (c *client) UpdateMultiStepCheck(
 	return &result, nil
 }
 
-// Delete deletes the check with the specified ID.
+// DeleteCheck deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
 	ID string,
@@ -1274,8 +1274,8 @@ func (c *client) DeleteMultiStepCheck(
 	return c.DeleteCheck(ctx, ID)
 }
 
-// Get takes the ID of an existing check, and returns the check parameters, or
-// an error.
+// GetCheck takes the ID of an existing check, and returns the check
+// parameters, or an error.
 func (c *client) GetCheck(
 	ctx context.Context,
 	ID string,
