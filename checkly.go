@@ -2655,7 +2655,7 @@ func (c *client) doRequest(
 	req.Header.Add("content-type", "application/json")
 
 	if c.debug != nil {
-		requestDump, err := httputil.DumpRequestOut(req, true)
+		requestDump, err := httputil.DumpRequestOut(redactedForDump(req, data), true)
 		if err != nil {
 			return rawResponse{}, fmt.Errorf("%s %s: dumping request for debug output: %w", method, path, err)
 		}
@@ -2690,6 +2690,25 @@ func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) 
 		return res, fmt.Errorf("%s %s: reading %d response: %w", method, path, resp.StatusCode, err)
 	}
 	return res, nil
+}
+
+// redactedPlaceholder replaces the value of a credential header in debug
+// output.
+const redactedPlaceholder = "[REDACTED]"
+
+// redactedForDump returns a copy of req, with body data, for the debug dump:
+// its Authorization header, which carries the API key, is replaced by
+// redactedPlaceholder. The other headers the client sets (the account ID and
+// the source) are not secret. req itself, which is sent, is left unchanged;
+// the copy gets its own body, as dumping reads it. A request without a body
+// keeps http.NoBody, so that it dumps with "Content-Length: 0".
+func redactedForDump(req *http.Request, data []byte) *http.Request {
+	dump := req.Clone(req.Context())
+	if req.Body != nil && req.Body != http.NoBody {
+		dump.Body = io.NopCloser(bytes.NewReader(data))
+	}
+	dump.Header.Set("Authorization", redactedPlaceholder)
+	return dump
 }
 
 func withAutoAssignAlertsFlag(url string) string {

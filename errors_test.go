@@ -821,3 +821,66 @@ func TestCodeBundleErrors(t *testing.T) {
 		}
 	})
 }
+
+// TestDebugDumpRedactsAPIKey checks that the debug output shows a placeholder
+// instead of the API key, while the request that is sent keeps its real
+// Authorization header and its body.
+func TestDebugDumpRedactsAPIKey(t *testing.T) {
+	t.Parallel()
+	const apiKey = "SECRET-API-KEY-MARKER"
+	type received struct{ auth, body string }
+	got := make(chan received, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		got <- received{auth: r.Header.Get("Authorization"), body: string(body)}
+		w.WriteHeader(http.StatusCreated)
+		io.WriteString(w, `{}`)
+	}))
+	t.Cleanup(srv.Close)
+	var debug strings.Builder
+	c := checkly.NewClient(srv.URL, apiKey, srv.Client(), &debug)
+	if _, err := c.CreateCheck(context.Background(), checkly.Check{Type: checkly.TypeAPI, Name: "dumped check"}); err != nil {
+		t.Fatal(err)
+	}
+
+	r := <-got
+	if r.auth != "Bearer "+apiKey {
+		t.Errorf("want the server to get the real Authorization header, got %q", r.auth)
+	}
+	if !strings.Contains(r.body, `"name":"dumped check"`) {
+		t.Errorf("want the server to get the request body, got %q", r.body)
+	}
+	dump := debug.String()
+	if strings.Contains(dump, apiKey) {
+		t.Errorf("want the API key left out of the debug output, got %q", dump)
+	}
+	if !strings.Contains(dump, "Authorization: [REDACTED]") {
+		t.Errorf("want a redacted Authorization header in the debug output, got %q", dump)
+	}
+	if !strings.Contains(dump, `"name":"dumped check"`) {
+		t.Errorf("want the request body in the debug output, got %q", dump)
+	}
+}
+
+// TestDebugDumpWithoutBody checks that a POST without a body, as for creating
+// a trigger, dumps with a zero Content-Length rather than as chunked.
+func TestDebugDumpWithoutBody(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		io.WriteString(w, `{"token":"t"}`)
+	}))
+	t.Cleanup(srv.Close)
+	var debug strings.Builder
+	c := checkly.NewClient(srv.URL, "test-key", srv.Client(), &debug)
+	if _, err := c.CreateTriggerCheck(context.Background(), "abc"); err != nil {
+		t.Fatal(err)
+	}
+	request, _, _ := strings.Cut(debug.String(), "\r\n\r\n")
+	if !strings.Contains(request, "Content-Length: 0") || strings.Contains(request, "chunked") {
+		t.Errorf("want a zero Content-Length in the dumped request, got %q", request)
+	}
+	if !strings.Contains(request, "Authorization: [REDACTED]") {
+		t.Errorf("want a redacted Authorization header, got %q", request)
+	}
+}
