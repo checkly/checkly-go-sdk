@@ -31,6 +31,11 @@ func NewClient(
 	apiKey string,
 	//optional, defaults to http.DefaultClient
 	httpClient *http.Client,
+	//optional, receives dumps of the requests and responses. Only the API
+	//key in the Authorization header is redacted: the dumps keep the full
+	//request and response bodies, which can hold secrets such as secret
+	//environment variable values and alert channel webhook URLs or keys, so
+	//do not share this output.
 	debug io.Writer,
 ) Client {
 	c := &client{

@@ -54,6 +54,8 @@ client.SetAccountId(accountId)
 
 > Note: if you don't have an API key, you can create one at [here](https://app.checklyhq.com/account/api-keys)
 
+> Note: the debug writer receives dumps of the requests and responses. Only the API key in the `Authorization` header is redacted; the full request and response bodies are kept, and can hold secrets such as secret environment variable values and alert channel webhook URLs or keys. Do not share debug output.
+
 ### Create your first checks
 
 Once you have a client, you can create a check. See here how to create your first API & Browser checks.

@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
 
 ### Security
-- The debug request dump replaces the `Authorization` header, which carries the API key, with `[REDACTED]`
+- The debug request dump replaces the `Authorization` header, which carries the API key, with `[REDACTED]`. Nothing else is redacted: the debug writer still receives full request and response bodies, which can hold secrets such as secret environment variable values and alert channel webhook URLs or keys, so do not share its output
 
 ## [v1.27.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.27.0) - 2026-10-07
 ### Changed
