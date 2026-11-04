@@ -100,6 +100,25 @@ client.CreateCheck(ctx, browserCheck)
 
 >  A complete example program! You can see an example program which creates a Checkly check in the [demo](demo/main.go) folder.
 
+### Handling errors
+
+When the API answers with a status a method does not accept, the method returns a `*checkly.APIError`. Its text names the request, the status and the backend's message, for example `GET /v1/checks/abc: 404 Not Found`. Match it with `errors.Is` and the sentinel errors such as `checkly.ErrNotFound`, `checkly.ErrForbidden` or `checkly.ErrRateLimited`, or inspect it with `errors.As`, rather than matching the text:
+
+```go
+_, err := client.GetCheck(ctx, id)
+if errors.Is(err, checkly.ErrNotFound) { // or checkly.IsNotFound(err)
+	// The check no longer exists.
+}
+var apiErr *checkly.APIError
+if errors.As(err, &apiErr) {
+	log.Printf("Checkly API answered %d: %s", apiErr.StatusCode, apiErr.Message)
+}
+```
+
+Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too.
+
+The SDK never adds the API key or the request body to an error. It does keep the backend's error message, and the start of an error body that is not JSON, cut at 500 bytes. A validation message can quote a submitted value, and so can the text of such a body, so take care when logging errors from requests that carry secrets.
+
 ## Questions
 For questions and support please open a new  [discussion](https://github.com/checkly/checkly-go-sdk/discussions). The issue list of this repo is exclusively for bug reports and feature/docs requests.
 

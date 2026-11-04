@@ -9,13 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Add `APICheck` and `BrowserCheck` types and replace `MultiStepCheck`, each with `Create/Get/Update/Delete` client methods backed by the dedicated per-type endpoints (`checks/api`, `checks/browser`, `checks/multistep`). The getters return an error when the ID belongs to a check of another type
+- Add `APIError`, returned for every response whose status the method does not accept, with the request's `Method` and `Path`, the `StatusCode`, the backend's error `Code`, `Message` and validation `Details`, and `RetryAfter` for a 429. Its text reads `METHOD /v1/path: 404 Not Found[ [ERROR_CODE]][: message][ (keys: …)]`, or `METHOD /v1/path: unexpected 200 OK response, want 201 Created` for a success status the method does not accept, followed by a hint for a 401 (check the API key), a 403 for an inaccessible account (check the account ID) or a 403 refused for the API key's role, and by the retries and the server's wait for a 429
+- Add sentinel errors `ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrAccountNotAccessible`, `ErrPlanLimit`, `ErrConflict` and `ErrRateLimited`, which an `APIError` matches with `errors.Is` by its status (and, for `ErrAccountNotAccessible`, its error code), and `IsNotFound(err)`
 
 ### Changed
 - **Breaking:** `MultiStepCheck` is redefined for the `checks/multistep` endpoint: `Type` and `FrequencyOffset` are removed, `AlertSettings` is now a pointer, `ScriptPath` and `Dependencies` are added, and the timestamps decode from `created_at`/`updated_at`
 - **Breaking:** the check update endpoints keep the stored value of an omitted key, so heartbeat, TCP, URL, DNS and ICMP monitor and check group create/update payloads now send clearable fields even when empty: `tags` and `alertChannelSubscriptions` as `[]` (heartbeat and TCP monitors excepted for subscriptions, whose endpoints clear them on omission), unset `groupOrder` as `null` (URL, DNS and ICMP monitors) or `0` (TCP monitors), TCP `request.assertions` as `[]`, and unset group `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and `localTearDownScript` as `null`. Removing the last value of such a field now clears it instead of leaving it unchanged
 - **Breaking:** `Request.BasicAuth` is always serialized, as `null` when unset, so that removing credentials clears them
 - **Breaking:** TCP, URL and DNS monitor payloads always send `degradedResponseTime` and `maxResponseTime`, and ICMP monitor payloads always send `degradedPacketLossThreshold` and `maxPacketLossThreshold`, so that update can set every value. A response time of 0 is no longer replaced by the API's default, and a packet loss threshold of 0 is rejected by the API. Callers that relied on the defaults when leaving these fields at 0 must now set them explicitly
+- **Breaking:** the text of every error returned by client methods changes, including transport and decode errors. Code that matched it, such as the `unexpected response status 404:` prefix, must switch to `errors.Is` with the sentinel errors or `errors.As` with `*APIError`
+- **Breaking:** `ErrCodeBundleNotFound` is now returned wrapped together with the `*APIError`, so match it with `errors.Is` rather than `==`. Only a 404, or the 403 the backend answers for a key of another account, counts as not found: a 403 for an inaccessible account, a role without permission or a plan without the entitlement is returned as a plain `*APIError`
+- **Breaking:** `AlertChannelConfigFromJSON` returns `nil` for a `null` config instead of a pointer to an empty config, and an error, naming the channel type, for an unknown type or a config that is not a JSON object. It still skips fields of an unexpected type. `SetConfig(nil)` does nothing
+- Errors no longer quote JSON response bodies, success bodies or request payloads (create errors for alert channels, dashboards, maintenance windows and private locations used to include the payload). The backend's error message, or the start of an error body that is not JSON, such as a proxy's HTML page, is kept with whitespace collapsed and cut at 500 bytes; a decode error names the request, the status and the body's size instead of quoting the body
+- Transport errors wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` and `errors.As` with a `*url.Error` work. The text names the request and the API host: `GET /v1/checks/abc: request to api.checklyhq.com failed: context deadline exceeded`
 - Cancelling the context during a rate-limit wait returns an error that matches both `ErrRateLimited` and the context error, so check it with `errors.Is` rather than `==`
+- `PeekCodeBundle` is retried on HTTP 429 like the other requests; `UploadCodeBundle`, which streams its body, still is not
+- Code bundle upload and peek errors keep the backend's message, such as the payload size limit, instead of reporting only the status
+- `CreateDashboard`, `CreateMaintenanceWindow`, `CreatePrivateLocation`, `CreateTriggerCheck` and `CreateTriggerGroup` check the status before decoding the response, so an error body that is not JSON, such as a proxy's HTML page, returns an `*APIError` instead of a JSON syntax error
+- Alert channel responses with a `null` or wrongly typed field no longer panic: `null` leaves the field unset, and a wrong type returns an error that names the field; a `null` config leaves every config unset
+- `GetStaticIPs` reports an invalid IPv4 address as `could not parse IP address from …` instead of `could not parse CIDR from …`
+- The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
+
+### Security
+- The debug request dump replaces the `Authorization` header, which carries the API key, with `[REDACTED]`
 
 ## [v1.27.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.27.0) - 2026-10-07
 ### Changed
