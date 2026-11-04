@@ -25,7 +25,7 @@ var alertSettings = checkly.AlertSettings{
 }
 
 var dashboard = checkly.Dashboard{
-	CustomUrl:      "string",
+	CustomURL:      "string",
 	CustomDomain:   "string",
 	Logo:           "string",
 	Header:         "string",
