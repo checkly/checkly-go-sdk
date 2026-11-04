@@ -20,22 +20,15 @@ func setupClient(t *testing.T) checkly.Client {
 	if baseUrl == "" {
 		baseUrl = "http://localhost:3000"
 	}
-	apiKey := os.Getenv("CHECKLY_API_KEY")
-	if apiKey == "" {
-		t.Fatal("'CHECKLY_API_KEY' must be set for integration tests")
-	}
-	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
-	if accountId == "" {
-		t.Fatal("'CHECKLY_ACCOUNT_ID' must be set for integration tests")
-	}
-
-	client := checkly.NewClient(
-		baseUrl,
-		apiKey,
-		nil,
+	// WithAuthFromEnv requires both CHECKLY_API_KEY and CHECKLY_ACCOUNT_ID
+	// and fails when either is not set.
+	client, err := checkly.NewClient(
+		checkly.WithBaseURL(baseUrl),
+		checkly.WithAuthFromEnv(),
 	)
-
-	client.SetAccountId(accountId)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return client
 }
 

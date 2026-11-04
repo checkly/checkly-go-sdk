@@ -30,6 +30,10 @@ type statusCase struct {
 	// notRetried marks methods that bypass the rate-limit retries, so that a
 	// 429 response fails them instead of being re-sent.
 	notRetried bool
+	// public marks methods backed by endpoints the API serves without
+	// authentication. They send no credentials, so they work without an API
+	// key; every other method fails without one.
+	public bool
 	// accept lists the response statuses the method treats as success.
 	accept []int
 	// body is the canned response body for every status but 204, which
@@ -724,6 +728,7 @@ var statusCases = map[string]statusCase{
 	"GetRuntime": {
 		requests: []string{"GET /v1/runtimes/2024.02"},
 		accept:   statusOK,
+		public:   true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetRuntime(ctx, "2024.02"))
 		},
@@ -734,6 +739,7 @@ var statusCases = map[string]statusCase{
 	"GetStaticIPs/first request": {
 		requests: []string{"GET /v1/static-ipv6s-by-region", "GET /v1/static-ips-by-region"},
 		accept:   statusOK,
+		public:   true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetStaticIPs(ctx))
 		},
@@ -742,6 +748,7 @@ var statusCases = map[string]statusCase{
 		requests:     []string{"GET /v1/static-ipv6s-by-region", "GET /v1/static-ips-by-region"},
 		leadStatuses: []int{http.StatusOK},
 		accept:       statusOK,
+		public:       true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetStaticIPs(ctx))
 		},
@@ -789,13 +796,6 @@ func getCheckCase[T any](get func(checkly.Client, context.Context, string) (T, e
 	}
 }
 
-// methodsWithoutStatusCase are the Client methods TestSuccessStatuses does
-// not cover, because they make no request.
-var methodsWithoutStatusCase = []string{
-	"SetAccountId",
-	"SetChecklySource",
-}
-
 // statusCaseMethod returns the Client method name of a statusCases key.
 func statusCaseMethod(key string) string {
 	method, _, _ := strings.Cut(key, "/")
@@ -803,7 +803,8 @@ func statusCaseMethod(key string) string {
 }
 
 // TestStatusCasesCoverClient fails when a Client method has no entry in
-// statusCases, so that a new method cannot skip the success-status check.
+// statusCases, so that a new method cannot skip the success-status check, or
+// when an entry names no Client method.
 func TestStatusCasesCoverClient(t *testing.T) {
 	t.Parallel()
 	covered := map[string]bool{}
@@ -815,12 +816,8 @@ func TestStatusCasesCoverClient(t *testing.T) {
 	for i := 0; i < clientType.NumMethod(); i++ {
 		name := clientType.Method(i).Name
 		methods[name] = true
-		excluded := slices.Contains(methodsWithoutStatusCase, name)
-		if !covered[name] && !excluded {
+		if !covered[name] {
 			t.Errorf("Client method %s has no entry in statusCases", name)
-		}
-		if covered[name] && excluded {
-			t.Errorf("Client method %s is both in statusCases and excluded from it", name)
 		}
 	}
 	for name := range covered {
@@ -848,7 +845,7 @@ func TestSuccessStatuses(t *testing.T) {
 				}
 				statuses := append(slices.Clone(tc.leadStatuses), status)
 				srv, got := newStatusServer(t, statuses, nil, body)
-				c := checkly.NewClient(srv.URL, "test-key", srv.Client())
+				c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
 
 				err := tc.call(context.Background(), c)
 				requests := got()
@@ -873,6 +870,76 @@ func TestSuccessStatuses(t *testing.T) {
 	}
 }
 
+// TestMissingCredentialsPerMethod checks, for every Client method, what a
+// client without an API key does. A public method succeeds and sends no
+// credential headers. Every other method fails with ErrMissingAPIKey, which is
+// not an *APIError and not ErrUnauthorized, without sending a request.
+func TestMissingCredentialsPerMethod(t *testing.T) {
+	t.Parallel()
+	for name, tc := range statusCases {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			body := tc.body
+			if body == "" {
+				body = "{}"
+			}
+			var (
+				mu       sync.Mutex
+				requests int
+				creds    []string
+			)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				io.Copy(io.Discard, r.Body)
+				mu.Lock()
+				requests++
+				for _, h := range []string{"Authorization", "X-Checkly-Account"} {
+					if v := r.Header.Get(h); v != "" {
+						creds = append(creds, h+": "+v)
+					}
+				}
+				mu.Unlock()
+				w.WriteHeader(tc.accept[0])
+				if tc.accept[0] != http.StatusNoContent {
+					io.WriteString(w, body)
+				}
+			}))
+			t.Cleanup(srv.Close)
+			c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithHTTPClient(srv.Client()))
+
+			err := tc.call(context.Background(), c)
+			mu.Lock()
+			defer mu.Unlock()
+
+			if tc.public {
+				if err != nil {
+					t.Fatalf("want success for a public method, got %v", err)
+				}
+				if requests != len(tc.requests) {
+					t.Errorf("want %d requests, got %d", len(tc.requests), requests)
+				}
+				if len(creds) > 0 {
+					t.Errorf("want no credential headers, got %q", creds)
+				}
+				return
+			}
+			if !errors.Is(err, checkly.ErrMissingAPIKey) {
+				t.Fatalf("want error matching ErrMissingAPIKey, got %v", err)
+			}
+			var apiErr *checkly.APIError
+			if errors.As(err, &apiErr) {
+				t.Errorf("want no *APIError, got %v", err)
+			}
+			if errors.Is(err, checkly.ErrUnauthorized) {
+				t.Errorf("want an error not matching ErrUnauthorized, got %v", err)
+			}
+			if requests != 0 {
+				t.Errorf("want no requests, got %d", requests)
+			}
+		})
+	}
+}
+
 // TestRateLimitRetryPerMethod checks, for every Client method, that a 429 response
 // followed by an accepted status makes the method re-send the request and
 // succeed, or, for the methods that bypass the retries, fail after one
@@ -893,7 +960,7 @@ func TestRateLimitRetryPerMethod(t *testing.T) {
 			retried := len(tc.leadStatuses)
 			statuses := append(slices.Clone(tc.leadStatuses), http.StatusTooManyRequests, tc.accept[0])
 			srv, got := newStatusServer(t, statuses, map[int]http.Header{http.StatusTooManyRequests: header}, body)
-			c := checkly.NewClient(srv.URL, "test-key", srv.Client())
+			c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
 			checkly.SkipRetryWaits(c)
 
 			err := tc.call(context.Background(), c)

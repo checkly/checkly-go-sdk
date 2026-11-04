@@ -27,8 +27,9 @@ type errorReply struct {
 }
 
 // newErrorServer answers every request with reply and returns a client for
-// it. The client is set up to skip the waits between rate-limit retries.
-func newErrorServer(t *testing.T, reply errorReply) checkly.Client {
+// it, configured further by opts. The client is set up to skip the waits
+// between rate-limit retries.
+func newErrorServer(t *testing.T, reply errorReply, opts ...checkly.ClientOption) checkly.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		io.Copy(io.Discard, r.Body)
@@ -39,7 +40,8 @@ func newErrorServer(t *testing.T, reply errorReply) checkly.Client {
 		io.WriteString(w, reply.body)
 	}))
 	t.Cleanup(srv.Close)
-	c := checkly.NewClient(srv.URL, "test-key", srv.Client())
+	opts = append([]checkly.ClientOption{checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client())}, opts...)
+	c := newTestClient(t, opts...)
 	checkly.SkipRetryWaits(c)
 	return c
 }
@@ -58,12 +60,11 @@ func TestErrorMessages(t *testing.T) {
 	html := "<html>\n<head><title>502 Bad Gateway</title></head>\n<body>\n" +
 		strings.Repeat("<center>nginx</center>\n", 20) + "</body>\n</html>\n"
 	tests := []struct {
-		name      string
-		accountID string
-		reply     errorReply
-		want      string
-		is        []error
-		isNot     []error
+		name  string
+		reply errorReply
+		want  string
+		is    []error
+		isNot []error
 	}{
 		{
 			name:  "boom 404",
@@ -93,26 +94,15 @@ func TestErrorMessages(t *testing.T) {
 		{
 			// Every refusal for an inaccessible account also carries the
 			// refused-by header; the error code decides the hint.
-			name:      "account not accessible",
-			accountID: "acc-123",
+			name: "account not accessible",
 			reply: errorReply{
 				status: 403,
 				header: http.Header{"X-Checkly-Refused-By": {"permission"}},
 				body:   `{"statusCode":403,"error":"Forbidden","message":"The selected account is not accessible with the provided credentials.","errorCode":"ERR_ACCOUNT_NOT_ACCESSIBLE"}`,
 			},
-			want:  `GET /v1/checks/abc: 403 Forbidden [ERR_ACCOUNT_NOT_ACCESSIBLE]: The selected account is not accessible with the provided credentials. Check the account ID "acc-123".`,
+			want:  `GET /v1/checks/abc: 403 Forbidden [ERR_ACCOUNT_NOT_ACCESSIBLE]: The selected account is not accessible with the provided credentials. Check the account ID "` + testAccountID + `".`,
 			is:    []error{checkly.ErrAccountNotAccessible, checkly.ErrForbidden},
 			isNot: []error{checkly.ErrUnauthorized},
-		},
-		{
-			name: "account not accessible without an account ID",
-			reply: errorReply{
-				status: 403,
-				header: http.Header{"X-Checkly-Refused-By": {"permission"}},
-				body:   `{"statusCode":403,"error":"Forbidden","message":"The selected account is not accessible with the provided credentials.","errorCode":"ERR_ACCOUNT_NOT_ACCESSIBLE"}`,
-			},
-			want: "GET /v1/checks/abc: 403 Forbidden [ERR_ACCOUNT_NOT_ACCESSIBLE]: The selected account is not accessible with the provided credentials.",
-			is:   []error{checkly.ErrAccountNotAccessible, checkly.ErrForbidden},
 		},
 		{
 			name: "refused by role",
@@ -225,9 +215,6 @@ func TestErrorMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			c := newErrorServer(t, tt.reply)
-			if tt.accountID != "" {
-				c.SetAccountId(tt.accountID)
-			}
 			_, err := c.GetCheck(context.Background(), "abc")
 			if err == nil {
 				t.Fatal("want error, got nil")
@@ -441,8 +428,7 @@ func TestErrorOmitsSecrets(t *testing.T) {
 					io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
 				}))
 				t.Cleanup(srv.Close)
-				c := checkly.NewClient(srv.URL, apiKey, srv.Client())
-				c.SetAccountId("acc-123")
+				c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth(apiKey, testAccountID), checkly.WithHTTPClient(srv.Client()))
 				err := call.call(context.Background(), c)
 				// Guard against a test whose payload lacks the marker.
 				if sent := <-sentBodies; !strings.Contains(sent, payload) {
@@ -483,7 +469,7 @@ func TestTransportErrors(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		host := srv.Listener.Addr().String()
 		srv.Close()
-		c := checkly.NewClient(srv.URL, "test-key", nil)
+		c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID))
 		err := c.DeleteCheck(context.Background(), "abc")
 		want := "DELETE /v1/checks/abc: request to " + host + " failed: "
 		if err == nil || !strings.HasPrefix(err.Error(), want) {
@@ -502,7 +488,7 @@ func TestTransportErrors(t *testing.T) {
 		t.Parallel()
 		srv := httptest.NewServer(http.NotFoundHandler())
 		t.Cleanup(srv.Close)
-		c := checkly.NewClient(srv.URL, "test-key", srv.Client())
+		c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		_, err := c.GetCheck(ctx, "abc")
@@ -529,7 +515,7 @@ func TestTransportErrors(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 		t.Cleanup(func() { close(release) })
-		c := checkly.NewClient(srv.URL, "test-key", srv.Client())
+		c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
 		_, err := c.GetCheck(ctx, "abc?x=1")
@@ -733,7 +719,7 @@ func TestCodeBundleErrors(t *testing.T) {
 				header: http.Header{"X-Checkly-Refused-By": {"permission"}},
 				body:   `{"statusCode":403,"error":"Forbidden","message":"The selected account is not accessible with the provided credentials.","errorCode":"ERR_ACCOUNT_NOT_ACCESSIBLE"}`,
 			},
-			want: "POST /next/checkly-storage/peek-code-bundle: 403 Forbidden [ERR_ACCOUNT_NOT_ACCESSIBLE]: The selected account is not accessible with the provided credentials.",
+			want: "POST /next/checkly-storage/peek-code-bundle: 403 Forbidden [ERR_ACCOUNT_NOT_ACCESSIBLE]: The selected account is not accessible with the provided credentials. Check the account ID \"" + testAccountID + "\".",
 			is:   []error{checkly.ErrAccountNotAccessible},
 		},
 		{
@@ -798,7 +784,7 @@ func TestCodeBundleErrors(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		host := srv.Listener.Addr().String()
 		srv.Close()
-		err := upload(checkly.NewClient(srv.URL, "test-key", nil))
+		err := upload(newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID)))
 		want := "POST /next/checkly-storage/upload-code-bundle: request to " + host + " failed: "
 		if err == nil || !strings.HasPrefix(err.Error(), want) {
 			t.Fatalf("want error starting with %q, got %v", want, err)

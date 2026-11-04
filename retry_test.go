@@ -60,9 +60,25 @@ func (s *rateLimitServer) requests() []string {
 	return append([]string(nil), s.bodies...)
 }
 
+// testAccountID is the account ID test clients authenticate with: account
+// IDs are UUIDs, and an API key needs one.
+const testAccountID = "a1b2c3d4-0000-4000-8000-000000000001"
+
+// mustNewClient returns the client NewClient builds from opts, failing the
+// test if NewClient returns an error.
+func mustNewClient(t *testing.T, opts ...ClientOption) *client {
+	t.Helper()
+	c, err := NewClient(opts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c.(*client)
+}
+
 // newTestClient returns a client whose waits are recorded instead of slept.
-func newTestClient(url string) (*client, *[]time.Duration) {
-	c := NewClient(url, "test-key", nil).(*client)
+func newTestClient(t *testing.T, url string) (*client, *[]time.Duration) {
+	t.Helper()
+	c := mustNewClient(t, WithBaseURL(url), WithAuth("test-key", testAccountID))
 	var waits []time.Duration
 	c.sleep = func(ctx context.Context, d time.Duration) error {
 		waits = append(waits, d)
@@ -75,9 +91,9 @@ var tooMany = cannedReply{status: http.StatusTooManyRequests, body: `{"message":
 
 func TestRateLimitRetriesThenSucceeds(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany, tooMany, cannedReply{status: 200, body: `{"ok":true}`})
-	c, waits := newTestClient(srv.URL)
+	c, waits := newTestClient(t, srv.URL)
 
-	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
+	res, err := c.send(context.Background(), true, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,9 +123,9 @@ func TestRateLimitHonoursRetryAfter(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "7", "X-RateLimit-Reset": "1"}},
 		cannedReply{status: 200, body: "{}"},
 	)
-	c, waits := newTestClient(srv.URL)
+	c, waits := newTestClient(t, srv.URL)
 
-	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
+	res, err := c.send(context.Background(), true, http.MethodGet, "/v1/things", nil)
 	if err != nil || res.status != 200 {
 		t.Fatalf("want 200, got %d, %v", res.status, err)
 	}
@@ -213,9 +229,9 @@ func TestCeilSeconds(t *testing.T) {
 
 func TestRateLimitGivesUpAfterMaxRetries(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany)
-	c, waits := newTestClient(srv.URL)
+	c, waits := newTestClient(t, srv.URL)
 
-	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
+	res, err := c.send(context.Background(), true, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,11 +254,11 @@ func TestRateLimitDoesNotWaitPastDeadline(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "30"}, body: "limited"},
 		cannedReply{status: 200},
 	)
-	c, waits := newTestClient(srv.URL)
+	c, waits := newTestClient(t, srv.URL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
+	res, err := c.send(ctx, true, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,13 +278,13 @@ func TestRateLimitLeavesTimeForTheRetriedRequest(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "10"}, body: "limited"},
 		cannedReply{status: 200},
 	)
-	c, waits := newTestClient(srv.URL)
+	c, waits := newTestClient(t, srv.URL)
 
 	// The wait (10s plus padding and jitter) fits before the deadline, but
 	// would leave less than rateLimitRequestMargin for the re-sent request.
 	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
 	defer cancel()
-	res, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
+	res, err := c.send(ctx, true, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +301,7 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "30"}, body: "limited"},
 		cannedReply{status: 200},
 	)
-	c := NewClient(srv.URL, "test-key", nil).(*client)
+	c := mustNewClient(t, WithBaseURL(srv.URL), WithAuth("test-key", testAccountID))
 
 	// Cancel once the client starts waiting, then let the real sleep run:
 	// the 30s wait must end at once.
@@ -296,7 +312,7 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		return sleepContext(ctx, d)
 	}
 	start := time.Now()
-	_, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
+	_, err := c.send(ctx, true, http.MethodGet, "/v1/things", nil)
 	if elapsed := time.Since(start); elapsed > 5*time.Second {
 		t.Fatalf("cancel did not abort the wait, took %v", elapsed)
 	}
@@ -322,10 +338,10 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 
 func TestRateLimitResendsPostBody(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany, tooMany, cannedReply{status: 201, body: "{}"})
-	c, _ := newTestClient(srv.URL)
+	c, _ := newTestClient(t, srv.URL)
 
 	payload := `{"name":"status page","components":[1,2,3]}`
-	res, err := c.send(context.Background(), http.MethodPost, "/v1/things", []byte(payload))
+	res, err := c.send(context.Background(), true, http.MethodPost, "/v1/things", []byte(payload))
 	if err != nil || res.status != 201 {
 		t.Fatalf("want 201, got %d, %v", res.status, err)
 	}

@@ -15,44 +15,223 @@ import (
 	"time"
 )
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
+// DefaultBaseURL is the root of the Checkly public API, which a client uses
+// unless WithBaseURL sets another.
+const DefaultBaseURL = "https://api.checklyhq.com"
 
-// NewClient constructs a Checkly API client.
-func NewClient(
-	//checkly API's base url
-	baseURL,
-	//checkly's api key
-	apiKey string,
-	//optional, defaults to http.DefaultClient
-	httpClient *http.Client,
-) Client {
+// defaultSource is the x-checkly-source header a client sends unless
+// WithSource sets another.
+const defaultSource = "go-sdk"
+
+// ClientOption configures a client built by NewClient. Each option validates
+// its value when NewClient applies it, and the first invalid option stops
+// NewClient with its error. Among valid options, which apply in order, a
+// later one overrides an earlier one; for WithBaseURL, WithHTTPClient and
+// WithSource an empty or nil value restores the default.
+type ClientOption func(*client) error
+
+// The environment variables WithAuthFromEnv reads.
+const (
+	envAPIKey    = "CHECKLY_API_KEY"
+	envAccountID = "CHECKLY_ACCOUNT_ID"
+)
+
+// NewClient constructs a Checkly API client. Without options it talks to
+// DefaultBaseURL through http.DefaultClient and has no auth: the public
+// methods GetStaticIPs and GetRuntime work, and every other method fails with
+// ErrMissingAPIKey without sending a request. Nil options are skipped.
+//
+// NewClient returns a nil Client and the error of the first option with an
+// invalid value, which starts with "checkly: " and names the option: a base
+// URL WithBaseURL rejects, or auth WithAuth or WithAuthFromEnv rejects, an
+// empty or unset API key (ErrMissingAPIKey) or account ID
+// (ErrMissingAccountID), or an account ID that is not a UUID
+// (ErrInvalidAccountID). The client is not modified after construction and
+// is safe for concurrent use.
+func NewClient(opts ...ClientOption) (Client, error) {
 	c := &client{
-		apiKey:     apiKey,
-		url:        baseURL,
-		httpClient: httpClient,
+		url:        DefaultBaseURL,
+		source:     defaultSource,
+		httpClient: http.DefaultClient,
 		sleep:      sleepContext,
 	}
-	if httpClient != nil {
-		c.httpClient = httpClient
-	} else {
-		c.httpClient = http.DefaultClient
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		if err := opt(c); err != nil {
+			return nil, err
+		}
 	}
-	return c
+	return c, nil
 }
 
-// SetAccountId sets ID on a client which is required when using User API keys.
-func (c *client) SetAccountId(ID string) {
-	c.accountId = ID
+// isUUID reports whether s is a UUID in the canonical 8-4-4-4-12 hexadecimal
+// form, in either case. Account IDs are UUIDs of any version and variant.
+func isUUID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	for i, r := range s {
+		switch i {
+		case 8, 13, 18, 23:
+			if r != '-' {
+				return false
+			}
+		default:
+			if !('0' <= r && r <= '9' || 'a' <= r && r <= 'f' || 'A' <= r && r <= 'F') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
-// SetChecklySource sets the source on a client which is required for analytics.
-func (c *client) SetChecklySource(source string) {
-	c.source = source
+// messageError is an error with its own text that wraps another error, so
+// that errors.Is and errors.As find the wrapped one while Error() shows only
+// msg. It lets an error match a sentinel with a more specific text, and keeps
+// a wrapped error's text, which may quote secrets, out of the message.
+type messageError struct {
+	msg     string
+	wrapped error
+}
+
+func (e *messageError) Error() string { return e.msg }
+func (e *messageError) Unwrap() error { return e.wrapped }
+
+// WithBaseURL sets the API root, such as "https://api.checklyhq.com". It must
+// be an http or https URL with a host and without a query or fragment; a
+// path is allowed. Trailing slashes are trimmed. An empty string restores
+// DefaultBaseURL.
+//
+// The error for an invalid value quotes the URL with any userinfo password
+// redacted. When the value does not parse, the error says only that it is not
+// a valid URL: it wraps the *url.Error, for errors.As, but leaves its text,
+// which quotes the input, out of the message.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *client) error {
+		if baseURL == "" {
+			c.url = DefaultBaseURL
+			return nil
+		}
+		u, err := url.Parse(baseURL)
+		if err != nil {
+			return &messageError{msg: "checkly: WithBaseURL: not a valid URL", wrapped: err}
+		}
+		// The first two errors do not quote the value: url.Parse may read
+		// userinfo such as "user:password@host" as the scheme or as the opaque
+		// part of "http:user:password@host", and Redacted masks neither.
+		switch {
+		case u.Scheme != "http" && u.Scheme != "https":
+			return errors.New("checkly: WithBaseURL: not an http or https URL")
+		case u.Opaque != "":
+			return errors.New("checkly: WithBaseURL: not an absolute URL; write it as http://host or https://host")
+		case u.Hostname() == "":
+			return fmt.Errorf("checkly: WithBaseURL: %q has no host", u.Redacted())
+		case u.RawQuery != "" || u.ForceQuery:
+			return fmt.Errorf("checkly: WithBaseURL: %q has a query", u.Redacted())
+		case strings.Contains(baseURL, "#"):
+			return fmt.Errorf("checkly: WithBaseURL: %q has a fragment", u.Redacted())
+		}
+		c.url = strings.TrimRight(baseURL, "/")
+		return nil
+	}
+}
+
+// WithHTTPClient sets the HTTP client that sends requests, for example to set
+// a timeout or a proxy. Nil restores http.DefaultClient.
+func WithHTTPClient(httpClient *http.Client) ClientOption {
+	return func(c *client) error {
+		if httpClient == nil {
+			c.httpClient = http.DefaultClient
+			return nil
+		}
+		c.httpClient = httpClient
+		return nil
+	}
+}
+
+// WithSource sets the x-checkly-source header, which identifies the calling
+// tool to the API. An empty string restores the default, "go-sdk".
+func WithSource(source string) ClientOption {
+	return func(c *client) error {
+		if source == "" {
+			c.source = defaultSource
+			return nil
+		}
+		c.source = source
+		return nil
+	}
+}
+
+// WithAuth sets the credentials that authenticate requests: the API key and
+// the ID of the account it acts on (a UUID), sent as the x-checkly-account
+// header. Both are required; for a client without auth, pass no auth option.
+// A later WithAuth or WithAuthFromEnv replaces the credentials completely.
+//
+// NewClient fails with "checkly: WithAuth: the API key is empty" (matching
+// ErrMissingAPIKey), "checkly: WithAuth: the account ID is empty" (matching
+// ErrMissingAccountID), or, for an account ID that is not a UUID, such as an
+// API key passed in its place, "checkly: WithAuth: the account ID is not a
+// UUID; check that the API key and account ID are not swapped" (matching
+// ErrInvalidAccountID). The errors never include the values, because a
+// misplaced value may be the API key.
+func WithAuth(apiKey, accountID string) ClientOption {
+	return func(c *client) error {
+		switch {
+		case apiKey == "":
+			return &messageError{msg: "checkly: WithAuth: the API key is empty", wrapped: ErrMissingAPIKey}
+		case accountID == "":
+			return &messageError{msg: "checkly: WithAuth: the account ID is empty", wrapped: ErrMissingAccountID}
+		case !isUUID(accountID):
+			return &messageError{
+				msg:     "checkly: WithAuth: the account ID is not a UUID; check that the API key and account ID are not swapped",
+				wrapped: ErrInvalidAccountID,
+			}
+		}
+		c.apiKey = apiKey
+		c.accountID = accountID
+		return nil
+	}
+}
+
+// WithAuthFromEnv sets the credentials from the CHECKLY_API_KEY and
+// CHECKLY_ACCOUNT_ID environment variables, which the Checkly CLI and the
+// Terraform provider use too, reading them when NewClient applies the option.
+// Both are required: if one is unset or empty, NewClient fails with an error
+// naming it, "checkly: WithAuthFromEnv: CHECKLY_API_KEY is not set" (matching
+// ErrMissingAPIKey) or "checkly: WithAuthFromEnv: CHECKLY_ACCOUNT_ID is not
+// set" (matching ErrMissingAccountID). The account ID must be a UUID, or
+// NewClient fails with "checkly: WithAuthFromEnv: CHECKLY_ACCOUNT_ID is not a
+// UUID" (matching ErrInvalidAccountID).
+//
+// NewClient never reads the environment without this option.
+func WithAuthFromEnv() ClientOption {
+	return func(c *client) error {
+		apiKey := os.Getenv(envAPIKey)
+		if apiKey == "" {
+			return &messageError{
+				msg:     fmt.Sprintf("checkly: WithAuthFromEnv: %s is not set", envAPIKey),
+				wrapped: ErrMissingAPIKey,
+			}
+		}
+		accountID := os.Getenv(envAccountID)
+		if accountID == "" {
+			return &messageError{
+				msg:     fmt.Sprintf("checkly: WithAuthFromEnv: %s is not set", envAccountID),
+				wrapped: ErrMissingAccountID,
+			}
+		}
+		if !isUUID(accountID) {
+			return &messageError{
+				msg:     fmt.Sprintf("checkly: WithAuthFromEnv: %s is not a UUID", envAccountID),
+				wrapped: ErrInvalidAccountID,
+			}
+		}
+		c.apiKey = apiKey
+		c.accountID = accountID
+		return nil
+	}
 }
 
 // CreateCheck creates a new check with the specified details. It returns the
@@ -2213,20 +2392,22 @@ func alertChannelFromJSON(res rawResponse) (*AlertChannel, error) {
 	return resultAc, nil
 }
 
-// Get a specific runtime specs
+// GetRuntime returns the specs of a runtime. The endpoint is public, so the
+// request is sent without credentials.
 func (c *client) GetRuntime(
 	ctx context.Context,
 	ID string,
 ) (*Runtime, error) {
 	result := Runtime{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/runtimes/%s", ID), nil, &result, http.StatusOK)
+	err := c.callPublicJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/runtimes/%s", ID), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// Get static IP lists
+// GetStaticIPs returns the static IP addresses of every region. The endpoints
+// are public, so the requests are sent without credentials.
 func (c *client) GetStaticIPs(
 	ctx context.Context,
 ) ([]StaticIP, error) {
@@ -2234,7 +2415,7 @@ func (c *client) GetStaticIPs(
 
 	// getting IPv6 first
 	var datav6 map[string][]string
-	err := c.callJSON(ctx, http.MethodGet, "/v1/static-ipv6s-by-region", nil, &datav6, http.StatusOK)
+	err := c.callPublicJSON(ctx, http.MethodGet, "/v1/static-ipv6s-by-region", &datav6, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2252,7 +2433,7 @@ func (c *client) GetStaticIPs(
 
 	// and then IPv4
 	var datav4 map[string][]string
-	err = c.callJSON(ctx, http.MethodGet, "/v1/static-ips-by-region", nil, &datav4, http.StatusOK)
+	err = c.callPublicJSON(ctx, http.MethodGet, "/v1/static-ips-by-region", &datav4, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2270,22 +2451,17 @@ func (c *client) GetStaticIPs(
 	return IPs, nil
 }
 
-func (c *client) addAuthHeaders(req *http.Request) error {
-	req.Header.Add("Authorization", "Bearer "+c.apiKey)
-
-	if strings.HasPrefix(c.apiKey, "cu") && c.accountId == "" {
-		return errors.New("missing Checkly Account ID (required when using User API Keys)")
+// authenticate adds the credential headers to req, an authenticated request:
+// the API key and the account ID. When the client has no auth, it returns
+// ErrMissingAPIKey, prefixed with method and path, and nothing is sent.
+// WithAuth and WithAuthFromEnv always set both, so a client with an API key
+// also has an account ID.
+func (c *client) authenticate(req *http.Request, method string, path string) error {
+	if c.apiKey == "" {
+		return fmt.Errorf("%s %s: %w", method, path, ErrMissingAPIKey)
 	}
-
-	if c.accountId != "" {
-		req.Header.Add("x-checkly-account", c.accountId)
-	}
-	if c.source != "" {
-		req.Header.Add("x-checkly-source", c.source)
-	} else {
-		req.Header.Add("x-checkly-source", "go-sdk")
-	}
-
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("x-checkly-account", c.accountID)
 	return nil
 }
 
@@ -2315,16 +2491,18 @@ func errorPath(path string) string {
 // described in retry.go; once the retries are spent, or the caller's deadline
 // does not leave time for another one, the 429 is returned like any other
 // response. When the context ends during a wait, the error matches both
-// ErrRateLimited and the context error.
+// ErrRateLimited and the context error. auth tells whether the request
+// carries credentials; only the public endpoints are sent without.
 func (c *client) send(
 	ctx context.Context,
+	auth bool,
 	method string,
 	path string,
 	data []byte,
 ) (rawResponse, error) {
 	requestURL := c.url + path
 	for retry := 0; ; retry++ {
-		res, err := c.doRequest(ctx, method, requestURL, errorPath(path), data)
+		res, err := c.doRequest(ctx, auth, method, requestURL, errorPath(path), data)
 		res.retries = retry
 		if err != nil || res.status != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
 			return res, err
@@ -2339,17 +2517,29 @@ func (c *client) send(
 			return res, nil
 		}
 		if err := c.sleep(ctx, wait); err != nil {
-			return res, fmt.Errorf("%w; gave up waiting to retry: %w", newAPIError(res, nil, c.accountId), err)
+			return res, fmt.Errorf("%w; gave up waiting to retry: %w", newAPIError(res, nil, c.accountID), err)
 		}
 	}
 }
 
-// call marshals in as the request body, unless it is nil, sends the request
-// to path, which is relative to the API root as send takes it, and returns
-// the response. A response status not among want is returned as an
-// *APIError.
+// call marshals in as the request body, unless it is nil, sends the
+// authenticated request to path, which is relative to the API root as send
+// takes it, and returns the response. A response status not among want is
+// returned as an *APIError.
 func (c *client) call(
 	ctx context.Context,
+	method string,
+	path string,
+	in any,
+	want ...int,
+) (rawResponse, error) {
+	return c.exchange(ctx, true, method, path, in, want...)
+}
+
+// exchange is call with auth, as send takes it, chosen by the caller.
+func (c *client) exchange(
+	ctx context.Context,
+	auth bool,
 	method string,
 	path string,
 	in any,
@@ -2362,7 +2552,7 @@ func (c *client) call(
 			return rawResponse{}, fmt.Errorf("%s %s: encoding request: %w", method, errorPath(path), err)
 		}
 	}
-	res, err := c.send(ctx, method, path, data)
+	res, err := c.send(ctx, auth, method, path, data)
 	if err != nil {
 		return rawResponse{}, err
 	}
@@ -2371,7 +2561,7 @@ func (c *client) call(
 			return res, nil
 		}
 	}
-	return rawResponse{}, newAPIError(res, want, c.accountId)
+	return rawResponse{}, newAPIError(res, want, c.accountID)
 }
 
 // callJSON is call followed by decoding the response body into out.
@@ -2390,6 +2580,23 @@ func (c *client) callJSON(
 	return decode(res, out)
 }
 
+// callPublicJSON is callJSON without a request body for the public endpoints,
+// which the API serves without authentication. It sends no credentials, so it
+// works without an API key and never fails for a missing account ID.
+func (c *client) callPublicJSON(
+	ctx context.Context,
+	method string,
+	path string,
+	out any,
+	want ...int,
+) error {
+	res, err := c.exchange(ctx, false, method, path, nil, want...)
+	if err != nil {
+		return err
+	}
+	return decode(res, out)
+}
+
 // decode decodes the body of res, a successful response, into out. The error
 // names the request, the status and the body's size, but never contains the
 // body, which may hold secrets. Like the decoding it replaces, it reads the
@@ -2401,11 +2608,13 @@ func decode(res rawResponse, out any) error {
 	return nil
 }
 
-// doRequest sends a single API request. The request is rebuilt from data on
-// every call so that it can be re-sent after a rate-limited response. path is
-// the request path for error messages, as errorPath returns it.
+// doRequest sends a single API request, with credentials when auth is set.
+// The request is rebuilt from data on every call so that it can be re-sent
+// after a rate-limited response. path is the request path for error
+// messages, as errorPath returns it.
 func (c *client) doRequest(
 	ctx context.Context,
+	auth bool,
 	method string,
 	requestURL string,
 	path string,
@@ -2416,9 +2625,11 @@ func (c *client) doRequest(
 		return rawResponse{}, fmt.Errorf("%s %s: building request: %w", method, path, err)
 	}
 
-	err = c.addAuthHeaders(req)
-	if err != nil {
-		return rawResponse{}, err
+	req.Header.Set("x-checkly-source", c.source)
+	if auth {
+		if err := c.authenticate(req, method, path); err != nil {
+			return rawResponse{}, err
+		}
 	}
 
 	req.Header.Add("content-type", "application/json")
@@ -2480,8 +2691,8 @@ func (c *client) UploadCodeBundle(
 		return nil, fmt.Errorf("%s %s: building request: %w", http.MethodPost, uploadCodeBundlePath, err)
 	}
 
-	err = c.addAuthHeaders(req)
-	if err != nil {
+	req.Header.Set("x-checkly-source", c.source)
+	if err := c.authenticate(req, http.MethodPost, uploadCodeBundlePath); err != nil {
 		return nil, err
 	}
 
@@ -2497,7 +2708,7 @@ func (c *client) UploadCodeBundle(
 		return nil, err
 	}
 	if res.status != http.StatusOK {
-		return nil, newAPIError(res, []int{http.StatusOK}, c.accountId)
+		return nil, newAPIError(res, []int{http.StatusOK}, c.accountID)
 	}
 	var output CodeBundle
 	if err := decode(res, &output); err != nil {

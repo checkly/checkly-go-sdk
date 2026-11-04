@@ -210,28 +210,18 @@ var heartbeatCheck = checkly.HeartbeatMonitor{
 }
 
 func main() {
-	apiKey := os.Getenv("CHECKLY_API_KEY")
-	if apiKey == "" {
-		log.Fatal("no CHECKLY_API_KEY set")
-	}
-
-	baseUrl := os.Getenv("CHECKLY_API_URL")
-	if baseUrl == "" {
-		baseUrl = "https://api.checklyhq.com"
-	}
-
-	client := checkly.NewClient(
-		baseUrl,
-		apiKey,
-		nil, //custom http client, defaults to http.DefaultClient
+	// An unset CHECKLY_API_URL leaves the production API. WithAuthFromEnv
+	// requires both CHECKLY_API_KEY and CHECKLY_ACCOUNT_ID.
+	client, err := checkly.NewClient(
+		checkly.WithBaseURL(os.Getenv("CHECKLY_API_URL")),
+		checkly.WithAuthFromEnv(),
 	)
-
-	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
-	if accountId != "" {
-		client.SetAccountId(accountId)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
 	group, err := client.CreateGroup(ctx, group)
 	if err != nil {

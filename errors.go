@@ -21,14 +21,15 @@ import (
 var (
 	// ErrNotFound matches a 404 response.
 	ErrNotFound = errors.New("not found")
-	// ErrUnauthorized matches a 401 response: the API key is missing or
-	// invalid.
+	// ErrUnauthorized matches a 401 response: the server rejected the API
+	// key. A client without an API key fails with ErrMissingAPIKey instead,
+	// before sending the request.
 	ErrUnauthorized = errors.New("unauthorized")
 	// ErrForbidden matches any 403 response.
 	ErrForbidden = errors.New("forbidden")
 	// ErrAccountNotAccessible matches a 403 response with the error code
 	// ERR_ACCOUNT_NOT_ACCESSIBLE: the API key has no access to the account
-	// selected with SetAccountId. Such an error also matches ErrForbidden.
+	// passed to WithAuth. Such an error also matches ErrForbidden.
 	ErrAccountNotAccessible = errors.New("account not accessible")
 	// ErrPlanLimit matches a 402 response: the action exceeds the account's
 	// plan.
@@ -39,6 +40,27 @@ var (
 	// ErrRateLimited matches a 429 response that was still rate limited after
 	// the client's retries.
 	ErrRateLimited = errors.New("rate limited")
+)
+
+// Sentinel errors for auth that cannot authenticate a request. They are not
+// *APIError values and do not match ErrUnauthorized, which means the server
+// rejected the key.
+var (
+	// ErrMissingAPIKey is matched by the error an authenticated method of a
+	// client without auth returns, without sending the request, prefixed
+	// with the request as in "GET /v1/checks/abc: no API key configured; set
+	// one with WithAuth". It also matches the error NewClient returns for
+	// WithAuth with an empty API key and for WithAuthFromEnv when
+	// CHECKLY_API_KEY is not set.
+	ErrMissingAPIKey = errors.New("no API key configured; set one with WithAuth")
+	// ErrMissingAccountID is matched by the error NewClient returns for
+	// WithAuth with an empty account ID and for WithAuthFromEnv when
+	// CHECKLY_ACCOUNT_ID is not set.
+	ErrMissingAccountID = errors.New("an API key needs an account ID")
+	// ErrInvalidAccountID is matched by the error NewClient returns when
+	// WithAuth or WithAuthFromEnv gets an account ID that is not a UUID, such
+	// as an API key passed in its place.
+	ErrInvalidAccountID = errors.New("the account ID is not a UUID")
 )
 
 // IsNotFound reports whether err is, or wraps, an API error for a 404
