@@ -8,21 +8,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Add status pages v3 support: `StatusPageV3` (incl. `supportLink` and `themeColors`), `StatusPageComponentV3` (incl. the typed per-type `configuration`) and `StatusPageAutomationRuleV3` types + `Create/Get/Update/Delete` client methods (`/v3/status-pages`, `/v3/status-pages/{id}/components`, `/v3/status-pages/{id}/automation-rules`)
-- Add optional `Path` field to `ClientCertificate` (URL path prefix that limits the certificate to API and Multistep check requests under that path)
-- Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
 - Add `APICheck` and `BrowserCheck` types and replace `MultiStepCheck`, each with `Create/Get/Update/Delete` client methods backed by the dedicated per-type endpoints (`checks/api`, `checks/browser`, `checks/multistep`). The getters return an error when the ID belongs to a check of another type
+- Add `APIError`, returned for every response whose status the method does not accept, with the request's `Method` and `Path`, the `StatusCode`, the backend's error `Code`, `Message` and validation `Details`, and `RetryAfter` for a 429. Its text reads `METHOD /v1/path: 404 Not Found[ [ERROR_CODE]][: message][ (keys: …)]`, or `METHOD /v1/path: unexpected 200 OK response, want 201 Created` for a success status the method does not accept, followed by a hint for a 401 (check the API key), a 403 for an inaccessible account (check the account ID) or a 403 refused for the API key's role, and by the retries and the server's wait for a 429
+- Add sentinel errors `ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrAccountNotAccessible`, `ErrPlanLimit`, `ErrConflict` and `ErrRateLimited`, which an `APIError` matches with `errors.Is` by its status (and, for `ErrAccountNotAccessible`, its error code), and `IsNotFound(err)`
 
 ### Changed
 - **Breaking:** `MultiStepCheck` is redefined for the `checks/multistep` endpoint: `Type` and `FrequencyOffset` are removed, `AlertSettings` is now a pointer, `ScriptPath` and `Dependencies` are added, and the timestamps decode from `created_at`/`updated_at`
 - **Breaking:** the check update endpoints keep the stored value of an omitted key, so heartbeat, TCP, URL, DNS and ICMP monitor and check group create/update payloads now send clearable fields even when empty: `tags` and `alertChannelSubscriptions` as `[]` (heartbeat and TCP monitors excepted for subscriptions, whose endpoints clear them on omission), unset `groupOrder` as `null` (URL, DNS and ICMP monitors) or `0` (TCP monitors), TCP `request.assertions` as `[]`, and unset group `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and `localTearDownScript` as `null`. Removing the last value of such a field now clears it instead of leaving it unchanged
 - **Breaking:** `Request.BasicAuth` is always serialized, as `null` when unset, so that removing credentials clears them
 - **Breaking:** TCP, URL and DNS monitor payloads always send `degradedResponseTime` and `maxResponseTime`, and ICMP monitor payloads always send `degradedPacketLossThreshold` and `maxPacketLossThreshold`, so that update can set every value. A response time of 0 is no longer replaced by the API's default, and a packet loss threshold of 0 is rejected by the API. Callers that relied on the defaults when leaving these fields at 0 must now set them explicitly
+- **Breaking:** the text of every error returned by client methods changes, including transport and decode errors. Code that matched it, such as the `unexpected response status 404:` prefix, must switch to `errors.Is` with the sentinel errors or `errors.As` with `*APIError`
+- **Breaking:** `ErrCodeBundleNotFound` is now returned wrapped together with the `*APIError`, so match it with `errors.Is` rather than `==`. Only a 404, or the 403 the backend answers for a key of another account, counts as not found: a 403 for an inaccessible account, a role without permission or a plan without the entitlement is returned as a plain `*APIError`
+- **Breaking:** `AlertChannelConfigFromJSON` returns `nil` for a `null` config instead of a pointer to an empty config, and an error, naming the channel type, for an unknown type or a config that is not a JSON object. It still skips fields of an unexpected type. `SetConfig(nil)` does nothing
+- Errors no longer quote JSON response bodies, success bodies or request payloads (create errors for alert channels, dashboards, maintenance windows and private locations used to include the payload). The backend's error message, or the start of an error body that is not JSON, such as a proxy's HTML page, is kept with whitespace collapsed and cut at 500 bytes; a decode error names the request, the status and the body's size instead of quoting the body
+- Transport errors wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` and `errors.As` with a `*url.Error` work. The text names the request and the API host: `GET /v1/checks/abc: request to api.checklyhq.com failed: context deadline exceeded`
+- Cancelling the context during a rate-limit wait returns an error that matches both `ErrRateLimited` and the context error, so check it with `errors.Is` rather than `==`
+- `PeekCodeBundle` is retried on HTTP 429 like the other requests; `UploadCodeBundle`, which streams its body, still is not
+- Code bundle upload and peek errors keep the backend's message, such as the payload size limit, instead of reporting only the status
+- `CreateDashboard`, `CreateMaintenanceWindow`, `CreatePrivateLocation`, `CreateTriggerCheck` and `CreateTriggerGroup` check the status before decoding the response, so an error body that is not JSON, such as a proxy's HTML page, returns an `*APIError` instead of a JSON syntax error
+- Alert channel responses with a `null` or wrongly typed field no longer panic: `null` leaves the field unset, and a wrong type returns an error that names the field; a `null` config leaves every config unset
+- `GetStaticIPs` reports an invalid IPv4 address as `could not parse IP address from …` instead of `could not parse CIDR from …`
+- The error for an unsupported retry strategy value starts in lowercase: `unsupported value "…" for retry strategy`
+
+### Deprecated
+- The `debug` argument of `NewClient` is ignored: the client no longer dumps requests and responses, which included the API key and secret values in plain text. To inspect API traffic, route it through an intercepting HTTPS proxy, for example with the `HTTPS_PROXY` environment variable. Pass `nil`
+
+## [v1.27.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.27.0) - 2026-10-07
+### Changed
 - gRPC monitor create/update payloads send empty `assertions` and `grpcConfig.metadata` as `[]`, and always send `grpcConfig.message` (`grpcConfig.service` in `HEALTH` mode), even when empty. The update endpoint keeps the stored value of an omitted field, so these empty values now clear the stored value instead of leaving it unchanged
+
+## [v1.26.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.26.0) - 2026-10-07
+### Added
+- Add status pages v3 support: `StatusPageV3` (incl. `supportLink` and `themeColors`), `StatusPageComponentV3` (incl. the typed per-type `configuration`) and `StatusPageAutomationRuleV3` types + `Create/Get/Update/Delete` client methods (`/v3/status-pages`, `/v3/status-pages/{id}/components`, `/v3/status-pages/{id}/automation-rules`)
+
+### Changed
 - API requests rejected with HTTP 429 are retried up to 4 times (code bundle upload and peek excepted), waiting as long as `Retry-After` or `X-RateLimit-Reset` asks (capped at 60s, plus up to 1.5s of padding and jitter) or with exponential backoff and jitter otherwise. A wait that would not leave enough of the request context's deadline for the re-sent request is skipped and the 429 is returned at once, so callers with short per-call deadlines need to allow for the wait to benefit; cancelling the context during a wait returns the context error
 
-## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-06-25
+## [v1.25.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.25.0) - 2026-10-07
+### Changed
+- gRPC monitors preserve their FlatBuffers monitor config [#172](https://github.com/checkly/checkly-go-sdk/pull/172)
+
+## [v1.24.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.24.0) - 2026-10-06
+### Changed
+- `MaintenanceWindow` sends the complete window, with timezone, scope and status page settings [#170](https://github.com/checkly/checkly-go-sdk/pull/170)
+
+## [v1.23.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.23.0) - 2026-09-03
 ### Added
+- Add optional `Path` field to `ClientCertificate` (URL path prefix that limits the certificate to API and Multistep check requests under that path)
+
+## [v1.22.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.22.0) - 2026-07-23
+### Added
+- Add SSL assertion grammar: new assertion sources `CERTIFICATE`, `CONNECTION`, `RESPONSE_TIME`, `JSON_RESPONSE` and `TEXT_RESPONSE`, plus `IS_NULL`/`NOT_NULL` comparisons
 - Add `GRPCMonitor` type + `Create/Get/Update/Delete` client methods (`checks/grpc`) [#c0f841a](https://github.com/checkly/checkly-go-sdk/commit/c0f841a)
 - Add `TracerouteMonitor` type + `Create/Get/Update/Delete` client methods (`checks/traceroute`) [#85860b0](https://github.com/checkly/checkly-go-sdk/commit/85860b0)
 - Add `SSLMonitor` type + `Create/Get/Update/Delete` client methods (`checks/ssl`) [#e30a577](https://github.com/checkly/checkly-go-sdk/commit/e30a577)

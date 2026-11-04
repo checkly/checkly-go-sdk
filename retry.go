@@ -2,6 +2,7 @@ package checkly
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -57,11 +58,7 @@ func sleepContext(ctx context.Context, d time.Duration) error {
 // with jitter. The result never exceeds rateLimitMaxWait plus the hint padding
 // and jitter.
 func rateLimitWait(h http.Header, retry int, now time.Time) time.Duration {
-	wait, ok := retryAfterHint(h, now)
-	if !ok {
-		wait, ok = resetHint(h, now)
-	}
-	if ok {
+	if wait, ok := rateLimitHint(h, now); ok {
 		// Clamp before padding so that a hint far in the future cannot
 		// overflow into a negative duration.
 		return min(wait, rateLimitMaxWait) + rateLimitHintPadding +
@@ -71,6 +68,16 @@ func rateLimitWait(h http.Header, retry int, now time.Time) time.Duration {
 	// random, so retries back off but concurrent clients spread out.
 	step := min(rateLimitBaseBackoff<<retry, rateLimitMaxWait)
 	return step/2 + time.Duration(rand.Int63n(int64(step/2)+1))
+}
+
+// rateLimitHint returns how long a 429 response asks the client to wait:
+// Retry-After if it is usable, X-RateLimit-Reset otherwise. The hint is not
+// capped; rateLimitWait caps it.
+func rateLimitHint(h http.Header, now time.Time) (time.Duration, bool) {
+	if wait, ok := retryAfterHint(h, now); ok {
+		return wait, true
+	}
+	return resetHint(h, now)
 }
 
 // retryAfterHint parses Retry-After as either delay-seconds or an HTTP date.
@@ -84,7 +91,7 @@ func retryAfterHint(h http.Header, now time.Time) (time.Duration, bool) {
 			return 0, false
 		}
 		// Clamp in seconds first: converting a huge value would overflow.
-		return time.Duration(min(secs, int64(rateLimitMaxWait/time.Second))) * time.Second, true
+		return time.Duration(min(secs, math.MaxInt64/int64(time.Second))) * time.Second, true
 	}
 	if t, err := http.ParseTime(v); err == nil {
 		return max(t.Sub(now), 0), true

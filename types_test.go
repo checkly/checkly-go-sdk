@@ -3,6 +3,7 @@ package checkly_test
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -515,4 +516,120 @@ func TestAlertChannelPagerduty(t *testing.T) {
 			ac.Pagerduty.ServiceName,
 		)
 	}
+}
+
+// fixtureConfig returns the config object of the alert channel in a fixture.
+func fixtureConfig(t *testing.T, name string) string {
+	t.Helper()
+	var ac struct {
+		Config json.RawMessage `json:"config"`
+	}
+	if err := json.Unmarshal([]byte(readFixture(t, name)), &ac); err != nil {
+		t.Fatal(err)
+	}
+	return string(ac.Config)
+}
+
+// TestAlertChannelConfigFromJSONTypes decodes a realistic config of every
+// alert channel type. The email and Slack configs come from the fixtures.
+func TestAlertChannelConfigFromJSONTypes(t *testing.T) {
+	tests := []struct {
+		channelType string
+		config      string
+		want        interface{}
+	}{
+		{checkly.AlertTypeEmail, fixtureConfig(t, "CreateAlertChannelEmail.json"), &checkly.AlertChannelEmail{Address: "test@example.com"}},
+		// The fixture's webhookUrl key is not the struct's url key, so only
+		// the channel decodes.
+		{checkly.AlertTypeSlack, fixtureConfig(t, "CreateAlertChannelSlack.json"), &checkly.AlertChannelSlack{Channel: "test"}},
+		{checkly.AlertTypeSlackApp, `{"slackChannels":["C123","C456"]}`, &checkly.AlertChannelSlackApp{SlackChannels: []string{"C123", "C456"}}},
+		{checkly.AlertTypeSMS, `{"name":"On call","number":"+15550100"}`, &checkly.AlertChannelSMS{Name: "On call", Number: "+15550100"}},
+		{checkly.AlertTypeCall, `{"name":"On call","number":"+15550100"}`, &checkly.AlertChannelCall{Name: "On call", Number: "+15550100"}},
+		{checkly.AlertTypeOpsgenie, `{"name":"Ops","apiKey":"fake-opsgenie-key","region":"EU","priority":"P3"}`, &checkly.AlertChannelOpsgenie{Name: "Ops", APIKey: "fake-opsgenie-key", Region: "EU", Priority: "P3"}},
+		{checkly.AlertTypePagerduty, `{"account":"acme","serviceKey":"fake-service-key","serviceName":"API"}`, &checkly.AlertChannelPagerduty{Account: "acme", ServiceKey: "fake-service-key", ServiceName: "API"}},
+		{
+			checkly.AlertTypeWebhook,
+			`{"name":"Hook","url":"https://example.com/hook","webhookType":"WEBHOOK_GENERIC","method":"POST","template":"{}","webhookSecret":"fake-secret","headers":[{"key":"X-Env","value":"prod","locked":false}],"queryParameters":[]}`,
+			&checkly.AlertChannelWebhook{
+				Name:            "Hook",
+				URL:             "https://example.com/hook",
+				WebhookType:     "WEBHOOK_GENERIC",
+				Method:          "POST",
+				Template:        "{}",
+				WebhookSecret:   "fake-secret",
+				Headers:         []checkly.KeyValue{{Key: "X-Env", Value: "prod"}},
+				QueryParameters: []checkly.KeyValue{},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.channelType, func(t *testing.T) {
+			got, err := checkly.AlertChannelConfigFromJSON(tt.channelType, []byte(tt.config))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("want %#v, got %#v", tt.want, got)
+			}
+			// A null config is no config.
+			got, err = checkly.AlertChannelConfigFromJSON(tt.channelType, []byte(" null "))
+			if err != nil || got != nil {
+				t.Errorf("want nil for a null config, got %#v, %v", got, err)
+			}
+		})
+	}
+}
+
+func TestAlertChannelConfigFromJSONErrors(t *testing.T) {
+	t.Run("unknown type", func(t *testing.T) {
+		_, err := checkly.AlertChannelConfigFromJSON("TEAMS", []byte(`{}`))
+		if want := `unknown alert channel type "TEAMS"`; err == nil || err.Error() != want {
+			t.Errorf("want %q, got %v", want, err)
+		}
+	})
+	t.Run("syntax error", func(t *testing.T) {
+		_, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeOpsgenie, []byte(`{"apiKey":"SECRET-VALUE-MARKER"`))
+		want := "decoding OPSGENIE alert channel config: "
+		if err == nil || !strings.HasPrefix(err.Error(), want) {
+			t.Fatalf("want error starting with %q, got %v", want, err)
+		}
+		if strings.Contains(err.Error(), "SECRET-VALUE-MARKER") {
+			t.Errorf("want the config left out of the error, got %q", err)
+		}
+	})
+	t.Run("not an object", func(t *testing.T) {
+		for raw, kind := range map[string]string{
+			`"SECRET-VALUE-MARKER"`:   "string",
+			`["SECRET-VALUE-MARKER"]`: "array",
+			`42`:                      "number",
+			`true`:                    "bool",
+		} {
+			_, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeWebhook, []byte(raw))
+			want := "decoding WEBHOOK alert channel config: got a JSON " + kind + ", want an object"
+			if err == nil || err.Error() != want {
+				t.Errorf("%s: want %q, got %v", raw, want, err)
+			}
+		}
+	})
+	// A field of an unexpected type is skipped, so that a channel whose
+	// config the API changed stays readable.
+	t.Run("type mismatch tolerated", func(t *testing.T) {
+		got, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeSMS, []byte(`{"name":"On call","number":15550100}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := (&checkly.AlertChannelSMS{Name: "On call"}); !reflect.DeepEqual(got, want) {
+			t.Errorf("want %#v, got %#v", want, got)
+		}
+	})
+	t.Run("nested type mismatch tolerated", func(t *testing.T) {
+		got, err := checkly.AlertChannelConfigFromJSON(checkly.AlertTypeWebhook, []byte(`{"name":"Hook","headers":[{"key":"X-Env","value":7}]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := &checkly.AlertChannelWebhook{Name: "Hook", Headers: []checkly.KeyValue{{Key: "X-Env"}}}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("want %#v, got %#v", want, got)
+		}
+	})
 }

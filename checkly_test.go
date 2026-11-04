@@ -1061,7 +1061,7 @@ func TestCreateAlertChannel(t *testing.T) {
 }
 
 func TestGetAlertChannel(t *testing.T) {
-	return
+	t.Skip("broken since it was added: validateAlertChannel decodes the empty body of the GET request as JSON and fails")
 	t.Parallel()
 	ta := getTestAlertChannelEmail()
 	ts := cannedResponseServer(t,
@@ -1300,7 +1300,7 @@ func TestUpdateDashboard(t *testing.T) {
 }
 
 func TestGetDashboard(t *testing.T) {
-	return
+	t.Skip("broken since it was added: validateDashboard decodes the empty body of the GET request as JSON and fails")
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
@@ -1540,7 +1540,7 @@ func TestUpdateMaintenanceWindow(t *testing.T) {
 }
 
 func TestGetMaintenanceWindow(t *testing.T) {
-	return
+	t.Skip("broken since it was added: validateMaintenanceWindow decodes the empty body of the GET request as JSON and fails")
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
@@ -1771,7 +1771,7 @@ func TestUpdatePrivateLocation(t *testing.T) {
 }
 
 func TestGetPrivateLocation(t *testing.T) {
-	return
+	t.Skip("broken since it was added: validatePrivateLocation decodes the empty body of the GET request as JSON and fails")
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
