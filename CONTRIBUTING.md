@@ -121,9 +121,18 @@ In order to facilitate the development process, we have a `Makefile` with a few 
 
 ## Project Structure
 
-- `./.github`: contains github (and github actions) related files.
+The SDK is a single package, `checkly`, in the repository root.
 
-> TBA
+- `client.go`: the `Client` interface and `NewClient`. `options.go` holds the `ClientOption`s.
+- `transport.go`: sending requests, authentication and response decoding. `rate_limit.go` holds the retry policy for HTTP 429 responses, and `errors.go` the error types and sentinel errors.
+- One file per API resource, such as `api_check.go`, `url_monitor.go`, `alert_channel.go` or `status_page_v3.go`. Each holds the resource's types, its request payloads and its client methods. Types shared by several resources have their own files, such as `assertion.go`, `alert_settings.go` and `retry_strategy.go`.
+- `<resource>_test.go` tests a resource through the exported API, and `<resource>_internal_test.go` tests unexported code, such as request payloads. Shared helpers are in `helpers_test.go` and `helpers_internal_test.go`. `status_test.go` checks the status codes, credentials and retries of every client method.
+- `integration_test.go`: tests against the real API, built with the `integration` tag.
+- `fixtures/`: canned API responses for the tests.
+- `demo/`: an example program, in its own module.
+- `.github/`: GitHub and GitHub Actions configuration.
+
+When adding a resource, add its types, payloads and methods in a new `<resource>.go`, its methods to the `Client` interface next to the related ones, and a row per method to `statusCases` in `status_test.go`.
 
 
 ## Release Process
