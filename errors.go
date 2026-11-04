@@ -333,3 +333,16 @@ func (e *transportError) Error() string {
 func (e *transportError) Unwrap() error {
 	return e.err
 }
+
+// messageError is an error with its own text that wraps another error, so
+// that errors.Is and errors.As find the wrapped one while Error() shows only
+// msg. It lets an error match a sentinel with a more specific text, and keeps
+// a wrapped error's text, which may quote secrets, out of the message.
+type messageError struct {
+	msg     string
+	wrapped error
+}
+
+func (e *messageError) Error() string { return e.msg }
+
+func (e *messageError) Unwrap() error { return e.wrapped }
