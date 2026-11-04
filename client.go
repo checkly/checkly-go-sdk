@@ -17,11 +17,6 @@ const defaultSource = "go-sdk"
 
 // Client is an interface that implements Checkly's API
 type Client interface {
-	GetHeartbeatMonitor(
-		ctx context.Context,
-		ID string,
-	) (*HeartbeatMonitor, error)
-
 	// CreateCheck creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
 	//
@@ -33,88 +28,15 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// CreateHeartbeatMonitor creates a new heartbeat monitor with the
-	// specified details. It returns the newly-created monitor, or an error.
-	CreateHeartbeatMonitor(
+	// GetCheck takes the ID of an existing check, and returns the check
+	// parameters, or an error.
+	//
+	// Deprecated: use GetAPICheck, GetBrowserCheck, GetMultiStepCheck or the
+	// get method of the monitor type.
+	GetCheck(
 		ctx context.Context,
-		monitor HeartbeatMonitor,
-	) (*HeartbeatMonitor, error)
-
-	// CreateTCPMonitor creates a new TCP monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateTCPMonitor(
-		ctx context.Context,
-		monitor TCPMonitor,
-	) (*TCPMonitor, error)
-
-	// CreateGRPCMonitor creates a new gRPC monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateGRPCMonitor(
-		ctx context.Context,
-		monitor GRPCMonitor,
-	) (*GRPCMonitor, error)
-
-	// CreateTracerouteMonitor creates a new traceroute monitor with the
-	// specified details. It returns the newly-created monitor, or an error.
-	CreateTracerouteMonitor(
-		ctx context.Context,
-		monitor TracerouteMonitor,
-	) (*TracerouteMonitor, error)
-
-	// CreateSSLMonitor creates a new SSL monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateSSLMonitor(
-		ctx context.Context,
-		monitor SSLMonitor,
-	) (*SSLMonitor, error)
-
-	// CreateURLMonitor creates a new URL monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateURLMonitor(
-		ctx context.Context,
-		monitor URLMonitor,
-	) (*URLMonitor, error)
-
-	// CreateDNSMonitor creates a new DNS monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateDNSMonitor(
-		ctx context.Context,
-		monitor DNSMonitor,
-	) (*DNSMonitor, error)
-
-	// CreateICMPMonitor creates a new ICMP monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
-	CreateICMPMonitor(
-		ctx context.Context,
-		monitor ICMPMonitor,
-	) (*ICMPMonitor, error)
-
-	// CreatePlaywrightCheck creates a new Playwright check.
-	CreatePlaywrightCheck(
-		ctx context.Context,
-		check PlaywrightCheck,
-	) (*PlaywrightCheck, error)
-
-	// CreateAPICheck creates a new API check with the specified details.
-	// It returns the newly-created check, or an error.
-	CreateAPICheck(
-		ctx context.Context,
-		check APICheck,
-	) (*APICheck, error)
-
-	// CreateBrowserCheck creates a new browser check with the specified
-	// details. It returns the newly-created check, or an error.
-	CreateBrowserCheck(
-		ctx context.Context,
-		check BrowserCheck,
-	) (*BrowserCheck, error)
-
-	// CreateMultiStepCheck creates a new multi-step check with the specified
-	// details. It returns the newly-created check, or an error.
-	CreateMultiStepCheck(
-		ctx context.Context,
-		check MultiStepCheck,
-	) (*MultiStepCheck, error)
+		ID string,
+	) (*Check, error)
 
 	// UpdateCheck updates an existing check with the specified details.
 	// It returns the updated check, or an error.
@@ -129,101 +51,6 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// UpdateHeartbeatMonitor updates an existing heartbeat monitor with the
-	// specified details. It returns the updated monitor, or an error.
-	UpdateHeartbeatMonitor(
-		ctx context.Context,
-		ID string,
-		monitor HeartbeatMonitor,
-	) (*HeartbeatMonitor, error)
-
-	// UpdateTCPMonitor updates an existing TCP monitor with the specified
-	// details. It returns the updated monitor, or an error.
-	UpdateTCPMonitor(
-		ctx context.Context,
-		ID string,
-		monitor TCPMonitor,
-	) (*TCPMonitor, error)
-
-	// UpdateGRPCMonitor updates an existing gRPC monitor with the specified
-	// details. It returns the updated monitor, or an error.
-	UpdateGRPCMonitor(
-		ctx context.Context,
-		ID string,
-		monitor GRPCMonitor,
-	) (*GRPCMonitor, error)
-
-	// UpdateTracerouteMonitor updates an existing traceroute monitor with the
-	// specified details. It returns the updated monitor, or an error.
-	UpdateTracerouteMonitor(
-		ctx context.Context,
-		ID string,
-		monitor TracerouteMonitor,
-	) (*TracerouteMonitor, error)
-
-	// UpdateSSLMonitor updates an existing SSL monitor with the specified
-	// details. It returns the updated monitor, or an error.
-	UpdateSSLMonitor(
-		ctx context.Context,
-		ID string,
-		monitor SSLMonitor,
-	) (*SSLMonitor, error)
-
-	// UpdateURLMonitor updates an existing URL monitor with the specified details.
-	// It returns the updated monitor, or an error.
-	UpdateURLMonitor(
-		ctx context.Context,
-		ID string,
-		monitor URLMonitor,
-	) (*URLMonitor, error)
-
-	// UpdateDNSMonitor updates an existing DNS monitor with the specified details.
-	// It returns the updated monitor, or an error.
-	UpdateDNSMonitor(
-		ctx context.Context,
-		ID string,
-		monitor DNSMonitor,
-	) (*DNSMonitor, error)
-
-	// UpdateICMPMonitor updates an existing ICMP monitor with the specified details.
-	// It returns the updated monitor, or an error.
-	UpdateICMPMonitor(
-		ctx context.Context,
-		ID string,
-		monitor ICMPMonitor,
-	) (*ICMPMonitor, error)
-
-	// UpdatePlaywrightCheck updates an existing Playwright check.
-	UpdatePlaywrightCheck(
-		ctx context.Context,
-		ID string,
-		check PlaywrightCheck,
-	) (*PlaywrightCheck, error)
-
-	// UpdateAPICheck updates an existing API check with the specified details.
-	// It returns the updated check, or an error.
-	UpdateAPICheck(
-		ctx context.Context,
-		ID string,
-		check APICheck,
-	) (*APICheck, error)
-
-	// UpdateBrowserCheck updates an existing browser check with the specified
-	// details. It returns the updated check, or an error.
-	UpdateBrowserCheck(
-		ctx context.Context,
-		ID string,
-		check BrowserCheck,
-	) (*BrowserCheck, error)
-
-	// UpdateMultiStepCheck updates an existing multi-step check with the
-	// specified details. It returns the updated check, or an error.
-	UpdateMultiStepCheck(
-		ctx context.Context,
-		ID string,
-		check MultiStepCheck,
-	) (*MultiStepCheck, error)
-
 	// DeleteCheck deletes the check with the specified ID.
 	//
 	// Deprecated: use DeleteAPICheck, DeleteBrowserCheck, DeleteMultiStepCheck
@@ -233,145 +60,12 @@ type Client interface {
 		ID string,
 	) error
 
-	// DeleteHeartbeatMonitor deletes the monitor with the specified ID.
-	DeleteHeartbeatMonitor(
+	// CreateAPICheck creates a new API check with the specified details.
+	// It returns the newly-created check, or an error.
+	CreateAPICheck(
 		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteTCPMonitor deletes the monitor with the specified ID.
-	DeleteTCPMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteGRPCMonitor deletes the monitor with the specified ID.
-	DeleteGRPCMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
-	DeleteTracerouteMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteSSLMonitor deletes the monitor with the specified ID.
-	DeleteSSLMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteURLMonitor deletes the monitor with the specified ID.
-	DeleteURLMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteDNSMonitor deletes the monitor with the specified ID.
-	DeleteDNSMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteICMPMonitor deletes the monitor with the specified ID.
-	DeleteICMPMonitor(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeletePlaywrightCheck deletes an existing Playwright check.
-	DeletePlaywrightCheck(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteAPICheck deletes the API check with the specified ID. It uses
-	// the generic check endpoint and does not verify the check type.
-	DeleteAPICheck(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteBrowserCheck deletes the browser check with the specified ID. It uses
-	// the generic check endpoint and does not verify the check type.
-	DeleteBrowserCheck(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// DeleteMultiStepCheck deletes the multi-step check with the specified ID. It uses
-	// the generic check endpoint and does not verify the check type.
-	DeleteMultiStepCheck(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// GetCheck takes the ID of an existing check, and returns the check
-	// parameters, or an error.
-	//
-	// Deprecated: use GetAPICheck, GetBrowserCheck, GetMultiStepCheck or the
-	// get method of the monitor type.
-	GetCheck(
-		ctx context.Context,
-		ID string,
-	) (*Check, error)
-
-	// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
-	// monitor parameters, or an error.
-	GetTCPMonitor(
-		ctx context.Context,
-		ID string,
-	) (*TCPMonitor, error)
-
-	// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-	// monitor parameters, or an error.
-	GetGRPCMonitor(
-		ctx context.Context,
-		ID string,
-	) (*GRPCMonitor, error)
-
-	// GetTracerouteMonitor takes the ID of an existing traceroute monitor,
-	// and returns the monitor parameters, or an error.
-	GetTracerouteMonitor(
-		ctx context.Context,
-		ID string,
-	) (*TracerouteMonitor, error)
-
-	// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-	// monitor parameters, or an error.
-	GetSSLMonitor(
-		ctx context.Context,
-		ID string,
-	) (*SSLMonitor, error)
-
-	// GetURLMonitor takes the ID of an existing URL monitor, and returns the
-	// monitor parameters, or an error.
-	GetURLMonitor(
-		ctx context.Context,
-		ID string,
-	) (*URLMonitor, error)
-
-	// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-	// monitor parameters, or an error.
-	GetDNSMonitor(
-		ctx context.Context,
-		ID string,
-	) (*DNSMonitor, error)
-
-	// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-	// monitor parameters, or an error.
-	GetICMPMonitor(
-		ctx context.Context,
-		ID string,
-	) (*ICMPMonitor, error)
-
-	// GetPlaywrightCheck retrieves an existing Playwright check.
-	GetPlaywrightCheck(
-		ctx context.Context,
-		ID string,
-	) (*PlaywrightCheck, error)
+		check APICheck,
+	) (*APICheck, error)
 
 	// GetAPICheck takes the ID of an existing API check, and returns the
 	// check parameters, or an error.
@@ -380,12 +74,56 @@ type Client interface {
 		ID string,
 	) (*APICheck, error)
 
+	// UpdateAPICheck updates an existing API check with the specified details.
+	// It returns the updated check, or an error.
+	UpdateAPICheck(
+		ctx context.Context,
+		ID string,
+		check APICheck,
+	) (*APICheck, error)
+
+	// DeleteAPICheck deletes the API check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
+	DeleteAPICheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateBrowserCheck creates a new browser check with the specified
+	// details. It returns the newly-created check, or an error.
+	CreateBrowserCheck(
+		ctx context.Context,
+		check BrowserCheck,
+	) (*BrowserCheck, error)
+
 	// GetBrowserCheck takes the ID of an existing browser check, and returns
 	// the check parameters, or an error.
 	GetBrowserCheck(
 		ctx context.Context,
 		ID string,
 	) (*BrowserCheck, error)
+
+	// UpdateBrowserCheck updates an existing browser check with the specified
+	// details. It returns the updated check, or an error.
+	UpdateBrowserCheck(
+		ctx context.Context,
+		ID string,
+		check BrowserCheck,
+	) (*BrowserCheck, error)
+
+	// DeleteBrowserCheck deletes the browser check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
+	DeleteBrowserCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateMultiStepCheck creates a new multi-step check with the specified
+	// details. It returns the newly-created check, or an error.
+	CreateMultiStepCheck(
+		ctx context.Context,
+		check MultiStepCheck,
+	) (*MultiStepCheck, error)
 
 	// GetMultiStepCheck takes the ID of an existing multi-step check, and
 	// returns the check parameters, or an error.
@@ -394,6 +132,284 @@ type Client interface {
 		ID string,
 	) (*MultiStepCheck, error)
 
+	// UpdateMultiStepCheck updates an existing multi-step check with the
+	// specified details. It returns the updated check, or an error.
+	UpdateMultiStepCheck(
+		ctx context.Context,
+		ID string,
+		check MultiStepCheck,
+	) (*MultiStepCheck, error)
+
+	// DeleteMultiStepCheck deletes the multi-step check with the specified ID. It uses
+	// the generic check endpoint and does not verify the check type.
+	DeleteMultiStepCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreatePlaywrightCheck creates a new Playwright check.
+	CreatePlaywrightCheck(
+		ctx context.Context,
+		check PlaywrightCheck,
+	) (*PlaywrightCheck, error)
+
+	// GetPlaywrightCheck retrieves an existing Playwright check.
+	GetPlaywrightCheck(
+		ctx context.Context,
+		ID string,
+	) (*PlaywrightCheck, error)
+
+	// UpdatePlaywrightCheck updates an existing Playwright check.
+	UpdatePlaywrightCheck(
+		ctx context.Context,
+		ID string,
+		check PlaywrightCheck,
+	) (*PlaywrightCheck, error)
+
+	// DeletePlaywrightCheck deletes an existing Playwright check.
+	DeletePlaywrightCheck(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// UploadCodeBundle uploads a code bundle which can be used with
+	// Playwright checks.
+	UploadCodeBundle(
+		ctx context.Context,
+		data io.Reader,
+		size int64,
+		options UploadCodeBundleOptions,
+	) (*CodeBundle, error)
+
+	// PeekCodeBundle peeks the associated metadata of a code bundle without
+	// downloading the code bundle.
+	PeekCodeBundle(
+		ctx context.Context,
+		key string,
+	) (*CodeBundle, error)
+
+	// CreateHeartbeatMonitor creates a new heartbeat monitor with the
+	// specified details. It returns the newly-created monitor, or an error.
+	CreateHeartbeatMonitor(
+		ctx context.Context,
+		monitor HeartbeatMonitor,
+	) (*HeartbeatMonitor, error)
+
+	GetHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+	) (*HeartbeatMonitor, error)
+
+	// UpdateHeartbeatMonitor updates an existing heartbeat monitor with the
+	// specified details. It returns the updated monitor, or an error.
+	UpdateHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+		monitor HeartbeatMonitor,
+	) (*HeartbeatMonitor, error)
+
+	// DeleteHeartbeatMonitor deletes the monitor with the specified ID.
+	DeleteHeartbeatMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateURLMonitor creates a new URL monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateURLMonitor(
+		ctx context.Context,
+		monitor URLMonitor,
+	) (*URLMonitor, error)
+
+	// GetURLMonitor takes the ID of an existing URL monitor, and returns the
+	// monitor parameters, or an error.
+	GetURLMonitor(
+		ctx context.Context,
+		ID string,
+	) (*URLMonitor, error)
+
+	// UpdateURLMonitor updates an existing URL monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateURLMonitor(
+		ctx context.Context,
+		ID string,
+		monitor URLMonitor,
+	) (*URLMonitor, error)
+
+	// DeleteURLMonitor deletes the monitor with the specified ID.
+	DeleteURLMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateTCPMonitor creates a new TCP monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateTCPMonitor(
+		ctx context.Context,
+		monitor TCPMonitor,
+	) (*TCPMonitor, error)
+
+	// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
+	// monitor parameters, or an error.
+	GetTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TCPMonitor, error)
+
+	// UpdateTCPMonitor updates an existing TCP monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateTCPMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TCPMonitor,
+	) (*TCPMonitor, error)
+
+	// DeleteTCPMonitor deletes the monitor with the specified ID.
+	DeleteTCPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateDNSMonitor creates a new DNS monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateDNSMonitor(
+		ctx context.Context,
+		monitor DNSMonitor,
+	) (*DNSMonitor, error)
+
+	// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
+	// monitor parameters, or an error.
+	GetDNSMonitor(
+		ctx context.Context,
+		ID string,
+	) (*DNSMonitor, error)
+
+	// UpdateDNSMonitor updates an existing DNS monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateDNSMonitor(
+		ctx context.Context,
+		ID string,
+		monitor DNSMonitor,
+	) (*DNSMonitor, error)
+
+	// DeleteDNSMonitor deletes the monitor with the specified ID.
+	DeleteDNSMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateICMPMonitor creates a new ICMP monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateICMPMonitor(
+		ctx context.Context,
+		monitor ICMPMonitor,
+	) (*ICMPMonitor, error)
+
+	// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
+	// monitor parameters, or an error.
+	GetICMPMonitor(
+		ctx context.Context,
+		ID string,
+	) (*ICMPMonitor, error)
+
+	// UpdateICMPMonitor updates an existing ICMP monitor with the specified details.
+	// It returns the updated monitor, or an error.
+	UpdateICMPMonitor(
+		ctx context.Context,
+		ID string,
+		monitor ICMPMonitor,
+	) (*ICMPMonitor, error)
+
+	// DeleteICMPMonitor deletes the monitor with the specified ID.
+	DeleteICMPMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateGRPCMonitor creates a new gRPC monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateGRPCMonitor(
+		ctx context.Context,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
+	// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
+	// monitor parameters, or an error.
+	GetGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) (*GRPCMonitor, error)
+
+	// UpdateGRPCMonitor updates an existing gRPC monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateGRPCMonitor(
+		ctx context.Context,
+		ID string,
+		monitor GRPCMonitor,
+	) (*GRPCMonitor, error)
+
+	// DeleteGRPCMonitor deletes the monitor with the specified ID.
+	DeleteGRPCMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateTracerouteMonitor creates a new traceroute monitor with the
+	// specified details. It returns the newly-created monitor, or an error.
+	CreateTracerouteMonitor(
+		ctx context.Context,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
+	// GetTracerouteMonitor takes the ID of an existing traceroute monitor,
+	// and returns the monitor parameters, or an error.
+	GetTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) (*TracerouteMonitor, error)
+
+	// UpdateTracerouteMonitor updates an existing traceroute monitor with the
+	// specified details. It returns the updated monitor, or an error.
+	UpdateTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+		monitor TracerouteMonitor,
+	) (*TracerouteMonitor, error)
+
+	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
+	DeleteTracerouteMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
+	// CreateSSLMonitor creates a new SSL monitor with the specified details.
+	// It returns the newly-created monitor, or an error.
+	CreateSSLMonitor(
+		ctx context.Context,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
+	// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
+	// monitor parameters, or an error.
+	GetSSLMonitor(
+		ctx context.Context,
+		ID string,
+	) (*SSLMonitor, error)
+
+	// UpdateSSLMonitor updates an existing SSL monitor with the specified
+	// details. It returns the updated monitor, or an error.
+	UpdateSSLMonitor(
+		ctx context.Context,
+		ID string,
+		monitor SSLMonitor,
+	) (*SSLMonitor, error)
+
+	// DeleteSSLMonitor deletes the monitor with the specified ID.
+	DeleteSSLMonitor(
+		ctx context.Context,
+		ID string,
+	) error
+
 	// CreateGroup creates a new check group with the specified details.
 	// It returns the newly-created group, or an error.
 	CreateGroup(
@@ -401,26 +417,12 @@ type Client interface {
 		group Group,
 	) (*Group, error)
 
-	// CreateGroupV2 creates a new check group with the specified details.
-	// It returns the newly-created group, or an error.
-	CreateGroupV2(
-		ctx context.Context,
-		group GroupV2,
-	) (*GroupV2, error)
-
 	// GetGroup takes the ID of an existing check group, and returns the
 	// corresponding group, or an error.
 	GetGroup(
 		ctx context.Context,
 		ID int64,
 	) (*Group, error)
-
-	// GetGroupV2 takes the ID of an existing check group, and returns the
-	// corresponding group, or an error.
-	GetGroupV2(
-		ctx context.Context,
-		ID int64,
-	) (*GroupV2, error)
 
 	// UpdateGroup takes the ID of an existing check group, and updates the
 	// corresponding check group to match the supplied group. It returns the updated
@@ -431,6 +433,26 @@ type Client interface {
 		group Group,
 	) (*Group, error)
 
+	// DeleteGroup deletes the check group with the specified ID. It returns a
+	DeleteGroup(
+		ctx context.Context,
+		ID int64,
+	) error
+
+	// CreateGroupV2 creates a new check group with the specified details.
+	// It returns the newly-created group, or an error.
+	CreateGroupV2(
+		ctx context.Context,
+		group GroupV2,
+	) (*GroupV2, error)
+
+	// GetGroupV2 takes the ID of an existing check group, and returns the
+	// corresponding group, or an error.
+	GetGroupV2(
+		ctx context.Context,
+		ID int64,
+	) (*GroupV2, error)
+
 	// UpdateGroupV2 takes the ID of an existing check group, and updates the
 	// corresponding check group to match the supplied group. It returns the updated
 	// group, or an error.
@@ -439,12 +461,6 @@ type Client interface {
 		ID int64,
 		group GroupV2,
 	) (*GroupV2, error)
-
-	// DeleteGroup deletes the check group with the specified ID. It returns a
-	DeleteGroup(
-		ctx context.Context,
-		ID int64,
-	) error
 
 	// DeleteGroupV2 deletes the check group with the specified ID. It returns a
 	DeleteGroupV2(
@@ -800,22 +816,6 @@ type Client interface {
 	) (*Runtime, error)
 
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
-
-	// UploadCodeBundle uploads a code bundle which can be used with
-	// Playwright checks.
-	UploadCodeBundle(
-		ctx context.Context,
-		data io.Reader,
-		size int64,
-		options UploadCodeBundleOptions,
-	) (*CodeBundle, error)
-
-	// PeekCodeBundle peeks the associated metadata of a code bundle without
-	// downloading the code bundle.
-	PeekCodeBundle(
-		ctx context.Context,
-		key string,
-	) (*CodeBundle, error)
 }
 
 // client implements Client. NewClient builds it from ClientOptions, and it is
