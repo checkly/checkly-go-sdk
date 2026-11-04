@@ -983,7 +983,7 @@ func getTestAlertChannelEmail() *checkly.AlertChannel {
 func getTestAlertChannelSlack() checkly.AlertChannel {
 	ac := checkly.AlertChannel{
 		ID:   1,
-		Type: checkly.AlertTypeEmail,
+		Type: checkly.AlertTypeSlack,
 		Slack: &checkly.AlertChannelSlack{
 			Channel:    "test",
 			WebhookURL: "https://slack.com/test",
@@ -992,56 +992,38 @@ func getTestAlertChannelSlack() checkly.AlertChannel {
 	return ac
 }
 
+// validateAlertChannel checks that body is the request body of the test alert
+// channel of its type.
 func validateAlertChannel(t *testing.T, body []byte) {
-	response := map[string]interface{}{}
-	err := json.Unmarshal(body, &response)
-	if err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
+	var req struct {
+		Type   string          `json:"type"`
+		Config json.RawMessage `json:"config"`
 	}
-	ac := checkly.AlertChannel{}
-	ac.Type = response["type"].(string)
-	cfgJSON, err := json.Marshal(response["config"])
-	if err != nil {
-		t.Error("NO CFG", response["config"].(string))
+	if err := json.Unmarshal(body, &req); err != nil {
+		t.Errorf("decoding error for data %q: %v", body, err)
 		return
 	}
-	cfg, err := checkly.AlertChannelConfigFromJSON(ac.Type, cfgJSON)
-	if err != nil {
-		t.Error("NO CFG", err)
-		return
-	}
-	ac.SetConfig(cfg)
-
-	if ac.Type == checkly.AlertTypeEmail {
-		ta := getTestAlertChannelEmail()
-		if ac.Email == nil {
-			t.Error("Email nil -> ", cfg, string(body))
+	switch req.Type {
+	case checkly.AlertTypeEmail:
+		var got checkly.AlertChannelEmail
+		if err := json.Unmarshal(req.Config, &got); err != nil {
+			t.Errorf("decoding config %s: %v", req.Config, err)
 			return
 		}
-		if ta.Email.Address != ac.Email.Address {
-			t.Errorf(
-				"Expected: %s, Got: %s",
-				ta.Email.Address,
-				ac.Email.Address,
-			)
+		if want := *getTestAlertChannelEmail().Email; got != want {
+			t.Errorf("want config %+v, got %+v", want, got)
 		}
-	}
-	if ac.Type == checkly.AlertTypeSlack {
-		ta := getTestAlertChannelSlack()
-		if ta.Slack.Channel != ac.Slack.Channel {
-			t.Errorf(
-				"Expected: %s, Got: %s",
-				ta.Slack.Channel,
-				ac.Slack.Channel,
-			)
+	case checkly.AlertTypeSlack:
+		var got checkly.AlertChannelSlack
+		if err := json.Unmarshal(req.Config, &got); err != nil {
+			t.Errorf("decoding config %s: %v", req.Config, err)
+			return
 		}
-		if ta.Slack.WebhookURL != ac.Slack.WebhookURL {
-			t.Errorf(
-				"Expected: %s, Got: %s",
-				ta.Slack.WebhookURL,
-				ac.Slack.WebhookURL,
-			)
+		if want := *getTestAlertChannelSlack().Slack; got != want {
+			t.Errorf("want config %+v, got %+v", want, got)
 		}
+	default:
+		t.Errorf("unexpected alert channel type %q", req.Type)
 	}
 }
 
@@ -1059,21 +1041,22 @@ func TestCreateAlertChannel(t *testing.T) {
 	ta := getTestAlertChannelEmail()
 	ac, err := client.CreateAlertChannel(context.Background(), *ta)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
+	ta.CreatedAt = "0001-01-11T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
 	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
 		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
 	}
 }
 
 func TestGetAlertChannel(t *testing.T) {
-	t.Skip("broken since it was added: validateAlertChannel decodes the empty body of the GET request as JSON and fails")
 	t.Parallel()
 	ta := getTestAlertChannelEmail()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
 		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
-		validateAlertChannel,
+		validateEmptyBody,
 		http.StatusOK,
 		"GetAlertChannelEmail.json",
 	)
@@ -1081,10 +1064,12 @@ func TestGetAlertChannel(t *testing.T) {
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
 	ac, err := client.GetAlertChannel(context.Background(), ta.ID)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	if !cmp.Equal(ta, *ac, ignoreAlertChannelFields) {
-		t.Error(cmp.Diff(ta, *ac, ignoreAlertChannelFields))
+	ta.CreatedAt = "0001-01-13T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
+	if !cmp.Equal(*ta, *ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(*ta, *ac, ignoreAlertChannelFields))
 	}
 }
 
@@ -1100,9 +1085,14 @@ func TestUpdateAlertChannel(t *testing.T) {
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.UpdateAlertChannel(context.Background(), ta.ID, *ta)
+	ac, err := client.UpdateAlertChannel(context.Background(), ta.ID, *ta)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
+	}
+	ta.CreatedAt = "0001-01-14T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
 	}
 }
 
@@ -1121,92 +1111,6 @@ func TestDeleteAlertChannel(t *testing.T) {
 	err := client.DeleteAlertChannel(context.Background(), ta.ID)
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestAlertChannelSetSmsConfig(t *testing.T) {
-	ac := checkly.AlertChannel{
-		Type: "SMS",
-	}
-	c := &checkly.AlertChannelSMS{
-		Name:   "foo",
-		Number: "012345",
-	}
-	ac.SetConfig(c)
-	if ac.SMS == nil {
-		t.Error("Shouldn't be nil")
-		return
-	}
-	if ac.SMS.Name != "foo" {
-		t.Errorf("Unexpected value: %s", ac.SMS.Name)
-	}
-}
-
-func TestAlertChannelSetEmailConfig(t *testing.T) {
-	ac := checkly.AlertChannel{
-		Type: "EMAIL",
-	}
-	c := checkly.AlertChannelEmail{
-		Address: "add@example.com",
-	}
-	ac.SetConfig(&c)
-	if ac.Email == nil {
-		t.Error("Shouldn't be nil")
-		return
-	}
-	if ac.Email.Address != c.Address {
-		t.Errorf("Unexpected value: %s", ac.Email.Address)
-	}
-}
-
-func TestAlertChannelSetWebookConfig(t *testing.T) {
-	ac := checkly.AlertChannel{
-		Type: "WEBHOOK",
-	}
-	var c interface{}
-	json := []byte(`{"headers":[{"key":"X-1","value":"h1v"},{"key":"X-2","value":"h2v"}],"method":"get","name":"fooname","queryParameters":[{"key":"q1","value":"v1"}],"template":"tmpl","url":"https://example.com/webhook","webhookSecret":"foosecret"}`)
-
-	c, err := checkly.AlertChannelConfigFromJSON(ac.Type, json)
-	if err != nil {
-		t.Errorf("Unexpected error %s", err.Error())
-	}
-	ac.SetConfig(c)
-	if ac.Webhook == nil {
-		t.Error("Shouldn't be nil")
-		return
-	}
-	if ac.Webhook.Name != "fooname" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.Name)
-	}
-	if ac.Webhook.Method != "get" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.Method)
-	}
-	if ac.Webhook.Template != "tmpl" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.Template)
-	}
-	if ac.Webhook.URL != "https://example.com/webhook" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.URL)
-	}
-	if ac.Webhook.WebhookSecret != "foosecret" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.WebhookSecret)
-	}
-	if len(ac.Webhook.Headers) != 2 {
-		t.Errorf("Unexpected len: %d", len(ac.Webhook.Headers))
-	}
-	if ac.Webhook.Headers[0].Key != "X-1" && ac.Webhook.Headers[0].Key != "X-2" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Key)
-	}
-	if ac.Webhook.Headers[0].Value != "h1v" && ac.Webhook.Headers[0].Value != "h2v" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.Headers[0].Value)
-	}
-	if len(ac.Webhook.QueryParameters) != 1 {
-		t.Errorf("Unexpected len: %d", len(ac.Webhook.QueryParameters))
-	}
-	if ac.Webhook.QueryParameters[0].Key != "q1" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Key)
-	}
-	if ac.Webhook.QueryParameters[0].Value != "v1" {
-		t.Errorf("Unexpected value: %s", ac.Webhook.QueryParameters[0].Value)
 	}
 }
 

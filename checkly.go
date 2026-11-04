@@ -1828,7 +1828,7 @@ func (c *client) CreateAlertChannel(
 	ctx context.Context,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, http.MethodPost, "/v1/alert-channels", payloadFromAlertChannel(ac), http.StatusOK, http.StatusCreated)
+	res, err := c.call(ctx, http.MethodPost, "/v1/alert-channels", createAlertChannelPayload(ac), http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1856,7 +1856,7 @@ func (c *client) UpdateAlertChannel(
 	ID int64,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, http.MethodPut, fmt.Sprintf("/v1/alert-channels/%d", ID), payloadFromAlertChannel(ac), http.StatusOK)
+	res, err := c.call(ctx, http.MethodPut, fmt.Sprintf("/v1/alert-channels/%d", ID), createAlertChannelPayload(ac), http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2292,104 +2292,84 @@ func (c *client) DeleteStatusPageAutomationRuleV3(
 	return err
 }
 
-func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
-	payload := map[string]interface{}{
-		"id":     ac.ID,
-		"type":   ac.Type,
-		"config": ac.GetConfig(),
+// alertChannelPayload is the request body of CreateAlertChannel and
+// UpdateAlertChannel. Unset settings are omitted, because the API rejects JSON
+// null for them. The ID is not sent, because the API strips it from the body.
+type alertChannelPayload struct {
+	Type               string `json:"type"`
+	Config             any    `json:"config"`
+	SendRecovery       *bool  `json:"sendRecovery,omitempty"`
+	SendFailure        *bool  `json:"sendFailure,omitempty"`
+	SendDegraded       *bool  `json:"sendDegraded,omitempty"`
+	SSLExpiry          *bool  `json:"sslExpiry,omitempty"`
+	SSLExpiryThreshold *int   `json:"sslExpiryThreshold,omitempty"`
+}
+
+// createAlertChannelPayload returns the request body for ac. The config is the
+// config field that matches ac.Type, sent as null when that field is nil or the
+// type is unknown.
+func createAlertChannelPayload(ac AlertChannel) alertChannelPayload {
+	return alertChannelPayload{
+		Type:               ac.Type,
+		Config:             ac.configField(),
+		SendRecovery:       ac.SendRecovery,
+		SendFailure:        ac.SendFailure,
+		SendDegraded:       ac.SendDegraded,
+		SSLExpiry:          ac.SSLExpiry,
+		SSLExpiryThreshold: ac.SSLExpiryThreshold,
 	}
-	if ac.SendRecovery != nil {
-		payload["sendRecovery"] = *ac.SendRecovery
-	}
-	if ac.SendDegraded != nil {
-		payload["sendDegraded"] = *ac.SendDegraded
-	}
-	if ac.SendFailure != nil {
-		payload["sendFailure"] = *ac.SendFailure
-	}
-	if ac.SSLExpiry != nil {
-		payload["sslExpiry"] = *ac.SSLExpiry
-	}
-	if ac.SSLExpiryThreshold != nil {
-		payload["sslExpiryThreshold"] = *ac.SSLExpiryThreshold
-	}
-	return payload
+}
+
+// alertChannelResponse is the response body of the alert channel methods. The
+// config is kept raw, because its type depends on the channel's type; the
+// config fields of AlertChannel are not decoded from JSON.
+type alertChannelResponse struct {
+	AlertChannel
+	Config json.RawMessage `json:"config"`
 }
 
 // alertChannelFromJSON decodes res, a response holding an alert channel. A
-// scalar field (id, type, the send flags, sslExpiry and sslExpiryThreshold)
-// that is JSON null is left unset; one of another type than expected is an
-// error that names the field. The config is decoded by
-// AlertChannelConfigFromJSON; a JSON null config leaves all configs unset.
+// field that is JSON null is left unset; one of another type than expected is
+// an error that names the field but never quotes a string value, because
+// alert channel configs hold secrets. A config, including a null one, needs a
+// known channel type; it is decoded by decodeAlertChannelConfig.
 func alertChannelFromJSON(res rawResponse) (*AlertChannel, error) {
-	result := map[string]any{}
-	if err := decode(res, &result); err != nil {
+	var r alertChannelResponse
+	if err := decode(res, &r); err != nil {
 		return nil, err
 	}
-	// fieldError reports the type, never the value, of a field: alert
-	// channel configs hold secrets.
-	fieldError := func(field string, v any, want string) error {
-		return fmt.Errorf("%s %s: decoding %d response: field %q is %T, want %s", res.method, res.path, res.status, field, v, want)
-	}
-	optionalBool := func(field string) (*bool, error) {
-		switch v := result[field].(type) {
-		case nil:
-			return nil, nil
-		case bool:
-			return &v, nil
-		default:
-			return nil, fieldError(field, v, "a boolean")
+	ac := &r.AlertChannel
+	if r.Config != nil {
+		if err := decodeAlertChannelConfig(ac, r.Config); err != nil {
+			return nil, fmt.Errorf("%s %s: decoding %d response: config: %w", res.method, res.path, res.status, err)
 		}
 	}
+	return ac, nil
+}
 
-	resultAc := &AlertChannel{}
-	switch v := result["id"].(type) {
-	case nil:
-	case float64:
-		resultAc.ID = int64(v)
-	default:
-		return nil, fieldError("id", v, "a number")
+// decodeAlertChannelConfig decodes cfgJSON into the config field of ac that
+// matches ac.Type. A field of the config whose JSON type does not match is
+// skipped, so that an unexpected value does not make an existing channel
+// unreadable. The errors never contain the config's values.
+func decodeAlertChannelConfig(ac *AlertChannel, cfgJSON json.RawMessage) error {
+	field := ac.configField()
+	if field == nil {
+		return fmt.Errorf("unknown alert channel type %q", ac.Type)
 	}
-	switch v := result["type"].(type) {
-	case nil:
-	case string:
-		resultAc.Type = v
-	default:
-		return nil, fieldError("type", v, "a string")
-	}
-	var err error
-	if resultAc.SendRecovery, err = optionalBool("sendRecovery"); err != nil {
-		return nil, err
-	}
-	if resultAc.SendFailure, err = optionalBool("sendFailure"); err != nil {
-		return nil, err
-	}
-	if resultAc.SendDegraded, err = optionalBool("sendDegraded"); err != nil {
-		return nil, err
-	}
-	if resultAc.SSLExpiry, err = optionalBool("sslExpiry"); err != nil {
-		return nil, err
-	}
-	switch v := result["sslExpiryThreshold"].(type) {
-	case nil:
-	case float64:
-		t := int(v)
-		resultAc.SSLExpiryThreshold = &t
-	default:
-		return nil, fieldError("sslExpiryThreshold", v, "a number")
-	}
-	if cfg, ok := result["config"]; ok {
-		cfgJSON, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, fmt.Errorf("%s %s: decoding %d response: config: %w", res.method, res.path, res.status, err)
+	// json.Unmarshal keeps decoding after a type mismatch and reports the
+	// first one as an *json.UnmarshalTypeError, so the config holds every
+	// field that does match. A mismatch without a field is the config itself
+	// being no object.
+	if err := json.Unmarshal(cfgJSON, field); err != nil {
+		var typeErr *json.UnmarshalTypeError
+		if !errors.As(err, &typeErr) {
+			return fmt.Errorf("decoding %s alert channel config: %w", ac.Type, err)
 		}
-		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
-		if err != nil {
-			return nil, fmt.Errorf("%s %s: decoding %d response: config: %w", res.method, res.path, res.status, err)
+		if typeErr.Field == "" {
+			return fmt.Errorf("decoding %s alert channel config: got a JSON %s, want an object", ac.Type, typeErr.Value)
 		}
-		resultAc.SetConfig(c)
 	}
-	return resultAc, nil
+	return nil
 }
 
 // GetRuntime returns the specs of a runtime. The endpoint is public, so the

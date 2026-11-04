@@ -1,13 +1,10 @@
 package checkly
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/netip"
 	"time"
@@ -1944,7 +1941,7 @@ type AlertChannelSMS struct {
 	Number string `json:"number"`
 }
 
-// AlertChannelCALL defines a type for a phone call alert channel
+// AlertChannelCall defines a type for a phone call alert channel
 type AlertChannelCall struct {
 	Name   string `json:"name"`
 	Number string `json:"number"`
@@ -1958,7 +1955,7 @@ type AlertChannelOpsgenie struct {
 	Priority string `json:"priority"`
 }
 
-// AlertChannelPagerduty defines a type for an pager duty alert channel
+// AlertChannelPagerduty defines a type for a PagerDuty alert channel
 type AlertChannelPagerduty struct {
 	Account     string `json:"account,omitempty"`
 	ServiceKey  string `json:"serviceKey"`
@@ -1977,8 +1974,9 @@ type AlertChannelWebhook struct {
 	QueryParameters []KeyValue `json:"queryParameters,omitempty"`
 }
 
-// AlertChannel represents an alert channel and its subscribed checks. The API
-// defines this data as read-only.
+// AlertChannel represents an alert channel. It is the input of
+// CreateAlertChannel and UpdateAlertChannel, which send the config field that
+// matches Type, and their result.
 type AlertChannel struct {
 	ID                 int64                  `json:"id,omitempty"`
 	Type               string                 `json:"type"`
@@ -2218,110 +2216,30 @@ type StaticIP struct {
 	Address netip.Prefix
 }
 
-// SetConfig sets config of alert channel based on it's type. A nil cfg leaves
-// the configs as they are.
-func (a *AlertChannel) SetConfig(cfg interface{}) {
-	switch v := cfg.(type) {
-	case nil:
-		// No config, as AlertChannelConfigFromJSON returns for JSON null.
-	case *AlertChannelEmail:
-		a.Email = cfg.(*AlertChannelEmail)
-	case *AlertChannelSMS:
-		a.SMS = cfg.(*AlertChannelSMS)
-	case *AlertChannelCall:
-		a.CALL = cfg.(*AlertChannelCall)
-	case *AlertChannelSlack:
-		a.Slack = cfg.(*AlertChannelSlack)
-	case *AlertChannelSlackApp:
-		a.SlackApp = cfg.(*AlertChannelSlackApp)
-	case *AlertChannelWebhook:
-		a.Webhook = cfg.(*AlertChannelWebhook)
-	case *AlertChannelOpsgenie:
-		a.Opsgenie = cfg.(*AlertChannelOpsgenie)
-	case *AlertChannelPagerduty:
-		a.Pagerduty = cfg.(*AlertChannelPagerduty)
-	default:
-		log.Printf("Unknown config type %v", v)
-	}
-}
-
-// GetConfig gets the config of the alert channel based on it's type
-func (a *AlertChannel) GetConfig() (cfg map[string]interface{}) {
-	byts := []byte{}
-	var err error
+// configField returns a pointer to the config field that matches a.Type, such
+// as &a.Email, or nil for an unknown type. Marshaling it yields the config, or
+// null when the field is nil; unmarshaling into it sets the field, to nil for
+// JSON null.
+func (a *AlertChannel) configField() any {
 	switch a.Type {
 	case AlertTypeEmail:
-		byts, err = json.Marshal(a.Email)
+		return &a.Email
 	case AlertTypeSMS:
-		byts, err = json.Marshal(a.SMS)
+		return &a.SMS
 	case AlertTypeCall:
-		byts, err = json.Marshal(a.CALL)
+		return &a.CALL
 	case AlertTypeSlack:
-		byts, err = json.Marshal(a.Slack)
+		return &a.Slack
 	case AlertTypeSlackApp:
-		byts, err = json.Marshal(a.SlackApp)
+		return &a.SlackApp
 	case AlertTypeOpsgenie:
-		byts, err = json.Marshal(a.Opsgenie)
+		return &a.Opsgenie
 	case AlertTypePagerduty:
-		byts, err = json.Marshal(a.Pagerduty)
+		return &a.Pagerduty
 	case AlertTypeWebhook:
-		byts, err = json.Marshal(a.Webhook)
+		return &a.Webhook
 	}
-
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(byts, &cfg)
-	return cfg
-}
-
-// AlertChannelConfigFromJSON decodes cfgJSON, the config of an alert channel
-// of type channelType, into a pointer to the matching config type, such as
-// *AlertChannelEmail. It returns nil for a JSON null config, and an error for
-// an unknown channel type or a config that is not a JSON object. A field of
-// the object whose JSON type does not match the config type is skipped, as
-// before, so that an unexpected value does not make an existing channel
-// unreadable. The client decodes a response before it calls this function, so
-// invalid JSON is only possible for a caller that passes its own cfgJSON.
-func AlertChannelConfigFromJSON(channelType string, cfgJSON []byte) (interface{}, error) {
-	var cfg interface{}
-	switch channelType {
-	case AlertTypeEmail:
-		cfg = &AlertChannelEmail{}
-	case AlertTypeSMS:
-		cfg = &AlertChannelSMS{}
-	case AlertTypeCall:
-		cfg = &AlertChannelCall{}
-	case AlertTypeSlack:
-		cfg = &AlertChannelSlack{}
-	case AlertTypeSlackApp:
-		cfg = &AlertChannelSlackApp{}
-	case AlertTypeOpsgenie:
-		cfg = &AlertChannelOpsgenie{}
-	case AlertTypePagerduty:
-		cfg = &AlertChannelPagerduty{}
-	case AlertTypeWebhook:
-		cfg = &AlertChannelWebhook{}
-	default:
-		return nil, fmt.Errorf("unknown alert channel type %q", channelType)
-	}
-	if string(bytes.TrimSpace(cfgJSON)) == "null" {
-		return nil, nil
-	}
-	// json.Unmarshal keeps decoding after a type mismatch and reports the
-	// first one as an *json.UnmarshalTypeError, so cfg holds every field
-	// that does match. A mismatch without a field is the config itself
-	// being no object. The errors never contain the config's values.
-	if err := json.Unmarshal(cfgJSON, cfg); err != nil {
-		var typeErr *json.UnmarshalTypeError
-		if !errors.As(err, &typeErr) {
-			return nil, fmt.Errorf("decoding %s alert channel config: %w", channelType, err)
-		}
-		if typeErr.Field == "" {
-			return nil, fmt.Errorf("decoding %s alert channel config: got a JSON %s, want an object", channelType, typeErr.Value)
-		}
-	}
-	return cfg, nil
+	return nil
 }
 
 type ClientCertificate struct {
