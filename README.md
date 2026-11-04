@@ -35,20 +35,30 @@ $ go get -u github.com/checkly/checkly-go-sdk
 
 ## Getting Started
 
-Create a new checkly `Client` by calling `checkly.NewClient()` (you will need to set your Checkly API Key and Account ID)
+Create a new checkly `Client` by calling `checkly.NewClient()` with options. Every option is optional: without any, the client talks to `checkly.DefaultBaseURL` through `http.DefaultClient` and has no auth, so only the public methods (`GetStaticIPs`, `GetRuntime`) work. Most methods need auth: an API key together with the ID of the account it acts on, a UUID.
+
+`WithAuthFromEnv()` reads the API key and account ID from `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID`, the variables the Checkly CLI uses. Both are required, and `NewClient` fails if either is not set:
 
 ```go
-baseUrl := "https://api.checklyhq.com"
-apiKey := os.Getenv("CHECKLY_API_KEY")
-accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
+client, err := checkly.NewClient(checkly.WithAuthFromEnv())
+if err != nil {
+	log.Fatal(err)
+}
+```
 
-client := checkly.NewClient(
-	baseUrl,
-	apiKey,
-	nil, //custom http client, defaults to http.DefaultClient
+Or pass the credentials with `WithAuth(apiKey, accountID)`, which also requires both; for a client without auth, pass no auth option. `NewClient` returns an error for an invalid option, such as an empty value or an account ID that is not a UUID:
+
+```go
+client, err := checkly.NewClient(
+	checkly.WithAuth(apiKey, accountID),
+	// Optional: another API root, and a custom HTTP client, for example with
+	// a timeout.
+	checkly.WithBaseURL("https://api.checklyhq.com"),
+	checkly.WithHTTPClient(&http.Client{Timeout: 30 * time.Second}),
 )
-
-client.SetAccountId(accountId)
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 > Note: if you don't have an API key, you can create one at [here](https://app.checklyhq.com/account/api-keys)

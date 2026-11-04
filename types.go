@@ -776,12 +776,6 @@ type Client interface {
 		ID string,
 	) error
 
-	// SetAccountId sets ID on a client which is required when using User API keys.
-	SetAccountId(ID string)
-
-	// SetChecklySource sets the source of the check for analytics purposes.
-	SetChecklySource(source string)
-
 	// Get a specific runtime specs.
 	GetRuntime(
 		ctx context.Context,
@@ -807,13 +801,15 @@ type Client interface {
 	) (*CodeBundle, error)
 }
 
-// client represents a Checkly client. To use a non-default HTTP client (for example, for testing, or to set
-// a timeout), assign to the HTTPClient field. To set a non-default URL (for
-// example, for testing), assign to the URL field.
+// client implements Client. NewClient builds it from ClientOptions, and it is
+// not modified afterwards, so it is safe for concurrent use.
 type client struct {
-	apiKey     string
-	url        string
-	accountId  string
+	apiKey string
+	// url is the API root, such as DefaultBaseURL, to which request paths
+	// starting with "/" are appended.
+	url       string
+	accountID string
+	// source is sent as the x-checkly-source header of every request.
 	source     string
 	httpClient *http.Client
 	// sleep waits between rate-limit retries, returning early with ctx.Err()
