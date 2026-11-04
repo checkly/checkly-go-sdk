@@ -1,0 +1,59 @@
+{
+  "id": "3013e5f5-b950-4364-b1a4-6b3ecb1e1c2e",
+  "checkType": "MULTI_STEP",
+  "name": "Multi-step Check #1",
+  "description": null,
+  "frequency": 10,
+  "activated": true,
+  "muted": false,
+  "shouldFail": false,
+  "runParallel": false,
+  "locations": [
+    "us-east-1",
+    "us-west-1"
+  ],
+  "script": "console.log('test')",
+  "environmentVariables": [
+    {
+      "key": "FOO",
+      "value": "bar",
+      "locked": false,
+      "secret": false
+    }
+  ],
+  "created_at": "2025-07-08T06:23:35.096Z",
+  "updated_at": null,
+  "tags": [
+    "tag-1"
+  ],
+  "alertSettings": {
+    "reminders": {
+      "amount": 0,
+      "interval": 5
+    },
+    "escalationType": "RUN_BASED",
+    "runBasedEscalation": {
+      "failedRunThreshold": 1
+    },
+    "timeBasedEscalation": {
+      "minutesFailingThreshold": 5
+    },
+    "parallelRunFailureThreshold": {
+      "enabled": false,
+      "percentage": 10
+    }
+  },
+  "useGlobalAlertSettings": true,
+  "groupId": null,
+  "groupOrder": null,
+  "runtimeId": null,
+  "retryStrategy": {
+    "type": "LINEAR",
+    "maxRetries": 2,
+    "sameRegion": true,
+    "baseBackoffSeconds": 60,
+    "maxDurationSeconds": 600
+  },
+  "alertChannelSubscriptions": [],
+  "privateLocations": []
+}

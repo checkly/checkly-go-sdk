@@ -1,0 +1,17 @@
+{
+  "id": "850cd536-a63b-4d33-9a12-8b125718f4e2",
+  "checkType": "HEARTBEAT",
+  "name": "Heartbeat Monitor #1",
+  "activated": true,
+  "muted": false,
+  "tags": [],
+  "useGlobalAlertSettings": true,
+  "alertChannelSubscriptions": [],
+  "heartbeat": {
+    "period": 5,
+    "periodUnit": "days",
+    "grace": 0,
+    "graceUnit": "seconds",
+    "pingToken": "1e90c854-cb74-4e7a-b9e9-ca23a5342cc7"
+  }
+}

@@ -86,3 +86,25 @@ func TestGRPCPayloadPreservesRequest(t *testing.T) {
 		t.Errorf("BEHAVIOR payload must omit service, got %v", config)
 	}
 }
+
+func TestICMPMonitorPayloadSendsNonZeroThresholds(t *testing.T) {
+	m := marshalToMap(t, createICMPMonitorPayload(ICMPMonitor{
+		DegradedPacketLossThreshold: 5,
+		MaxPacketLossThreshold:      50,
+	}))
+	if m["degradedPacketLossThreshold"] != float64(5) || m["maxPacketLossThreshold"] != float64(50) {
+		t.Errorf("expected thresholds 5 and 50, got %v and %v", m["degradedPacketLossThreshold"], m["maxPacketLossThreshold"])
+	}
+}
+
+func TestScriptCheckPayloadsSendNullForEmptyScript(t *testing.T) {
+	scriptPath := "__checks__/check.spec.js"
+	for name, m := range map[string]map[string]any{
+		"browser":    marshalToMap(t, createBrowserCheckPayload(BrowserCheck{ScriptPath: &scriptPath})),
+		"multi-step": marshalToMap(t, createMultiStepCheckPayload(MultiStepCheck{ScriptPath: &scriptPath})),
+	} {
+		if value, ok := m["script"]; !ok || value != nil {
+			t.Errorf("%s: expected script to be null, got %#v", name, value)
+		}
+	}
+}

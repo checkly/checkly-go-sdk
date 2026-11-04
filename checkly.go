@@ -227,11 +227,32 @@ func (c *client) CreateHeartbeat(
 	return c.CreateHeartbeatMonitor(ctx, check)
 }
 
+type heartbeatMonitorPayload struct {
+	HeartbeatMonitor
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The field below shadows an embedded field
+	// whose zero value would be omitted so that it is always sent and can
+	// actually be cleared via an update. AlertChannelSubscriptions is not
+	// shadowed: this endpoint verifiably clears subscriptions when the key
+	// is omitted.
+	Tags []string `json:"tags"`
+}
+
+func createHeartbeatMonitorPayload(monitor HeartbeatMonitor) heartbeatMonitorPayload {
+	payload := heartbeatMonitorPayload{
+		HeartbeatMonitor: monitor,
+	}
+
+	payload.Tags = emptyIfNil(monitor.Tags)
+
+	return payload
+}
+
 func (c *client) CreateHeartbeatMonitor(
 	ctx context.Context,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(monitor)
+	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
 	if err != nil {
 		return nil, err
 	}
@@ -262,11 +283,37 @@ func (c *client) CreateTCPCheck(
 	return c.CreateTCPMonitor(ctx, check)
 }
 
+// tcpRequestPayload wraps TCPRequest for create and update payloads. The
+// endpoints are PATCH-style down to the nested request object: request keys
+// omitted from the payload keep their server-side value. Assertions shadows
+// the embedded field, whose omitempty would drop the key for an empty list,
+// so that removing all assertions reliably clears them. Data is not shadowed
+// because the backend rejects an empty string ("request.data is not allowed
+// to be empty") and silently keeps the previous value on null, so a data
+// value can never be cleared, only changed. IPFamily is not shadowed because
+// an empty string is not a valid value for it either; it can only be changed
+// to another valid value.
+type tcpRequestPayload struct {
+	TCPRequest
+	Assertions []Assertion `json:"assertions"`
+}
+
 type tcpMonitorPayload struct {
 	TCPMonitor
 	Type        string `json:"checkType"`
 	DoubleCheck bool   `json:"doubleCheck"`
 	GroupID     *int64 `json:"groupId"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update. AlertChannelSubscriptions is not
+	// shadowed: this endpoint verifiably clears subscriptions when the key
+	// is omitted.
+	Tags                 []string          `json:"tags"`
+	DegradedResponseTime int               `json:"degradedResponseTime"`
+	MaxResponseTime      int               `json:"maxResponseTime"`
+	GroupOrder           int               `json:"groupOrder"`
+	Request              tcpRequestPayload `json:"request"`
 }
 
 func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
@@ -291,6 +338,25 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 
 	if monitor.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
+	}
+
+	payload.Tags = emptyIfNil(monitor.Tags)
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// The group order must always be sent: 0 is the value it resets to, and
+	// omitting the key would make the backend keep the previous value on
+	// update. Note that the URL, DNS and ICMP monitor endpoints differ:
+	// they only reset the order on an explicit null, not 0.
+	payload.GroupOrder = monitor.GroupOrder
+
+	payload.Request = tcpRequestPayload{
+		TCPRequest: monitor.Request,
+		Assertions: emptyIfNil(monitor.Request.Assertions),
 	}
 
 	return payload
@@ -557,6 +623,15 @@ type urlMonitorPayload struct {
 	Request     Request `json:"request"`
 	DoubleCheck bool    `json:"doubleCheck"`
 	GroupID     *int64  `json:"groupId"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	GroupOrder                *int                       `json:"groupOrder"`
 }
 
 func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
@@ -583,6 +658,21 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 	if monitor.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
+
+	payload.Tags = emptyIfNil(monitor.Tags)
+
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -624,6 +714,15 @@ type dnsMonitorPayload struct {
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	GroupOrder                *int                       `json:"groupOrder"`
 }
 
 func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
@@ -647,6 +746,21 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
 	}
+
+	payload.Tags = emptyIfNil(monitor.Tags)
+
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
+
+	// The response time limits must always be sent: 0 is a valid value, and
+	// omitting the keys would make the backend default them on create and
+	// keep the previous values on update.
+	payload.DegradedResponseTime = monitor.DegradedResponseTime
+	payload.MaxResponseTime = monitor.MaxResponseTime
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -688,6 +802,15 @@ type icmpMonitorPayload struct {
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                        []string                   `json:"tags"`
+	AlertChannelSubscriptions   []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	DegradedPacketLossThreshold int                        `json:"degradedPacketLossThreshold"`
+	MaxPacketLossThreshold      int                        `json:"maxPacketLossThreshold"`
+	GroupOrder                  *int                       `json:"groupOrder"`
 }
 
 func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
@@ -711,6 +834,23 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
 	}
+
+	payload.Tags = emptyIfNil(monitor.Tags)
+
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
+
+	// The packet loss thresholds must always be sent: omitting the keys
+	// would make the backend default them on create and keep the previous
+	// values on update. The backend rejects an explicit 0, and sending it
+	// surfaces that as a validation error rather than silently storing a
+	// different value.
+	payload.DegradedPacketLossThreshold = monitor.DegradedPacketLossThreshold
+	payload.MaxPacketLossThreshold = monitor.MaxPacketLossThreshold
+
+	// GroupOrder must be null if empty or the order will not get unset on
+	// update. Note that the check and TCP monitor endpoints differ: they
+	// accept and reset on a literal 0.
+	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }
@@ -793,6 +933,206 @@ func (c *client) CreatePlaywrightCheck(
 	return &result, nil
 }
 
+type apiCheckPayload struct {
+	APICheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// Go type cannot express the value that clears them.
+	DoubleCheck       bool   `json:"doubleCheck"`
+	GroupID           *int64 `json:"groupId"`
+	SetupSnippetID    *int64 `json:"setupSnippetId"`
+	TearDownSnippetID *int64 `json:"tearDownSnippetId"`
+}
+
+func createAPICheckPayload(check APICheck) apiCheckPayload {
+	payload := apiCheckPayload{
+		APICheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "API",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck:       false,
+		GroupID:           nullIfZero(check.GroupID),
+		SetupSnippetID:    nullIfZero(check.SetupSnippetID),
+		TearDownSnippetID: nullIfZero(check.TearDownSnippetID),
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	payload.Locations = emptyIfNil(check.Locations)
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
+
+	return payload
+}
+
+func (c *client) CreateAPICheck(
+	ctx context.Context,
+	check APICheck,
+) (*APICheck, error) {
+	payload := createAPICheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/api"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result APICheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type browserCheckPayload struct {
+	BrowserCheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// Go type cannot express the value that clears them.
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+	// Script is null rather than empty when unset: the API rejects an empty
+	// script, and a check that runs ScriptPath has no inline script.
+	Script *string `json:"script"`
+}
+
+func createBrowserCheckPayload(check BrowserCheck) browserCheckPayload {
+	payload := browserCheckPayload{
+		BrowserCheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "BROWSER",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck: false,
+		GroupID:     nullIfZero(check.GroupID),
+		Script:      nullIfZero(check.Script),
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	payload.Locations = emptyIfNil(check.Locations)
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
+	payload.Dependencies = emptyIfNil(check.Dependencies)
+
+	return payload
+}
+
+func (c *client) CreateBrowserCheck(
+	ctx context.Context,
+	check BrowserCheck,
+) (*BrowserCheck, error) {
+	payload := createBrowserCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/browser"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result BrowserCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+type multiStepCheckPayload struct {
+	MultiStepCheck
+	Type string `json:"checkType"`
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// Go type cannot express the value that clears them.
+	DoubleCheck bool   `json:"doubleCheck"`
+	GroupID     *int64 `json:"groupId"`
+	// Script is null rather than empty when unset: the API rejects an empty
+	// script, and a check that runs ScriptPath has no inline script.
+	Script *string `json:"script"`
+}
+
+func createMultiStepCheckPayload(check MultiStepCheck) multiStepCheckPayload {
+	payload := multiStepCheckPayload{
+		MultiStepCheck: check,
+		// The endpoint defaults `checkType` correctly, but be explicit anyway.
+		Type: "MULTI_STEP",
+		// Unfortunately, this will default to true if not set. Always sending
+		// false also clears the deprecated doubleCheck flag on updates of
+		// checks that still have it set; retryStrategy is its replacement.
+		DoubleCheck: false,
+		GroupID:     nullIfZero(check.GroupID),
+		Script:      nullIfZero(check.Script),
+	}
+
+	// A nil value for a list will cause the backend to not update the value.
+	// We must send empty lists instead.
+	payload.Locations = emptyIfNil(check.Locations)
+	if check.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
+	payload.Tags = emptyIfNil(check.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(check.AlertChannelSubscriptions)
+	payload.Dependencies = emptyIfNil(check.Dependencies)
+
+	return payload
+}
+
+func (c *client) CreateMultiStepCheck(
+	ctx context.Context,
+	check MultiStepCheck,
+) (*MultiStepCheck, error) {
+	payload := createMultiStepCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPost,
+		withAutoAssignAlertsFlag("checks/multistep"),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MultiStepCheck
+	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Update updates an existing check with the specified details. It returns the
 // updated check, or an error.
 func (c *client) UpdateCheck(
@@ -838,7 +1178,7 @@ func (c *client) UpdateHeartbeatMonitor(
 	ID string,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(monitor)
+	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
 	if err != nil {
 		return nil, err
 	}
@@ -1111,6 +1451,96 @@ func (c *client) UpdatePlaywrightCheck(
 	return &result, nil
 }
 
+func (c *client) UpdateAPICheck(
+	ctx context.Context,
+	ID string,
+	check APICheck,
+) (*APICheck, error) {
+	payload := createAPICheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/api/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result APICheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateBrowserCheck(
+	ctx context.Context,
+	ID string,
+	check BrowserCheck,
+) (*BrowserCheck, error) {
+	payload := createBrowserCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/browser/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result BrowserCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
+func (c *client) UpdateMultiStepCheck(
+	ctx context.Context,
+	ID string,
+	check MultiStepCheck,
+) (*MultiStepCheck, error) {
+	payload := createMultiStepCheckPayload(check)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodPut,
+		withAutoAssignAlertsFlag(fmt.Sprintf("checks/multistep/%s", ID)),
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var result MultiStepCheck
+	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	if err != nil {
+		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return &result, nil
+}
+
 // Delete deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
@@ -1188,6 +1618,27 @@ func (c *client) DeleteICMPMonitor(
 }
 
 func (c *client) DeletePlaywrightCheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteAPICheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteBrowserCheck(
+	ctx context.Context,
+	ID string,
+) error {
+	return c.DeleteCheck(ctx, ID)
+}
+
+func (c *client) DeleteMultiStepCheck(
 	ctx context.Context,
 	ID string,
 ) error {
@@ -1470,8 +1921,98 @@ func (c *client) GetPlaywrightCheck(
 	return &result, nil
 }
 
+// getCheckOfType fetches the check at path and decodes it into result. The
+// generic check endpoint returns checks of every type, so the response's
+// checkType is compared with the expected one: decoding a check of another
+// type would silently drop its type-specific fields.
+func (c *client) getCheckOfType(
+	ctx context.Context,
+	path string,
+	checkType string,
+	result any,
+) error {
+	status, res, err := c.apiCall(
+		ctx,
+		http.MethodGet,
+		path,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusOK {
+		return fmt.Errorf("unexpected response status %d: %q", status, res)
+	}
+	var header struct {
+		CheckType string `json:"checkType"`
+	}
+	if err := json.Unmarshal([]byte(res), &header); err != nil {
+		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	if header.CheckType != checkType {
+		return fmt.Errorf("check is of type %q, not %q", header.CheckType, checkType)
+	}
+	if err := json.Unmarshal([]byte(res), result); err != nil {
+		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	}
+	return nil
+}
+
+// GetAPICheck takes the ID of an existing API check, and returns the check
+// parameters, or an error. It returns an error when the ID belongs to a check
+// of another type.
+func (c *client) GetAPICheck(
+	ctx context.Context,
+	ID string,
+) (*APICheck, error) {
+	var result APICheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s", ID), "API", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetBrowserCheck takes the ID of an existing browser check, and returns the
+// check parameters, or an error. It returns an error when the ID belongs to a
+// check of another type. The includeDependencies query parameter is required
+// for the response to contain the check's script dependencies.
+func (c *client) GetBrowserCheck(
+	ctx context.Context,
+	ID string,
+) (*BrowserCheck, error) {
+	var result BrowserCheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetMultiStepCheck takes the ID of an existing multi-step check, and returns
+// the check parameters, or an error. It returns an error when the ID belongs
+// to a check of another type. The includeDependencies query parameter is
+// required for the response to contain the check's script dependencies.
+func (c *client) GetMultiStepCheck(
+	ctx context.Context,
+	ID string,
+) (*MultiStepCheck, error) {
+	var result MultiStepCheck
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 type groupPayload struct {
 	Group
+	// The update endpoint is PATCH-style: keys omitted from the payload keep
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          *string                    `json:"localSetupScript"`
+	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createGroupPayload(group Group) groupPayload {
@@ -1488,6 +2029,20 @@ func createGroupPayload(group Group) groupPayload {
 	if group.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
+
+	// The snippet IDs must be null if empty or they will not get unset on
+	// update.
+	payload.SetupSnippetID = nullIfZero(group.SetupSnippetID)
+
+	payload.TearDownSnippetID = nullIfZero(group.TearDownSnippetID)
+
+	// The local scripts must be null if empty or they will not get unset on
+	// update.
+	payload.LocalSetupScript = nullIfZero(group.LocalSetupScript)
+
+	payload.LocalTearDownScript = nullIfZero(group.LocalTearDownScript)
+
+	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
 
 	return payload
 }
@@ -1525,6 +2080,11 @@ func (c *client) CreateGroup(
 
 type groupV2Payload struct {
 	GroupV2
+	// The embedded field's omitempty would drop the key for nil and empty
+	// slices, leaving it up to the backend whether the server-side value is
+	// kept or cleared. Shadow the field so an explicit empty list is always
+	// sent and removing all subscriptions reliably clears them.
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createGroupV2Payload(group GroupV2) groupV2Payload {
@@ -1541,6 +2101,8 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 	if group.PrivateLocations == nil {
 		payload.PrivateLocations = &[]string{}
 	}
+
+	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
 
 	return payload
 }

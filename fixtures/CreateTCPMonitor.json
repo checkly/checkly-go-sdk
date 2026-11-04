@@ -1,0 +1,26 @@
+{
+  "id": "26900d4d-a852-4e34-9bd0-e40a7a5a2495",
+  "checkType": "TCP",
+  "name": "TCP Monitor #1",
+  "frequency": 60,
+  "activated": true,
+  "muted": false,
+  "shouldFail": false,
+  "runParallel": false,
+  "locations": [],
+  "tags": [],
+  "degradedResponseTime": 4000,
+  "maxResponseTime": 5000,
+  "useGlobalAlertSettings": true,
+  "groupId": null,
+  "groupOrder": 0,
+  "alertChannelSubscriptions": [],
+  "privateLocations": [],
+  "request": {
+    "hostname": "example.com",
+    "port": 443,
+    "data": "",
+    "assertions": [],
+    "ipFamily": "IPv4"
+  }
+}
