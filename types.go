@@ -15,52 +15,6 @@ import (
 
 // Client is an interface that implements Checkly's API
 type Client interface {
-	// Create creates a new check with the specified details.
-	// It returns the newly-created check, or an error.
-	//
-	// Deprecated: method type would be removed in future versions,
-	// use CreateCheck instead.
-	Create(
-		ctx context.Context,
-		check Check,
-	) (*Check, error)
-
-	// Update updates an existing check with the specified details.
-	// It returns the updated check, or an error.
-	//
-	// Deprecated: this method would be removed in future versions,
-	// use UpdateCheck instead.
-	Update(
-		ctx context.Context,
-		ID string,
-		check Check,
-	) (*Check, error)
-
-	// Delete deletes the check with the specified ID.
-	//
-	// Deprecated: this method would be removed in future versions,
-	// use DeleteCheck instead.
-	Delete(
-		ctx context.Context,
-		ID string,
-	) error
-
-	// Get takes the ID of an existing check, and returns the check parameters,
-	// or an error.
-	//
-	// Deprecated: this method would be removed in future versions,
-	// use GetCheck instead.
-	Get(
-		ctx context.Context,
-		ID string,
-	) (*Check, error)
-
-	// Deprecated: Use GetHeartbeatMonitor instead.
-	GetHeartbeatCheck(
-		ctx context.Context,
-		ID string,
-	) (*HeartbeatCheck, error)
-
 	GetHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
@@ -73,30 +27,12 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// CreateHeartbeat creates a new heartbeat check with the specified details.
-	// It returns the newly-created check, or an error.
-	//
-	// Deprecated: Use CreateHeartbeatMonitor instead.
-	CreateHeartbeat(
-		ctx context.Context,
-		check HeartbeatCheck,
-	) (*HeartbeatCheck, error)
-
 	// CreateHeartbeatMonitor creates a new heartbeat monitor with the
 	// specified details. It returns the newly-created monitor, or an error.
 	CreateHeartbeatMonitor(
 		ctx context.Context,
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
-
-	// CreateTCPCheck creates a new TCP check with the specified details.
-	// It returns the newly-created check, or an error.
-	//
-	// Deprecated: Use CreateTCPMonitor instead.
-	CreateTCPCheck(
-		ctx context.Context,
-		check TCPCheck,
-	) (*TCPCheck, error)
 
 	// CreateTCPMonitor creates a new TCP monitor with the specified details.
 	// It returns the newly-created monitor, or an error.
@@ -182,16 +118,6 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// UpdateHeartbeat updates an existing heartbeat check with the specified details.
-	// It returns the updated check, or an error.
-	//
-	// Deprecated: Use UpdateHeartbeatMonitor instead.
-	UpdateHeartbeat(
-		ctx context.Context,
-		ID string,
-		check HeartbeatCheck,
-	) (*HeartbeatCheck, error)
-
 	// UpdateHeartbeatMonitor updates an existing heartbeat monitor with the
 	// specified details. It returns the updated monitor, or an error.
 	UpdateHeartbeatMonitor(
@@ -199,14 +125,6 @@ type Client interface {
 		ID string,
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
-
-	// UpdateTCPCheck updates an existing TCP check with the specified details.
-	// It returns the updated check, or an error.
-	UpdateTCPCheck(
-		ctx context.Context,
-		ID string,
-		check TCPCheck,
-	) (*TCPCheck, error)
 
 	// UpdateTCPMonitor updates an existing TCP monitor with the specified
 	// details. It returns the updated monitor, or an error.
@@ -382,15 +300,6 @@ type Client interface {
 		ctx context.Context,
 		ID string,
 	) (*Check, error)
-
-	// Get takes the ID of an existing TCP check, and returns the check
-	// parameters, or an error.
-	//
-	// Deprecated: Use GetTCPMonitor instead.
-	GetTCPCheck(
-		ctx context.Context,
-		ID string,
-	) (*TCPCheck, error)
 
 	// Get takes the ID of an existing TCP monitor, and returns the monitor
 	// parameters, or an error.
@@ -1039,8 +948,6 @@ type Check struct {
 	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
 	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
 
-	// Deprecated: this property will be removed in future versions.
-	SSLCheck bool `json:"sslCheck"`
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`
 }
@@ -1173,12 +1080,6 @@ type HeartbeatMonitor struct {
 	UpdatedAt                 time.Time                  `json:"updatedAt"`
 }
 
-// HeartbeatCheck is an alias for HeartbeatMonitor for backwards compatibility
-// purposes.
-//
-// Deprecated: Use HeartbeatMonitor instead.
-type HeartbeatCheck = HeartbeatMonitor
-
 // TCPMonitor represents a TCP monitor.
 type TCPMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
@@ -1207,11 +1108,6 @@ type TCPMonitor struct {
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
 }
-
-// TCPCheck is an alias for TCPMonitor for backwards compatibility purposes.
-//
-// Deprecated: Use TCPMonitor instead.
-type TCPCheck = TCPMonitor
 
 // URLMonitor represents a URL monitor.
 type URLMonitor struct {
@@ -1665,8 +1561,6 @@ type AlertSettings struct {
 	TimeBasedEscalation         TimeBasedEscalation         `json:"timeBasedEscalation,omitempty"`
 	Reminders                   Reminders                   `json:"reminders,omitempty"`
 	ParallelRunFailureThreshold ParallelRunFailureThreshold `json:"parallelRunFailureThreshold,omitempty"`
-	// Deprecated: this property will be removed in future versions.
-	SSLCertificates SSLCertificates `json:"sslCertificates,omitempty"`
 }
 
 // ParallelRunFailureThreshold represent an alert escalation based on the number
@@ -1693,13 +1587,6 @@ type TimeBasedEscalation struct {
 type Reminders struct {
 	Amount   int `json:"amount,omitempty"`
 	Interval int `json:"interval,omitempty"`
-}
-
-// Deprecated: this type will be removed in future versions.
-// SSLCertificates represents alert settings for expiring SSL certificates.
-type SSLCertificates struct {
-	Enabled        bool `json:"enabled,omitempty"`
-	AlertThreshold int  `json:"alertThreshold,omitempty"`
 }
 
 type RetryStrategy struct {

@@ -68,13 +68,9 @@ var wantCheck = checkly.Check{
 		},
 		IPFamily: "IPv4",
 	},
-	Script: "foo",
-	EnvironmentVariables: []checkly.EnvironmentVariable{
-		{
-			Key:   "ENVTEST",
-			Value: "Hello world",
-		},
-	},
+	// Script and EnvironmentVariables are left unset: the API check endpoint
+	// (/v1/checks/api) does not accept them and drops them from the payload,
+	// so an API check never stores them.
 	Tags: []string{
 		"foo",
 		"bar",
@@ -158,7 +154,7 @@ func validateAnything(*testing.T, []byte) {
 
 // TODO: adjust wantCheck to test multiple SSLCheckDomain value and remove it from this list
 var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset",
-	"AlertSettings.SSLCertificates", "PrivateLocations", "SSLCheckDomain")
+	"PrivateLocations", "SSLCheckDomain")
 
 func TestAPIError(t *testing.T) {
 	t.Parallel()
@@ -179,83 +175,6 @@ func TestAPIError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "frequency") {
 		t.Errorf("want API error value to contain 'frequency', got %q", err.Error())
-	}
-}
-
-func TestCreate(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPost,
-		"/v1/checks?autoAssignAlerts=false",
-		validateCheck,
-		http.StatusCreated,
-		"CreateCheck.json",
-	)
-	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	gotCheck, err := client.Create(context.Background(), wantCheck)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestGet(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodGet,
-		fmt.Sprintf("/v1/checks/%s", wantCheckID),
-		validateEmptyBody,
-		http.StatusOK,
-		"GetCheck.json",
-	)
-	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	gotCheck, err := client.Get(context.Background(), wantCheckID)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestUpdate(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPut,
-		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-		validateCheck,
-		http.StatusOK,
-		"UpdateCheck.json",
-	)
-	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	gotCheck, err := client.Update(context.Background(), wantCheckID, wantCheck)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestDelete(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodDelete,
-		fmt.Sprintf("/v1/checks/%s", wantCheckID),
-		validateEmptyBody,
-		http.StatusNoContent,
-		"Empty.json",
-	)
-	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
-	err := client.Delete(context.Background(), wantCheckID)
-	if err != nil {
-		t.Error(err)
 	}
 }
 
@@ -333,6 +252,80 @@ func TestDeleteCheck(t *testing.T) {
 	err := client.DeleteCheck(context.Background(), wantCheckID)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+// TestCheckScriptAndEnvironmentVariablesPayload verifies that CreateCheck and
+// UpdateCheck send a Check's Script and EnvironmentVariables. wantCheck is an
+// API check, whose endpoint does not store these fields, so it leaves them
+// unset and a browser check covers them here instead.
+func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
+	t.Parallel()
+	check := checkly.Check{
+		Name:      "browser",
+		Type:      checkly.TypeBrowser,
+		Frequency: 10,
+		Locations: []string{"eu-west-1"},
+		Script:    "await page.goto('https://example.com')",
+		EnvironmentVariables: []checkly.EnvironmentVariable{
+			{Key: "ENVTEST", Value: "Hello world"},
+		},
+	}
+	validate := func(t *testing.T, body []byte) {
+		var got struct {
+			Script               *string                       `json:"script"`
+			EnvironmentVariables []checkly.EnvironmentVariable `json:"environmentVariables"`
+		}
+		if err := json.Unmarshal(body, &got); err != nil {
+			t.Fatalf("decoding error for data %q: %v", body, err)
+		}
+		if got.Script == nil || *got.Script != check.Script {
+			t.Errorf("want script %q in the payload, got %s", check.Script, body)
+		}
+		if !cmp.Equal(check.EnvironmentVariables, got.EnvironmentVariables) {
+			t.Error(cmp.Diff(check.EnvironmentVariables, got.EnvironmentVariables))
+		}
+	}
+	cases := []struct {
+		name    string
+		method  string
+		url     string
+		status  int
+		fixture string
+		call    func(checkly.Client) (*checkly.Check, error)
+	}{
+		{
+			name:    "CreateCheck",
+			method:  http.MethodPost,
+			url:     "/v1/checks/browser?autoAssignAlerts=false",
+			status:  http.StatusCreated,
+			fixture: "CreateBrowserCheck.json",
+			call: func(c checkly.Client) (*checkly.Check, error) {
+				return c.CreateCheck(context.Background(), check)
+			},
+		},
+		{
+			name:    "UpdateCheck",
+			method:  http.MethodPut,
+			url:     fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
+			status:  http.StatusOK,
+			fixture: "UpdateBrowserCheck.json",
+			call: func(c checkly.Client) (*checkly.Check, error) {
+				return c.UpdateCheck(context.Background(), wantCheckID, check)
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			ts := cannedResponseServer(t, tc.method, tc.url, validate, tc.status, tc.fixture)
+			defer ts.Close()
+			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+			if _, err := tc.call(client); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -422,7 +415,7 @@ func validateGroup(t *testing.T, body []byte) {
 	}
 }
 
-var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertSettings.SSLCertificates", "PrivateLocations")
+var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "PrivateLocations")
 
 func TestCreateGroup(t *testing.T) {
 	t.Parallel()

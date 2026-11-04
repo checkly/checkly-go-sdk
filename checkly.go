@@ -59,61 +59,7 @@ func (c *client) SetChecklySource(source string) {
 	c.source = source
 }
 
-// Create creates a new check with the specified details. It returns the
-// newly-created check, or an error.
-//
-// Deprecated: this method would be removed in future versions,
-// use CreateCheck instead.
-func (c *client) Create(
-	ctx context.Context,
-	check Check,
-) (*Check, error) {
-	// There are differences between /v1/checks and /v1/checks/<type>. Keep
-	// using /v1/checks here for backwards compatibility reasons.
-	return c.createCheck(ctx, check, "/v1/checks")
-}
-
-// Update updates an existing check with the specified details. It returns the
-// updated check, or an error.
-//
-// Deprecated: this method would be removed in future versions,
-// use UpdateCheck instead.
-func (c *client) Update(
-	ctx context.Context,
-	ID string, check Check,
-) (*Check, error) {
-	return c.UpdateCheck(ctx, ID, check)
-}
-
-// Delete deletes the check with the specified ID.
-//
-// Deprecated: this method would be removed in future versions,
-// use DeleteCheck instead.
-func (c *client) Delete(
-	ctx context.Context,
-	ID string,
-) error {
-	return c.DeleteCheck(ctx, ID)
-}
-
-// Get takes the ID of an existing check, and returns the check parameters, or
-// an error.
-//
-// Deprecated: this method would be removed in future versions,
-// use GetCheck instead.
-func (c *client) Get(
-	ctx context.Context,
-	ID string,
-) (*Check, error) {
-	var result Check
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// Create creates a new check with the specified details. It returns the
+// CreateCheck creates a new check with the specified details. It returns the
 // newly-created check, or an error.
 func (c *client) CreateCheck(
 	ctx context.Context,
@@ -146,7 +92,12 @@ func (c *client) CreateCheck(
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
-	return c.createCheck(ctx, check, endpoint)
+	var result Check
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag(endpoint), createCheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 type checkPayload struct {
@@ -175,27 +126,6 @@ func createCheckPayload(check Check) checkPayload {
 	}
 
 	return payload
-}
-
-func (c *client) createCheck(
-	ctx context.Context,
-	check Check,
-	endpoint string,
-) (*Check, error) {
-	var result Check
-	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag(endpoint), createCheckPayload(check), &result, http.StatusCreated)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// Deprecated: Use CreateHeartbeatMonitor instead.
-func (c *client) CreateHeartbeat(
-	ctx context.Context,
-	check HeartbeatCheck,
-) (*HeartbeatCheck, error) {
-	return c.CreateHeartbeatMonitor(ctx, check)
 }
 
 type heartbeatMonitorPayload struct {
@@ -229,14 +159,6 @@ func (c *client) CreateHeartbeatMonitor(
 		return nil, err
 	}
 	return &result, nil
-}
-
-// Deprecated: Use CreateTCPMonitor instead.
-func (c *client) CreateTCPCheck(
-	ctx context.Context,
-	check TCPCheck,
-) (*TCPCheck, error) {
-	return c.CreateTCPMonitor(ctx, check)
 }
 
 // tcpRequestPayload wraps TCPRequest for create and update payloads. The
@@ -928,14 +850,6 @@ func (c *client) UpdateCheck(
 	return &result, nil
 }
 
-// Deprecated: Use UpdateHeartbeatMonitor instead.
-func (c *client) UpdateHeartbeat(
-	ctx context.Context,
-	ID string, check HeartbeatCheck,
-) (*HeartbeatCheck, error) {
-	return c.UpdateHeartbeatMonitor(ctx, ID, check)
-}
-
 func (c *client) UpdateHeartbeatMonitor(
 	ctx context.Context,
 	ID string,
@@ -947,15 +861,6 @@ func (c *client) UpdateHeartbeatMonitor(
 		return nil, err
 	}
 	return &result, nil
-}
-
-// Deprecated: Use UpdateTCPMonitor instead.
-func (c *client) UpdateTCPCheck(
-	ctx context.Context,
-	ID string,
-	check TCPCheck,
-) (*TCPCheck, error) {
-	return c.UpdateTCPMonitor(ctx, ID, check)
 }
 
 func (c *client) UpdateTCPMonitor(
@@ -1208,14 +1113,6 @@ func (c *client) GetCheck(
 	return &result, nil
 }
 
-// Deprecated: Use GetHeartbeatMonitor instead.
-func (c *client) GetHeartbeatCheck(
-	ctx context.Context,
-	ID string,
-) (*HeartbeatCheck, error) {
-	return c.GetHeartbeatMonitor(ctx, ID)
-}
-
 func (c *client) GetHeartbeatMonitor(
 	ctx context.Context,
 	ID string,
@@ -1226,17 +1123,6 @@ func (c *client) GetHeartbeatMonitor(
 		return nil, err
 	}
 	return &result, nil
-}
-
-// GetTCPCheck takes the ID of an existing TCP check, and returns the check
-// parameters, or an error.
-//
-// Deprecated: Use GetTCPMonitor instead.
-func (c *client) GetTCPCheck(
-	ctx context.Context,
-	ID string,
-) (*TCPCheck, error) {
-	return c.GetTCPMonitor(ctx, ID)
 }
 
 // GetTCPMonitor takes the ID of an existing TCP monitor, and returns the

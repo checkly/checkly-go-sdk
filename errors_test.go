@@ -228,7 +228,7 @@ func TestErrorMessages(t *testing.T) {
 			if tt.accountID != "" {
 				c.SetAccountId(tt.accountID)
 			}
-			_, err := c.Get(context.Background(), "abc")
+			_, err := c.GetCheck(context.Background(), "abc")
 			if err == nil {
 				t.Fatal("want error, got nil")
 			}
@@ -270,7 +270,7 @@ func TestAPIErrorFields(t *testing.T) {
 		header: http.Header{"Retry-After": {"12"}},
 		body:   `{"statusCode":429,"error":"Too Many Requests","message":"Rate limit exceeded"}`,
 	})
-	_, err := c.Get(context.Background(), "abc?x=1")
+	_, err := c.GetCheck(context.Background(), "abc?x=1")
 	var apiErr *checkly.APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("want *APIError, got %v", err)
@@ -305,7 +305,7 @@ func TestAPIErrorLiteral(t *testing.T) {
 func TestDecodeErrorOmitsBody(t *testing.T) {
 	t.Parallel()
 	c := newErrorServer(t, errorReply{status: 200, body: `{"frequency":"SECRET-RESPONSE-MARKER"}`})
-	_, err := c.Get(context.Background(), "abc")
+	_, err := c.GetCheck(context.Background(), "abc")
 	if err == nil {
 		t.Fatal("want decode error, got nil")
 	}
@@ -351,7 +351,7 @@ func TestRateLimitRetryAfter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			c := newErrorServer(t, errorReply{status: 429, header: tt.header})
-			_, err := c.Get(context.Background(), "abc")
+			_, err := c.GetCheck(context.Background(), "abc")
 			var apiErr *checkly.APIError
 			if !errors.As(err, &apiErr) {
 				t.Fatalf("want *APIError, got %v", err)
@@ -505,7 +505,7 @@ func TestTransportErrors(t *testing.T) {
 		c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, err := c.Get(ctx, "abc")
+		_, err := c.GetCheck(ctx, "abc")
 		if !errors.Is(err, context.Canceled) {
 			t.Fatalf("want context.Canceled, got %v", err)
 		}
@@ -532,7 +532,7 @@ func TestTransportErrors(t *testing.T) {
 		c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
-		_, err := c.Get(ctx, "abc?x=1")
+		_, err := c.GetCheck(ctx, "abc?x=1")
 		if !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("want context.DeadlineExceeded, got %v", err)
 		}
