@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/netip"
@@ -106,22 +105,10 @@ func (c *client) Get(
 	ctx context.Context,
 	ID string,
 ) (*Check, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result Check
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Check{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -195,26 +182,10 @@ func (c *client) createCheck(
 	check Check,
 	endpoint string,
 ) (*Check, error) {
-	payload := createCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag(endpoint),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Check
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag(endpoint), createCheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1546,19 +1517,8 @@ func (c *client) DeleteCheck(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("checks/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) DeleteHeartbeatMonitor(
@@ -1931,31 +1891,20 @@ func (c *client) getCheckOfType(
 	checkType string,
 	result any,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		path,
-		nil,
-	)
+	res, err := c.call(ctx, 1, http.MethodGet, path, nil, http.StatusOK)
 	if err != nil {
 		return err
-	}
-	if status != http.StatusOK {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	var header struct {
 		CheckType string `json:"checkType"`
 	}
-	if err := json.Unmarshal([]byte(res), &header); err != nil {
-		return fmt.Errorf("decoding error for data %s: %v", res, err)
+	if err := decode(res, &header); err != nil {
+		return err
 	}
 	if header.CheckType != checkType {
-		return fmt.Errorf("check is of type %q, not %q", header.CheckType, checkType)
+		return fmt.Errorf("%s %s: check is of type %q, not %q", res.method, res.path, header.CheckType, checkType)
 	}
-	if err := json.Unmarshal([]byte(res), result); err != nil {
-		return fmt.Errorf("decoding error for data %s: %v", res, err)
-	}
-	return nil
+	return decode(res, result)
 }
 
 // GetAPICheck takes the ID of an existing API check, and returns the check
@@ -3737,6 +3686,10 @@ func (c *client) addAuthHeaders(req *http.Request) error {
 	return nil
 }
 
+// apiCall, apiCallV1, apiCallV3 and apiCallV return the raw status and body of
+// a request for the methods that check the status themselves. New code uses
+// call and callJSON instead, which turn an unexpected status into an
+// *APIError.
 func (c *client) apiCall(
 	ctx context.Context,
 	method string,
@@ -3771,48 +3724,149 @@ func (c *client) apiCallV(
 	URL string,
 	data []byte,
 ) (statusCode int, response string, err error) {
-	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, v, URL)
+	res, err := c.send(ctx, v, method, URL, data)
+	return res.status, string(res.body), err
+}
+
+// rawResponse is a response as send returns it, before its status is
+// checked, together with the request it answers.
+type rawResponse struct {
+	// method and path name the request in error messages; path is as
+	// apiPath returns it.
+	method string
+	path   string
+	status int
+	body   []byte
+	header http.Header
+	// retries is how many times the request was re-sent after a 429.
+	retries int
+}
+
+// apiPath returns the path of an API request for error messages: the
+// versioned path without the query string, such as "/v1/checks/abc".
+func apiPath(v int, path string) string {
+	path, _, _ = strings.Cut(path, "?")
+	return fmt.Sprintf("/v%d/%s", v, path)
+}
+
+// send sends a request to version v of the API and returns the response,
+// whatever its status. path is relative to the version, such as
+// "checks/abc?x=y". A 429 response is retried as described in retry.go; once
+// the retries are spent, or the caller's deadline does not leave time for
+// another one, the 429 is returned like any other response. When the context
+// ends during a wait, the error matches both ErrRateLimited and the context
+// error.
+func (c *client) send(
+	ctx context.Context,
+	v int,
+	method string,
+	path string,
+	data []byte,
+) (rawResponse, error) {
+	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, v, path)
 	for retry := 0; ; retry++ {
-		var header http.Header
-		statusCode, response, header, err = c.doRequest(ctx, method, requestURL, data)
-		if err != nil || statusCode != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
-			return statusCode, response, err
+		res, err := c.doRequest(ctx, method, requestURL, apiPath(v, path), data)
+		res.retries = retry
+		if err != nil || res.status != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
+			return res, err
 		}
 
 		// Rate limited: wait and re-send, unless the wait would leave too
 		// little of the caller's deadline for the re-sent request, in which
 		// case the caller sees the 429 itself.
 		now := time.Now()
-		wait := rateLimitWait(header, retry, now)
+		wait := rateLimitWait(res.header, retry, now)
 		if deadline, ok := ctx.Deadline(); ok && now.Add(wait+rateLimitRequestMargin).After(deadline) {
-			return statusCode, response, nil
+			return res, nil
 		}
 		if c.debug != nil {
 			fmt.Fprintf(c.debug, "rate limited, retrying in %v (retry %d of %d)\n\n", wait, retry+1, rateLimitMaxRetries)
 		}
 		if err := c.sleep(ctx, wait); err != nil {
-			return statusCode, response, err
+			return res, fmt.Errorf("%w; gave up waiting to retry: %w", newAPIError(res, nil, c.accountId), err)
 		}
 	}
 }
 
+// call marshals in as the request body, unless it is nil, sends the request
+// to version v of the API and returns the response. A response status not
+// among want is returned as an *APIError.
+func (c *client) call(
+	ctx context.Context,
+	v int,
+	method string,
+	path string,
+	in any,
+	want ...int,
+) (rawResponse, error) {
+	var data []byte
+	if in != nil {
+		var err error
+		if data, err = json.Marshal(in); err != nil {
+			return rawResponse{}, fmt.Errorf("%s %s: encoding request: %w", method, apiPath(v, path), err)
+		}
+	}
+	res, err := c.send(ctx, v, method, path, data)
+	if err != nil {
+		return rawResponse{}, err
+	}
+	for _, status := range want {
+		if res.status == status {
+			return res, nil
+		}
+	}
+	return rawResponse{}, newAPIError(res, want, c.accountId)
+}
+
+// callJSON is call followed by decoding the response body into out.
+func (c *client) callJSON(
+	ctx context.Context,
+	v int,
+	method string,
+	path string,
+	in any,
+	out any,
+	want ...int,
+) error {
+	res, err := c.call(ctx, v, method, path, in, want...)
+	if err != nil {
+		return err
+	}
+	return decode(res, out)
+}
+
+// decode decodes the body of res, a successful response, into out. The error
+// names the request, the status and the body's size, but never contains the
+// body, which may hold secrets. Like the decoding it replaces, it reads the
+// first JSON value and ignores the rest.
+func decode(res rawResponse, out any) error {
+	if err := json.NewDecoder(bytes.NewReader(res.body)).Decode(out); err != nil {
+		return fmt.Errorf("%s %s: decoding %d response (%d bytes): %w", res.method, res.path, res.status, len(res.body), err)
+	}
+	return nil
+}
+
 // doRequest sends a single API request. The request is rebuilt from data on
-// every call so that it can be re-sent after a rate-limited response.
+// every call so that it can be re-sent after a rate-limited response. path is
+// the request path for error messages, as apiPath returns it.
 func (c *client) doRequest(
 	ctx context.Context,
 	method string,
 	requestURL string,
+	path string,
 	data []byte,
-) (statusCode int, response string, header http.Header, err error) {
-	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
-
+) (rawResponse, error) {
+	// The context is attached after the debug dump: DumpRequestOut fails on
+	// a cancelled context, which would hide the transport error that Do
+	// reports for it.
+	req, err := http.NewRequest(method, requestURL, bytes.NewReader(data))
 	if err != nil {
-		return 0, "", nil, fmt.Errorf("failed to create HTTP request: %v", err)
+		return rawResponse{}, fmt.Errorf("%s %s: building request: %w", method, path, err)
 	}
 
 	err = c.addAuthHeaders(req)
 	if err != nil {
-		return 0, "", nil, err
+		return rawResponse{}, err
 	}
 
 	req.Header.Add("content-type", "application/json")
@@ -3820,7 +3874,7 @@ func (c *client) doRequest(
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
-			return 0, "", nil, fmt.Errorf("error dumping HTTP request: %v", err)
+			return rawResponse{}, fmt.Errorf("%s %s: dumping request for debug output: %w", method, path, err)
 		}
 		fmt.Fprintln(c.debug, string(requestDump))
 		fmt.Fprintln(c.debug)
@@ -3829,7 +3883,11 @@ func (c *client) doRequest(
 	req = req.WithContext(ctx)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return 0, "", nil, fmt.Errorf("HTTP request failed with: %v", err)
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			return rawResponse{}, &transportError{method: method, path: path, host: req.URL.Host, err: urlErr}
+		}
+		return rawResponse{}, fmt.Errorf("%s %s: request to %s failed: %w", method, path, req.URL.Host, err)
 	}
 
 	defer resp.Body.Close()
@@ -3837,11 +3895,12 @@ func (c *client) doRequest(
 		c.dumpResponse(resp)
 	}
 
-	res, err := ioutil.ReadAll(resp.Body)
+	res := rawResponse{method: method, path: path, status: resp.StatusCode, header: resp.Header}
+	res.body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, "", resp.Header, fmt.Errorf("HTTP request failed: %v", err)
+		return res, fmt.Errorf("%s %s: reading %d response: %w", method, path, resp.StatusCode, err)
 	}
-	return resp.StatusCode, string(res), resp.Header, nil
+	return res, nil
 }
 
 func withAutoAssignAlertsFlag(url string) string {

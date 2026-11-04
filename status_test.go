@@ -30,6 +30,9 @@ type statusCase struct {
 	// notRetried marks methods that bypass the rate-limit retries, so that a
 	// 429 response fails them instead of being re-sent.
 	notRetried bool
+	// apiError marks methods that report a rejected status as an *APIError
+	// with that status. The others only have to return some error.
+	apiError bool
 	// accept lists the response statuses the method treats as success.
 	accept []int
 	// body is the canned response body for every status but 204, which
@@ -77,6 +80,7 @@ var statusCases = map[string]statusCase{
 	"Create": {
 		requests: []string{"POST /v1/checks?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.Create(ctx, checkly.Check{Type: checkly.TypeAPI}))
 		},
@@ -89,12 +93,13 @@ var statusCases = map[string]statusCase{
 		},
 	},
 	"Delete":              deleteCheckCase(checkly.Client.Delete),
-	"Get":                 getCheckCase(checkly.Client.Get),
+	"Get":                 withAPIError(getCheckCase(checkly.Client.Get)),
 	"GetHeartbeatCheck":   getCheckCase(checkly.Client.GetHeartbeatCheck),
 	"GetHeartbeatMonitor": getCheckCase(checkly.Client.GetHeartbeatMonitor),
 	"CreateCheck": {
 		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateCheck(ctx, checkly.Check{Type: checkly.TypeAPI}))
 		},
@@ -330,6 +335,7 @@ var statusCases = map[string]statusCase{
 	"GetAPICheck": {
 		requests: []string{"GET /v1/checks/id1"},
 		accept:   statusOK,
+		apiError: true,
 		body:     `{"checkType":"API"}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetAPICheck(ctx, testID))
@@ -338,6 +344,7 @@ var statusCases = map[string]statusCase{
 	"GetBrowserCheck": {
 		requests: []string{"GET /v1/checks/id1?includeDependencies=true"},
 		accept:   statusOK,
+		apiError: true,
 		body:     `{"checkType":"BROWSER"}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetBrowserCheck(ctx, testID))
@@ -346,6 +353,7 @@ var statusCases = map[string]statusCase{
 	"GetMultiStepCheck": {
 		requests: []string{"GET /v1/checks/id1?includeDependencies=true"},
 		accept:   statusOK,
+		apiError: true,
 		body:     `{"checkType":"MULTI_STEP"}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetMultiStepCheck(ctx, testID))
@@ -855,13 +863,20 @@ var statusCases = map[string]statusCase{
 }
 
 // deleteCheckCase covers the check and monitor deleters, which all share the
-// generic check endpoint.
+// generic check endpoint and DeleteCheck's error handling.
 func deleteCheckCase(del func(checkly.Client, context.Context, string) error) statusCase {
 	return statusCase{
 		requests: []string{"DELETE /v1/checks/id1"},
 		accept:   statusNoContent,
+		apiError: true,
 		call:     func(ctx context.Context, c checkly.Client) error { return del(c, ctx, testID) },
 	}
+}
+
+// withAPIError marks tc as reporting a rejected status as an *APIError.
+func withAPIError(tc statusCase) statusCase {
+	tc.apiError = true
+	return tc
 }
 
 // getCheckCase covers the check and monitor getters that read the generic
@@ -949,7 +964,7 @@ func TestSuccessStatuses(t *testing.T) {
 					}
 					return
 				}
-				assertRejected(t, err, status)
+				assertRejected(t, err, status, tc.apiError)
 				// A rejected response ends the call, so no request after
 				// the rejected one is sent.
 				if wantSent := tc.requests[:len(statuses)]; !slices.Equal(requests, wantSent) {
@@ -1007,11 +1022,22 @@ func TestRateLimitRetryPerMethod(t *testing.T) {
 }
 
 // assertRejected checks that a method reported an error for a response status
-// it does not accept.
-func assertRejected(t *testing.T, err error, status int) {
+// it does not accept and, when apiError is set, that the error is an
+// *APIError for that status.
+func assertRejected(t *testing.T, err error, status int, apiError bool) {
 	t.Helper()
 	if err == nil {
 		t.Fatalf("want error for status %d, got nil", status)
+	}
+	if !apiError {
+		return
+	}
+	var apiErr *checkly.APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("want *APIError for status %d, got %T: %v", status, err, err)
+	}
+	if apiErr.StatusCode != status {
+		t.Errorf("want *APIError with status %d, got %d: %v", status, apiErr.StatusCode, err)
 	}
 }
 

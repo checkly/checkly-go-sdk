@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -75,12 +76,15 @@ func TestRateLimitRetriesThenSucceeds(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany, tooMany, cannedReply{status: 200, body: `{"ok":true}`})
 	c, waits := newTestClient(srv.URL)
 
-	status, body, err := c.apiCall(context.Background(), http.MethodGet, "things", nil)
+	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != 200 || body != `{"ok":true}` {
-		t.Fatalf("want 200 {\"ok\":true}, got %d %q", status, body)
+	if res.status != 200 || string(res.body) != `{"ok":true}` {
+		t.Fatalf("want 200 {\"ok\":true}, got %d %q", res.status, res.body)
+	}
+	if res.retries != 2 {
+		t.Errorf("want 2 retries, got %d", res.retries)
 	}
 	if got := len(srv.requests()); got != 3 {
 		t.Errorf("want 3 requests, got %d", got)
@@ -104,9 +108,9 @@ func TestRateLimitHonoursRetryAfter(t *testing.T) {
 	)
 	c, waits := newTestClient(srv.URL)
 
-	status, _, err := c.apiCall(context.Background(), http.MethodGet, "things", nil)
-	if err != nil || status != 200 {
-		t.Fatalf("want 200, got %d, %v", status, err)
+	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
+	if err != nil || res.status != 200 {
+		t.Fatalf("want 200, got %d, %v", res.status, err)
 	}
 	if len(*waits) != 1 {
 		t.Fatalf("want 1 wait, got %v", *waits)
@@ -158,16 +162,46 @@ func TestRateLimitWaitHints(t *testing.T) {
 	}
 }
 
+// TestRateLimitHintUncapped checks that the server's hint is returned as it
+// is, in each header form: only rateLimitWait caps it.
+func TestRateLimitHintUncapped(t *testing.T) {
+	now := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	tests := []struct {
+		name    string
+		headers map[string]string
+		want    time.Duration
+	}{
+		{"retry-after seconds", map[string]string{"Retry-After": "86400"}, 24 * time.Hour},
+		{"retry-after http date", map[string]string{"Retry-After": now.Add(2 * time.Hour).Format(http.TimeFormat)}, 2 * time.Hour},
+		{"reset header", map[string]string{"X-RateLimit-Reset": strconv.FormatInt(now.Add(3*time.Hour).Unix(), 10)}, 3 * time.Hour},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := http.Header{}
+			for k, v := range tt.headers {
+				h.Set(k, v)
+			}
+			got, ok := rateLimitHint(h, now)
+			if !ok || got != tt.want {
+				t.Errorf("want %v, got %v (ok %v)", tt.want, got, ok)
+			}
+		})
+	}
+}
+
 func TestRateLimitGivesUpAfterMaxRetries(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany)
 	c, waits := newTestClient(srv.URL)
 
-	status, body, err := c.apiCall(context.Background(), http.MethodGet, "things", nil)
+	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != http.StatusTooManyRequests || body != tooMany.body {
-		t.Errorf("want final 429 with its body, got %d %q", status, body)
+	if res.status != http.StatusTooManyRequests || string(res.body) != tooMany.body {
+		t.Errorf("want final 429 with its body, got %d %q", res.status, res.body)
+	}
+	if res.retries != rateLimitMaxRetries {
+		t.Errorf("want %d retries, got %d", rateLimitMaxRetries, res.retries)
 	}
 	if got := len(srv.requests()); got != rateLimitMaxRetries+1 {
 		t.Errorf("want %d requests, got %d", rateLimitMaxRetries+1, got)
@@ -186,12 +220,12 @@ func TestRateLimitDoesNotWaitPastDeadline(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	status, body, err := c.apiCall(ctx, http.MethodGet, "things", nil)
+	res, err := c.send(ctx, 1, http.MethodGet, "things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != 429 || body != "limited" {
-		t.Errorf("want immediate 429, got %d %q", status, body)
+	if res.status != 429 || string(res.body) != "limited" {
+		t.Errorf("want immediate 429, got %d %q", res.status, res.body)
 	}
 	if len(*waits) != 0 {
 		t.Errorf("want no waits, got %v", *waits)
@@ -212,12 +246,12 @@ func TestRateLimitLeavesTimeForTheRetriedRequest(t *testing.T) {
 	// would leave less than rateLimitRequestMargin for the re-sent request.
 	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
 	defer cancel()
-	status, body, err := c.apiCall(ctx, http.MethodGet, "things", nil)
+	res, err := c.send(ctx, 1, http.MethodGet, "things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != 429 || body != "limited" {
-		t.Errorf("want immediate 429, got %d %q", status, body)
+	if res.status != 429 || string(res.body) != "limited" {
+		t.Errorf("want immediate 429, got %d %q", res.status, res.body)
 	}
 	if len(*waits) != 0 {
 		t.Errorf("want no waits, got %v", *waits)
@@ -240,15 +274,24 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		return sleepContext(ctx, d)
 	}
 	start := time.Now()
-	status, body, err := c.apiCall(ctx, http.MethodGet, "things", nil)
+	_, err := c.send(ctx, 1, http.MethodGet, "things", nil)
 	if elapsed := time.Since(start); elapsed > 5*time.Second {
 		t.Fatalf("cancel did not abort the wait, took %v", elapsed)
 	}
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("want context.Canceled, got %v", err)
 	}
-	if status != 429 || body != "limited" {
-		t.Errorf("want the 429 alongside the error, got %d %q", status, body)
+	// The error also describes the 429 the client gave up retrying.
+	if !errors.Is(err, ErrRateLimited) {
+		t.Errorf("want ErrRateLimited, got %v", err)
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != 429 || apiErr.Message != "limited" || apiErr.RetryAfter != 30*time.Second {
+		t.Errorf("want the 429 as an *APIError, got %#v", apiErr)
+	}
+	want := "GET /v1/things: 429 Too Many Requests: limited (retry after 30s); gave up waiting to retry: context canceled"
+	if err.Error() != want {
+		t.Errorf("want error %q, got %q", want, err)
 	}
 	if got := len(srv.requests()); got != 1 {
 		t.Errorf("want 1 request, got %d", got)
@@ -260,9 +303,9 @@ func TestRateLimitResendsPostBody(t *testing.T) {
 	c, _ := newTestClient(srv.URL)
 
 	payload := `{"name":"status page","components":[1,2,3]}`
-	status, _, err := c.apiCall(context.Background(), http.MethodPost, "things", []byte(payload))
-	if err != nil || status != 201 {
-		t.Fatalf("want 201, got %d, %v", status, err)
+	res, err := c.send(context.Background(), 1, http.MethodPost, "things", []byte(payload))
+	if err != nil || res.status != 201 {
+		t.Fatalf("want 201, got %d, %v", res.status, err)
 	}
 	got := srv.requests()
 	if len(got) != 3 {
