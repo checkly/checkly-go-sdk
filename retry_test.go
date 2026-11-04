@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -186,6 +187,27 @@ func TestRateLimitHintUncapped(t *testing.T) {
 				t.Errorf("want %v, got %v (ok %v)", tt.want, got, ok)
 			}
 		})
+	}
+}
+
+// TestCeilSeconds checks the rounding of the wait that a rate-limit error
+// shows: up to whole seconds, so a short wait never shows as "0s", except
+// where rounding up would overflow.
+func TestCeilSeconds(t *testing.T) {
+	tests := []struct {
+		in, want time.Duration
+	}{
+		{time.Nanosecond, time.Second},
+		{300 * time.Millisecond, time.Second},
+		{time.Second, time.Second},
+		{1500 * time.Millisecond, 2 * time.Second},
+		{12 * time.Second, 12 * time.Second},
+		{math.MaxInt64, math.MaxInt64},
+	}
+	for _, tt := range tests {
+		if got := ceilSeconds(tt.in); got != tt.want {
+			t.Errorf("ceilSeconds(%v): want %v, got %v", tt.in, tt.want, got)
+		}
 	}
 }
 

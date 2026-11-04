@@ -337,8 +337,10 @@ func TestRateLimitRetryAfter(t *testing.T) {
 		{"retry-after seconds", http.Header{"Retry-After": {"120"}}, 120 * time.Second, 120 * time.Second, "retry after 2m0s"},
 		{"retry-after date", http.Header{"Retry-After": {inTwoMinutes.UTC().Format(http.TimeFormat)}}, 110 * time.Second, 120 * time.Second, "retry after "},
 		{"reset", http.Header{"X-Ratelimit-Reset": {strconv.FormatInt(inTwoMinutes.Unix(), 10)}}, 110 * time.Second, 120 * time.Second, "retry after "},
-		// A wait under a second is rounded up, not shown as "0s".
-		{"short reset", http.Header{"X-Ratelimit-Reset": {strconv.FormatInt(time.Now().Unix()+1, 10)}}, time.Nanosecond, time.Second, "retry after 1s)"},
+		// A reset two seconds ahead leaves a wait of one to two seconds,
+		// depending on when the request lands within the current second.
+		// Rounding up is covered exactly by TestCeilSeconds.
+		{"short reset", http.Header{"X-Ratelimit-Reset": {strconv.FormatInt(time.Now().Unix()+2, 10)}}, time.Nanosecond, 2 * time.Second, "retry after "},
 		// A hint centuries ahead saturates at the maximum Duration, which
 		// cannot be rounded up to whole seconds without overflowing.
 		{"far-future reset", http.Header{"X-Ratelimit-Reset": {"99999999999999"}}, math.MaxInt64, math.MaxInt64, "retry after 2562047h47m16.854775807s)"},
