@@ -1145,8 +1145,10 @@ func TestICMPMonitorCRUD(t *testing.T) {
 	client := setupClient(t)
 
 	pendingMonitor := checkly.ICMPMonitor{
-		Name:      "Foo ICMP monitor",
-		Frequency: 1,
+		Name:                        "Foo ICMP monitor",
+		Frequency:                   1,
+		DegradedPacketLossThreshold: 10,
+		MaxPacketLossThreshold:      20,
 		Request: checkly.ICMPRequest{
 			Hostname:  "welcome.checklyhq.com",
 			IPFamily:  "IPv4",
@@ -1217,8 +1219,10 @@ func TestICMPMonitorCRUD(t *testing.T) {
 	}
 
 	updateMonitor := checkly.ICMPMonitor{
-		Name:      "Bar ICMP monitor",
-		Frequency: 1,
+		Name:                        "Bar ICMP monitor",
+		Frequency:                   1,
+		DegradedPacketLossThreshold: 10,
+		MaxPacketLossThreshold:      20,
 		Request: checkly.ICMPRequest{
 			Hostname:  "api.checklyhq.com",
 			IPFamily:  "IPv4",
@@ -1307,8 +1311,10 @@ func TestICMPMonitorGroupUnset(t *testing.T) {
 	}()
 
 	pendingMonitor := checkly.ICMPMonitor{
-		Name:      "Foo ICMP monitor",
-		Frequency: 1,
+		Name:                        "Foo ICMP monitor",
+		Frequency:                   1,
+		DegradedPacketLossThreshold: 10,
+		MaxPacketLossThreshold:      20,
 		Request: checkly.ICMPRequest{
 			Hostname:   "welcome.checklyhq.com",
 			Assertions: []checkly.Assertion{},
