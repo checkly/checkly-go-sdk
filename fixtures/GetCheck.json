@@ -46,12 +46,6 @@
   "locations": [
     "eu-west-1"
   ],
-  "environmentVariables": [
-    {
-      "key": "ENVTEST",
-      "value": "Hello world"
-    }
-  ],
   "tags": [
     "foo",
     "bar"
@@ -73,7 +67,6 @@
       "percentage": 10
     }
   },
-  "script": "foo",
   "setupSnippetId": null,
   "tearDownSnippetId": null,
   "localSetupScript": "setitup",

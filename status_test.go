@@ -74,23 +74,6 @@ func ignoreResult[T any](_ T, err error) error { return err }
 // followed by "/" and a variant name when one method needs several cases.
 var statusCases = map[string]statusCase{
 	// Checks
-	"Create": {
-		requests: []string{"POST /v1/checks?autoAssignAlerts=false"},
-		accept:   statusCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.Create(ctx, checkly.Check{Type: checkly.TypeAPI}))
-		},
-	},
-	"Update": {
-		requests: []string{"PUT /v1/checks/id1?autoAssignAlerts=false"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.Update(ctx, testID, checkly.Check{Type: checkly.TypeAPI}))
-		},
-	},
-	"Delete":              deleteCheckCase(checkly.Client.Delete),
-	"Get":                 getCheckCase(checkly.Client.Get),
-	"GetHeartbeatCheck":   getCheckCase(checkly.Client.GetHeartbeatCheck),
 	"GetHeartbeatMonitor": getCheckCase(checkly.Client.GetHeartbeatMonitor),
 	"CreateCheck": {
 		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
@@ -99,25 +82,11 @@ var statusCases = map[string]statusCase{
 			return ignoreResult(c.CreateCheck(ctx, checkly.Check{Type: checkly.TypeAPI}))
 		},
 	},
-	"CreateHeartbeat": {
-		requests: []string{"POST /v1/checks/heartbeat?autoAssignAlerts=false"},
-		accept:   statusCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateHeartbeat(ctx, checkly.HeartbeatCheck{}))
-		},
-	},
 	"CreateHeartbeatMonitor": {
 		requests: []string{"POST /v1/checks/heartbeat?autoAssignAlerts=false"},
 		accept:   statusCreated,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateHeartbeatMonitor(ctx, checkly.HeartbeatMonitor{}))
-		},
-	},
-	"CreateTCPCheck": {
-		requests: []string{"POST /v1/checks/tcp?autoAssignAlerts=false"},
-		accept:   statusCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateTCPCheck(ctx, checkly.TCPCheck{}))
 		},
 	},
 	"CreateTCPMonitor": {
@@ -204,25 +173,11 @@ var statusCases = map[string]statusCase{
 			return ignoreResult(c.UpdateCheck(ctx, testID, checkly.Check{Type: checkly.TypeAPI}))
 		},
 	},
-	"UpdateHeartbeat": {
-		requests: []string{"PUT /v1/checks/heartbeat/id1?autoAssignAlerts=false"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.UpdateHeartbeat(ctx, testID, checkly.HeartbeatCheck{}))
-		},
-	},
 	"UpdateHeartbeatMonitor": {
 		requests: []string{"PUT /v1/checks/heartbeat/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateHeartbeatMonitor(ctx, testID, checkly.HeartbeatMonitor{}))
-		},
-	},
-	"UpdateTCPCheck": {
-		requests: []string{"PUT /v1/checks/tcp/id1?autoAssignAlerts=false"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.UpdateTCPCheck(ctx, testID, checkly.TCPCheck{}))
 		},
 	},
 	"UpdateTCPMonitor": {
@@ -316,7 +271,6 @@ var statusCases = map[string]statusCase{
 	"DeleteBrowserCheck":      deleteCheckCase(checkly.Client.DeleteBrowserCheck),
 	"DeleteMultiStepCheck":    deleteCheckCase(checkly.Client.DeleteMultiStepCheck),
 	"GetCheck":                getCheckCase(checkly.Client.GetCheck),
-	"GetTCPCheck":             getCheckCase(checkly.Client.GetTCPCheck),
 	"GetTCPMonitor":           getCheckCase(checkly.Client.GetTCPMonitor),
 	"GetGRPCMonitor":          getCheckCase(checkly.Client.GetGRPCMonitor),
 	"GetTracerouteMonitor":    getCheckCase(checkly.Client.GetTracerouteMonitor),
@@ -894,7 +848,7 @@ func TestSuccessStatuses(t *testing.T) {
 				}
 				statuses := append(slices.Clone(tc.leadStatuses), status)
 				srv, got := newStatusServer(t, statuses, nil, body)
-				c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+				c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 
 				err := tc.call(context.Background(), c)
 				requests := got()
@@ -939,7 +893,7 @@ func TestRateLimitRetryPerMethod(t *testing.T) {
 			retried := len(tc.leadStatuses)
 			statuses := append(slices.Clone(tc.leadStatuses), http.StatusTooManyRequests, tc.accept[0])
 			srv, got := newStatusServer(t, statuses, map[int]http.Header{http.StatusTooManyRequests: header}, body)
-			c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+			c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 			checkly.SkipRetryWaits(c)
 
 			err := tc.call(context.Background(), c)

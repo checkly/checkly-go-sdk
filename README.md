@@ -46,7 +46,6 @@ client := checkly.NewClient(
 	baseUrl,
 	apiKey,
 	nil, //custom http client, defaults to http.DefaultClient
-	nil, //deprecated and ignored
 )
 
 client.SetAccountId(accountId)

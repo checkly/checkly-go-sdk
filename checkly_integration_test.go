@@ -33,7 +33,6 @@ func setupClient(t *testing.T) checkly.Client {
 		baseUrl,
 		apiKey,
 		nil,
-		nil,
 	)
 
 	client.SetAccountId(accountId)
@@ -43,11 +42,11 @@ func setupClient(t *testing.T) checkly.Client {
 func TestCreateIntegration(t *testing.T) {
 	client := setupClient(t)
 
-	gotCheck, err := client.Create(context.Background(), wantCheck)
+	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(context.Background(), gotCheck.ID)
+	defer client.DeleteCheck(context.Background(), gotCheck.ID)
 	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
 		t.Fatal(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
 	}
@@ -128,12 +127,12 @@ func TestCheckGroupUnset(t *testing.T) {
 
 func TestGetIntegration(t *testing.T) {
 	client := setupClient(t)
-	check, err := client.Create(context.Background(), wantCheck)
+	check, err := client.CreateCheck(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(context.Background(), check.ID)
-	gotCheck, err := client.Get(context.Background(), check.ID)
+	defer client.DeleteCheck(context.Background(), check.ID)
+	gotCheck, err := client.GetCheck(context.Background(), check.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,14 +144,14 @@ func TestGetIntegration(t *testing.T) {
 func TestUpdateIntegration(t *testing.T) {
 	t.Parallel()
 	client := setupClient(t)
-	check, err := client.Create(context.Background(), wantCheck)
+	check, err := client.CreateCheck(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Delete(context.Background(), check.ID)
+	defer client.DeleteCheck(context.Background(), check.ID)
 	updatedCheck := wantCheck
 	updatedCheck.Name = "integrationTestUpdate"
-	gotCheck, err := client.Update(context.Background(), check.ID, updatedCheck)
+	gotCheck, err := client.UpdateCheck(context.Background(), check.ID, updatedCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,11 +163,11 @@ func TestUpdateIntegration(t *testing.T) {
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
 	client := setupClient(t)
-	check, err := client.Create(context.Background(), wantCheck)
+	check, err := client.CreateCheck(context.Background(), wantCheck)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Delete(context.Background(), check.ID); err != nil {
+	if err := client.DeleteCheck(context.Background(), check.ID); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -199,7 +198,7 @@ func TestCreateGroupIntegration(t *testing.T) {
 	}
 	defer client.DeleteGroup(context.Background(), gotGroup.ID)
 	// These are set by the APIs
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "AlertSettings.SSLCertificates", "PrivateLocations")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
 	if !cmp.Equal(wantGroupCopy, *gotGroup, ignored) {
 		t.Fatal(cmp.Diff(wantGroupCopy, *gotGroup, ignored))
 	}
@@ -323,7 +322,7 @@ func TestTCPCheckCRUD(t *testing.T) {
 
 	client := setupClient(t)
 
-	pendingCheck := checkly.TCPCheck{
+	pendingCheck := checkly.TCPMonitor{
 		Name:      "TestTCPCheckCRUD",
 		Muted:     false,
 		Frequency: 1,
@@ -334,7 +333,7 @@ func TestTCPCheckCRUD(t *testing.T) {
 		},
 	}
 
-	createdCheck, err := client.CreateTCPCheck(ctx, pendingCheck)
+	createdCheck, err := client.CreateTCPMonitor(ctx, pendingCheck)
 	if err != nil {
 		t.Fatalf("failed to create TCP check: %v", err)
 	}
@@ -349,7 +348,7 @@ func TestTCPCheckCRUD(t *testing.T) {
 		t.Fatalf("expected Muted to be false after creation")
 	}
 
-	_, err = client.GetTCPCheck(ctx, createdCheck.ID)
+	_, err = client.GetTCPMonitor(ctx, createdCheck.ID)
 	if err != nil {
 		t.Fatalf("failed to get TCP check: %v", err)
 	}
@@ -357,7 +356,7 @@ func TestTCPCheckCRUD(t *testing.T) {
 	updateCheck := *createdCheck
 	updateCheck.Muted = true
 
-	updatedCheck, err := client.UpdateTCPCheck(ctx, createdCheck.ID, updateCheck)
+	updatedCheck, err := client.UpdateTCPMonitor(ctx, createdCheck.ID, updateCheck)
 	if err != nil {
 		t.Fatalf("failed to update TCP check: %v", err)
 	}

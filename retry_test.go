@@ -62,7 +62,7 @@ func (s *rateLimitServer) requests() []string {
 
 // newTestClient returns a client whose waits are recorded instead of slept.
 func newTestClient(url string) (*client, *[]time.Duration) {
-	c := NewClient(url, "test-key", nil, nil).(*client)
+	c := NewClient(url, "test-key", nil).(*client)
 	var waits []time.Duration
 	c.sleep = func(ctx context.Context, d time.Duration) error {
 		waits = append(waits, d)
@@ -285,7 +285,7 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "30"}, body: "limited"},
 		cannedReply{status: 200},
 	)
-	c := NewClient(srv.URL, "test-key", nil, nil).(*client)
+	c := NewClient(srv.URL, "test-key", nil).(*client)
 
 	// Cancel once the client starts waiting, then let the real sleep run:
 	// the 30s wait must end at once.

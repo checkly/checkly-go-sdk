@@ -113,7 +113,6 @@ var browserCheck = checkly.Check{
 	Muted:          false,
 	ShouldFail:     false,
 	DoubleCheck:    false,
-	SSLCheck:       true,
 	SSLCheckDomain: "www.acme.com",
 	Locations:      []string{"eu-west-1"},
 	AlertSettings:  alertSettings,
@@ -197,7 +196,7 @@ var group = checkly.Group{
 	LocalTearDownScript: "teardown-test",
 }
 
-var heartbeatCheck = checkly.HeartbeatCheck{
+var heartbeatCheck = checkly.HeartbeatMonitor{
 	Name:          "My Heartbeat Check",
 	Activated:     true,
 	Muted:         false,
@@ -225,7 +224,6 @@ func main() {
 		baseUrl,
 		apiKey,
 		nil, //custom http client, defaults to http.DefaultClient
-		nil, //deprecated and ignored
 	)
 
 	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")
@@ -242,7 +240,7 @@ func main() {
 	fmt.Printf("New check group created with ID %d\n", group.ID)
 
 	for _, check := range []checkly.Check{apiCheck, browserCheck} {
-		gotCheck, err := client.Create(ctx, check)
+		gotCheck, err := client.CreateCheck(ctx, check)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -250,7 +248,7 @@ func main() {
 	}
 
 	// HB
-	gotHbCheck, err := client.CreateHeartbeat(ctx, heartbeatCheck)
+	gotHbCheck, err := client.CreateHeartbeatMonitor(ctx, heartbeatCheck)
 	if err != nil {
 		log.Fatal(err)
 	}
