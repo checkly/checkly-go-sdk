@@ -12,7 +12,6 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -1660,21 +1659,10 @@ func (c *client) CreateSnippet(
 	ctx context.Context,
 	snippet Snippet,
 ) (*Snippet, error) {
-	data, err := json.Marshal(snippet)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "snippets", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result Snippet
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, "snippets", snippet, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1685,17 +1673,10 @@ func (c *client) GetSnippet(
 	ctx context.Context,
 	ID int64,
 ) (*Snippet, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil)
+	result := Snippet{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Snippet{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1708,25 +1689,10 @@ func (c *client) UpdateSnippet(
 	ID int64,
 	snippet Snippet,
 ) (*Snippet, error) {
-	data, err := json.Marshal(snippet)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut, fmt.Sprintf("snippets/%d", ID),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Snippet
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("snippets/%d", ID), snippet, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1736,14 +1702,8 @@ func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil, http.StatusNoContent)
+	return err
 }
 
 // CreateEnvironmentVariable creates a new environment variable with the
@@ -1753,21 +1713,10 @@ func (c *client) CreateEnvironmentVariable(
 	ctx context.Context,
 	envVar EnvironmentVariable,
 ) (*EnvironmentVariable, error) {
-	data, err := json.Marshal(envVar)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "variables", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result EnvironmentVariable
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, "variables", envVar, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1778,22 +1727,10 @@ func (c *client) GetEnvironmentVariable(
 	ctx context.Context,
 	key string,
 ) (*EnvironmentVariable, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("variables/%s", key),
-		nil,
-	)
+	result := EnvironmentVariable{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("variables/%s", key), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := EnvironmentVariable{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1806,26 +1743,10 @@ func (c *client) UpdateEnvironmentVariable(
 	key string,
 	envVar EnvironmentVariable,
 ) (*EnvironmentVariable, error) {
-	data, err := json.Marshal(envVar)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		fmt.Sprintf("variables/%s", key),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result EnvironmentVariable
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("variables/%s", key), envVar, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1835,14 +1756,8 @@ func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("variables/%s", key), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("variables/%s", key), nil, http.StatusNoContent)
+	return err
 }
 
 // CreateAlertChannel creates a new alert channel with the specified details. It returns
@@ -1851,17 +1766,9 @@ func (c *client) CreateAlertChannel(
 	ctx context.Context,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	payload := payloadFromAlertChannel(ac)
-	data, err := json.Marshal(payload)
+	res, err := c.call(ctx, 1, http.MethodPost, "alert-channels", payloadFromAlertChannel(ac), http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "alert-channels", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %v", status, res, string(data))
 	}
 	return alertChannelFromJSON(res)
 }
@@ -1872,16 +1779,9 @@ func (c *client) GetAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) (*AlertChannel, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil)
+	res, err := c.call(ctx, 1, http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := map[string]interface{}{}
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("GetAlertChannel: decoding error for data %q: %v", res, err)
 	}
 	return alertChannelFromJSON(res)
 }
@@ -1894,17 +1794,9 @@ func (c *client) UpdateAlertChannel(
 	ID int64,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	payload := payloadFromAlertChannel(ac)
-	data, err := json.Marshal(payload)
+	res, err := c.call(ctx, 1, http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), payloadFromAlertChannel(ac), http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
 	}
 	return alertChannelFromJSON(res)
 }
@@ -1914,19 +1806,8 @@ func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("alert-channels/%d", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("alert-channels/%d", ID), nil, http.StatusNoContent)
+	return err
 }
 
 // CreateDashboard creates a new dashboard with the specified details. It returns
@@ -1935,22 +1816,10 @@ func (c *client) CreateDashboard(
 	ctx context.Context,
 	dashboard Dashboard,
 ) (*Dashboard, error) {
-	data, err := json.Marshal(dashboard)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "dashboards", data)
-	if err != nil {
-		return nil, err
-	}
 	var result Dashboard
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-
+	err := c.callJSON(ctx, 1, http.MethodPost, "dashboards", dashboard, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %s", status, res, data)
 	}
 	return &result, nil
 }
@@ -1961,17 +1830,10 @@ func (c *client) GetDashboard(
 	ctx context.Context,
 	ID string,
 ) (*Dashboard, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, "dashboards/"+ID, nil)
+	result := Dashboard{}
+	err := c.callJSON(ctx, 1, http.MethodGet, "dashboards/"+ID, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Dashboard{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1981,19 +1843,8 @@ func (c *client) DeleteDashboard(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		"dashboards/"+ID,
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, "dashboards/"+ID, nil, http.StatusNoContent)
+	return err
 }
 
 // UpdateDashboard takes the ID of an existing dashboard, and updates the
@@ -2004,26 +1855,10 @@ func (c *client) UpdateDashboard(
 	ID string,
 	dashboard Dashboard,
 ) (*Dashboard, error) {
-	data, err := json.Marshal(dashboard)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		"dashboards/"+ID,
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Dashboard
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, "dashboards/"+ID, dashboard, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2033,22 +1868,10 @@ func (c *client) CreateMaintenanceWindow(
 	ctx context.Context,
 	mw MaintenanceWindow,
 ) (*MaintenanceWindow, error) {
-	data, err := json.Marshal(mw)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "maintenance-windows", data)
-	if err != nil {
-		return nil, err
-	}
 	var result MaintenanceWindow
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-
+	err := c.callJSON(ctx, 1, http.MethodPost, "maintenance-windows", mw, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %s", status, res, data)
 	}
 	return &result, nil
 }
@@ -2059,17 +1882,10 @@ func (c *client) GetMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
 ) (*MaintenanceWindow, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil)
+	result := MaintenanceWindow{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := MaintenanceWindow{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2079,19 +1895,8 @@ func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("maintenance-windows/%d", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("maintenance-windows/%d", ID), nil, http.StatusNoContent)
+	return err
 }
 
 // UpdateMaintenanceWindow takes the ID of an existing window, and updates the
@@ -2101,25 +1906,10 @@ func (c *client) UpdateMaintenanceWindow(
 	ID int64,
 	mw MaintenanceWindow,
 ) (*MaintenanceWindow, error) {
-	data, err := json.Marshal(mw)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut, fmt.Sprintf("maintenance-windows/%d", ID),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result MaintenanceWindow
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("maintenance-windows/%d", ID), mw, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2129,22 +1919,10 @@ func (c *client) CreatePrivateLocation(
 	ctx context.Context,
 	pl PrivateLocation,
 ) (*PrivateLocation, error) {
-	data, err := json.Marshal(pl)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "private-locations", data)
-	if err != nil {
-		return nil, err
-	}
 	var result PrivateLocation
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-
+	err := c.callJSON(ctx, 1, http.MethodPost, "private-locations", pl, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q, payload: %s", status, res, data)
 	}
 	return &result, nil
 }
@@ -2155,17 +1933,10 @@ func (c *client) GetPrivateLocation(
 	ctx context.Context,
 	ID string,
 ) (*PrivateLocation, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("private-locations/%s", ID), nil)
+	result := PrivateLocation{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("private-locations/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := PrivateLocation{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2175,19 +1946,8 @@ func (c *client) DeletePrivateLocation(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("private-locations/%s", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("private-locations/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 // UpdatePrivateLocation takes the ID of an existing private location and updates it
@@ -2197,25 +1957,10 @@ func (c *client) UpdatePrivateLocation(
 	ID string,
 	pl PrivateLocation,
 ) (*PrivateLocation, error) {
-	data, err := json.Marshal(pl)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut, fmt.Sprintf("private-locations/%s", ID),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result PrivateLocation
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("private-locations/%s", ID), pl, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2225,18 +1970,10 @@ func (c *client) CreateTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) (*TriggerCheck, error) {
-	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil)
-	if err != nil {
-		return nil, err
-	}
 	var result TriggerCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-
+	err := c.callJSON(ctx, 1, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
 	}
 
 	result.URL = fmt.Sprintf("%s/checks/%s/trigger/%s", c.url, checkID, result.Token)
@@ -2250,17 +1987,10 @@ func (c *client) GetTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) (*TriggerCheck, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil)
+	result := TriggerCheck{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := TriggerCheck{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	result.URL = fmt.Sprintf("%s/checks/%s/trigger/%s", c.url, checkID, result.Token)
 	return &result, nil
@@ -2271,19 +2001,8 @@ func (c *client) DeleteTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("triggers/checks/%s", checkID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("triggers/checks/%s", checkID), nil, http.StatusNoContent)
+	return err
 }
 
 // CreateTriggerGroup creates a new trigger with the specified details.
@@ -2291,18 +2010,10 @@ func (c *client) CreateTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) (*TriggerGroup, error) {
-	status, res, err := c.apiCall(ctx, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
-	if err != nil {
-		return nil, err
-	}
 	var result TriggerGroup
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-
+	err := c.callJSON(ctx, 1, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK && status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
 	}
 
 	result.URL = fmt.Sprintf("%s/check-groups/%d/trigger/%s", c.url, groupID, result.Token)
@@ -2316,17 +2027,10 @@ func (c *client) GetTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) (*TriggerGroup, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil)
+	result := TriggerGroup{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := TriggerGroup{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 
 	result.URL = fmt.Sprintf("%s/check-groups/%d/trigger/%s", c.url, groupID, result.Token)
@@ -2338,40 +2042,18 @@ func (c *client) DeleteTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("triggers/check-groups/%s", strconv.FormatInt(groupID, 10)),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateClientCertificate(
 	ctx context.Context,
 	cs ClientCertificate,
 ) (*ClientCertificate, error) {
-	data, err := json.Marshal(cs)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "client-certificates", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result ClientCertificate
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, "client-certificates", cs, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2380,17 +2062,10 @@ func (c *client) GetClientCertificate(
 	ctx context.Context,
 	ID string,
 ) (*ClientCertificate, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil)
+	var result ClientCertificate
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result ClientCertificate
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2399,35 +2074,18 @@ func (c *client) DeleteClientCertificate(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateStatusPage(
 	ctx context.Context,
 	page StatusPage,
 ) (*StatusPage, error) {
-	data, err := json.Marshal(page)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPage
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, "status-pages", page, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2436,17 +2094,10 @@ func (c *client) GetStatusPage(
 	ctx context.Context,
 	ID string,
 ) (*StatusPage, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil)
+	var result StatusPage
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result StatusPage
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2456,21 +2107,10 @@ func (c *client) UpdateStatusPage(
 	ID string,
 	page StatusPage,
 ) (*StatusPage, error) {
-	data, err := json.Marshal(page)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPage
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), page, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2479,35 +2119,18 @@ func (c *client) DeleteStatusPage(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateStatusPageService(
 	ctx context.Context,
 	service StatusPageService,
 ) (*StatusPageService, error) {
-	data, err := json.Marshal(service)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPost, "status-pages/services", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageService
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, "status-pages/services", service, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2516,17 +2139,10 @@ func (c *client) GetStatusPageService(
 	ctx context.Context,
 	ID string,
 ) (*StatusPageService, error) {
-	status, res, err := c.apiCall(ctx, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil)
+	var result StatusPageService
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result StatusPageService
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2536,21 +2152,10 @@ func (c *client) UpdateStatusPageService(
 	ID string,
 	service StatusPageService,
 ) (*StatusPageService, error) {
-	data, err := json.Marshal(service)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(ctx, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageService
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), service, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2559,35 +2164,18 @@ func (c *client) DeleteStatusPageService(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCall(ctx, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateStatusPageV3(
 	ctx context.Context,
 	page StatusPageV3,
 ) (*StatusPageV3, error) {
-	data, err := json.Marshal(page)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPost, "status-pages", data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPost, "status-pages", page, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2596,17 +2184,10 @@ func (c *client) GetStatusPageV3(
 	ctx context.Context,
 	ID string,
 ) (*StatusPageV3, error) {
-	status, res, err := c.apiCallV3(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil)
+	var result StatusPageV3
+	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result StatusPageV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2616,21 +2197,10 @@ func (c *client) UpdateStatusPageV3(
 	ID string,
 	page StatusPageV3,
 ) (*StatusPageV3, error) {
-	data, err := json.Marshal(page)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), page, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2639,14 +2209,8 @@ func (c *client) DeleteStatusPageV3(
 	ctx context.Context,
 	ID string,
 ) error {
-	status, res, err := c.apiCallV3(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateStatusPageComponentV3(
@@ -2654,21 +2218,10 @@ func (c *client) CreateStatusPageComponentV3(
 	statusPageID string,
 	component StatusPageComponentV3,
 ) (*StatusPageComponentV3, error) {
-	data, err := json.Marshal(component)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPost, fmt.Sprintf("status-pages/%s/components", statusPageID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageComponentV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPost, fmt.Sprintf("status-pages/%s/components", statusPageID), component, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2678,17 +2231,10 @@ func (c *client) GetStatusPageComponentV3(
 	statusPageID string,
 	ID string,
 ) (*StatusPageComponentV3, error) {
-	status, res, err := c.apiCallV3(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil)
+	var result StatusPageComponentV3
+	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result StatusPageComponentV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2699,21 +2245,10 @@ func (c *client) UpdateStatusPageComponentV3(
 	ID string,
 	component StatusPageComponentV3,
 ) (*StatusPageComponentV3, error) {
-	data, err := json.Marshal(component)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageComponentV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), component, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2723,14 +2258,8 @@ func (c *client) DeleteStatusPageComponentV3(
 	statusPageID string,
 	ID string,
 ) error {
-	status, res, err := c.apiCallV3(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil, http.StatusNoContent)
+	return err
 }
 
 func (c *client) CreateStatusPageAutomationRuleV3(
@@ -2738,21 +2267,10 @@ func (c *client) CreateStatusPageAutomationRuleV3(
 	statusPageID string,
 	rule StatusPageAutomationRuleV3,
 ) (*StatusPageAutomationRuleV3, error) {
-	data, err := json.Marshal(rule)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPost, fmt.Sprintf("status-pages/%s/automation-rules", statusPageID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageAutomationRuleV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPost, fmt.Sprintf("status-pages/%s/automation-rules", statusPageID), rule, &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2762,17 +2280,10 @@ func (c *client) GetStatusPageAutomationRuleV3(
 	statusPageID string,
 	ID string,
 ) (*StatusPageAutomationRuleV3, error) {
-	status, res, err := c.apiCallV3(ctx, http.MethodGet, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil)
+	var result StatusPageAutomationRuleV3
+	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result StatusPageAutomationRuleV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2783,21 +2294,10 @@ func (c *client) UpdateStatusPageAutomationRuleV3(
 	ID string,
 	rule StatusPageAutomationRuleV3,
 ) (*StatusPageAutomationRuleV3, error) {
-	data, err := json.Marshal(rule)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV3(ctx, http.MethodPut, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), data)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status: %d, res: %q", status, res)
-	}
 	var result StatusPageAutomationRuleV3
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), rule, &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2807,14 +2307,8 @@ func (c *client) DeleteStatusPageAutomationRuleV3(
 	statusPageID string,
 	ID string,
 ) error {
-	status, res, err := c.apiCallV3(ctx, http.MethodDelete, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil, http.StatusNoContent)
+	return err
 }
 
 func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
@@ -2841,58 +2335,76 @@ func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 	return payload
 }
 
-func alertChannelFromJSON(response string) (*AlertChannel, error) {
-	result := map[string]interface{}{}
-	if err := json.NewDecoder(strings.NewReader(response)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("UpdateAlertChannel: decoding error for data Res(%s), Err(%w)", response, err)
+// alertChannelFromJSON decodes res, a response holding an alert channel. A
+// scalar field (id, type, the send flags, sslExpiry and sslExpiryThreshold)
+// that is JSON null is left unset; one of another type than expected is an
+// error that names the field. The config is decoded by
+// AlertChannelConfigFromJSON.
+func alertChannelFromJSON(res rawResponse) (*AlertChannel, error) {
+	result := map[string]any{}
+	if err := decode(res, &result); err != nil {
+		return nil, err
 	}
+	// fieldError reports the type, never the value, of a field: alert
+	// channel configs hold secrets.
+	fieldError := func(field string, v any, want string) error {
+		return fmt.Errorf("%s %s: decoding %d response: field %q is %T, want %s", res.method, res.path, res.status, field, v, want)
+	}
+	optionalBool := func(field string) (*bool, error) {
+		switch v := result[field].(type) {
+		case nil:
+			return nil, nil
+		case bool:
+			return &v, nil
+		default:
+			return nil, fieldError(field, v, "a boolean")
+		}
+	}
+
 	resultAc := &AlertChannel{}
-	if v, ok := result["id"]; ok {
-		switch v.(type) {
-		case int, int64:
-			resultAc.ID = v.(int64)
-		case float32, float64:
-			resultAc.ID = int64(v.(float64))
-		}
+	switch v := result["id"].(type) {
+	case nil:
+	case float64:
+		resultAc.ID = int64(v)
+	default:
+		return nil, fieldError("id", v, "a number")
 	}
-	if v, ok := result["type"]; ok {
-		resultAc.Type = v.(string)
+	switch v := result["type"].(type) {
+	case nil:
+	case string:
+		resultAc.Type = v
+	default:
+		return nil, fieldError("type", v, "a string")
 	}
-	if v, ok := result["sendRecovery"]; ok {
-		sr := v.(bool)
-		resultAc.SendRecovery = &sr
+	var err error
+	if resultAc.SendRecovery, err = optionalBool("sendRecovery"); err != nil {
+		return nil, err
 	}
-	if v, ok := result["sendFailure"]; ok {
-		sf := v.(bool)
-		resultAc.SendFailure = &sf
+	if resultAc.SendFailure, err = optionalBool("sendFailure"); err != nil {
+		return nil, err
 	}
-	if v, ok := result["sendDegraded"]; ok {
-		sd := v.(bool)
-		resultAc.SendDegraded = &sd
+	if resultAc.SendDegraded, err = optionalBool("sendDegraded"); err != nil {
+		return nil, err
 	}
-	if v, ok := result["sslExpiry"]; ok {
-		expiry := v.(bool)
-		resultAc.SSLExpiry = &expiry
+	if resultAc.SSLExpiry, err = optionalBool("sslExpiry"); err != nil {
+		return nil, err
 	}
-	if v, ok := result["sslExpiryThreshold"]; ok {
-		switch v.(type) {
-		case int, int64:
-			t := v.(int)
-			resultAc.SSLExpiryThreshold = &t
-		case float32, float64:
-			t := int(v.(float64))
-			resultAc.SSLExpiryThreshold = &t
-		}
+	switch v := result["sslExpiryThreshold"].(type) {
+	case nil:
+	case float64:
+		t := int(v)
+		resultAc.SSLExpiryThreshold = &t
+	default:
+		return nil, fieldError("sslExpiryThreshold", v, "a number")
 	}
 	if cfg, ok := result["config"]; ok {
 		cfgJSON, err := json.Marshal(cfg)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s %s: decoding %d response: config: %w", res.method, res.path, res.status, err)
 		}
 		c, err := AlertChannelConfigFromJSON(resultAc.Type, cfgJSON)
 		if err != nil {
-			//TODO check this
-			return nil, err
+			return nil, fmt.Errorf("%s %s: decoding %d response: config: %w", res.method, res.path, res.status, err)
 		}
 		resultAc.SetConfig(c)
 	}
@@ -2904,22 +2416,10 @@ func (c *client) GetRuntime(
 	ctx context.Context,
 	ID string,
 ) (*Runtime, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("runtimes/%s", ID),
-		nil,
-	)
+	result := Runtime{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("runtimes/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Runtime{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2931,31 +2431,17 @@ func (c *client) GetStaticIPs(
 	var IPs []StaticIP
 
 	// getting IPv6 first
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		"static-ipv6s-by-region",
-		nil,
-	)
+	var datav6 map[string][]string
+	err := c.callJSON(ctx, 1, http.MethodGet, "static-ipv6s-by-region", nil, &datav6, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-
-	var datav6 map[string][]string
-
-	err = json.Unmarshal([]byte(res), &datav6)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 
 	for region, ips := range datav6 {
 		for _, ip := range ips {
 			addr, err := netip.ParsePrefix(ip)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+				return nil, fmt.Errorf("could not parse CIDR from %s: %w", ip, err)
 			}
 
 			IPs = append(IPs, StaticIP{Region: region, Address: addr})
@@ -2963,30 +2449,17 @@ func (c *client) GetStaticIPs(
 	}
 
 	// and then IPv4
-	status, res, err = c.apiCall(
-		ctx,
-		http.MethodGet,
-		"static-ips-by-region",
-		nil,
-	)
+	var datav4 map[string][]string
+	err = c.callJSON(ctx, 1, http.MethodGet, "static-ips-by-region", nil, &datav4, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-
-	var datav4 map[string][]string
-	err = json.Unmarshal([]byte(res), &datav4)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 
 	for region, ips := range datav4 {
 		for _, ip := range ips {
 			addr, err := netip.ParseAddr(ip)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse CIDR from %s: %v", ip, err)
+				return nil, fmt.Errorf("could not parse IP address from %s: %w", ip, err)
 			}
 			IPs = append(IPs, StaticIP{Region: region, Address: netip.PrefixFrom(addr, 32)})
 		}
@@ -3021,48 +2494,6 @@ func (c *client) addAuthHeaders(req *http.Request) error {
 	}
 
 	return nil
-}
-
-// apiCall, apiCallV1, apiCallV3 and apiCallV return the raw status and body of
-// a request for the methods that check the status themselves. New code uses
-// call and callJSON instead, which turn an unexpected status into an
-// *APIError.
-func (c *client) apiCall(
-	ctx context.Context,
-	method string,
-	URL string,
-	data []byte,
-) (statusCode int, response string, err error) {
-	return c.apiCallV1(ctx, method, URL, data)
-}
-
-func (c *client) apiCallV1(
-	ctx context.Context,
-	method string,
-	URL string,
-	data []byte,
-) (statusCode int, response string, err error) {
-	return c.apiCallV(ctx, 1, method, URL, data)
-}
-
-func (c *client) apiCallV3(
-	ctx context.Context,
-	method string,
-	URL string,
-	data []byte,
-) (statusCode int, response string, err error) {
-	return c.apiCallV(ctx, 3, method, URL, data)
-}
-
-func (c *client) apiCallV(
-	ctx context.Context,
-	v int,
-	method string,
-	URL string,
-	data []byte,
-) (statusCode int, response string, err error) {
-	res, err := c.send(ctx, v, method, URL, data)
-	return res.status, string(res.body), err
 }
 
 // rawResponse is a response as send returns it, before its status is

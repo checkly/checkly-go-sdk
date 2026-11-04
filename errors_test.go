@@ -366,12 +366,45 @@ func TestRateLimitRetryAfter(t *testing.T) {
 
 // TestErrorOmitsSecrets checks that the SDK puts neither the API key nor the
 // request payload into an error. When the server itself echoes them in its
-// error body, they reach the error only as part of the backend's message.
+// error body, they reach the error only as part of the backend's message. The
+// create methods covered are those whose errors used to include the payload.
 func TestErrorOmitsSecrets(t *testing.T) {
 	t.Parallel()
 	const apiKey = "SECRET-API-KEY-MARKER"
 	const payload = "SECRET-PAYLOAD-MARKER"
 	secrets := []string{apiKey, payload}
+	calls := []struct {
+		request string
+		call    func(context.Context, checkly.Client) error
+	}{
+		{"POST /v1/checks/api", func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateCheck(ctx, checkly.Check{
+				Type:                 checkly.TypeAPI,
+				Name:                 payload,
+				EnvironmentVariables: []checkly.EnvironmentVariable{{Key: "TOKEN", Value: payload}},
+			})
+			return err
+		}},
+		{"POST /v1/alert-channels", func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateAlertChannel(ctx, checkly.AlertChannel{
+				Type:    checkly.AlertTypeWebhook,
+				Webhook: &checkly.AlertChannelWebhook{Name: "hook", URL: "https://example.com", WebhookSecret: payload},
+			})
+			return err
+		}},
+		{"POST /v1/dashboards", func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateDashboard(ctx, checkly.Dashboard{Description: payload})
+			return err
+		}},
+		{"POST /v1/maintenance-windows", func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateMaintenanceWindow(ctx, checkly.MaintenanceWindow{Name: payload})
+			return err
+		}},
+		{"POST /v1/private-locations", func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreatePrivateLocation(ctx, checkly.PrivateLocation{Name: payload})
+			return err
+		}},
+	}
 	tests := []struct {
 		name string
 		// reply builds the error body from the request's Authorization
@@ -394,46 +427,50 @@ func TestErrorOmitsSecrets(t *testing.T) {
 		}},
 	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				body, _ := io.ReadAll(r.Body)
-				w.WriteHeader(500)
-				io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
-			}))
-			t.Cleanup(srv.Close)
-			c := checkly.NewClient(srv.URL, apiKey, srv.Client(), nil)
-			c.SetAccountId("acc-123")
-			_, err := c.CreateCheck(context.Background(), checkly.Check{
-				Type:                 checkly.TypeAPI,
-				Name:                 payload,
-				EnvironmentVariables: []checkly.EnvironmentVariable{{Key: "TOKEN", Value: payload}},
+		for _, call := range calls {
+			tt, call := tt, call
+			t.Run(tt.name+"/"+call.request, func(t *testing.T) {
+				t.Parallel()
+				sentBodies := make(chan string, 1)
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					body, _ := io.ReadAll(r.Body)
+					sentBodies <- string(body)
+					w.WriteHeader(500)
+					io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
+				}))
+				t.Cleanup(srv.Close)
+				c := checkly.NewClient(srv.URL, apiKey, srv.Client(), nil)
+				c.SetAccountId("acc-123")
+				err := call.call(context.Background(), c)
+				// Guard against a test whose payload lacks the marker.
+				if sent := <-sentBodies; !strings.Contains(sent, payload) {
+					t.Fatalf("want the request body to contain %s, got %q", payload, sent)
+				}
+				var apiErr *checkly.APIError
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("want *APIError, got %v", err)
+				}
+				// The message is capped, which limits how much of an echoed
+				// request it can show.
+				if max := 500 + len("… (truncated)"); len(apiErr.Message) > max {
+					t.Errorf("want Message of at most %d bytes, got %d", max, len(apiErr.Message))
+				}
+				// Whatever the server echoed is only in the backend's message;
+				// the rest of the error text holds no secret.
+				rest := strings.Replace(err.Error(), apiErr.Message, "", 1)
+				for _, secret := range secrets {
+					if strings.Contains(rest, secret) {
+						t.Errorf("want %s only inside the backend message, got %q", secret, err)
+					}
+				}
+				if tt.name == "no echo" {
+					want := call.request + ": 500 Internal Server Error: An internal server error occurred"
+					if err.Error() != want {
+						t.Errorf("want %q, got %q", want, err)
+					}
+				}
 			})
-			var apiErr *checkly.APIError
-			if !errors.As(err, &apiErr) {
-				t.Fatalf("want *APIError, got %v", err)
-			}
-			// The message is capped, which limits how much of an echoed
-			// request it can show.
-			if max := 500 + len("… (truncated)"); len(apiErr.Message) > max {
-				t.Errorf("want Message of at most %d bytes, got %d", max, len(apiErr.Message))
-			}
-			// Whatever the server echoed is only in the backend's message;
-			// the rest of the error text holds no secret.
-			rest := strings.Replace(err.Error(), apiErr.Message, "", 1)
-			for _, secret := range secrets {
-				if strings.Contains(rest, secret) {
-					t.Errorf("want %s only inside the backend message, got %q", secret, err)
-				}
-			}
-			if tt.name == "no echo" {
-				want := "POST /v1/checks/api: 500 Internal Server Error: An internal server error occurred"
-				if err.Error() != want {
-					t.Errorf("want %q, got %q", want, err)
-				}
-			}
-		})
+		}
 	}
 }
 
@@ -510,4 +547,98 @@ func TestTransportErrors(t *testing.T) {
 			t.Errorf("want %q, got %q", want, err)
 		}
 	})
+}
+
+// TestCreateChecksStatusBeforeDecoding checks that the create methods that
+// used to decode the body before checking the status report an error body
+// that is not JSON, such as a proxy's HTML page, as an *APIError.
+func TestCreateChecksStatusBeforeDecoding(t *testing.T) {
+	t.Parallel()
+	calls := map[string]func(context.Context, checkly.Client) error{
+		"POST /v1/dashboards": func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateDashboard(ctx, checkly.Dashboard{})
+			return err
+		},
+		"POST /v1/maintenance-windows": func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateMaintenanceWindow(ctx, checkly.MaintenanceWindow{})
+			return err
+		},
+		"POST /v1/private-locations": func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreatePrivateLocation(ctx, checkly.PrivateLocation{})
+			return err
+		},
+		"POST /v1/triggers/checks/abc": func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateTriggerCheck(ctx, "abc")
+			return err
+		},
+		"POST /v1/triggers/check-groups/7": func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateTriggerGroup(ctx, 7)
+			return err
+		},
+	}
+	for request, call := range calls {
+		request, call := request, call
+		t.Run(request, func(t *testing.T) {
+			t.Parallel()
+			c := newErrorServer(t, errorReply{status: 502, body: "<html><title>502 Bad Gateway</title></html>"})
+			err := call(context.Background(), c)
+			want := request + ": 502 Bad Gateway: <html><title>502 Bad Gateway</title></html>"
+			if err == nil || err.Error() != want {
+				t.Errorf("want %q, got %v", want, err)
+			}
+		})
+	}
+}
+
+// TestAlertChannelDecoding checks how alert channel responses decode: JSON
+// null leaves a field unset, a field of the wrong type is an error naming the
+// field but not its value, and errors name the request that was made.
+func TestAlertChannelDecoding(t *testing.T) {
+	t.Parallel()
+	t.Run("null fields", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","sendRecovery":null,"sendFailure":true,"sendDegraded":null,"sslExpiry":null,"sslExpiryThreshold":null,"config":{"address":"a@example.com"}}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.ID != 7 || ac.Type != "EMAIL" || ac.SendRecovery != nil || ac.SendDegraded != nil || ac.SSLExpiry != nil || ac.SSLExpiryThreshold != nil {
+			t.Errorf("want null fields unset, got %+v", ac)
+		}
+		if ac.SendFailure == nil || !*ac.SendFailure {
+			t.Errorf("want sendFailure true, got %v", ac.SendFailure)
+		}
+		if ac.Email == nil || ac.Email.Address != "a@example.com" {
+			t.Errorf("want the email config decoded, got %+v", ac.Email)
+		}
+	})
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"wrong bool", `{"type":"EMAIL","sslExpiry":"SECRET-VALUE-MARKER"}`, `field "sslExpiry" is string, want a boolean`},
+		{"wrong type", `{"type":42}`, `field "type" is float64, want a string`},
+		{"wrong id", `{"id":"SECRET-VALUE-MARKER"}`, `field "id" is string, want a number`},
+		{"wrong threshold", `{"sslExpiryThreshold":true}`, `field "sslExpiryThreshold" is bool, want a number`},
+		{"not json", `SECRET-VALUE-MARKER`, `decoding 201 response (19 bytes): invalid character`},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			c := newErrorServer(t, errorReply{status: 201, body: tt.body})
+			_, err := c.CreateAlertChannel(context.Background(), checkly.AlertChannel{})
+			if err == nil {
+				t.Fatal("want error, got nil")
+			}
+			prefix := "POST /v1/alert-channels: "
+			if !strings.HasPrefix(err.Error(), prefix) || !strings.Contains(err.Error(), tt.want) {
+				t.Errorf("want error starting with %q and containing %q, got %q", prefix, tt.want, err)
+			}
+			if strings.Contains(err.Error(), "SECRET-VALUE-MARKER") {
+				t.Errorf("want the field value left out of the error, got %q", err)
+			}
+		})
+	}
 }
