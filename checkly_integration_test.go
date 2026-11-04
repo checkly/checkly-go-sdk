@@ -33,7 +33,6 @@ func setupClient(t *testing.T) checkly.Client {
 		baseUrl,
 		apiKey,
 		nil,
-		nil,
 	)
 
 	client.SetAccountId(accountId)

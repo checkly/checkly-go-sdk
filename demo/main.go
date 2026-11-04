@@ -224,7 +224,6 @@ func main() {
 		baseUrl,
 		apiKey,
 		nil, //custom http client, defaults to http.DefaultClient
-		nil, //deprecated and ignored
 	)
 
 	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")

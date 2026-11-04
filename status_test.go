@@ -848,7 +848,7 @@ func TestSuccessStatuses(t *testing.T) {
 				}
 				statuses := append(slices.Clone(tc.leadStatuses), status)
 				srv, got := newStatusServer(t, statuses, nil, body)
-				c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+				c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 
 				err := tc.call(context.Background(), c)
 				requests := got()
@@ -893,7 +893,7 @@ func TestRateLimitRetryPerMethod(t *testing.T) {
 			retried := len(tc.leadStatuses)
 			statuses := append(slices.Clone(tc.leadStatuses), http.StatusTooManyRequests, tc.accept[0])
 			srv, got := newStatusServer(t, statuses, map[int]http.Header{http.StatusTooManyRequests: header}, body)
-			c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+			c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 			checkly.SkipRetryWaits(c)
 
 			err := tc.call(context.Background(), c)

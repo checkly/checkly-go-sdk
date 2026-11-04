@@ -166,7 +166,7 @@ func TestAPIError(t *testing.T) {
 		"BadRequest.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateCheck(context.Background(), checkly.Check{
 		Type: checkly.TypeAPI,
 	})
@@ -188,7 +188,7 @@ func TestCreateCheck(t *testing.T) {
 		"CreateCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
 	if err != nil {
 		t.Error(err)
@@ -208,7 +208,7 @@ func TestGetCheck(t *testing.T) {
 		"GetCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotCheck, err := client.GetCheck(context.Background(), wantCheckID)
 	if err != nil {
 		t.Error(err)
@@ -228,7 +228,7 @@ func TestUpdateCheck(t *testing.T) {
 		"UpdateCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotCheck, err := client.UpdateCheck(context.Background(), wantCheckID, wantCheck)
 	if err != nil {
 		t.Error(err)
@@ -248,7 +248,7 @@ func TestDeleteCheck(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteCheck(context.Background(), wantCheckID)
 	if err != nil {
 		t.Error(err)
@@ -321,7 +321,7 @@ func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
 			t.Parallel()
 			ts := cannedResponseServer(t, tc.method, tc.url, validate, tc.status, tc.fixture)
 			defer ts.Close()
-			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 			if _, err := tc.call(client); err != nil {
 				t.Error(err)
 			}
@@ -427,7 +427,7 @@ func TestCreateGroup(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotGroup, err := client.CreateGroup(context.Background(), wantGroup)
 	if err != nil {
 		t.Error(err)
@@ -448,7 +448,7 @@ func TestGetGroup(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotGroup, err := client.GetGroup(context.Background(), wantGroupID)
 	if err != nil {
 		t.Error(err)
@@ -469,7 +469,7 @@ func TestUpdateGroup(t *testing.T) {
 		"UpdateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotGroup, err := client.UpdateGroup(context.Background(), wantGroupID, wantGroup)
 	if err != nil {
 		t.Error(err)
@@ -490,7 +490,7 @@ func TestDeleteGroup(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteGroup(context.Background(), wantGroupID)
 	if err != nil {
 		t.Error(err)
@@ -508,7 +508,7 @@ func TestGetCheckResult(t *testing.T) {
 		"GetCheckResult.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
 		t.Errorf("Expected no errors, got %v", err)
@@ -554,7 +554,7 @@ func TestGetTracerouteCheckResult(t *testing.T) {
 		"GetTracerouteCheckResult.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
 		t.Fatalf("Expected no errors, got %v", err)
@@ -591,7 +591,7 @@ func TestGetGRPCCheckResult(t *testing.T) {
 		"GetGRPCCheckResult.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
 		t.Fatalf("Expected no errors, got %v", err)
@@ -628,7 +628,7 @@ func TestGetSSLCheckResult(t *testing.T) {
 		"GetSSLCheckResult.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.GetCheckResult(context.Background(), wantCheckID, resultID)
 	if err != nil {
 		t.Fatalf("Expected no errors, got %v", err)
@@ -665,7 +665,7 @@ func TestGetCheckResults(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	results, err := client.GetCheckResults(context.Background(), wantCheckID, nil)
 	if err != nil {
 		t.Error(err)
@@ -716,7 +716,7 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	results, err := client.GetCheckResults(context.Background(), "73d29e72-6540", &checkly.CheckResultsFilter{
 		Limit:       100,
 		Page:        1,
@@ -746,7 +746,7 @@ func TestGetCheckResultsWithFilters2(t *testing.T) {
 	)
 
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	results, err := client.GetCheckResults(
 		context.Background(),
 		"73d29e72-6540", &checkly.CheckResultsFilter{},
@@ -789,7 +789,7 @@ func TestCreateSnippet(t *testing.T) {
 		"CreateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotSnippet, err := client.CreateSnippet(context.Background(), testSnippet)
 	if err != nil {
 		t.Error(err)
@@ -809,7 +809,7 @@ func TestGetSnippet(t *testing.T) {
 		"CreateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotSnippet, err := client.GetSnippet(context.Background(), testSnippet.ID)
 	if err != nil {
 		t.Error(err)
@@ -829,7 +829,7 @@ func TestUpdateSnippet(t *testing.T) {
 		"UpdateSnippet.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotSnippet, err := client.UpdateSnippet(context.Background(), testSnippet.ID, testSnippet)
 	if err != nil {
 		t.Error(err)
@@ -849,7 +849,7 @@ func TestDeleteSnippet(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteSnippet(context.Background(), testSnippet.ID)
 	if err != nil {
 		t.Error(err)
@@ -882,7 +882,7 @@ func TestCreateEnvironmentVariable(t *testing.T) {
 		"CreateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.CreateEnvironmentVariable(context.Background(), testEnvVariable)
 	if err != nil {
 		t.Error(err)
@@ -902,7 +902,7 @@ func TestGetEnvironmentVariable(t *testing.T) {
 		"CreateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.GetEnvironmentVariable(context.Background(), testEnvVariable.Key)
 	if err != nil {
 		t.Error(err)
@@ -922,7 +922,7 @@ func TestUpdateEnvironmentVariable(t *testing.T) {
 		"UpdateEnvironmentVariable.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	result, err := client.UpdateEnvironmentVariable(
 		context.Background(),
 		testEnvVariable.Key,
@@ -946,7 +946,7 @@ func TestDeleteEnvironmentVariable(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteEnvironmentVariable(context.Background(), testEnvVariable.Key)
 	if err != nil {
 		t.Error(err)
@@ -1040,7 +1040,7 @@ func TestCreateAlertChannel(t *testing.T) {
 		"CreateAlertChannelEmail.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	ta := getTestAlertChannelEmail()
 	ac, err := client.CreateAlertChannel(context.Background(), *ta)
 	if err != nil {
@@ -1063,7 +1063,7 @@ func TestGetAlertChannel(t *testing.T) {
 		"GetAlertChannelEmail.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	ac, err := client.GetAlertChannel(context.Background(), ta.ID)
 	if err != nil {
 		t.Error(err)
@@ -1084,7 +1084,7 @@ func TestUpdateAlertChannel(t *testing.T) {
 		"UpdateAlertChannel.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateAlertChannel(context.Background(), ta.ID, *ta)
 	if err != nil {
 		t.Error(err)
@@ -1102,7 +1102,7 @@ func TestDeleteAlertChannel(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteAlertChannel(context.Background(), ta.ID)
 	if err != nil {
 		t.Error(err)
@@ -1246,7 +1246,7 @@ func TestCreateDashboard(t *testing.T) {
 		"CreateDashboard.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotDashboard, err := client.CreateDashboard(context.Background(), testDashboard)
 	if err != nil {
 		t.Error(err)
@@ -1266,7 +1266,7 @@ func TestDeleteDashboard(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteDashboard(context.Background(), testDashboard.DashboardID)
 	if err != nil {
 		t.Error(err)
@@ -1283,7 +1283,7 @@ func TestUpdateDashboard(t *testing.T) {
 		"CreateDashboard.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateDashboard(context.Background(), testDashboard.DashboardID, testDashboard)
 	if err != nil {
 		t.Error(err)
@@ -1301,7 +1301,7 @@ func TestGetDashboard(t *testing.T) {
 		"CreateDashboard.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	ac, err := client.GetDashboard(context.Background(), testDashboard.DashboardID)
 	if err != nil {
 		t.Error(err)
@@ -1486,7 +1486,7 @@ func TestCreateMaintenanceWindow(t *testing.T) {
 		"CreateMaintenanceWindow.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotMaintencanceWindow, err := client.CreateMaintenanceWindow(context.Background(), testMaintenanceWindow)
 	if err != nil {
 		t.Error(err)
@@ -1506,7 +1506,7 @@ func TestDeleteMaintenanceWindow(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteMaintenanceWindow(context.Background(), testMaintenanceWindow.ID)
 	if err != nil {
 		t.Error(err)
@@ -1523,7 +1523,7 @@ func TestUpdateMaintenanceWindow(t *testing.T) {
 		"CreateMaintenanceWindow.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateMaintenanceWindow(context.Background(), testMaintenanceWindow.ID, testMaintenanceWindow)
 	if err != nil {
 		t.Error(err)
@@ -1541,7 +1541,7 @@ func TestGetMaintenanceWindow(t *testing.T) {
 		"CreateMaintenanceWindow.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	mw, err := client.GetMaintenanceWindow(context.Background(), testMaintenanceWindow.ID)
 	if err != nil {
 		t.Error(err)
@@ -1583,7 +1583,7 @@ func TestCreatePrivateLocation(t *testing.T) {
 		"CreatePrivateLocation.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotPrivateLocation, err := client.CreatePrivateLocation(context.Background(), testPrivateLocation)
 	if err != nil {
 		t.Error(err)
@@ -1603,7 +1603,7 @@ func TestDeletePrivateLocation(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeletePrivateLocation(context.Background(), testPrivateLocation.ID)
 	if err != nil {
 		t.Error(err)
@@ -1620,7 +1620,7 @@ func TestUpdatePrivateLocation(t *testing.T) {
 		"CreatePrivateLocation.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdatePrivateLocation(context.Background(), testPrivateLocation.ID, testPrivateLocation)
 	if err != nil {
 		t.Error(err)
@@ -1638,7 +1638,7 @@ func TestGetPrivateLocation(t *testing.T) {
 		"CreatePrivateLocation.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	pl, err := client.GetPrivateLocation(context.Background(), testPrivateLocation.ID)
 	if err != nil {
 		t.Error(err)
@@ -1674,7 +1674,7 @@ func TestGetStaticIPs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	gotStaticIPs, err := client.GetStaticIPs(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -1735,7 +1735,7 @@ func TestCreateClientCertificate(t *testing.T) {
 		"CreateClientCertificate.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateClientCertificate(context.Background(), testClientCertificate)
 	if err != nil {
 		t.Error(err)
@@ -1755,7 +1755,7 @@ func TestGetClientCertificate(t *testing.T) {
 		"GetClientCertificate.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetClientCertificate(context.Background(), testClientCertificate.ID)
 	if err != nil {
 		t.Error(err)
@@ -1775,7 +1775,7 @@ func TestDeleteClientCertificate(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteClientCertificate(context.Background(), testClientCertificate.ID)
 	if err != nil {
 		t.Error(err)
@@ -1810,7 +1810,7 @@ func TestCreateStatusPageService(t *testing.T) {
 		"CreateStatusPageService.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateStatusPageService(context.Background(), testStatusPageService)
 	if err != nil {
 		t.Error(err)
@@ -1830,7 +1830,7 @@ func TestDeleteStatusPageService(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteStatusPageService(context.Background(), testStatusPageService.ID)
 	if err != nil {
 		t.Error(err)
@@ -1847,7 +1847,7 @@ func TestUpdateStatusPageService(t *testing.T) {
 		"UpdateStatusPageService.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateStatusPageService(context.Background(), testStatusPageService.ID, testStatusPageService)
 	if err != nil {
 		t.Error(err)
@@ -1863,7 +1863,7 @@ func TestGetStatusPageService(t *testing.T) {
 		"GetStatusPageService.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetStatusPageService(context.Background(), testStatusPageService.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -1914,7 +1914,7 @@ func TestCreateStatusPage(t *testing.T) {
 		"CreateStatusPage.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateStatusPage(context.Background(), testStatusPage)
 	if err != nil {
 		t.Error(err)
@@ -1934,7 +1934,7 @@ func TestDeleteStatusPage(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteStatusPage(context.Background(), testStatusPage.ID)
 	if err != nil {
 		t.Error(err)
@@ -1951,7 +1951,7 @@ func TestUpdateStatusPage(t *testing.T) {
 		"UpdateStatusPage.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateStatusPage(context.Background(), testStatusPage.ID, testStatusPage)
 	if err != nil {
 		t.Error(err)
@@ -1967,7 +1967,7 @@ func TestGetStatusPage(t *testing.T) {
 		"GetStatusPage.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetStatusPage(context.Background(), testStatusPage.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2041,7 +2041,7 @@ func TestCreateStatusPageV3(t *testing.T) {
 		"CreateStatusPageV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateStatusPageV3(context.Background(), testStatusPageV3)
 	if err != nil {
 		t.Error(err)
@@ -2061,7 +2061,7 @@ func TestDeleteStatusPageV3(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteStatusPageV3(context.Background(), testStatusPageV3.ID)
 	if err != nil {
 		t.Error(err)
@@ -2078,7 +2078,7 @@ func TestUpdateStatusPageV3(t *testing.T) {
 		"UpdateStatusPageV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateStatusPageV3(context.Background(), testStatusPageV3.ID, testStatusPageV3)
 	if err != nil {
 		t.Error(err)
@@ -2095,7 +2095,7 @@ func TestGetStatusPageV3(t *testing.T) {
 		"GetStatusPageV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetStatusPageV3(context.Background(), testStatusPageV3.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2144,7 +2144,7 @@ func TestCreateStatusPageComponentV3(t *testing.T) {
 		"CreateStatusPageComponentV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateStatusPageComponentV3(context.Background(), testStatusPageV3.ID, testStatusPageComponentV3)
 	if err != nil {
 		t.Error(err)
@@ -2164,7 +2164,7 @@ func TestDeleteStatusPageComponentV3(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteStatusPageComponentV3(context.Background(), testStatusPageV3.ID, testStatusPageComponentV3.ID)
 	if err != nil {
 		t.Error(err)
@@ -2181,7 +2181,7 @@ func TestUpdateStatusPageComponentV3(t *testing.T) {
 		"UpdateStatusPageComponentV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateStatusPageComponentV3(context.Background(), testStatusPageV3.ID, testStatusPageComponentV3.ID, testStatusPageComponentV3)
 	if err != nil {
 		t.Error(err)
@@ -2198,7 +2198,7 @@ func TestGetStatusPageComponentV3(t *testing.T) {
 		"GetStatusPageComponentV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetStatusPageComponentV3(context.Background(), testStatusPageV3.ID, testStatusPageComponentV3.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2249,7 +2249,7 @@ func TestCreateStatusPageAutomationRuleV3(t *testing.T) {
 		"CreateStatusPageAutomationRuleV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateStatusPageAutomationRuleV3(context.Background(), testStatusPageV3.ID, testStatusPageAutomationRuleV3)
 	if err != nil {
 		t.Error(err)
@@ -2269,7 +2269,7 @@ func TestDeleteStatusPageAutomationRuleV3(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteStatusPageAutomationRuleV3(context.Background(), testStatusPageV3.ID, testStatusPageAutomationRuleV3.ID)
 	if err != nil {
 		t.Error(err)
@@ -2286,7 +2286,7 @@ func TestUpdateStatusPageAutomationRuleV3(t *testing.T) {
 		"UpdateStatusPageAutomationRuleV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateStatusPageAutomationRuleV3(context.Background(), testStatusPageV3.ID, testStatusPageAutomationRuleV3.ID, testStatusPageAutomationRuleV3)
 	if err != nil {
 		t.Error(err)
@@ -2303,7 +2303,7 @@ func TestGetStatusPageAutomationRuleV3(t *testing.T) {
 		"GetStatusPageAutomationRuleV3.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetStatusPageAutomationRuleV3(context.Background(), testStatusPageV3.ID, testStatusPageAutomationRuleV3.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2398,7 +2398,7 @@ func TestCreateURLMonitor(t *testing.T) {
 		"CreateURLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateURLMonitor(context.Background(), testURLMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2418,7 +2418,7 @@ func TestDeleteURLMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteURLMonitor(context.Background(), testURLMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -2435,7 +2435,7 @@ func TestUpdateURLMonitor(t *testing.T) {
 		"UpdateURLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateURLMonitor(context.Background(), testURLMonitor.ID, testURLMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2451,7 +2451,7 @@ func TestGetURLMonitor(t *testing.T) {
 		"GetURLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetURLMonitor(context.Background(), testURLMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2533,7 +2533,7 @@ func TestCreateDNSMonitor(t *testing.T) {
 		"CreateDNSMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateDNSMonitor(context.Background(), testDNSMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2553,7 +2553,7 @@ func TestDeleteDNSMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteDNSMonitor(context.Background(), testDNSMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -2570,7 +2570,7 @@ func TestUpdateDNSMonitor(t *testing.T) {
 		"UpdateDNSMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateDNSMonitor(context.Background(), testDNSMonitor.ID, testDNSMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2586,7 +2586,7 @@ func TestGetDNSMonitor(t *testing.T) {
 		"GetDNSMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetDNSMonitor(context.Background(), testDNSMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2668,7 +2668,7 @@ func TestCreateICMPMonitor(t *testing.T) {
 		"CreateICMPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateICMPMonitor(context.Background(), testICMPMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2688,7 +2688,7 @@ func TestDeleteICMPMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteICMPMonitor(context.Background(), testICMPMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -2705,7 +2705,7 @@ func TestUpdateICMPMonitor(t *testing.T) {
 		"UpdateICMPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateICMPMonitor(context.Background(), testICMPMonitor.ID, testICMPMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2721,7 +2721,7 @@ func TestGetICMPMonitor(t *testing.T) {
 		"GetICMPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetICMPMonitor(context.Background(), testICMPMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2817,7 +2817,7 @@ func TestCreateGRPCMonitor(t *testing.T) {
 		"CreateGRPCMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateGRPCMonitor(context.Background(), testGRPCMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2837,7 +2837,7 @@ func TestDeleteGRPCMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteGRPCMonitor(context.Background(), testGRPCMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -2854,7 +2854,7 @@ func TestUpdateGRPCMonitor(t *testing.T) {
 		"UpdateGRPCMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateGRPCMonitor(context.Background(), testGRPCMonitor.ID, testGRPCMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2870,7 +2870,7 @@ func TestGetGRPCMonitor(t *testing.T) {
 		"GetGRPCMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetGRPCMonitor(context.Background(), testGRPCMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -2958,7 +2958,7 @@ func TestCreateTracerouteMonitor(t *testing.T) {
 		"CreateTracerouteMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateTracerouteMonitor(context.Background(), testTracerouteMonitor)
 	if err != nil {
 		t.Error(err)
@@ -2978,7 +2978,7 @@ func TestDeleteTracerouteMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -2995,7 +2995,7 @@ func TestUpdateTracerouteMonitor(t *testing.T) {
 		"UpdateTracerouteMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, testTracerouteMonitor)
 	if err != nil {
 		t.Error(err)
@@ -3011,7 +3011,7 @@ func TestGetTracerouteMonitor(t *testing.T) {
 		"GetTracerouteMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -3121,7 +3121,7 @@ func TestCreateSSLMonitor(t *testing.T) {
 		"CreateSSLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateSSLMonitor(context.Background(), testSSLMonitor)
 	if err != nil {
 		t.Error(err)
@@ -3141,7 +3141,7 @@ func TestDeleteSSLMonitor(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteSSLMonitor(context.Background(), testSSLMonitor.ID)
 	if err != nil {
 		t.Error(err)
@@ -3158,7 +3158,7 @@ func TestUpdateSSLMonitor(t *testing.T) {
 		"UpdateSSLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateSSLMonitor(context.Background(), testSSLMonitor.ID, testSSLMonitor)
 	if err != nil {
 		t.Error(err)
@@ -3174,7 +3174,7 @@ func TestGetSSLMonitor(t *testing.T) {
 		"GetSSLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetSSLMonitor(context.Background(), testSSLMonitor.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -3582,7 +3582,7 @@ func TestCreateAPICheck(t *testing.T) {
 		"CreateAPICheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateAPICheck(context.Background(), testAPICheck)
 	if err != nil {
 		t.Error(err)
@@ -3602,7 +3602,7 @@ func TestDeleteAPICheck(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteAPICheck(context.Background(), testAPICheck.ID)
 	if err != nil {
 		t.Error(err)
@@ -3619,7 +3619,7 @@ func TestUpdateAPICheck(t *testing.T) {
 		"UpdateAPICheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateAPICheck(context.Background(), testAPICheck.ID, testAPICheck)
 	if err != nil {
 		t.Error(err)
@@ -3635,7 +3635,7 @@ func TestGetAPICheck(t *testing.T) {
 		"GetAPICheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetAPICheck(context.Background(), testAPICheck.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -3745,7 +3745,7 @@ func TestCreateBrowserCheck(t *testing.T) {
 		"CreateBrowserCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateBrowserCheck(context.Background(), testBrowserCheck)
 	if err != nil {
 		t.Error(err)
@@ -3765,7 +3765,7 @@ func TestDeleteBrowserCheck(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteBrowserCheck(context.Background(), testBrowserCheck.ID)
 	if err != nil {
 		t.Error(err)
@@ -3782,7 +3782,7 @@ func TestUpdateBrowserCheck(t *testing.T) {
 		"UpdateBrowserCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateBrowserCheck(context.Background(), testBrowserCheck.ID, testBrowserCheck)
 	if err != nil {
 		t.Error(err)
@@ -3798,7 +3798,7 @@ func TestGetBrowserCheck(t *testing.T) {
 		"GetBrowserCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetBrowserCheck(context.Background(), testBrowserCheck.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -3907,7 +3907,7 @@ func TestCreateMultiStepCheck(t *testing.T) {
 		"CreateMultiStepCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.CreateMultiStepCheck(context.Background(), testMultiStepCheck)
 	if err != nil {
 		t.Error(err)
@@ -3927,7 +3927,7 @@ func TestDeleteMultiStepCheck(t *testing.T) {
 		"Empty.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	err := client.DeleteMultiStepCheck(context.Background(), testMultiStepCheck.ID)
 	if err != nil {
 		t.Error(err)
@@ -3944,7 +3944,7 @@ func TestUpdateMultiStepCheck(t *testing.T) {
 		"UpdateMultiStepCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateMultiStepCheck(context.Background(), testMultiStepCheck.ID, testMultiStepCheck)
 	if err != nil {
 		t.Error(err)
@@ -3960,7 +3960,7 @@ func TestGetMultiStepCheck(t *testing.T) {
 		"GetMultiStepCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	response, err := client.GetMultiStepCheck(context.Background(), testMultiStepCheck.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -4008,7 +4008,7 @@ func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
 		"CreateAPICheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateAPICheck(context.Background(), checkly.APICheck{
 		Name: "API Check #1",
 	})
@@ -4040,7 +4040,7 @@ func TestCreateBrowserCheckSerializesEmptyValues(t *testing.T) {
 		"CreateBrowserCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateBrowserCheck(context.Background(), checkly.BrowserCheck{
 		Name:   "Browser Check #1",
 		Script: "console.log('test')",
@@ -4060,7 +4060,7 @@ func TestCreateMultiStepCheckSerializesEmptyValues(t *testing.T) {
 		"CreateMultiStepCheck.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateMultiStepCheck(context.Background(), checkly.MultiStepCheck{
 		Name:   "Multi-step Check #1",
 		Script: "console.log('test')",
@@ -4090,7 +4090,7 @@ func TestCreateGroupSerializesEmptyValues(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateGroup(context.Background(), checkly.Group{
 		Name: "Group #1",
 	})
@@ -4115,7 +4115,7 @@ func TestUpdateGroupSerializesSetValues(t *testing.T) {
 		"UpdateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateGroup(context.Background(), 17, checkly.Group{
 		Name:                "Group #1",
 		SetupSnippetID:      5,
@@ -4148,7 +4148,7 @@ func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
 		"CreateGroup.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateGroupV2(context.Background(), checkly.GroupV2{
 		Name: "Group #1",
 	})
@@ -4192,7 +4192,7 @@ func TestCreateTCPMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateTCPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateTCPMonitor(context.Background(), checkly.TCPMonitor{
 		Name: "TCP Monitor #1",
 		Request: checkly.TCPRequest{
@@ -4215,7 +4215,7 @@ func TestUpdateTCPMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateTCPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateTCPMonitor(
 		context.Background(),
 		"26900d4d-a852-4e34-9bd0-e40a7a5a2495",
@@ -4246,7 +4246,7 @@ func TestCreateHeartbeatMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateHeartbeatMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateHeartbeatMonitor(context.Background(), checkly.HeartbeatMonitor{
 		Name: "Heartbeat Monitor #1",
 		Heartbeat: checkly.Heartbeat{
@@ -4271,7 +4271,7 @@ func TestUpdateHeartbeatMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateHeartbeatMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateHeartbeatMonitor(
 		context.Background(),
 		"850cd536-a63b-4d33-9a12-8b125718f4e2",
@@ -4313,7 +4313,7 @@ func TestCreateURLMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateURLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateURLMonitor(context.Background(), checkly.URLMonitor{
 		Name: "URL Monitor #1",
 		Request: checkly.URLRequest{
@@ -4335,7 +4335,7 @@ func TestUpdateURLMonitorSerializesEmptyValues(t *testing.T) {
 		"UpdateURLMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateURLMonitor(
 		context.Background(),
 		testURLMonitor.ID,
@@ -4374,7 +4374,7 @@ func TestCreateDNSMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateDNSMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateDNSMonitor(context.Background(), checkly.DNSMonitor{
 		Name: "DNS Monitor #1",
 		Request: checkly.DNSRequest{
@@ -4397,7 +4397,7 @@ func TestUpdateDNSMonitorSerializesEmptyValues(t *testing.T) {
 		"UpdateDNSMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateDNSMonitor(
 		context.Background(),
 		testDNSMonitor.ID,
@@ -4437,7 +4437,7 @@ func TestCreateICMPMonitorSerializesEmptyValues(t *testing.T) {
 		"CreateICMPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.CreateICMPMonitor(context.Background(), checkly.ICMPMonitor{
 		Name: "ICMP Monitor #1",
 		Request: checkly.ICMPRequest{
@@ -4459,7 +4459,7 @@ func TestUpdateICMPMonitorSerializesEmptyValues(t *testing.T) {
 		"UpdateICMPMonitor.json",
 	)
 	defer ts.Close()
-	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+	client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 	_, err := client.UpdateICMPMonitor(
 		context.Background(),
 		testICMPMonitor.ID,
@@ -4518,7 +4518,7 @@ func TestGetPerTypeCheckRejectsOtherCheckTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := cannedResponseServer(t, http.MethodGet, tt.path, validateEmptyBody, http.StatusOK, tt.fixture)
 			defer ts.Close()
-			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client(), nil)
+			client := checkly.NewClient(ts.URL, "dummy-key", ts.Client())
 			if err := tt.get(client); err == nil || !strings.Contains(err.Error(), "check is of type") {
 				t.Errorf("expected a check type error, got %v", err)
 			}

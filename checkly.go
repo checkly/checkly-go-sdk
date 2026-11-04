@@ -30,10 +30,6 @@ func NewClient(
 	apiKey string,
 	//optional, defaults to http.DefaultClient
 	httpClient *http.Client,
-	//deprecated and ignored: the client writes no debug output. To inspect
-	//API traffic, route it through an intercepting HTTPS proxy, for example
-	//with the HTTPS_PROXY environment variable.
-	_ io.Writer,
 ) Client {
 	c := &client{
 		apiKey:     apiKey,

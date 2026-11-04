@@ -39,7 +39,7 @@ func newErrorServer(t *testing.T, reply errorReply) checkly.Client {
 		io.WriteString(w, reply.body)
 	}))
 	t.Cleanup(srv.Close)
-	c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+	c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 	checkly.SkipRetryWaits(c)
 	return c
 }
@@ -441,7 +441,7 @@ func TestErrorOmitsSecrets(t *testing.T) {
 					io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
 				}))
 				t.Cleanup(srv.Close)
-				c := checkly.NewClient(srv.URL, apiKey, srv.Client(), nil)
+				c := checkly.NewClient(srv.URL, apiKey, srv.Client())
 				c.SetAccountId("acc-123")
 				err := call.call(context.Background(), c)
 				// Guard against a test whose payload lacks the marker.
@@ -483,7 +483,7 @@ func TestTransportErrors(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		host := srv.Listener.Addr().String()
 		srv.Close()
-		c := checkly.NewClient(srv.URL, "test-key", nil, nil)
+		c := checkly.NewClient(srv.URL, "test-key", nil)
 		err := c.DeleteCheck(context.Background(), "abc")
 		want := "DELETE /v1/checks/abc: request to " + host + " failed: "
 		if err == nil || !strings.HasPrefix(err.Error(), want) {
@@ -502,7 +502,7 @@ func TestTransportErrors(t *testing.T) {
 		t.Parallel()
 		srv := httptest.NewServer(http.NotFoundHandler())
 		t.Cleanup(srv.Close)
-		c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+		c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		_, err := c.GetCheck(ctx, "abc")
@@ -529,7 +529,7 @@ func TestTransportErrors(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 		t.Cleanup(func() { close(release) })
-		c := checkly.NewClient(srv.URL, "test-key", srv.Client(), nil)
+		c := checkly.NewClient(srv.URL, "test-key", srv.Client())
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
 		_, err := c.GetCheck(ctx, "abc?x=1")
@@ -798,7 +798,7 @@ func TestCodeBundleErrors(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		host := srv.Listener.Addr().String()
 		srv.Close()
-		err := upload(checkly.NewClient(srv.URL, "test-key", nil, nil))
+		err := upload(checkly.NewClient(srv.URL, "test-key", nil))
 		want := "POST /next/checkly-storage/upload-code-bundle: request to " + host + " failed: "
 		if err == nil || !strings.HasPrefix(err.Error(), want) {
 			t.Fatalf("want error starting with %q, got %v", want, err)
