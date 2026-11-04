@@ -2339,7 +2339,7 @@ func payloadFromAlertChannel(ac AlertChannel) map[string]interface{} {
 // scalar field (id, type, the send flags, sslExpiry and sslExpiryThreshold)
 // that is JSON null is left unset; one of another type than expected is an
 // error that names the field. The config is decoded by
-// AlertChannelConfigFromJSON.
+// AlertChannelConfigFromJSON; a JSON null config leaves all configs unset.
 func alertChannelFromJSON(res rawResponse) (*AlertChannel, error) {
 	result := map[string]any{}
 	if err := decode(res, &result); err != nil {

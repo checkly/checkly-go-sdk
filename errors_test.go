@@ -614,6 +614,35 @@ func TestAlertChannelDecoding(t *testing.T) {
 			t.Errorf("want the email config decoded, got %+v", ac.Email)
 		}
 	})
+	t.Run("null config", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","config":null}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.Email != nil {
+			t.Errorf("want no email config for a null config, got %+v", ac.Email)
+		}
+	})
+	t.Run("config not an object", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","config":"SECRET-VALUE-MARKER"}`})
+		_, err := c.GetAlertChannel(context.Background(), 7)
+		want := "GET /v1/alert-channels/7: decoding 200 response: config: decoding EMAIL alert channel config: got a JSON string, want an object"
+		if err == nil || err.Error() != want {
+			t.Errorf("want %q, got %v", want, err)
+		}
+	})
+	t.Run("unknown type", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"TEAMS","config":{}}`})
+		_, err := c.GetAlertChannel(context.Background(), 7)
+		want := `GET /v1/alert-channels/7: decoding 200 response: config: unknown alert channel type "TEAMS"`
+		if err == nil || err.Error() != want {
+			t.Errorf("want %q, got %v", want, err)
+		}
+	})
 	tests := []struct {
 		name string
 		body string
