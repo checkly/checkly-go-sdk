@@ -88,12 +88,13 @@ var statusCases = map[string]statusCase{
 	"Update": {
 		requests: []string{"PUT /v1/checks/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.Update(ctx, testID, checkly.Check{Type: checkly.TypeAPI}))
 		},
 	},
 	"Delete":              deleteCheckCase(checkly.Client.Delete),
-	"Get":                 withAPIError(getCheckCase(checkly.Client.Get)),
+	"Get":                 getCheckCase(checkly.Client.Get),
 	"GetHeartbeatCheck":   getCheckCase(checkly.Client.GetHeartbeatCheck),
 	"GetHeartbeatMonitor": getCheckCase(checkly.Client.GetHeartbeatMonitor),
 	"CreateCheck": {
@@ -107,6 +108,7 @@ var statusCases = map[string]statusCase{
 	"CreateHeartbeat": {
 		requests: []string{"POST /v1/checks/heartbeat?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateHeartbeat(ctx, checkly.HeartbeatCheck{}))
 		},
@@ -114,6 +116,7 @@ var statusCases = map[string]statusCase{
 	"CreateHeartbeatMonitor": {
 		requests: []string{"POST /v1/checks/heartbeat?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateHeartbeatMonitor(ctx, checkly.HeartbeatMonitor{}))
 		},
@@ -121,6 +124,7 @@ var statusCases = map[string]statusCase{
 	"CreateTCPCheck": {
 		requests: []string{"POST /v1/checks/tcp?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateTCPCheck(ctx, checkly.TCPCheck{}))
 		},
@@ -128,6 +132,7 @@ var statusCases = map[string]statusCase{
 	"CreateTCPMonitor": {
 		requests: []string{"POST /v1/checks/tcp?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateTCPMonitor(ctx, checkly.TCPMonitor{}))
 		},
@@ -135,6 +140,7 @@ var statusCases = map[string]statusCase{
 	"CreateGRPCMonitor": {
 		requests: []string{"POST /v1/checks/grpc?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateGRPCMonitor(ctx, checkly.GRPCMonitor{}))
 		},
@@ -142,6 +148,7 @@ var statusCases = map[string]statusCase{
 	"CreateTracerouteMonitor": {
 		requests: []string{"POST /v1/checks/traceroute?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateTracerouteMonitor(ctx, checkly.TracerouteMonitor{}))
 		},
@@ -149,6 +156,7 @@ var statusCases = map[string]statusCase{
 	"CreateSSLMonitor": {
 		requests: []string{"POST /v1/checks/ssl?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateSSLMonitor(ctx, checkly.SSLMonitor{}))
 		},
@@ -156,6 +164,7 @@ var statusCases = map[string]statusCase{
 	"CreateURLMonitor": {
 		requests: []string{"POST /v1/checks/url?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateURLMonitor(ctx, checkly.URLMonitor{}))
 		},
@@ -163,6 +172,7 @@ var statusCases = map[string]statusCase{
 	"CreateDNSMonitor": {
 		requests: []string{"POST /v1/checks/dns?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateDNSMonitor(ctx, checkly.DNSMonitor{}))
 		},
@@ -170,6 +180,7 @@ var statusCases = map[string]statusCase{
 	"CreateICMPMonitor": {
 		requests: []string{"POST /v1/checks/icmp?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateICMPMonitor(ctx, checkly.ICMPMonitor{}))
 		},
@@ -177,6 +188,7 @@ var statusCases = map[string]statusCase{
 	"CreatePlaywrightCheck": {
 		requests: []string{"POST /v1/checks/playwright?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreatePlaywrightCheck(ctx, checkly.PlaywrightCheck{}))
 		},
@@ -184,6 +196,7 @@ var statusCases = map[string]statusCase{
 	"CreateAPICheck": {
 		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateAPICheck(ctx, checkly.APICheck{}))
 		},
@@ -191,6 +204,7 @@ var statusCases = map[string]statusCase{
 	"CreateBrowserCheck": {
 		requests: []string{"POST /v1/checks/browser?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateBrowserCheck(ctx, checkly.BrowserCheck{}))
 		},
@@ -198,6 +212,7 @@ var statusCases = map[string]statusCase{
 	"CreateMultiStepCheck": {
 		requests: []string{"POST /v1/checks/multistep?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateMultiStepCheck(ctx, checkly.MultiStepCheck{}))
 		},
@@ -205,6 +220,7 @@ var statusCases = map[string]statusCase{
 	"UpdateCheck": {
 		requests: []string{"PUT /v1/checks/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateCheck(ctx, testID, checkly.Check{Type: checkly.TypeAPI}))
 		},
@@ -212,6 +228,7 @@ var statusCases = map[string]statusCase{
 	"UpdateHeartbeat": {
 		requests: []string{"PUT /v1/checks/heartbeat/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateHeartbeat(ctx, testID, checkly.HeartbeatCheck{}))
 		},
@@ -219,6 +236,7 @@ var statusCases = map[string]statusCase{
 	"UpdateHeartbeatMonitor": {
 		requests: []string{"PUT /v1/checks/heartbeat/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateHeartbeatMonitor(ctx, testID, checkly.HeartbeatMonitor{}))
 		},
@@ -226,6 +244,7 @@ var statusCases = map[string]statusCase{
 	"UpdateTCPCheck": {
 		requests: []string{"PUT /v1/checks/tcp/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateTCPCheck(ctx, testID, checkly.TCPCheck{}))
 		},
@@ -233,6 +252,7 @@ var statusCases = map[string]statusCase{
 	"UpdateTCPMonitor": {
 		requests: []string{"PUT /v1/checks/tcp/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateTCPMonitor(ctx, testID, checkly.TCPMonitor{}))
 		},
@@ -240,6 +260,7 @@ var statusCases = map[string]statusCase{
 	"UpdateGRPCMonitor": {
 		requests: []string{"PUT /v1/checks/grpc/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateGRPCMonitor(ctx, testID, checkly.GRPCMonitor{}))
 		},
@@ -247,6 +268,7 @@ var statusCases = map[string]statusCase{
 	"UpdateTracerouteMonitor": {
 		requests: []string{"PUT /v1/checks/traceroute/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateTracerouteMonitor(ctx, testID, checkly.TracerouteMonitor{}))
 		},
@@ -254,6 +276,7 @@ var statusCases = map[string]statusCase{
 	"UpdateSSLMonitor": {
 		requests: []string{"PUT /v1/checks/ssl/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateSSLMonitor(ctx, testID, checkly.SSLMonitor{}))
 		},
@@ -261,6 +284,7 @@ var statusCases = map[string]statusCase{
 	"UpdateURLMonitor": {
 		requests: []string{"PUT /v1/checks/url/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateURLMonitor(ctx, testID, checkly.URLMonitor{}))
 		},
@@ -268,6 +292,7 @@ var statusCases = map[string]statusCase{
 	"UpdateDNSMonitor": {
 		requests: []string{"PUT /v1/checks/dns/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateDNSMonitor(ctx, testID, checkly.DNSMonitor{}))
 		},
@@ -275,6 +300,7 @@ var statusCases = map[string]statusCase{
 	"UpdateICMPMonitor": {
 		requests: []string{"PUT /v1/checks/icmp/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateICMPMonitor(ctx, testID, checkly.ICMPMonitor{}))
 		},
@@ -282,6 +308,7 @@ var statusCases = map[string]statusCase{
 	"UpdatePlaywrightCheck": {
 		requests: []string{"PUT /v1/checks/playwright/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdatePlaywrightCheck(ctx, testID, checkly.PlaywrightCheck{}))
 		},
@@ -289,6 +316,7 @@ var statusCases = map[string]statusCase{
 	"UpdateAPICheck": {
 		requests: []string{"PUT /v1/checks/api/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateAPICheck(ctx, testID, checkly.APICheck{}))
 		},
@@ -296,6 +324,7 @@ var statusCases = map[string]statusCase{
 	"UpdateBrowserCheck": {
 		requests: []string{"PUT /v1/checks/browser/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateBrowserCheck(ctx, testID, checkly.BrowserCheck{}))
 		},
@@ -303,6 +332,7 @@ var statusCases = map[string]statusCase{
 	"UpdateMultiStepCheck": {
 		requests: []string{"PUT /v1/checks/multistep/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateMultiStepCheck(ctx, testID, checkly.MultiStepCheck{}))
 		},
@@ -364,6 +394,7 @@ var statusCases = map[string]statusCase{
 	"CreateGroup": {
 		requests: []string{"POST /v1/check-groups?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateGroup(ctx, checkly.Group{}))
 		},
@@ -371,6 +402,7 @@ var statusCases = map[string]statusCase{
 	"CreateGroupV2": {
 		requests: []string{"POST /v2/check-groups?autoAssignAlerts=false"},
 		accept:   statusCreated,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateGroupV2(ctx, checkly.GroupV2{}))
 		},
@@ -378,6 +410,7 @@ var statusCases = map[string]statusCase{
 	"GetGroup": {
 		requests: []string{"GET /v1/check-groups/7"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetGroup(ctx, testIntID))
 		},
@@ -385,6 +418,7 @@ var statusCases = map[string]statusCase{
 	"GetGroupV2": {
 		requests: []string{"GET /v1/check-groups/7"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetGroupV2(ctx, testIntID))
 		},
@@ -392,6 +426,7 @@ var statusCases = map[string]statusCase{
 	"UpdateGroup": {
 		requests: []string{"PUT /v1/check-groups/7?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateGroup(ctx, testIntID, checkly.Group{}))
 		},
@@ -399,6 +434,7 @@ var statusCases = map[string]statusCase{
 	"UpdateGroupV2": {
 		requests: []string{"PUT /v2/check-groups/7?autoAssignAlerts=false"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateGroupV2(ctx, testIntID, checkly.GroupV2{}))
 		},
@@ -406,11 +442,13 @@ var statusCases = map[string]statusCase{
 	"DeleteGroup": {
 		requests: []string{"DELETE /v1/check-groups/7"},
 		accept:   statusNoContent,
+		apiError: true,
 		call:     func(ctx context.Context, c checkly.Client) error { return c.DeleteGroup(ctx, testIntID) },
 	},
 	"DeleteGroupV2": {
 		requests: []string{"DELETE /v1/check-groups/7"},
 		accept:   statusNoContent,
+		apiError: true,
 		call:     func(ctx context.Context, c checkly.Client) error { return c.DeleteGroupV2(ctx, testIntID) },
 	},
 
@@ -418,6 +456,7 @@ var statusCases = map[string]statusCase{
 	"GetCheckResult": {
 		requests: []string{"GET /v1/check-results/id1/res1"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetCheckResult(ctx, testID, "res1"))
 		},
@@ -425,6 +464,7 @@ var statusCases = map[string]statusCase{
 	"GetCheckResults/no filter": {
 		requests: []string{"GET /v1/check-results/id1"},
 		accept:   statusOK,
+		apiError: true,
 		body:     `[]`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetCheckResults(ctx, testID, nil))
@@ -433,6 +473,7 @@ var statusCases = map[string]statusCase{
 	"GetCheckResults/all filters": {
 		requests: []string{"GET /v1/check-results/id1?checkType=API&from=1700000000&hasFailures=1&limit=5&location=eu-west-1&page=2&to=1700003600"},
 		accept:   statusOK,
+		apiError: true,
 		body:     `[]`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetCheckResults(ctx, testID, &checkly.CheckResultsFilter{
@@ -873,18 +914,13 @@ func deleteCheckCase(del func(checkly.Client, context.Context, string) error) st
 	}
 }
 
-// withAPIError marks tc as reporting a rejected status as an *APIError.
-func withAPIError(tc statusCase) statusCase {
-	tc.apiError = true
-	return tc
-}
-
 // getCheckCase covers the check and monitor getters that read the generic
 // check endpoint without checking the type of the returned check.
 func getCheckCase[T any](get func(checkly.Client, context.Context, string) (T, error)) statusCase {
 	return statusCase{
 		requests: []string{"GET /v1/checks/id1"},
 		accept:   statusOK,
+		apiError: true,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(get(c, ctx, testID))
 		},

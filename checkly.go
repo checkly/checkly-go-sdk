@@ -223,25 +223,10 @@ func (c *client) CreateHeartbeatMonitor(
 	ctx context.Context,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/heartbeat"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result HeartbeatMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/heartbeat"), createHeartbeatMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -337,26 +322,10 @@ func (c *client) CreateTCPMonitor(
 	ctx context.Context,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
-	payload := createTCPMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/tcp"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result TCPMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/tcp"), createTCPMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -439,26 +408,10 @@ func (c *client) CreateGRPCMonitor(
 	ctx context.Context,
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
-	payload := createGRPCMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/grpc"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result GRPCMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/grpc"), createGRPCMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -502,26 +455,10 @@ func (c *client) CreateTracerouteMonitor(
 	ctx context.Context,
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
-	payload := createTracerouteMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/traceroute"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result TracerouteMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/traceroute"), createTracerouteMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -564,26 +501,10 @@ func (c *client) CreateSSLMonitor(
 	ctx context.Context,
 	monitor SSLMonitor,
 ) (*SSLMonitor, error) {
-	payload := createSSLMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/ssl"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result SSLMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/ssl"), createSSLMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -652,26 +573,10 @@ func (c *client) CreateURLMonitor(
 	ctx context.Context,
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
-	payload := createURLMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/url"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result URLMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/url"), createURLMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -740,26 +645,10 @@ func (c *client) CreateDNSMonitor(
 	ctx context.Context,
 	monitor DNSMonitor,
 ) (*DNSMonitor, error) {
-	payload := createDNSMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/dns"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result DNSMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/dns"), createDNSMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -830,26 +719,10 @@ func (c *client) CreateICMPMonitor(
 	ctx context.Context,
 	monitor ICMPMonitor,
 ) (*ICMPMonitor, error) {
-	payload := createICMPMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/icmp"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result ICMPMonitor
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/icmp"), createICMPMonitorPayload(monitor), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -880,26 +753,10 @@ func (c *client) CreatePlaywrightCheck(
 	ctx context.Context,
 	check PlaywrightCheck,
 ) (*PlaywrightCheck, error) {
-	payload := createPlaywrightCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/playwright"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result PlaywrightCheck
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/playwright"), createPlaywrightCheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -946,26 +803,10 @@ func (c *client) CreateAPICheck(
 	ctx context.Context,
 	check APICheck,
 ) (*APICheck, error) {
-	payload := createAPICheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/api"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result APICheck
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/api"), createAPICheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1013,26 +854,10 @@ func (c *client) CreateBrowserCheck(
 	ctx context.Context,
 	check BrowserCheck,
 ) (*BrowserCheck, error) {
-	payload := createBrowserCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/browser"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result BrowserCheck
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/browser"), createBrowserCheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1080,26 +905,10 @@ func (c *client) CreateMultiStepCheck(
 	ctx context.Context,
 	check MultiStepCheck,
 ) (*MultiStepCheck, error) {
-	payload := createMultiStepCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("checks/multistep"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result MultiStepCheck
-	if err = json.NewDecoder(strings.NewReader(res)).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/multistep"), createMultiStepCheckPayload(check), &result, http.StatusCreated)
+	if err != nil {
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1111,27 +920,10 @@ func (c *client) UpdateCheck(
 	ID string,
 	check Check,
 ) (*Check, error) {
-	payload := createCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Check
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)), createCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1149,26 +941,10 @@ func (c *client) UpdateHeartbeatMonitor(
 	ID string,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
-	data, err := json.Marshal(createHeartbeatMonitorPayload(monitor))
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/heartbeat/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result HeartbeatMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/heartbeat/%s", ID)), createHeartbeatMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1187,27 +963,10 @@ func (c *client) UpdateTCPMonitor(
 	ID string,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
-	payload := createTCPMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/tcp/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result TCPMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/tcp/%s", ID)), createTCPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1217,27 +976,10 @@ func (c *client) UpdateGRPCMonitor(
 	ID string,
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
-	payload := createGRPCMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/grpc/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result GRPCMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/grpc/%s", ID)), createGRPCMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1247,27 +989,10 @@ func (c *client) UpdateTracerouteMonitor(
 	ID string,
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
-	payload := createTracerouteMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/traceroute/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result TracerouteMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/traceroute/%s", ID)), createTracerouteMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1277,27 +1002,10 @@ func (c *client) UpdateSSLMonitor(
 	ID string,
 	monitor SSLMonitor,
 ) (*SSLMonitor, error) {
-	payload := createSSLMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/ssl/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result SSLMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/ssl/%s", ID)), createSSLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1307,27 +1015,10 @@ func (c *client) UpdateURLMonitor(
 	ID string,
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
-	payload := createURLMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/url/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result URLMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/url/%s", ID)), createURLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1337,27 +1028,10 @@ func (c *client) UpdateDNSMonitor(
 	ID string,
 	monitor DNSMonitor,
 ) (*DNSMonitor, error) {
-	payload := createDNSMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/dns/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result DNSMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/dns/%s", ID)), createDNSMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1367,27 +1041,10 @@ func (c *client) UpdateICMPMonitor(
 	ID string,
 	monitor ICMPMonitor,
 ) (*ICMPMonitor, error) {
-	payload := createICMPMonitorPayload(monitor)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/icmp/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result ICMPMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/icmp/%s", ID)), createICMPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1397,27 +1054,10 @@ func (c *client) UpdatePlaywrightCheck(
 	ID string,
 	check PlaywrightCheck,
 ) (*PlaywrightCheck, error) {
-	payload := createPlaywrightCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/playwright/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result PlaywrightCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/playwright/%s", ID)), createPlaywrightCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1427,27 +1067,10 @@ func (c *client) UpdateAPICheck(
 	ID string,
 	check APICheck,
 ) (*APICheck, error) {
-	payload := createAPICheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/api/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result APICheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/api/%s", ID)), createAPICheckPayload(check), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1457,27 +1080,10 @@ func (c *client) UpdateBrowserCheck(
 	ID string,
 	check BrowserCheck,
 ) (*BrowserCheck, error) {
-	payload := createBrowserCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/browser/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result BrowserCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/browser/%s", ID)), createBrowserCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1487,27 +1093,10 @@ func (c *client) UpdateMultiStepCheck(
 	ID string,
 	check MultiStepCheck,
 ) (*MultiStepCheck, error) {
-	payload := createMultiStepCheckPayload(check)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("checks/multistep/%s", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result MultiStepCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/multistep/%s", ID)), createMultiStepCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -1611,22 +1200,10 @@ func (c *client) GetCheck(
 	ctx context.Context,
 	ID string,
 ) (*Check, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	result := Check{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Check{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1643,22 +1220,10 @@ func (c *client) GetHeartbeatMonitor(
 	ctx context.Context,
 	ID string,
 ) (*HeartbeatMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	result := HeartbeatMonitor{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := HeartbeatMonitor{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1680,22 +1245,10 @@ func (c *client) GetTCPMonitor(
 	ctx context.Context,
 	ID string,
 ) (*TCPMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result TCPMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result TCPMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1706,22 +1259,10 @@ func (c *client) GetGRPCMonitor(
 	ctx context.Context,
 	ID string,
 ) (*GRPCMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result GRPCMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result GRPCMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1732,22 +1273,10 @@ func (c *client) GetTracerouteMonitor(
 	ctx context.Context,
 	ID string,
 ) (*TracerouteMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result TracerouteMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result TracerouteMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1758,22 +1287,10 @@ func (c *client) GetSSLMonitor(
 	ctx context.Context,
 	ID string,
 ) (*SSLMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result SSLMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result SSLMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1784,22 +1301,10 @@ func (c *client) GetURLMonitor(
 	ctx context.Context,
 	ID string,
 ) (*URLMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result URLMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result URLMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1810,22 +1315,10 @@ func (c *client) GetDNSMonitor(
 	ctx context.Context,
 	ID string,
 ) (*DNSMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result DNSMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result DNSMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1836,22 +1329,10 @@ func (c *client) GetICMPMonitor(
 	ctx context.Context,
 	ID string,
 ) (*ICMPMonitor, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result ICMPMonitor
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result ICMPMonitor
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -1861,22 +1342,10 @@ func (c *client) GetPlaywrightCheck(
 	ctx context.Context,
 	ID string,
 ) (*PlaywrightCheck, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("checks/%s", ID),
-		nil,
-	)
+	var result PlaywrightCheck
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result PlaywrightCheck
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2002,27 +1471,10 @@ func (c *client) CreateGroup(
 	ctx context.Context,
 	group Group,
 ) (*Group, error) {
-	payload := createGroupPayload(group)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("check-groups"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Group
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("check-groups"), createGroupPayload(group), &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2062,28 +1514,10 @@ func (c *client) CreateGroupV2(
 	ctx context.Context,
 	group GroupV2,
 ) (*GroupV2, error) {
-	payload := createGroupV2Payload(group)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV(
-		ctx,
-		2,
-		http.MethodPost,
-		withAutoAssignAlertsFlag("check-groups"),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusCreated {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result GroupV2
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 2, http.MethodPost, withAutoAssignAlertsFlag("check-groups"), createGroupV2Payload(group), &result, http.StatusCreated)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2094,22 +1528,10 @@ func (c *client) GetGroup(
 	ctx context.Context,
 	ID int64,
 ) (*Group, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("check-groups/%d", ID),
-		nil,
-	)
+	result := Group{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := Group{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2120,23 +1542,10 @@ func (c *client) GetGroupV2(
 	ctx context.Context,
 	ID int64,
 ) (*GroupV2, error) {
-	status, res, err := c.apiCallV(
-		ctx,
-		1,
-		http.MethodGet,
-		fmt.Sprintf("check-groups/%d", ID),
-		nil,
-	)
+	var result GroupV2
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	var result GroupV2
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2149,27 +1558,10 @@ func (c *client) UpdateGroup(
 	ID int64,
 	group Group,
 ) (*Group, error) {
-	payload := createGroupPayload(group)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result Group
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)), createGroupPayload(group), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2182,28 +1574,10 @@ func (c *client) UpdateGroupV2(
 	ID int64,
 	group GroupV2,
 ) (*GroupV2, error) {
-	payload := createGroupV2Payload(group)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	status, res, err := c.apiCallV(
-		ctx,
-		2,
-		http.MethodPut,
-		withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)),
-		data,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
 	var result GroupV2
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
+	err := c.callJSON(ctx, 2, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)), createGroupV2Payload(group), &result, http.StatusOK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %s: %v", res, err)
+		return nil, err
 	}
 	return &result, nil
 }
@@ -2213,19 +1587,8 @@ func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
 ) error {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("check-groups/%d", ID),
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-	if status != http.StatusNoContent {
-		return fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	return nil
+	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("check-groups/%d", ID), nil, http.StatusNoContent)
+	return err
 }
 
 // DeleteGroupV2 deletes the check group with the specified ID.
@@ -2242,23 +1605,10 @@ func (c *client) GetCheckResult(
 	checkID,
 	checkResultID string,
 ) (*CheckResult, error) {
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("check-results/%s/%s", checkID, checkResultID),
-		nil,
-	)
+	result := CheckResult{}
+	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-results/%s/%s", checkID, checkResultID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-
-	result := CheckResult{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return &result, nil
 }
@@ -2296,23 +1646,10 @@ func (c *client) GetCheckResults(
 		uri = uri + "?" + q.Encode()
 	}
 
-	status, res, err := c.apiCall(
-		ctx,
-		http.MethodGet,
-		uri,
-		nil,
-	)
-
+	result := []CheckResult{}
+	err := c.callJSON(ctx, 1, http.MethodGet, uri, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("unexpected response status %d: %q", status, res)
-	}
-	result := []CheckResult{}
-	err = json.NewDecoder(strings.NewReader(res)).Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("decoding error for data %q: %v", res, err)
 	}
 	return result, nil
 }
