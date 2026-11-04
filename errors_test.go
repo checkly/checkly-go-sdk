@@ -566,7 +566,7 @@ func TestCreateChecksStatusBeforeDecoding(t *testing.T) {
 
 // TestAlertChannelDecoding checks how alert channel responses decode: JSON
 // null leaves a field unset, a field of the wrong type is an error naming the
-// field but not its value, and errors name the request that was made.
+// field but not a string value, and errors name the request that was made.
 func TestAlertChannelDecoding(t *testing.T) {
 	t.Parallel()
 	t.Run("null fields", func(t *testing.T) {
@@ -584,6 +584,17 @@ func TestAlertChannelDecoding(t *testing.T) {
 		}
 		if ac.Email == nil || ac.Email.Address != "a@example.com" {
 			t.Errorf("want the email config decoded, got %+v", ac.Email)
+		}
+	})
+	t.Run("timestamps", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","created_at":"2026-01-02T03:04:05.678Z","updated_at":"2026-02-03T04:05:06.789Z"}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.CreatedAt != "2026-01-02T03:04:05.678Z" || ac.UpdatedAt != "2026-02-03T04:05:06.789Z" {
+			t.Errorf("want the timestamps decoded, got created_at %q, updated_at %q", ac.CreatedAt, ac.UpdatedAt)
 		}
 	})
 	t.Run("null config", func(t *testing.T) {
@@ -618,13 +629,19 @@ func TestAlertChannelDecoding(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want string
+		// want holds substrings of the error. Go 1.24 added the embedded
+		// struct's name to the field path of encoding/json type errors, so
+		// the path between the two parts depends on the Go version.
+		want []string
 	}{
-		{"wrong bool", `{"type":"EMAIL","sslExpiry":"SECRET-VALUE-MARKER"}`, `field "sslExpiry" is string, want a boolean`},
-		{"wrong type", `{"type":42}`, `field "type" is float64, want a string`},
-		{"wrong id", `{"id":"SECRET-VALUE-MARKER"}`, `field "id" is string, want a number`},
-		{"wrong threshold", `{"sslExpiryThreshold":true}`, `field "sslExpiryThreshold" is bool, want a number`},
-		{"not json", `SECRET-VALUE-MARKER`, `decoding 201 response (19 bytes): invalid character`},
+		{"wrong bool", `{"type":"EMAIL","sslExpiry":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.sslExpiry of type bool`}},
+		{"wrong type", `{"type":42}`, []string{`cannot unmarshal number into Go struct field alertChannelResponse.`, `.type of type string`}},
+		{"wrong id", `{"id":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.id of type int64`}},
+		{"fractional id", `{"id":1.5}`, []string{`cannot unmarshal number 1.5 into Go struct field alertChannelResponse.`, `.id of type int64`}},
+		{"wrong threshold", `{"sslExpiryThreshold":true}`, []string{`cannot unmarshal bool into Go struct field alertChannelResponse.`, `.sslExpiryThreshold of type int`}},
+		{"fractional threshold", `{"sslExpiryThreshold":30.5}`, []string{`cannot unmarshal number 30.5 into Go struct field alertChannelResponse.`, `.sslExpiryThreshold of type int`}},
+		{"wrong timestamp", `{"created_at":["SECRET-VALUE-MARKER"]}`, []string{`cannot unmarshal array into Go struct field alertChannelResponse.`, `.created_at of type string`}},
+		{"not json", `SECRET-VALUE-MARKER`, []string{`decoding 201 response (19 bytes): invalid character`}},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -636,8 +653,13 @@ func TestAlertChannelDecoding(t *testing.T) {
 				t.Fatal("want error, got nil")
 			}
 			prefix := "POST /v1/alert-channels: "
-			if !strings.HasPrefix(err.Error(), prefix) || !strings.Contains(err.Error(), tt.want) {
-				t.Errorf("want error starting with %q and containing %q, got %q", prefix, tt.want, err)
+			if !strings.HasPrefix(err.Error(), prefix) {
+				t.Errorf("want error starting with %q, got %q", prefix, err)
+			}
+			for _, want := range tt.want {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("want error containing %q, got %q", want, err)
+				}
 			}
 			if strings.Contains(err.Error(), "SECRET-VALUE-MARKER") {
 				t.Errorf("want the field value left out of the error, got %q", err)
