@@ -70,7 +70,7 @@ func (c *client) Create(
 ) (*Check, error) {
 	// There are differences between /v1/checks and /v1/checks/<type>. Keep
 	// using /v1/checks here for backwards compatibility reasons.
-	return c.createCheck(ctx, check, "checks")
+	return c.createCheck(ctx, check, "/v1/checks")
 }
 
 // Update updates an existing check with the specified details. It returns the
@@ -106,7 +106,7 @@ func (c *client) Get(
 	ID string,
 ) (*Check, error) {
 	var result Check
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -122,13 +122,13 @@ func (c *client) CreateCheck(
 	var endpoint string
 	switch check.Type {
 	case "BROWSER":
-		endpoint = "checks/browser"
+		endpoint = "/v1/checks/browser"
 	case "API":
-		endpoint = "checks/api"
+		endpoint = "/v1/checks/api"
 	case "HEARTBEAT":
-		endpoint = "checks/heartbeat"
+		endpoint = "/v1/checks/heartbeat"
 	case "MULTI_STEP":
-		endpoint = "checks/multistep"
+		endpoint = "/v1/checks/multistep"
 	case "TCP":
 		return nil, fmt.Errorf("user error: use CreateTCPMonitor to create TCP monitors")
 	case "URL":
@@ -183,7 +183,7 @@ func (c *client) createCheck(
 	endpoint string,
 ) (*Check, error) {
 	var result Check
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag(endpoint), createCheckPayload(check), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag(endpoint), createCheckPayload(check), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (c *client) CreateHeartbeatMonitor(
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/heartbeat"), createHeartbeatMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/heartbeat"), createHeartbeatMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (c *client) CreateTCPMonitor(
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/tcp"), createTCPMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/tcp"), createTCPMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -409,7 +409,7 @@ func (c *client) CreateGRPCMonitor(
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/grpc"), createGRPCMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/grpc"), createGRPCMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +456,7 @@ func (c *client) CreateTracerouteMonitor(
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/traceroute"), createTracerouteMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/traceroute"), createTracerouteMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +502,7 @@ func (c *client) CreateSSLMonitor(
 	monitor SSLMonitor,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/ssl"), createSSLMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/ssl"), createSSLMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -574,7 +574,7 @@ func (c *client) CreateURLMonitor(
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/url"), createURLMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/url"), createURLMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +646,7 @@ func (c *client) CreateDNSMonitor(
 	monitor DNSMonitor,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/dns"), createDNSMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/dns"), createDNSMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -720,7 +720,7 @@ func (c *client) CreateICMPMonitor(
 	monitor ICMPMonitor,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/icmp"), createICMPMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/icmp"), createICMPMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +754,7 @@ func (c *client) CreatePlaywrightCheck(
 	check PlaywrightCheck,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/playwright"), createPlaywrightCheckPayload(check), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/playwright"), createPlaywrightCheckPayload(check), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -804,7 +804,7 @@ func (c *client) CreateAPICheck(
 	check APICheck,
 ) (*APICheck, error) {
 	var result APICheck
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/api"), createAPICheckPayload(check), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/api"), createAPICheckPayload(check), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -855,7 +855,7 @@ func (c *client) CreateBrowserCheck(
 	check BrowserCheck,
 ) (*BrowserCheck, error) {
 	var result BrowserCheck
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/browser"), createBrowserCheckPayload(check), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/browser"), createBrowserCheckPayload(check), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -906,7 +906,7 @@ func (c *client) CreateMultiStepCheck(
 	check MultiStepCheck,
 ) (*MultiStepCheck, error) {
 	var result MultiStepCheck
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("checks/multistep"), createMultiStepCheckPayload(check), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/multistep"), createMultiStepCheckPayload(check), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -921,7 +921,7 @@ func (c *client) UpdateCheck(
 	check Check,
 ) (*Check, error) {
 	var result Check
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/%s", ID)), createCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/%s", ID)), createCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -942,7 +942,7 @@ func (c *client) UpdateHeartbeatMonitor(
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/heartbeat/%s", ID)), createHeartbeatMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/heartbeat/%s", ID)), createHeartbeatMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -964,7 +964,7 @@ func (c *client) UpdateTCPMonitor(
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/tcp/%s", ID)), createTCPMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/tcp/%s", ID)), createTCPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -977,7 +977,7 @@ func (c *client) UpdateGRPCMonitor(
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/grpc/%s", ID)), createGRPCMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/grpc/%s", ID)), createGRPCMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +990,7 @@ func (c *client) UpdateTracerouteMonitor(
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/traceroute/%s", ID)), createTracerouteMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", ID)), createTracerouteMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1003,7 +1003,7 @@ func (c *client) UpdateSSLMonitor(
 	monitor SSLMonitor,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/ssl/%s", ID)), createSSLMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/ssl/%s", ID)), createSSLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1016,7 +1016,7 @@ func (c *client) UpdateURLMonitor(
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/url/%s", ID)), createURLMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/url/%s", ID)), createURLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1029,7 +1029,7 @@ func (c *client) UpdateDNSMonitor(
 	monitor DNSMonitor,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/dns/%s", ID)), createDNSMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/dns/%s", ID)), createDNSMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1042,7 +1042,7 @@ func (c *client) UpdateICMPMonitor(
 	monitor ICMPMonitor,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/icmp/%s", ID)), createICMPMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/icmp/%s", ID)), createICMPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1055,7 +1055,7 @@ func (c *client) UpdatePlaywrightCheck(
 	check PlaywrightCheck,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/playwright/%s", ID)), createPlaywrightCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/playwright/%s", ID)), createPlaywrightCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1068,7 +1068,7 @@ func (c *client) UpdateAPICheck(
 	check APICheck,
 ) (*APICheck, error) {
 	var result APICheck
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/api/%s", ID)), createAPICheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/api/%s", ID)), createAPICheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1081,7 +1081,7 @@ func (c *client) UpdateBrowserCheck(
 	check BrowserCheck,
 ) (*BrowserCheck, error) {
 	var result BrowserCheck
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/browser/%s", ID)), createBrowserCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/browser/%s", ID)), createBrowserCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1094,7 +1094,7 @@ func (c *client) UpdateMultiStepCheck(
 	check MultiStepCheck,
 ) (*MultiStepCheck, error) {
 	var result MultiStepCheck
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("checks/multistep/%s", ID)), createMultiStepCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/multistep/%s", ID)), createMultiStepCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1106,7 +1106,7 @@ func (c *client) DeleteCheck(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("checks/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/checks/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1201,7 +1201,7 @@ func (c *client) GetCheck(
 	ID string,
 ) (*Check, error) {
 	result := Check{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1221,7 +1221,7 @@ func (c *client) GetHeartbeatMonitor(
 	ID string,
 ) (*HeartbeatMonitor, error) {
 	result := HeartbeatMonitor{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1246,7 +1246,7 @@ func (c *client) GetTCPMonitor(
 	ID string,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1260,7 +1260,7 @@ func (c *client) GetGRPCMonitor(
 	ID string,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1274,7 +1274,7 @@ func (c *client) GetTracerouteMonitor(
 	ID string,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1288,7 +1288,7 @@ func (c *client) GetSSLMonitor(
 	ID string,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1302,7 +1302,7 @@ func (c *client) GetURLMonitor(
 	ID string,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1316,7 +1316,7 @@ func (c *client) GetDNSMonitor(
 	ID string,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1330,7 +1330,7 @@ func (c *client) GetICMPMonitor(
 	ID string,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1343,7 +1343,7 @@ func (c *client) GetPlaywrightCheck(
 	ID string,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("checks/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1360,7 +1360,7 @@ func (c *client) getCheckOfType(
 	checkType string,
 	result any,
 ) error {
-	res, err := c.call(ctx, 1, http.MethodGet, path, nil, http.StatusOK)
+	res, err := c.call(ctx, http.MethodGet, path, nil, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -1384,7 +1384,7 @@ func (c *client) GetAPICheck(
 	ID string,
 ) (*APICheck, error) {
 	var result APICheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s", ID), "API", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "API", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -1399,7 +1399,7 @@ func (c *client) GetBrowserCheck(
 	ID string,
 ) (*BrowserCheck, error) {
 	var result BrowserCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "BROWSER", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -1414,7 +1414,7 @@ func (c *client) GetMultiStepCheck(
 	ID string,
 ) (*MultiStepCheck, error) {
 	var result MultiStepCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), "MULTI_STEP", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -1472,7 +1472,7 @@ func (c *client) CreateGroup(
 	group Group,
 ) (*Group, error) {
 	var result Group
-	err := c.callJSON(ctx, 1, http.MethodPost, withAutoAssignAlertsFlag("check-groups"), createGroupPayload(group), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/check-groups"), createGroupPayload(group), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1515,7 +1515,7 @@ func (c *client) CreateGroupV2(
 	group GroupV2,
 ) (*GroupV2, error) {
 	var result GroupV2
-	err := c.callJSON(ctx, 2, http.MethodPost, withAutoAssignAlertsFlag("check-groups"), createGroupV2Payload(group), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v2/check-groups"), createGroupV2Payload(group), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1529,7 +1529,7 @@ func (c *client) GetGroup(
 	ID int64,
 ) (*Group, error) {
 	result := Group{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-groups/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1543,7 +1543,7 @@ func (c *client) GetGroupV2(
 	ID int64,
 ) (*GroupV2, error) {
 	var result GroupV2
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-groups/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1559,7 +1559,7 @@ func (c *client) UpdateGroup(
 	group Group,
 ) (*Group, error) {
 	var result Group
-	err := c.callJSON(ctx, 1, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)), createGroupPayload(group), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/check-groups/%d", ID)), createGroupPayload(group), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1575,7 +1575,7 @@ func (c *client) UpdateGroupV2(
 	group GroupV2,
 ) (*GroupV2, error) {
 	var result GroupV2
-	err := c.callJSON(ctx, 2, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("check-groups/%d", ID)), createGroupV2Payload(group), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v2/check-groups/%d", ID)), createGroupV2Payload(group), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1587,7 +1587,7 @@ func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("check-groups/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/check-groups/%d", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1606,7 +1606,7 @@ func (c *client) GetCheckResult(
 	checkResultID string,
 ) (*CheckResult, error) {
 	result := CheckResult{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("check-results/%s/%s", checkID, checkResultID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-results/%s/%s", checkID, checkResultID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1619,7 +1619,7 @@ func (c *client) GetCheckResults(
 	checkID string,
 	filters *CheckResultsFilter,
 ) ([]CheckResult, error) {
-	uri := fmt.Sprintf("check-results/%s", checkID)
+	uri := fmt.Sprintf("/v1/check-results/%s", checkID)
 	if filters != nil {
 		q := url.Values{}
 		if filters.Page > 0 {
@@ -1647,7 +1647,7 @@ func (c *client) GetCheckResults(
 	}
 
 	result := []CheckResult{}
-	err := c.callJSON(ctx, 1, http.MethodGet, uri, nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, uri, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1661,7 +1661,7 @@ func (c *client) CreateSnippet(
 	snippet Snippet,
 ) (*Snippet, error) {
 	var result Snippet
-	err := c.callJSON(ctx, 1, http.MethodPost, "snippets", snippet, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/snippets", snippet, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1675,7 +1675,7 @@ func (c *client) GetSnippet(
 	ID int64,
 ) (*Snippet, error) {
 	result := Snippet{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("snippets/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/snippets/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1691,7 +1691,7 @@ func (c *client) UpdateSnippet(
 	snippet Snippet,
 ) (*Snippet, error) {
 	var result Snippet
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("snippets/%d", ID), snippet, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/snippets/%d", ID), snippet, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1703,7 +1703,7 @@ func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("snippets/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/snippets/%d", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1715,7 +1715,7 @@ func (c *client) CreateEnvironmentVariable(
 	envVar EnvironmentVariable,
 ) (*EnvironmentVariable, error) {
 	var result EnvironmentVariable
-	err := c.callJSON(ctx, 1, http.MethodPost, "variables", envVar, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/variables", envVar, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1729,7 +1729,7 @@ func (c *client) GetEnvironmentVariable(
 	key string,
 ) (*EnvironmentVariable, error) {
 	result := EnvironmentVariable{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("variables/%s", key), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/variables/%s", key), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1745,7 +1745,7 @@ func (c *client) UpdateEnvironmentVariable(
 	envVar EnvironmentVariable,
 ) (*EnvironmentVariable, error) {
 	var result EnvironmentVariable
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("variables/%s", key), envVar, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/variables/%s", key), envVar, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1757,7 +1757,7 @@ func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("variables/%s", key), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/variables/%s", key), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1767,7 +1767,7 @@ func (c *client) CreateAlertChannel(
 	ctx context.Context,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, 1, http.MethodPost, "alert-channels", payloadFromAlertChannel(ac), http.StatusOK, http.StatusCreated)
+	res, err := c.call(ctx, http.MethodPost, "/v1/alert-channels", payloadFromAlertChannel(ac), http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1780,7 +1780,7 @@ func (c *client) GetAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, 1, http.MethodGet, fmt.Sprintf("alert-channels/%d", ID), nil, http.StatusOK)
+	res, err := c.call(ctx, http.MethodGet, fmt.Sprintf("/v1/alert-channels/%d", ID), nil, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1795,7 +1795,7 @@ func (c *client) UpdateAlertChannel(
 	ID int64,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, 1, http.MethodPut, fmt.Sprintf("alert-channels/%d", ID), payloadFromAlertChannel(ac), http.StatusOK)
+	res, err := c.call(ctx, http.MethodPut, fmt.Sprintf("/v1/alert-channels/%d", ID), payloadFromAlertChannel(ac), http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1807,7 +1807,7 @@ func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("alert-channels/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/alert-channels/%d", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1818,7 +1818,7 @@ func (c *client) CreateDashboard(
 	dashboard Dashboard,
 ) (*Dashboard, error) {
 	var result Dashboard
-	err := c.callJSON(ctx, 1, http.MethodPost, "dashboards", dashboard, &result, http.StatusOK, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/dashboards", dashboard, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1832,7 +1832,7 @@ func (c *client) GetDashboard(
 	ID string,
 ) (*Dashboard, error) {
 	result := Dashboard{}
-	err := c.callJSON(ctx, 1, http.MethodGet, "dashboards/"+ID, nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, "/v1/dashboards/"+ID, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1844,7 +1844,7 @@ func (c *client) DeleteDashboard(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, "dashboards/"+ID, nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, "/v1/dashboards/"+ID, nil, http.StatusNoContent)
 	return err
 }
 
@@ -1857,7 +1857,7 @@ func (c *client) UpdateDashboard(
 	dashboard Dashboard,
 ) (*Dashboard, error) {
 	var result Dashboard
-	err := c.callJSON(ctx, 1, http.MethodPut, "dashboards/"+ID, dashboard, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, "/v1/dashboards/"+ID, dashboard, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1870,7 +1870,7 @@ func (c *client) CreateMaintenanceWindow(
 	mw MaintenanceWindow,
 ) (*MaintenanceWindow, error) {
 	var result MaintenanceWindow
-	err := c.callJSON(ctx, 1, http.MethodPost, "maintenance-windows", mw, &result, http.StatusOK, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/maintenance-windows", mw, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1884,7 +1884,7 @@ func (c *client) GetMaintenanceWindow(
 	ID int64,
 ) (*MaintenanceWindow, error) {
 	result := MaintenanceWindow{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("maintenance-windows/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1896,7 +1896,7 @@ func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("maintenance-windows/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1908,7 +1908,7 @@ func (c *client) UpdateMaintenanceWindow(
 	mw MaintenanceWindow,
 ) (*MaintenanceWindow, error) {
 	var result MaintenanceWindow
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("maintenance-windows/%d", ID), mw, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/maintenance-windows/%d", ID), mw, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1921,7 +1921,7 @@ func (c *client) CreatePrivateLocation(
 	pl PrivateLocation,
 ) (*PrivateLocation, error) {
 	var result PrivateLocation
-	err := c.callJSON(ctx, 1, http.MethodPost, "private-locations", pl, &result, http.StatusOK, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/private-locations", pl, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1935,7 +1935,7 @@ func (c *client) GetPrivateLocation(
 	ID string,
 ) (*PrivateLocation, error) {
 	result := PrivateLocation{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("private-locations/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/private-locations/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1947,7 +1947,7 @@ func (c *client) DeletePrivateLocation(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("private-locations/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/private-locations/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -1959,7 +1959,7 @@ func (c *client) UpdatePrivateLocation(
 	pl PrivateLocation,
 ) (*PrivateLocation, error) {
 	var result PrivateLocation
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("private-locations/%s", ID), pl, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/private-locations/%s", ID), pl, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -1972,7 +1972,7 @@ func (c *client) CreateTriggerCheck(
 	checkID string,
 ) (*TriggerCheck, error) {
 	var result TriggerCheck
-	err := c.callJSON(ctx, 1, http.MethodPost, fmt.Sprintf("triggers/checks/%s", checkID), nil, &result, http.StatusOK, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, fmt.Sprintf("/v1/triggers/checks/%s", checkID), nil, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -1989,7 +1989,7 @@ func (c *client) GetTriggerCheck(
 	checkID string,
 ) (*TriggerCheck, error) {
 	result := TriggerCheck{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("triggers/checks/%s", checkID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/triggers/checks/%s", checkID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2002,7 +2002,7 @@ func (c *client) DeleteTriggerCheck(
 	ctx context.Context,
 	checkID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("triggers/checks/%s", checkID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/triggers/checks/%s", checkID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2012,7 +2012,7 @@ func (c *client) CreateTriggerGroup(
 	groupID int64,
 ) (*TriggerGroup, error) {
 	var result TriggerGroup
-	err := c.callJSON(ctx, 1, http.MethodPost, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, &result, http.StatusOK, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, fmt.Sprintf("/v1/triggers/check-groups/%d", groupID), nil, &result, http.StatusOK, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2029,7 +2029,7 @@ func (c *client) GetTriggerGroup(
 	groupID int64,
 ) (*TriggerGroup, error) {
 	result := TriggerGroup{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/triggers/check-groups/%d", groupID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2043,7 +2043,7 @@ func (c *client) DeleteTriggerGroup(
 	ctx context.Context,
 	groupID int64,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("triggers/check-groups/%d", groupID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/triggers/check-groups/%d", groupID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2052,7 +2052,7 @@ func (c *client) CreateClientCertificate(
 	cs ClientCertificate,
 ) (*ClientCertificate, error) {
 	var result ClientCertificate
-	err := c.callJSON(ctx, 1, http.MethodPost, "client-certificates", cs, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/client-certificates", cs, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2064,7 +2064,7 @@ func (c *client) GetClientCertificate(
 	ID string,
 ) (*ClientCertificate, error) {
 	var result ClientCertificate
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("client-certificates/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/client-certificates/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2075,7 +2075,7 @@ func (c *client) DeleteClientCertificate(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("client-certificates/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/client-certificates/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2084,7 +2084,7 @@ func (c *client) CreateStatusPage(
 	page StatusPage,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, 1, http.MethodPost, "status-pages", page, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/status-pages", page, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2096,7 +2096,7 @@ func (c *client) GetStatusPage(
 	ID string,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2109,7 +2109,7 @@ func (c *client) UpdateStatusPage(
 	page StatusPage,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), page, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/%s", ID), page, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2120,7 +2120,7 @@ func (c *client) DeleteStatusPage(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2129,7 +2129,7 @@ func (c *client) CreateStatusPageService(
 	service StatusPageService,
 ) (*StatusPageService, error) {
 	var result StatusPageService
-	err := c.callJSON(ctx, 1, http.MethodPost, "status-pages/services", service, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/status-pages/services", service, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2141,7 +2141,7 @@ func (c *client) GetStatusPageService(
 	ID string,
 ) (*StatusPageService, error) {
 	var result StatusPageService
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("status-pages/services/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/services/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2154,7 +2154,7 @@ func (c *client) UpdateStatusPageService(
 	service StatusPageService,
 ) (*StatusPageService, error) {
 	var result StatusPageService
-	err := c.callJSON(ctx, 1, http.MethodPut, fmt.Sprintf("status-pages/services/%s", ID), service, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/services/%s", ID), service, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2165,7 +2165,7 @@ func (c *client) DeleteStatusPageService(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 1, http.MethodDelete, fmt.Sprintf("status-pages/services/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/services/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2174,7 +2174,7 @@ func (c *client) CreateStatusPageV3(
 	page StatusPageV3,
 ) (*StatusPageV3, error) {
 	var result StatusPageV3
-	err := c.callJSON(ctx, 3, http.MethodPost, "status-pages", page, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v3/status-pages", page, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2186,7 +2186,7 @@ func (c *client) GetStatusPageV3(
 	ID string,
 ) (*StatusPageV3, error) {
 	var result StatusPageV3
-	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2199,7 +2199,7 @@ func (c *client) UpdateStatusPageV3(
 	page StatusPageV3,
 ) (*StatusPageV3, error) {
 	var result StatusPageV3
-	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s", ID), page, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s", ID), page, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2210,7 +2210,7 @@ func (c *client) DeleteStatusPageV3(
 	ctx context.Context,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s", ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2220,7 +2220,7 @@ func (c *client) CreateStatusPageComponentV3(
 	component StatusPageComponentV3,
 ) (*StatusPageComponentV3, error) {
 	var result StatusPageComponentV3
-	err := c.callJSON(ctx, 3, http.MethodPost, fmt.Sprintf("status-pages/%s/components", statusPageID), component, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, fmt.Sprintf("/v3/status-pages/%s/components", statusPageID), component, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2233,7 +2233,7 @@ func (c *client) GetStatusPageComponentV3(
 	ID string,
 ) (*StatusPageComponentV3, error) {
 	var result StatusPageComponentV3
-	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2247,7 +2247,7 @@ func (c *client) UpdateStatusPageComponentV3(
 	component StatusPageComponentV3,
 ) (*StatusPageComponentV3, error) {
 	var result StatusPageComponentV3
-	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), component, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), component, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2259,7 +2259,7 @@ func (c *client) DeleteStatusPageComponentV3(
 	statusPageID string,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s/components/%s", statusPageID, ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2269,7 +2269,7 @@ func (c *client) CreateStatusPageAutomationRuleV3(
 	rule StatusPageAutomationRuleV3,
 ) (*StatusPageAutomationRuleV3, error) {
 	var result StatusPageAutomationRuleV3
-	err := c.callJSON(ctx, 3, http.MethodPost, fmt.Sprintf("status-pages/%s/automation-rules", statusPageID), rule, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, fmt.Sprintf("/v3/status-pages/%s/automation-rules", statusPageID), rule, &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -2282,7 +2282,7 @@ func (c *client) GetStatusPageAutomationRuleV3(
 	ID string,
 ) (*StatusPageAutomationRuleV3, error) {
 	var result StatusPageAutomationRuleV3
-	err := c.callJSON(ctx, 3, http.MethodGet, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2296,7 +2296,7 @@ func (c *client) UpdateStatusPageAutomationRuleV3(
 	rule StatusPageAutomationRuleV3,
 ) (*StatusPageAutomationRuleV3, error) {
 	var result StatusPageAutomationRuleV3
-	err := c.callJSON(ctx, 3, http.MethodPut, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), rule, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), rule, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2308,7 +2308,7 @@ func (c *client) DeleteStatusPageAutomationRuleV3(
 	statusPageID string,
 	ID string,
 ) error {
-	_, err := c.call(ctx, 3, http.MethodDelete, fmt.Sprintf("status-pages/%s/automation-rules/%s", statusPageID, ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -2418,7 +2418,7 @@ func (c *client) GetRuntime(
 	ID string,
 ) (*Runtime, error) {
 	result := Runtime{}
-	err := c.callJSON(ctx, 1, http.MethodGet, fmt.Sprintf("runtimes/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/runtimes/%s", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2433,7 +2433,7 @@ func (c *client) GetStaticIPs(
 
 	// getting IPv6 first
 	var datav6 map[string][]string
-	err := c.callJSON(ctx, 1, http.MethodGet, "static-ipv6s-by-region", nil, &datav6, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, "/v1/static-ipv6s-by-region", nil, &datav6, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2451,7 +2451,7 @@ func (c *client) GetStaticIPs(
 
 	// and then IPv4
 	var datav4 map[string][]string
-	err = c.callJSON(ctx, 1, http.MethodGet, "static-ips-by-region", nil, &datav4, http.StatusOK)
+	err = c.callJSON(ctx, http.MethodGet, "/v1/static-ips-by-region", nil, &datav4, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -2502,12 +2502,6 @@ type rawResponse struct {
 	retries int
 }
 
-// versionedPath returns the path from the API root of path in version v of
-// the API: "checks/abc" becomes "/v1/checks/abc".
-func versionedPath(v int, path string) string {
-	return fmt.Sprintf("/v%d/%s", v, path)
-}
-
 // errorPath returns path without its query string, as error messages show it.
 func errorPath(path string) string {
 	path, _, _ = strings.Cut(path, "?")
@@ -2550,21 +2544,10 @@ func (c *client) send(
 }
 
 // call marshals in as the request body, unless it is nil, sends the request
-// to version v of the API and returns the response. A response status not
-// among want is returned as an *APIError.
+// to path, which is relative to the API root as send takes it, and returns
+// the response. A response status not among want is returned as an
+// *APIError.
 func (c *client) call(
-	ctx context.Context,
-	v int,
-	method string,
-	path string,
-	in any,
-	want ...int,
-) (rawResponse, error) {
-	return c.callPath(ctx, method, versionedPath(v, path), in, want...)
-}
-
-// callPath is call for a path relative to the API root, as send takes it.
-func (c *client) callPath(
 	ctx context.Context,
 	method string,
 	path string,
@@ -2593,14 +2576,13 @@ func (c *client) callPath(
 // callJSON is call followed by decoding the response body into out.
 func (c *client) callJSON(
 	ctx context.Context,
-	v int,
 	method string,
 	path string,
 	in any,
 	out any,
 	want ...int,
 ) error {
-	res, err := c.call(ctx, v, method, path, in, want...)
+	res, err := c.call(ctx, method, path, in, want...)
 	if err != nil {
 		return err
 	}
@@ -2735,7 +2717,7 @@ func (c *client) PeekCodeBundle(
 	ctx context.Context,
 	key string,
 ) (*CodeBundle, error) {
-	res, err := c.callPath(ctx, http.MethodPost, peekCodeBundlePath, peekCodeBundlePayload{Key: key}, http.StatusOK)
+	res, err := c.call(ctx, http.MethodPost, peekCodeBundlePath, peekCodeBundlePayload{Key: key}, http.StatusOK)
 	if err != nil {
 		var apiErr *APIError
 		if errors.As(err, &apiErr) && codeBundleNotFound(apiErr) {
