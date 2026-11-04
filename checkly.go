@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"net/netip"
 	"net/url"
 	"os"
@@ -31,18 +30,15 @@ func NewClient(
 	apiKey string,
 	//optional, defaults to http.DefaultClient
 	httpClient *http.Client,
-	//optional, receives dumps of the requests and responses. Only the API
-	//key in the Authorization header is redacted: the dumps keep the full
-	//request and response bodies, which can hold secrets such as secret
-	//environment variable values and alert channel webhook URLs or keys, so
-	//do not share this output.
-	debug io.Writer,
+	//deprecated and ignored: the client writes no debug output. To inspect
+	//API traffic, route it through an intercepting HTTPS proxy, for example
+	//with the HTTPS_PROXY environment variable.
+	_ io.Writer,
 ) Client {
 	c := &client{
 		apiKey:     apiKey,
 		url:        baseURL,
 		httpClient: httpClient,
-		debug:      debug,
 		sleep:      sleepContext,
 	}
 	if httpClient != nil {
@@ -2473,15 +2469,6 @@ func (c *client) GetStaticIPs(
 	return IPs, nil
 }
 
-// dumpResponse writes the raw response data to the debug output, if set, or
-// standard error otherwise.
-func (c *client) dumpResponse(resp *http.Response) {
-	// ignore errors dumping response - no recovery from this
-	responseDump, _ := httputil.DumpResponse(resp, true)
-	fmt.Fprintln(c.debug, string(responseDump))
-	fmt.Fprintln(c.debug)
-}
-
 func (c *client) addAuthHeaders(req *http.Request) error {
 	req.Header.Add("Authorization", "Bearer "+c.apiKey)
 
@@ -2555,9 +2542,6 @@ func (c *client) send(
 		wait := rateLimitWait(res.header, retry, now)
 		if deadline, ok := ctx.Deadline(); ok && now.Add(wait+rateLimitRequestMargin).After(deadline) {
 			return res, nil
-		}
-		if c.debug != nil {
-			fmt.Fprintf(c.debug, "rate limited, retrying in %v (retry %d of %d)\n\n", wait, retry+1, rateLimitMaxRetries)
 		}
 		if err := c.sleep(ctx, wait); err != nil {
 			return res, fmt.Errorf("%w; gave up waiting to retry: %w", newAPIError(res, nil, c.accountId), err)
@@ -2644,10 +2628,7 @@ func (c *client) doRequest(
 	path string,
 	data []byte,
 ) (rawResponse, error) {
-	// The context is attached after the debug dump: DumpRequestOut fails on
-	// a cancelled context, which would hide the transport error that Do
-	// reports for it.
-	req, err := http.NewRequest(method, requestURL, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, method, requestURL, bytes.NewReader(data))
 	if err != nil {
 		return rawResponse{}, fmt.Errorf("%s %s: building request: %w", method, path, err)
 	}
@@ -2659,20 +2640,11 @@ func (c *client) doRequest(
 
 	req.Header.Add("content-type", "application/json")
 
-	if c.debug != nil {
-		requestDump, err := httputil.DumpRequestOut(redactedForDump(req, data), true)
-		if err != nil {
-			return rawResponse{}, fmt.Errorf("%s %s: dumping request for debug output: %w", method, path, err)
-		}
-		fmt.Fprintln(c.debug, string(requestDump))
-		fmt.Fprintln(c.debug)
-	}
-
-	return c.roundTrip(req.WithContext(ctx), path)
+	return c.roundTrip(req, path)
 }
 
-// roundTrip sends req and reads the whole response, dumping it to the debug
-// output if one is set. path is the request path for error messages.
+// roundTrip sends req and reads the whole response. path is the request path
+// for error messages.
 func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) {
 	method := req.Method
 	resp, err := c.httpClient.Do(req)
@@ -2685,9 +2657,6 @@ func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) 
 	}
 
 	defer resp.Body.Close()
-	if c.debug != nil {
-		c.dumpResponse(resp)
-	}
 
 	res := rawResponse{method: method, path: path, status: resp.StatusCode, header: resp.Header}
 	res.body, err = io.ReadAll(resp.Body)
@@ -2695,25 +2664,6 @@ func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) 
 		return res, fmt.Errorf("%s %s: reading %d response: %w", method, path, resp.StatusCode, err)
 	}
 	return res, nil
-}
-
-// redactedPlaceholder replaces the value of a credential header in debug
-// output.
-const redactedPlaceholder = "[REDACTED]"
-
-// redactedForDump returns a copy of req, with body data, for the debug dump:
-// its Authorization header, which carries the API key, is replaced by
-// redactedPlaceholder. The other headers the client sets (the account ID and
-// the source) are not secret. req itself, which is sent, is left unchanged;
-// the copy gets its own body, as dumping reads it. A request without a body
-// keeps http.NoBody, so that it dumps with "Content-Length: 0".
-func redactedForDump(req *http.Request, data []byte) *http.Request {
-	dump := req.Clone(req.Context())
-	if req.Body != nil && req.Body != http.NoBody {
-		dump.Body = io.NopCloser(bytes.NewReader(data))
-	}
-	dump.Header.Set("Authorization", redactedPlaceholder)
-	return dump
 }
 
 func withAutoAssignAlertsFlag(url string) string {

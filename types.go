@@ -934,9 +934,7 @@ type Client interface {
 	) (*CodeBundle, error)
 }
 
-// client represents a Checkly client. If the Debug field is set to an io.Writer
-// (for example os.Stdout), then the client will dump API requests and responses
-// to it.  To use a non-default HTTP client (for example, for testing, or to set
+// client represents a Checkly client. To use a non-default HTTP client (for example, for testing, or to set
 // a timeout), assign to the HTTPClient field. To set a non-default URL (for
 // example, for testing), assign to the URL field.
 type client struct {
@@ -945,7 +943,6 @@ type client struct {
 	accountId  string
 	source     string
 	httpClient *http.Client
-	debug      io.Writer
 	// sleep waits between rate-limit retries, returning early with ctx.Err()
 	// when ctx is done. Tests replace it to avoid real delays.
 	sleep func(context.Context, time.Duration) error

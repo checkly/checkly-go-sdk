@@ -111,19 +111,7 @@ After you have installed  Go, you can clone the repository and start working on 
 
 ## Debugging
 
-If things aren't working as you expect, you can pass an `io.Writer` to `checkly.NewClient's fourth arg` to receive debug output. If `debug` is non-nil, then all API requests and responses will be dumped to the specified writer (for example, `os.Stderr`).
-
-Regardless of the debug setting, if a request fails with HTTP status 400 Bad Request, the full response will be dumped (to standard error if no debug writer is set):
-
-```go
-debugOutput := os.Stderr
-client.NewClient(
-	"https://api.checklyhq.com",
-	"your-api-key",
-	nil,
-	debugOutput,
-)
-```
+To inspect the requests the client sends and the responses it receives, route them through an intercepting HTTPS proxy. The default HTTP client honors the `HTTPS_PROXY` environment variable; the proxy's CA certificate must be trusted, for example through the system keychain on macOS or `SSL_CERT_FILE` on Linux. Proxied traffic includes the API key and secret values in plain text, so do not share captures.
 
 ## Scripts
 

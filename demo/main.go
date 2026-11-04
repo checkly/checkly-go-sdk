@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -222,14 +221,11 @@ func main() {
 		baseUrl = "https://api.checklyhq.com"
 	}
 
-	var debug interface{ io.Writer } = nil
-	// uncomment this to enable dumping of API requests and responses
-	// debug = os.Stdout
 	client := checkly.NewClient(
 		baseUrl,
 		apiKey,
-		nil,   //custom http client, defaults to http.DefaultClient
-		debug, //io.Writer to output debug messages
+		nil, //custom http client, defaults to http.DefaultClient
+		nil, //deprecated and ignored
 	)
 
 	accountId := os.Getenv("CHECKLY_ACCOUNT_ID")

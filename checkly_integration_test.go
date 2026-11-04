@@ -5,7 +5,6 @@ package checkly_test
 
 import (
 	"context"
-	"io"
 	"os"
 	"sync"
 	"testing"
@@ -17,7 +16,6 @@ import (
 )
 
 func setupClient(t *testing.T) checkly.Client {
-	var debug io.Writer // to enable debug output set to => os.Stdout
 	baseUrl := os.Getenv("CHECKLY_API_URL")
 	if baseUrl == "" {
 		baseUrl = "http://localhost:3000"
@@ -35,7 +33,7 @@ func setupClient(t *testing.T) checkly.Client {
 		baseUrl,
 		apiKey,
 		nil,
-		debug,
+		nil,
 	)
 
 	client.SetAccountId(accountId)
