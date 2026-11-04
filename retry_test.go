@@ -77,7 +77,7 @@ func TestRateLimitRetriesThenSucceeds(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany, tooMany, cannedReply{status: 200, body: `{"ok":true}`})
 	c, waits := newTestClient(srv.URL)
 
-	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
+	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestRateLimitHonoursRetryAfter(t *testing.T) {
 	)
 	c, waits := newTestClient(srv.URL)
 
-	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
+	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
 	if err != nil || res.status != 200 {
 		t.Fatalf("want 200, got %d, %v", res.status, err)
 	}
@@ -215,7 +215,7 @@ func TestRateLimitGivesUpAfterMaxRetries(t *testing.T) {
 	srv := newRateLimitServer(t, tooMany)
 	c, waits := newTestClient(srv.URL)
 
-	res, err := c.send(context.Background(), 1, http.MethodGet, "things", nil)
+	res, err := c.send(context.Background(), http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestRateLimitDoesNotWaitPastDeadline(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res, err := c.send(ctx, 1, http.MethodGet, "things", nil)
+	res, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +268,7 @@ func TestRateLimitLeavesTimeForTheRetriedRequest(t *testing.T) {
 	// would leave less than rateLimitRequestMargin for the re-sent request.
 	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
 	defer cancel()
-	res, err := c.send(ctx, 1, http.MethodGet, "things", nil)
+	res, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +296,7 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		return sleepContext(ctx, d)
 	}
 	start := time.Now()
-	_, err := c.send(ctx, 1, http.MethodGet, "things", nil)
+	_, err := c.send(ctx, http.MethodGet, "/v1/things", nil)
 	if elapsed := time.Since(start); elapsed > 5*time.Second {
 		t.Fatalf("cancel did not abort the wait, took %v", elapsed)
 	}
@@ -325,7 +325,7 @@ func TestRateLimitResendsPostBody(t *testing.T) {
 	c, _ := newTestClient(srv.URL)
 
 	payload := `{"name":"status page","components":[1,2,3]}`
-	res, err := c.send(context.Background(), 1, http.MethodPost, "things", []byte(payload))
+	res, err := c.send(context.Background(), http.MethodPost, "/v1/things", []byte(payload))
 	if err != nil || res.status != 201 {
 		t.Fatalf("want 201, got %d, %v", res.status, err)
 	}

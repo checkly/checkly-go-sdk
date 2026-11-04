@@ -2500,7 +2500,7 @@ func (c *client) addAuthHeaders(req *http.Request) error {
 // checked, together with the request it answers.
 type rawResponse struct {
 	// method and path name the request in error messages; path is as
-	// apiPath returns it.
+	// errorPath returns it.
 	method string
 	path   string
 	status int
@@ -2510,30 +2510,34 @@ type rawResponse struct {
 	retries int
 }
 
-// apiPath returns the path of an API request for error messages: the
-// versioned path without the query string, such as "/v1/checks/abc".
-func apiPath(v int, path string) string {
-	path, _, _ = strings.Cut(path, "?")
+// versionedPath returns the path from the API root of path in version v of
+// the API: "checks/abc" becomes "/v1/checks/abc".
+func versionedPath(v int, path string) string {
 	return fmt.Sprintf("/v%d/%s", v, path)
 }
 
-// send sends a request to version v of the API and returns the response,
-// whatever its status. path is relative to the version, such as
-// "checks/abc?x=y". A 429 response is retried as described in retry.go; once
-// the retries are spent, or the caller's deadline does not leave time for
-// another one, the 429 is returned like any other response. When the context
-// ends during a wait, the error matches both ErrRateLimited and the context
-// error.
+// errorPath returns path without its query string, as error messages show it.
+func errorPath(path string) string {
+	path, _, _ = strings.Cut(path, "?")
+	return path
+}
+
+// send sends a request and returns the response, whatever its status.
+// path is relative to the API root, such as "/v1/checks/abc?x=y" or
+// "/next/checkly-storage/peek-code-bundle". A 429 response is retried as
+// described in retry.go; once the retries are spent, or the caller's deadline
+// does not leave time for another one, the 429 is returned like any other
+// response. When the context ends during a wait, the error matches both
+// ErrRateLimited and the context error.
 func (c *client) send(
 	ctx context.Context,
-	v int,
 	method string,
 	path string,
 	data []byte,
 ) (rawResponse, error) {
-	requestURL := fmt.Sprintf("%s/v%d/%s", c.url, v, path)
+	requestURL := c.url + path
 	for retry := 0; ; retry++ {
-		res, err := c.doRequest(ctx, method, requestURL, apiPath(v, path), data)
+		res, err := c.doRequest(ctx, method, requestURL, errorPath(path), data)
 		res.retries = retry
 		if err != nil || res.status != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
 			return res, err
@@ -2567,14 +2571,25 @@ func (c *client) call(
 	in any,
 	want ...int,
 ) (rawResponse, error) {
+	return c.callPath(ctx, method, versionedPath(v, path), in, want...)
+}
+
+// callPath is call for a path relative to the API root, as send takes it.
+func (c *client) callPath(
+	ctx context.Context,
+	method string,
+	path string,
+	in any,
+	want ...int,
+) (rawResponse, error) {
 	var data []byte
 	if in != nil {
 		var err error
 		if data, err = json.Marshal(in); err != nil {
-			return rawResponse{}, fmt.Errorf("%s %s: encoding request: %w", method, apiPath(v, path), err)
+			return rawResponse{}, fmt.Errorf("%s %s: encoding request: %w", method, errorPath(path), err)
 		}
 	}
-	res, err := c.send(ctx, v, method, path, data)
+	res, err := c.send(ctx, method, path, data)
 	if err != nil {
 		return rawResponse{}, err
 	}
@@ -2616,7 +2631,7 @@ func decode(res rawResponse, out any) error {
 
 // doRequest sends a single API request. The request is rebuilt from data on
 // every call so that it can be re-sent after a rate-limited response. path is
-// the request path for error messages, as apiPath returns it.
+// the request path for error messages, as errorPath returns it.
 func (c *client) doRequest(
 	ctx context.Context,
 	method string,
@@ -2648,7 +2663,13 @@ func (c *client) doRequest(
 		fmt.Fprintln(c.debug)
 	}
 
-	req = req.WithContext(ctx)
+	return c.roundTrip(req.WithContext(ctx), path)
+}
+
+// roundTrip sends req and reads the whole response, dumping it to the debug
+// output if one is set. path is the request path for error messages.
+func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) {
+	method := req.Method
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		var urlErr *url.Error
@@ -2679,6 +2700,13 @@ func withAutoAssignAlertsFlag(url string) string {
 	return url + "?" + flag
 }
 
+// The code bundle endpoints belong to the /next API. An upload streams its
+// body, so it cannot be re-sent and is not retried on a 429; a peek is.
+const (
+	uploadCodeBundlePath = "/next/checkly-storage/upload-code-bundle"
+	peekCodeBundlePath   = "/next/checkly-storage/peek-code-bundle"
+)
+
 func (c *client) UploadCodeBundle(
 	ctx context.Context,
 	data io.Reader,
@@ -2688,11 +2716,11 @@ func (c *client) UploadCodeBundle(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/next/checkly-storage/upload-code-bundle", c.url),
+		c.url+uploadCodeBundlePath,
 		io.LimitReader(data, size),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %s: building request: %w", http.MethodPost, uploadCodeBundlePath, err)
 	}
 
 	err = c.addAuthHeaders(req)
@@ -2707,84 +2735,64 @@ func (c *client) UploadCodeBundle(
 		req.Header.Add("x-bundle-checksum-sha256", options.ChecksumSha256)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	res, err := c.roundTrip(req, uploadCodeBundlePath)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	switch {
-	case resp.StatusCode == 200:
-		decoder := json.NewDecoder(resp.Body)
-
-		var output CodeBundle
-		err = decoder.Decode(&output)
-		if err != nil {
-			return nil, err
-		}
-
-		return &output, nil
-	default:
-		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+	if res.status != http.StatusOK {
+		return nil, newAPIError(res, []int{http.StatusOK}, c.accountId)
 	}
+	var output CodeBundle
+	if err := decode(res, &output); err != nil {
+		return nil, err
+	}
+	return &output, nil
 }
 
 type peekCodeBundlePayload struct {
 	Key string `json:"key"`
 }
 
+// ErrCodeBundleNotFound is returned, wrapping the *APIError, when
+// PeekCodeBundle finds no code bundle for the key.
 var ErrCodeBundleNotFound = errors.New("code bundle not found")
 
 func (c *client) PeekCodeBundle(
 	ctx context.Context,
 	key string,
 ) (*CodeBundle, error) {
-	payload := peekCodeBundlePayload{
-		Key: key,
-	}
-
-	data, err := json.Marshal(payload)
+	res, err := c.callPath(ctx, http.MethodPost, peekCodeBundlePath, peekCodeBundlePayload{Key: key}, http.StatusOK)
 	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		fmt.Sprintf("%s/next/checkly-storage/peek-code-bundle", c.url),
-		bytes.NewReader(data),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.addAuthHeaders(req)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("content-type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	switch {
-	case resp.StatusCode == 404, resp.StatusCode == 403:
-		return nil, ErrCodeBundleNotFound
-	case resp.StatusCode == 200:
-		decoder := json.NewDecoder(resp.Body)
-
-		var output CodeBundle
-		err = decoder.Decode(&output)
-		if err != nil {
-			return nil, err
+		var apiErr *APIError
+		if errors.As(err, &apiErr) && codeBundleNotFound(apiErr) {
+			return nil, fmt.Errorf("%w: %w", ErrCodeBundleNotFound, apiErr)
 		}
-
-		return &output, nil
-	default:
-		return nil, fmt.Errorf("unexpected HTTP %d response code: %v", resp.StatusCode, resp.Status)
+		return nil, err
 	}
+	var output CodeBundle
+	if err := decode(res, &output); err != nil {
+		return nil, err
+	}
+	return &output, nil
+}
+
+// invalidStorageKeyMessage starts the backend's message for a code bundle key
+// that belongs to another account: "Invalid Checkly Storage key <key>". It
+// has no trailing space, because an empty key leaves the message ending in
+// one, which APIError.Message trims.
+const invalidStorageKeyMessage = "Invalid Checkly Storage key"
+
+// codeBundleNotFound reports whether a peek failed because there is no code
+// bundle for the key: a 404, or the 403 the backend answers for a key that
+// belongs to another account. Every other 403, such as a refused account
+// access, a role without permission or a plan without the entitlement, is a
+// failure the caller must see, not a missing bundle.
+func codeBundleNotFound(e *APIError) bool {
+	switch e.StatusCode {
+	case http.StatusNotFound:
+		return true
+	case http.StatusForbidden:
+		return e.Code == "" && strings.HasPrefix(e.Message, invalidStorageKeyMessage)
+	}
+	return false
 }
