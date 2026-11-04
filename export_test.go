@@ -6,12 +6,22 @@ import (
 	"time"
 )
 
-// SkipRetryWaits makes c re-send a rate-limited request without waiting, so
-// that tests in package checkly_test can exercise the retry loop quickly. Even
-// "Retry-After: 0" otherwise waits for the hint padding and jitter.
-func SkipRetryWaits(c Client) {
-	c.(*client).sleep = func(ctx context.Context, _ time.Duration) error {
+// WithoutRetryWaits returns an option that makes the client re-send a
+// rate-limited request without waiting, so that tests in package checkly_test
+// can exercise the retry loop quickly. Even "Retry-After: 0" otherwise waits
+// for the hint padding and jitter.
+func WithoutRetryWaits() ClientOption {
+	return withSleep(func(ctx context.Context, _ time.Duration) error {
 		return ctx.Err()
+	})
+}
+
+// withSleep returns an option that replaces the wait between rate-limit
+// retries with sleep.
+func withSleep(sleep func(context.Context, time.Duration) error) ClientOption {
+	return func(c *client) error {
+		c.sleep = sleep
+		return nil
 	}
 }
 

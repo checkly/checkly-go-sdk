@@ -78,12 +78,11 @@ func mustNewClient(t *testing.T, opts ...ClientOption) *client {
 // newTestClient returns a client whose waits are recorded instead of slept.
 func newTestClient(t *testing.T, url string) (*client, *[]time.Duration) {
 	t.Helper()
-	c := mustNewClient(t, WithBaseURL(url), WithAuth("test-key", testAccountID))
 	var waits []time.Duration
-	c.sleep = func(ctx context.Context, d time.Duration) error {
+	c := mustNewClient(t, WithBaseURL(url), WithAuth("test-key", testAccountID), withSleep(func(ctx context.Context, d time.Duration) error {
 		waits = append(waits, d)
 		return ctx.Err()
-	}
+	}))
 	return c, &waits
 }
 
@@ -301,16 +300,14 @@ func TestRateLimitWaitAbortsOnCancel(t *testing.T) {
 		cannedReply{status: 429, headers: map[string]string{"Retry-After": "30"}, body: "limited"},
 		cannedReply{status: 200},
 	)
-	c := mustNewClient(t, WithBaseURL(srv.URL), WithAuth("test-key", testAccountID))
-
 	// Cancel once the client starts waiting, then let the real sleep run:
 	// the 30s wait must end at once.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	c.sleep = func(ctx context.Context, d time.Duration) error {
+	c := mustNewClient(t, WithBaseURL(srv.URL), WithAuth("test-key", testAccountID), withSleep(func(ctx context.Context, d time.Duration) error {
 		cancel()
 		return sleepContext(ctx, d)
-	}
+	}))
 	start := time.Now()
 	_, err := c.send(ctx, true, http.MethodGet, "/v1/things", nil)
 	if elapsed := time.Since(start); elapsed > 5*time.Second {

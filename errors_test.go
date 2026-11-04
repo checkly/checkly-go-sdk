@@ -40,10 +40,8 @@ func newErrorServer(t *testing.T, reply errorReply, opts ...checkly.ClientOption
 		io.WriteString(w, reply.body)
 	}))
 	t.Cleanup(srv.Close)
-	opts = append([]checkly.ClientOption{checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client())}, opts...)
-	c := newTestClient(t, opts...)
-	checkly.SkipRetryWaits(c)
-	return c
+	opts = append([]checkly.ClientOption{checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()), checkly.WithoutRetryWaits()}, opts...)
+	return newTestClient(t, opts...)
 }
 
 func readFixture(t *testing.T, name string) string {

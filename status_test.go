@@ -960,8 +960,7 @@ func TestRateLimitRetryPerMethod(t *testing.T) {
 			retried := len(tc.leadStatuses)
 			statuses := append(slices.Clone(tc.leadStatuses), http.StatusTooManyRequests, tc.accept[0])
 			srv, got := newStatusServer(t, statuses, map[int]http.Header{http.StatusTooManyRequests: header}, body)
-			c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
-			checkly.SkipRetryWaits(c)
+			c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()), checkly.WithoutRetryWaits())
 
 			err := tc.call(context.Background(), c)
 			requests := got()
