@@ -55,9 +55,8 @@ var privateLocation = checkly.PrivateLocation{
 	Icon:     "location",
 }
 
-var apiCheck = checkly.Check{
+var apiCheck = checkly.APICheck{
 	Name:                 "My API Check",
-	Type:                 checkly.TypeAPI,
 	Frequency:            10,
 	FrequencyOffset:      1,
 	DegradedResponseTime: 5000,
@@ -65,9 +64,6 @@ var apiCheck = checkly.Check{
 	Activated:            true,
 	Muted:                false,
 	ShouldFail:           false,
-	DoubleCheck:          false,
-	LocalSetupScript:     "",
-	LocalTearDownScript:  "",
 	Locations: []string{
 		"eu-west-1",
 		"ap-northeast-2",
@@ -76,7 +72,7 @@ var apiCheck = checkly.Check{
 		"foo",
 		"bar",
 	},
-	AlertSettings:          alertSettings,
+	AlertSettings:          &alertSettings,
 	UseGlobalAlertSettings: false,
 	Request: checkly.Request{
 		Method: http.MethodGet,
@@ -105,17 +101,15 @@ var apiCheck = checkly.Check{
 	},
 }
 
-var browserCheck = checkly.Check{
+var browserCheck = checkly.BrowserCheck{
 	Name:           "My Browser Check",
-	Type:           checkly.TypeBrowser,
 	Frequency:      10,
 	Activated:      true,
 	Muted:          false,
 	ShouldFail:     false,
-	DoubleCheck:    false,
 	SSLCheckDomain: "www.acme.com",
 	Locations:      []string{"eu-west-1"},
-	AlertSettings:  alertSettings,
+	AlertSettings:  &alertSettings,
 	Script: `const assert = require("chai").assert;
   const puppeteer = require("puppeteer");
 
@@ -131,10 +125,6 @@ var browserCheck = checkly.Check{
 			Key:   "HELLO",
 			Value: "Hello world",
 		},
-	},
-	Request: checkly.Request{
-		Method: http.MethodGet,
-		URL:    "http://example.com",
 	},
 }
 
@@ -229,13 +219,17 @@ func main() {
 	}
 	fmt.Printf("New check group created with ID %d\n", group.ID)
 
-	for _, check := range []checkly.Check{apiCheck, browserCheck} {
-		gotCheck, err := client.CreateCheck(ctx, check)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("New check created with ID %s\n", gotCheck.ID)
+	gotAPICheck, err := client.CreateAPICheck(ctx, apiCheck)
+	if err != nil {
+		log.Fatal(err)
 	}
+	fmt.Printf("New API check created with ID %s\n", gotAPICheck.ID)
+
+	gotBrowserCheck, err := client.CreateBrowserCheck(ctx, browserCheck)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("New browser check created with ID %s\n", gotBrowserCheck.ID)
 
 	// HB
 	gotHbCheck, err := client.CreateHeartbeatMonitor(ctx, heartbeatCheck)

@@ -20,8 +20,12 @@ type Client interface {
 		ID string,
 	) (*HeartbeatMonitor, error)
 
-	// Create creates a new check with the specified details.
+	// CreateCheck creates a new check with the specified details.
 	// It returns the newly-created check, or an error.
+	//
+	// Deprecated: use CreateAPICheck, CreateBrowserCheck,
+	// CreateMultiStepCheck or the create method of the monitor type, which
+	// take the fields of their check type.
 	CreateCheck(
 		ctx context.Context,
 		check Check,
@@ -110,8 +114,13 @@ type Client interface {
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
-	// Update updates an existing check with the specified details.
+	// UpdateCheck updates an existing check with the specified details.
 	// It returns the updated check, or an error.
+	//
+	// Deprecated: use UpdateAPICheck, UpdateBrowserCheck,
+	// UpdateMultiStepCheck or the update method of the monitor type.
+	// UpdateCheck uses the generic check update
+	// endpoint, which the API has deprecated.
 	UpdateCheck(
 		ctx context.Context,
 		ID string,
@@ -213,7 +222,10 @@ type Client interface {
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
-	// Delete deletes the check with the specified ID.
+	// DeleteCheck deletes the check with the specified ID.
+	//
+	// Deprecated: use DeleteAPICheck, DeleteBrowserCheck, DeleteMultiStepCheck
+	// or the delete method of the monitor type.
 	DeleteCheck(
 		ctx context.Context,
 		ID string,
@@ -294,50 +306,53 @@ type Client interface {
 		ID string,
 	) error
 
-	// Get takes the ID of an existing check, and returns the check parameters,
-	// or an error.
+	// GetCheck takes the ID of an existing check, and returns the check
+	// parameters, or an error.
+	//
+	// Deprecated: use GetAPICheck, GetBrowserCheck, GetMultiStepCheck or the
+	// get method of the monitor type.
 	GetCheck(
 		ctx context.Context,
 		ID string,
 	) (*Check, error)
 
-	// Get takes the ID of an existing TCP monitor, and returns the monitor
-	// parameters, or an error.
+	// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
+	// monitor parameters, or an error.
 	GetTCPMonitor(
 		ctx context.Context,
 		ID string,
 	) (*TCPMonitor, error)
 
-	// Get takes the ID of an existing gRPC monitor, and returns the monitor
-	// parameters, or an error.
+	// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
+	// monitor parameters, or an error.
 	GetGRPCMonitor(
 		ctx context.Context,
 		ID string,
 	) (*GRPCMonitor, error)
 
-	// Get takes the ID of an existing traceroute monitor, and returns the
-	// monitor parameters, or an error.
+	// GetTracerouteMonitor takes the ID of an existing traceroute monitor,
+	// and returns the monitor parameters, or an error.
 	GetTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 	) (*TracerouteMonitor, error)
 
-	// Get takes the ID of an existing SSL monitor, and returns the monitor
-	// parameters, or an error.
+	// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
+	// monitor parameters, or an error.
 	GetSSLMonitor(
 		ctx context.Context,
 		ID string,
 	) (*SSLMonitor, error)
 
-	// Get takes the ID of an existing URL monitor, and returns the monitor
-	// parameters, or an error.
+	// GetURLMonitor takes the ID of an existing URL monitor, and returns the
+	// monitor parameters, or an error.
 	GetURLMonitor(
 		ctx context.Context,
 		ID string,
 	) (*URLMonitor, error)
 
-	// Get takes the ID of an existing URL monitor, and returns the monitor
-	// parameters, or an error.
+	// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
+	// monitor parameters, or an error.
 	GetDNSMonitor(
 		ctx context.Context,
 		ID string,
@@ -776,7 +791,7 @@ type Client interface {
 		ID string,
 	) error
 
-	// Get a specific runtime specs.
+	// GetRuntime returns the runtime with the specified ID, or an error.
 	GetRuntime(
 		ctx context.Context,
 		ID string,
@@ -906,6 +921,9 @@ const IsNull = "IS_NULL"
 const NotNull = "NOT_NULL"
 
 // Check represents the parameters for an existing check.
+//
+// Deprecated: use APICheck, BrowserCheck, MultiStepCheck or a monitor type
+// such as HeartbeatMonitor, with the client methods of their type.
 type Check struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
