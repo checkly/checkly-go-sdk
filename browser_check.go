@@ -42,6 +42,15 @@ type BrowserCheck struct {
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+
+	// Intent describes what the check protects, for automatic AI repair.
+	// It is sent as null when nil, so an update with a nil Intent clears an
+	// intent set elsewhere, for example in the web app.
+	Intent *CheckIntent `json:"intent"`
+	// AIAutoRepairEnabled overrides the account's automatic AI repair
+	// setting for this check. Nil inherits the account setting; it is sent
+	// as null, so an update with nil removes an override set elsewhere.
+	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
 type browserCheckPayload struct {

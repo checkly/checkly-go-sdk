@@ -11,7 +11,8 @@ import (
 //
 // Create and update requests always send every field, so an update replaces
 // the whole window: the API keeps a field's stored value only when the field
-// is omitted, and this type never omits one. A zero value means the API's
+// is omitted, and this type omits only a nil
+// StatusPageVisibility.ComponentConfigs. A zero value means the API's
 // default: no repeat, UTC, no description, empty tag lists, nothing paused or
 // silenced, and a StatusPageVisibility that is hidden and unlinked.
 type MaintenanceWindow struct {
@@ -90,9 +91,9 @@ func (mw MaintenanceWindow) MarshalJSON() ([]byte, error) {
 // change Enabled from true to false; any other change is rejected, so such an
 // account must send the stored settings back unchanged apart from Enabled.
 //
-// Only service-based status page links can be expressed. A window linked only
-// to status page components can't be sent back unchanged: the API rejects
-// StatusPageIDs without ServiceIDs or AffectAllServices.
+// Status pages with services (v2) are linked with ServiceIDs or
+// AffectAllServices, and status pages with components (v3) with
+// ComponentConfigs.
 type MaintenanceWindowStatusPageVisibility struct {
 	Enabled bool `json:"enabled"`
 
@@ -109,24 +110,64 @@ type MaintenanceWindowStatusPageVisibility struct {
 	AutoEnd              *bool `json:"autoEnd"`
 	ShowAffectedServices *bool `json:"showAffectedServices"`
 
-	// StatusPageIDs requires ServiceIDs or AffectAllServices.
+	// StatusPageIDs requires ServiceIDs or AffectAllServices for a status
+	// page with services, and an entry in ComponentConfigs for one with
+	// components.
 	StatusPageIDs []string `json:"statusPageIds"`
 	ServiceIDs    []string `json:"serviceIds"`
+
+	// ComponentConfigs lists the affected components of each linked status
+	// page with components, at most one entry per page. Unlike the other
+	// settings, nil is left out of the request, and an update then keeps
+	// the stored component configs; a non-nil slice replaces them all, so an
+	// empty one removes them. The API rejects an update that leaves them
+	// out while StatusPageIDs is non-empty and neither ServiceIDs nor
+	// AffectAllServices is set, so send back the ones a read returned.
+	ComponentConfigs []MaintenanceWindowComponentConfig `json:"componentConfigs"`
 }
 
-// MarshalJSON sends every setting, using the API's defaults for unset ones.
-// Fields declared here shadow the embedded ones of the same JSON name.
+// MaintenanceWindowComponentConfig lists the components of one status page
+// that a maintenance window affects.
+type MaintenanceWindowComponentConfig struct {
+	// StatusPageID is the ID of a status page listed in StatusPageIDs.
+	StatusPageID string `json:"statusPageId"`
+	// AffectAllComponents affects every component of the page, including
+	// components added later. It requires Components to be empty.
+	AffectAllComponents bool                               `json:"affectAllComponents"`
+	Components          []MaintenanceWindowComponentImpact `json:"components,omitempty"`
+}
+
+// MaintenanceWindowComponentImpact is a status page component affected by a
+// maintenance window, and the status it shows while the window is in
+// progress.
+type MaintenanceWindowComponentImpact struct {
+	ComponentID string `json:"componentId"`
+	// Status is one of OPERATIONAL, UNDER_MAINTENANCE, DEGRADED_PERFORMANCE,
+	// PARTIAL_OUTAGE or MAJOR_OUTAGE. Empty means UNDER_MAINTENANCE.
+	Status string `json:"status,omitempty"`
+}
+
+// MarshalJSON sends every setting other than a nil ComponentConfigs, using
+// the API's defaults for unset ones. Fields declared here shadow the embedded
+// ones of the same JSON name.
 func (v MaintenanceWindowStatusPageVisibility) MarshalJSON() ([]byte, error) {
 	type alias MaintenanceWindowStatusPageVisibility
+	// omitempty would also leave out an empty slice, which must be sent to
+	// remove the stored component configs; only a nil pointer is left out.
+	var componentConfigs *[]MaintenanceWindowComponentConfig
+	if v.ComponentConfigs != nil {
+		componentConfigs = &v.ComponentConfigs
+	}
 	return json.Marshal(struct {
 		alias
-		Severity              *string  `json:"severity"`
-		ReminderMinutesBefore []int    `json:"reminderMinutesBefore"`
-		AutoStart             bool     `json:"autoStart"`
-		AutoEnd               bool     `json:"autoEnd"`
-		ShowAffectedServices  bool     `json:"showAffectedServices"`
-		StatusPageIDs         []string `json:"statusPageIds"`
-		ServiceIDs            []string `json:"serviceIds"`
+		Severity              *string                             `json:"severity"`
+		ReminderMinutesBefore []int                               `json:"reminderMinutesBefore"`
+		AutoStart             bool                                `json:"autoStart"`
+		AutoEnd               bool                                `json:"autoEnd"`
+		ShowAffectedServices  bool                                `json:"showAffectedServices"`
+		StatusPageIDs         []string                            `json:"statusPageIds"`
+		ServiceIDs            []string                            `json:"serviceIds"`
+		ComponentConfigs      *[]MaintenanceWindowComponentConfig `json:"componentConfigs,omitempty"`
 	}{
 		alias:                 alias(v),
 		Severity:              nullIfZero(v.Severity),
@@ -136,6 +177,7 @@ func (v MaintenanceWindowStatusPageVisibility) MarshalJSON() ([]byte, error) {
 		ShowAffectedServices:  trueIfNil(v.ShowAffectedServices),
 		StatusPageIDs:         emptyIfNil(v.StatusPageIDs),
 		ServiceIDs:            emptyIfNil(v.ServiceIDs),
+		ComponentConfigs:      componentConfigs,
 	})
 }
 

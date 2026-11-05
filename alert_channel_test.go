@@ -509,3 +509,29 @@ func TestAlertChannelDecoding(t *testing.T) {
 		})
 	}
 }
+
+// The alert channel update resets an omitted autoSubscribe to false, so the
+// setting decodes from responses and is sent when set.
+func TestAlertChannelAutoSubscribe(t *testing.T) {
+	t.Parallel()
+	c, lastBody := newRecordingServer(t, http.StatusOK, `{"id":7,"type":"EMAIL","autoSubscribe":true,"config":{"address":"a@example.com"}}`)
+	on := true
+	ac, err := c.UpdateAlertChannel(context.Background(), 7, checkly.AlertChannel{
+		Type:          checkly.AlertTypeEmail,
+		Email:         &checkly.AlertChannelEmail{Address: "a@example.com"},
+		AutoSubscribe: &on,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertRawBodyField(t, lastBody(), "autoSubscribe", `true`)
+	if ac.AutoSubscribe == nil || !*ac.AutoSubscribe {
+		t.Errorf("want autoSubscribe true decoded, got %v", ac.AutoSubscribe)
+	}
+
+	// The API rejects null, so nil is left out.
+	if _, err := c.CreateAlertChannel(context.Background(), checkly.AlertChannel{Type: checkly.AlertTypeEmail}); err != nil {
+		t.Fatal(err)
+	}
+	assertRawBodyKeyAbsent(t, lastBody(), "autoSubscribe")
+}

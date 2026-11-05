@@ -5,6 +5,7 @@ package checkly_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -1323,6 +1324,229 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 
 	if updatedMonitor.GroupID != 0 {
 		t.Fatalf("wrong GroupID after update")
+	}
+}
+
+// The alert channel update resets an omitted autoSubscribe to false.
+func TestAlertChannelAutoSubscribeIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	on := true
+	pending := checkly.AlertChannel{
+		Type:          checkly.AlertTypeEmail,
+		Email:         &checkly.AlertChannelEmail{Address: "test@example.com"},
+		AutoSubscribe: &on,
+	}
+	created, err := client.CreateAlertChannel(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create alert channel: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteAlertChannel(ctx, created.ID)
+	}()
+	if created.AutoSubscribe == nil || !*created.AutoSubscribe {
+		t.Fatalf("expected autoSubscribe true after create, got %v", created.AutoSubscribe)
+	}
+	read, err := client.GetAlertChannel(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get alert channel: %v", err)
+	}
+	if read.AutoSubscribe == nil || !*read.AutoSubscribe {
+		t.Fatalf("expected autoSubscribe true after read, got %v", read.AutoSubscribe)
+	}
+
+	pending.AutoSubscribe = nil
+	updated, err := client.UpdateAlertChannel(ctx, created.ID, pending)
+	if err != nil {
+		t.Fatalf("failed to update alert channel: %v", err)
+	}
+	if updated.AutoSubscribe == nil || *updated.AutoSubscribe {
+		t.Fatalf("expected autoSubscribe false after an update without it, got %v", updated.AutoSubscribe)
+	}
+}
+
+// The intent, the auto-repair override and assertion regexes round-trip,
+// and an update without the intent and override clears them.
+func TestAPICheckSelfHealingFieldsIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	off := false
+	intent := &checkly.CheckIntent{
+		Goal:             "The public API answers",
+		RequiredOutcomes: []string{"The status endpoint returns 200"},
+		MustPreserve:     []string{},
+	}
+	pending := checkly.APICheck{
+		Name:      "Foo self-healing check",
+		Frequency: 60,
+		Locations: []string{"us-east-1"},
+		Request: checkly.Request{
+			Method:          "GET",
+			URL:             "https://api.checklyhq.com/v1/status",
+			Headers:         []checkly.KeyValue{},
+			QueryParameters: []checkly.KeyValue{},
+			Assertions: []checkly.Assertion{
+				{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+				{Source: checkly.Headers, Property: "content-type", Comparison: checkly.Contains, Target: "json", Regex: `^(\w+/\w+)`},
+			},
+		},
+		Intent:              intent,
+		AIAutoRepairEnabled: &off,
+	}
+	created, err := client.CreateAPICheck(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create API check: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteAPICheck(ctx, created.ID)
+	}()
+
+	read, err := client.GetAPICheck(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get API check: %v", err)
+	}
+	if !cmp.Equal(intent, read.Intent) {
+		t.Fatalf("intent after create: %s", cmp.Diff(intent, read.Intent))
+	}
+	if read.AIAutoRepairEnabled == nil || *read.AIAutoRepairEnabled {
+		t.Fatalf("expected aiAutoRepairEnabled false after create, got %v", read.AIAutoRepairEnabled)
+	}
+	if got := read.Request.Assertions; len(got) != 2 || got[0].Regex != "" || got[1].Regex != `^(\w+/\w+)` {
+		t.Fatalf("expected the assertion regexes to round-trip, got %+v", got)
+	}
+
+	pending.Intent = nil
+	pending.AIAutoRepairEnabled = nil
+	updated, err := client.UpdateAPICheck(ctx, created.ID, pending)
+	if err != nil {
+		t.Fatalf("failed to update API check: %v", err)
+	}
+	if updated.Intent != nil || updated.AIAutoRepairEnabled != nil {
+		t.Fatalf("expected intent and aiAutoRepairEnabled cleared after update, got %+v, %v", updated.Intent, updated.AIAutoRepairEnabled)
+	}
+	if got := updated.Request.Assertions; len(got) != 2 || got[1].Regex != `^(\w+/\w+)` {
+		t.Fatalf("expected the assertion regex to survive the update, got %+v", got)
+	}
+}
+
+// The proxy URL round-trips, and an update with an empty one removes it.
+func TestPrivateLocationProxyURLIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	proxy := "http://proxy.example.com:3128"
+	pending := checkly.PrivateLocation{
+		Name:     "Foo proxy location",
+		SlugName: "foo-proxy-location",
+		Icon:     "location",
+		ProxyURL: &proxy,
+	}
+	created, err := client.CreatePrivateLocation(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create private location: %v", err)
+	}
+	defer func() {
+		_ = client.DeletePrivateLocation(ctx, created.ID)
+	}()
+	read, err := client.GetPrivateLocation(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get private location: %v", err)
+	}
+	if read.ProxyURL == nil || *read.ProxyURL != proxy {
+		t.Fatalf("expected the proxy URL after create, got %v", read.ProxyURL)
+	}
+
+	empty := ""
+	pending.ProxyURL = &empty
+	if _, err := client.UpdatePrivateLocation(ctx, created.ID, pending); err != nil {
+		t.Fatalf("failed to update private location: %v", err)
+	}
+	read, err = client.GetPrivateLocation(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get private location: %v", err)
+	}
+	if read.ProxyURL != nil {
+		t.Fatalf("expected no proxy URL after update, got %v", read.ProxyURL)
+	}
+}
+
+// A maintenance window links a status page with components through its
+// component configs; a window read back can be sent unchanged, and an update
+// with an empty list removes them.
+func TestMaintenanceWindowComponentConfigsIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	page, err := client.CreateStatusPageV3(ctx, checkly.StatusPageV3{
+		Name: "Foo maintenance status page",
+		URL:  "foo-maintenance-status-page",
+	})
+	if err != nil {
+		t.Fatalf("failed to create v3 status page: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteStatusPageV3(ctx, page.ID)
+	}()
+	component, err := client.CreateStatusPageComponentV3(ctx, page.ID, checkly.StatusPageComponentV3{Name: "Foo API"})
+	if err != nil {
+		t.Fatalf("failed to create status page component: %v", err)
+	}
+
+	configs := []checkly.MaintenanceWindowComponentConfig{{
+		StatusPageID: page.ID,
+		Components: []checkly.MaintenanceWindowComponentImpact{
+			{ComponentID: component.ID, Status: "PARTIAL_OUTAGE"},
+		},
+	}}
+	pending := checkly.MaintenanceWindow{
+		Name:     "Foo maintenance",
+		StartsAt: "2030-01-01T00:00:00.000Z",
+		EndsAt:   "2030-01-01T01:00:00.000Z",
+		StatusPageVisibility: checkly.MaintenanceWindowStatusPageVisibility{
+			Enabled:          true,
+			StatusPageIDs:    []string{page.ID},
+			ComponentConfigs: configs,
+		},
+	}
+	created, err := client.CreateMaintenanceWindow(ctx, pending)
+	if errors.Is(err, checkly.ErrForbidden) || errors.Is(err, checkly.ErrPlanLimit) {
+		t.Skipf("the account cannot show maintenance windows on status pages: %v", err)
+	}
+	if err != nil {
+		t.Fatalf("failed to create maintenance window: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteMaintenanceWindow(ctx, created.ID)
+	}()
+
+	read, err := client.GetMaintenanceWindow(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get maintenance window: %v", err)
+	}
+	if !cmp.Equal(configs, read.StatusPageVisibility.ComponentConfigs) {
+		t.Fatalf("component configs after create: %s", cmp.Diff(configs, read.StatusPageVisibility.ComponentConfigs))
+	}
+
+	pending = *read
+	pending.Name = "Bar maintenance"
+	updated, err := client.UpdateMaintenanceWindow(ctx, created.ID, pending)
+	if err != nil {
+		t.Fatalf("failed to update maintenance window with the component configs read: %v", err)
+	}
+	if !cmp.Equal(configs, updated.StatusPageVisibility.ComponentConfigs) {
+		t.Fatalf("component configs after a round trip: %s", cmp.Diff(configs, updated.StatusPageVisibility.ComponentConfigs))
+	}
+
+	pending.StatusPageVisibility.StatusPageIDs = []string{}
+	pending.StatusPageVisibility.ComponentConfigs = []checkly.MaintenanceWindowComponentConfig{}
+	updated, err = client.UpdateMaintenanceWindow(ctx, created.ID, pending)
+	if err != nil {
+		t.Fatalf("failed to update maintenance window with empty component configs: %v", err)
+	}
+	if len(updated.StatusPageVisibility.ComponentConfigs) != 0 || len(updated.StatusPageVisibility.StatusPageIDs) != 0 {
+		t.Fatalf("expected the status page unlinked, got %+v", updated.StatusPageVisibility)
 	}
 }
 

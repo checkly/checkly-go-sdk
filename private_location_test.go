@@ -108,3 +108,38 @@ func TestGetPrivateLocation(t *testing.T) {
 		t.Error(cmp.Diff(testPrivateLocation, *pl, ignorePrivateLocationFields))
 	}
 }
+
+// The update keeps an omitted proxyUrl and rejects an empty one, so nil and
+// an empty ProxyURL are both sent as null, which removes the proxy.
+func TestPrivateLocationProxyURL(t *testing.T) {
+	t.Parallel()
+	proxy, empty := "https://user:password@proxy.example.com:3128", ""
+	for _, tc := range []struct {
+		name  string
+		proxy *string
+		want  string
+	}{
+		{"nil", nil, `null`},
+		{"empty", &empty, `null`},
+		{"set", &proxy, `"https://user:password@proxy.example.com:3128"`},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			c, lastBody := newRecordingServer(t, http.StatusOK, `{"id":"1","name":"n","proxyUrl":"https://user:password@proxy.example.com:3128"}`)
+			pl := checkly.PrivateLocation{Name: "n", SlugName: "n", ProxyURL: tc.proxy}
+			got, err := c.UpdatePrivateLocation(context.Background(), "1", pl)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertRawBodyField(t, lastBody(), "proxyUrl", tc.want)
+			if got.ProxyURL == nil || *got.ProxyURL != proxy {
+				t.Errorf("want the proxy URL decoded, got %v", got.ProxyURL)
+			}
+			if _, err := c.CreatePrivateLocation(context.Background(), pl); err != nil {
+				t.Fatal(err)
+			}
+			assertRawBodyField(t, lastBody(), "proxyUrl", tc.want)
+		})
+	}
+}

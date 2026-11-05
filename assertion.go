@@ -79,4 +79,9 @@ type Assertion struct {
 	Property      string `json:"property"`
 	Comparison    string `json:"comparison"`
 	Target        string `json:"target"`
+	// Regex, when set on a HEADERS assertion, is matched against the header
+	// value, and the assertion compares the first capture group instead of
+	// the whole value; a value it does not match compares as empty. Empty
+	// compares the whole value.
+	Regex string `json:"regex"`
 }

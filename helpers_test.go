@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -180,5 +181,33 @@ func runPayloadCases(t *testing.T, cases []payloadCase) {
 				t.Error(err)
 			}
 		})
+	}
+}
+
+// newRecordingServer answers every request with status and body, and returns
+// a client for it and a function that returns the body of the last request.
+func newRecordingServer(t *testing.T, status int, body string) (checkly.Client, func() []byte) {
+	t.Helper()
+	var (
+		mu   sync.Mutex
+		last []byte
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		mu.Lock()
+		last = got
+		mu.Unlock()
+		w.WriteHeader(status)
+		io.WriteString(w, body)
+	}))
+	t.Cleanup(srv.Close)
+	c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
+	return c, func() []byte {
+		mu.Lock()
+		defer mu.Unlock()
+		return last
 	}
 }
