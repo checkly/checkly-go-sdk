@@ -50,6 +50,7 @@ var testMaintenanceWindow = checkly.MaintenanceWindow{
 		ShowAffectedServices:  &testMaintenanceWindowTrue,
 		StatusPageIDs:         []string{},
 		ServiceIDs:            []string{},
+		ComponentConfigs:      []checkly.MaintenanceWindowComponentConfig{},
 	},
 }
 
@@ -250,4 +251,73 @@ func TestGetMaintenanceWindow(t *testing.T) {
 	if !cmp.Equal(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields) {
 		t.Error(cmp.Diff(testMaintenanceWindow, *mw, ignoreMaintenanceWindowFields))
 	}
+}
+
+// The update keeps the stored component configs when the key is omitted and
+// replaces them when it is sent, so nil ComponentConfigs are left out while
+// an empty list is sent, to remove them.
+func TestMaintenanceWindowComponentConfigs(t *testing.T) {
+	t.Parallel()
+	marshalVisibility := func(v checkly.MaintenanceWindowStatusPageVisibility) map[string]json.RawMessage {
+		t.Helper()
+		body, err := json.Marshal(checkly.MaintenanceWindow{Name: "TEST", StatusPageVisibility: v})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var raw struct {
+			StatusPageVisibility map[string]json.RawMessage `json:"statusPageVisibility"`
+		}
+		if err := json.Unmarshal(body, &raw); err != nil {
+			t.Fatal(err)
+		}
+		return raw.StatusPageVisibility
+	}
+
+	if got, ok := marshalVisibility(checkly.MaintenanceWindowStatusPageVisibility{})["componentConfigs"]; ok {
+		t.Errorf("want nil componentConfigs left out, got %s", got)
+	}
+	got := marshalVisibility(checkly.MaintenanceWindowStatusPageVisibility{ComponentConfigs: []checkly.MaintenanceWindowComponentConfig{}})
+	if string(got["componentConfigs"]) != `[]` {
+		t.Errorf("want empty componentConfigs sent as [], got %s", got["componentConfigs"])
+	}
+	got = marshalVisibility(checkly.MaintenanceWindowStatusPageVisibility{
+		Enabled:       true,
+		StatusPageIDs: []string{"page-1", "page-2"},
+		ComponentConfigs: []checkly.MaintenanceWindowComponentConfig{
+			{StatusPageID: "page-1", Components: []checkly.MaintenanceWindowComponentImpact{
+				{ComponentID: "component-1", Status: "PARTIAL_OUTAGE"},
+				{ComponentID: "component-2"},
+			}},
+			{StatusPageID: "page-2", AffectAllComponents: true},
+		},
+	})
+	want := `[{"statusPageId":"page-1","affectAllComponents":false,"components":[{"componentId":"component-1","status":"PARTIAL_OUTAGE"},{"componentId":"component-2"}]},` +
+		`{"statusPageId":"page-2","affectAllComponents":true}]`
+	if string(got["componentConfigs"]) != want {
+		t.Errorf("componentConfigs: want %s, got %s", want, got["componentConfigs"])
+	}
+}
+
+// Decoding the component configs lets a window read from the API be sent
+// back unchanged.
+func TestMaintenanceWindowComponentConfigsDecoding(t *testing.T) {
+	t.Parallel()
+	c, lastBody := newRecordingServer(t, http.StatusOK, `{"id":1,"name":"TEST","statusPageVisibility":{"enabled":true,"statusPageIds":["page-1"],`+
+		`"componentConfigs":[{"statusPageId":"page-1","affectAllComponents":false,"components":[{"componentId":"component-1","status":"UNDER_MAINTENANCE"}]}]}}`)
+	mw, err := c.GetMaintenanceWindow(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []checkly.MaintenanceWindowComponentConfig{{
+		StatusPageID: "page-1",
+		Components:   []checkly.MaintenanceWindowComponentImpact{{ComponentID: "component-1", Status: "UNDER_MAINTENANCE"}},
+	}}
+	if !cmp.Equal(want, mw.StatusPageVisibility.ComponentConfigs) {
+		t.Error(cmp.Diff(want, mw.StatusPageVisibility.ComponentConfigs))
+	}
+	if _, err := c.UpdateMaintenanceWindow(context.Background(), 1, *mw); err != nil {
+		t.Fatal(err)
+	}
+	assertRawNestedBodyField(t, lastBody(), "statusPageVisibility", "componentConfigs",
+		`[{"statusPageId":"page-1","affectAllComponents":false,"components":[{"componentId":"component-1","status":"UNDER_MAINTENANCE"}]}]`)
 }

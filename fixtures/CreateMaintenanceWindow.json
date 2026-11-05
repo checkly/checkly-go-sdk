@@ -29,6 +29,7 @@
     "autoEnd": true,
     "showAffectedServices": true,
     "statusPageIds": [],
-    "serviceIds": []
+    "serviceIds": [],
+    "componentConfigs": []
   }
 }

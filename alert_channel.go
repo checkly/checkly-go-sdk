@@ -111,6 +111,11 @@ type AlertChannel struct {
 	SSLExpiryThreshold *int                   `json:"sslExpiryThreshold"`
 	CreatedAt          string                 `json:"created_at"`
 	UpdatedAt          string                 `json:"updated_at"`
+
+	// AutoSubscribe subscribes checks created later to the channel. Nil
+	// leaves the key out, and the API then applies its default, false, on
+	// update too.
+	AutoSubscribe *bool `json:"autoSubscribe"`
 }
 
 // configField returns a pointer to the config field that matches a.Type, such
@@ -200,6 +205,7 @@ type alertChannelPayload struct {
 	SendDegraded       *bool  `json:"sendDegraded,omitempty"`
 	SSLExpiry          *bool  `json:"sslExpiry,omitempty"`
 	SSLExpiryThreshold *int   `json:"sslExpiryThreshold,omitempty"`
+	AutoSubscribe      *bool  `json:"autoSubscribe,omitempty"`
 }
 
 // createAlertChannelPayload returns the request body for ac. The config is the
@@ -214,6 +220,7 @@ func createAlertChannelPayload(ac AlertChannel) alertChannelPayload {
 		SendDegraded:       ac.SendDegraded,
 		SSLExpiry:          ac.SSLExpiry,
 		SSLExpiryThreshold: ac.SSLExpiryThreshold,
+		AutoSubscribe:      ac.AutoSubscribe,
 	}
 }
 
