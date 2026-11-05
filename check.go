@@ -53,8 +53,8 @@ type Check struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	CreatedAt                 time.Time                  `json:"createdAt"`
-	UpdatedAt                 time.Time                  `json:"updatedAt"`
+	CreatedAt                 time.Time                  `json:"created_at"`
+	UpdatedAt                 time.Time                  `json:"updated_at"`
 
 	// Pointers
 	PrivateLocations *[]string        `json:"privateLocations"`

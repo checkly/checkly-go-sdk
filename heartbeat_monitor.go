@@ -19,8 +19,8 @@ type HeartbeatMonitor struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	Heartbeat                 Heartbeat                  `json:"heartbeat"`
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"createdAt"`
-	UpdatedAt                 time.Time                  `json:"updatedAt"`
+	CreatedAt                 time.Time                  `json:"created_at"`
+	UpdatedAt                 time.Time                  `json:"updated_at"`
 }
 
 // Heartbeat represents the parameter for the heartbeat check.

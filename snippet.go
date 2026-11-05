@@ -12,8 +12,8 @@ type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	Script    string    `json:"script"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // CreateSnippet creates a new snippet with the specified details. It returns
