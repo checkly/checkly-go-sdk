@@ -28,10 +28,12 @@ type Dashboard struct {
 	Header             string         `json:"header,omitempty"`
 	ShowHeader         *bool          `json:"showHeader,omitempty"` // If nil, defaults to true.
 	Width              string         `json:"width,omitempty"`
-	RefreshRate        int            `json:"refreshRate"`
+	RefreshRate        int            `json:"refreshRate,omitempty"` // One of 60, 300 or 600 seconds. If 0, defaults to 60.
 	ChecksPerPage      int            `json:"checksPerPage,omitempty"`
-	PaginationRate     int            `json:"paginationRate"`
-	Paginate           bool           `json:"paginate"`
+	PaginationRate     int            `json:"paginationRate,omitempty"` // One of 30, 60 or 300 seconds. If 0, defaults to 60.
+	Paginate           *bool          `json:"paginate,omitempty"`       // If nil, defaults to true.
+	SortByStatus       bool           `json:"sortByStatus,omitempty"`
+	ShowGroupNames     *bool          `json:"showGroupNames,omitempty"` // If nil, defaults to true.
 	Tags               []string       `json:"tags,omitempty"`
 	HideTags           bool           `json:"hideTags,omitempty"`
 	UseTagsAndOperator bool           `json:"useTagsAndOperator,omitempty"`
@@ -44,6 +46,35 @@ type Dashboard struct {
 	CreatedAt          string         `json:"created_at"`
 	UpdatedAt          string         `json:"updated_at"`
 	Keys               []DashboardKey `json:"keys,omitempty"`
+}
+
+// dashboardUpdatePayload is the body of a dashboard update. The update
+// endpoint keeps the stored value of an omitted key that has no default, so
+// the fields below shadow the embedded fields that omit their empty value:
+// they are always sent, as null (or "" for header, which does not accept
+// null) when empty, so that emptying them clears the stored value. Omitted
+// keys that have a default, such as refreshRate or paginate, get it on
+// update as on create.
+type dashboardUpdatePayload struct {
+	Dashboard
+	CustomDomain *string `json:"customDomain"`
+	Logo         *string `json:"logo"`
+	Link         *string `json:"link"`
+	Description  *string `json:"description"`
+	Favicon      *string `json:"favicon"`
+	Header       string  `json:"header"`
+}
+
+func newDashboardUpdatePayload(dashboard Dashboard) dashboardUpdatePayload {
+	return dashboardUpdatePayload{
+		Dashboard:    dashboard,
+		CustomDomain: nullIfZero(dashboard.CustomDomain),
+		Logo:         nullIfZero(dashboard.Logo),
+		Link:         nullIfZero(dashboard.Link),
+		Description:  nullIfZero(dashboard.Description),
+		Favicon:      nullIfZero(dashboard.Favicon),
+		Header:       dashboard.Header,
+	}
 }
 
 // CreateDashboard creates a new dashboard with the specified details. It returns
@@ -83,7 +114,7 @@ func (c *client) UpdateDashboard(
 	dashboard Dashboard,
 ) (*Dashboard, error) {
 	var result Dashboard
-	err := c.callJSON(ctx, http.MethodPut, "/v1/dashboards/"+ID, dashboard, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, "/v1/dashboards/"+ID, newDashboardUpdatePayload(dashboard), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

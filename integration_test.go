@@ -249,6 +249,97 @@ func TestGetDashboardIntegration(t *testing.T) {
 	}
 }
 
+// wantDashboardDefaults fails the test unless the dashboard has the API
+// defaults of the fields the SDK leaves out when unset.
+func wantDashboardDefaults(t *testing.T, d *checkly.Dashboard) {
+	t.Helper()
+	if d.RefreshRate != 60 || d.PaginationRate != 60 || d.Paginate == nil || !*d.Paginate ||
+		d.SortByStatus || d.ShowGroupNames == nil || !*d.ShowGroupNames {
+		t.Fatalf("want refreshRate 60, paginationRate 60, paginate true, sortByStatus false, showGroupNames true; got %d, %d, %v, %v, %v",
+			d.RefreshRate, d.PaginationRate, fmtBoolPtr(d.Paginate), d.SortByStatus, fmtBoolPtr(d.ShowGroupNames))
+	}
+}
+
+func fmtBoolPtr(b *bool) string {
+	if b == nil {
+		return "nil"
+	}
+	return fmt.Sprint(*b)
+}
+
+func TestDashboardDefaultsIntegration(t *testing.T) {
+	client := setupClient(t)
+	ctx := context.Background()
+	dashboard := checkly.Dashboard{
+		CustomURL: fmt.Sprintf("sdk-defaults-%d", time.Now().UnixNano()),
+		Header:    "Defaults",
+	}
+
+	created, err := client.CreateDashboard(ctx, dashboard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.DeleteDashboard(ctx, created.DashboardID)
+	wantDashboardDefaults(t, created)
+
+	falseVal := false
+	changed := dashboard
+	changed.RefreshRate = 300
+	changed.PaginationRate = 30
+	changed.Paginate = &falseVal
+	changed.SortByStatus = true
+	changed.ShowGroupNames = &falseVal
+	got, err := client.UpdateDashboard(ctx, created.DashboardID, changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.RefreshRate != 300 || got.PaginationRate != 30 || got.Paginate == nil || *got.Paginate ||
+		!got.SortByStatus || got.ShowGroupNames == nil || *got.ShowGroupNames {
+		t.Fatalf("update did not set the fields: got %d, %d, %v, %v, %v",
+			got.RefreshRate, got.PaginationRate, fmtBoolPtr(got.Paginate), got.SortByStatus, fmtBoolPtr(got.ShowGroupNames))
+	}
+
+	// The update endpoint applies the create defaults to omitted keys.
+	if _, err := client.UpdateDashboard(ctx, created.DashboardID, dashboard); err != nil {
+		t.Fatal(err)
+	}
+	read, err := client.GetDashboard(ctx, created.DashboardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantDashboardDefaults(t, read)
+}
+
+func TestDashboardClearTextsIntegration(t *testing.T) {
+	client := setupClient(t)
+	ctx := context.Background()
+	dashboard := checkly.Dashboard{
+		CustomURL:   fmt.Sprintf("sdk-clear-%d", time.Now().UnixNano()),
+		Header:      "Header",
+		Description: "Description",
+		Logo:        "https://www.checklyhq.com/logo.svg",
+		Favicon:     "https://www.checklyhq.com/favicon.ico",
+		Link:        "https://www.checklyhq.com",
+	}
+	created, err := client.CreateDashboard(ctx, dashboard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.DeleteDashboard(ctx, created.DashboardID)
+
+	if _, err := client.UpdateDashboard(ctx, created.DashboardID, checkly.Dashboard{CustomURL: dashboard.CustomURL}); err != nil {
+		t.Fatal(err)
+	}
+	read, err := client.GetDashboard(ctx, created.DashboardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if read.Header != "" || read.Description != "" || read.Logo != "" || read.Favicon != "" || read.Link != "" {
+		t.Fatalf("update with empty texts did not clear them: header %q, description %q, logo %q, favicon %q, link %q",
+			read.Header, read.Description, read.Logo, read.Favicon, read.Link)
+	}
+}
+
 //Maintenance Windows
 
 func TestCreateMaintenanceWindowIntegration(t *testing.T) {
