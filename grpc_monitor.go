@@ -86,6 +86,20 @@ type grpcMonitorPayload struct {
 	DoubleCheck bool               `json:"doubleCheck"`
 	Request     grpcRequestPayload `json:"request"`
 	GroupID     *int64             `json:"groupId"`
+	// The update endpoint keeps the stored value of an omitted key. The
+	// fields below shadow embedded fields whose zero value would be omitted,
+	// so that an update resets them: lists are sent empty, and the group
+	// order as null, which is also its default on create.
+	Tags                      []string                   `json:"tags"`
+	GroupOrder                *int                       `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+}
+
+// grpcMonitorUpdatePayload is the update request. It differs from the create
+// request only in its request object, see grpcUpdateRequestPayload.
+type grpcMonitorUpdatePayload struct {
+	grpcMonitorPayload
+	Request grpcUpdateRequestPayload `json:"request"`
 }
 
 // grpcRequestPayload sends empty lists rather than omitting them, as the
@@ -96,6 +110,14 @@ type grpcRequestPayload struct {
 	GRPCConfig grpcConfigPayload `json:"grpcConfig"`
 }
 
+// grpcUpdateRequestPayload sends an unset timeout as null, which the update
+// endpoint accepts and the runner treats as its default timeout. The create
+// request leaves the key out instead, so that the API stores its default.
+type grpcUpdateRequestPayload struct {
+	grpcRequestPayload
+	Timeout *int `json:"timeout"`
+}
+
 // grpcConfigPayload sends empty metadata as an empty list, and always sends
 // the free-text field of the configured mode, even when it is empty: the
 // update endpoint keeps the stored value of an omitted field, so an empty
@@ -103,21 +125,36 @@ type grpcRequestPayload struct {
 // other mode stays omitted, as the API discards it anyway.
 type grpcConfigPayload struct {
 	GRPCConfig
-	Metadata []GRPCMetadata `json:"metadata"`
-	Message  *string        `json:"message,omitempty"`
-	Service  *string        `json:"service,omitempty"`
+	Metadata     []GRPCMetadata `json:"metadata"`
+	Message      *string        `json:"message,omitempty"`
+	Service      *string        `json:"service,omitempty"`
+	ProtoContent *string        `json:"protoContent,omitempty"`
 }
 
 func createGRPCConfigPayload(config GRPCConfig) grpcConfigPayload {
 	payload := grpcConfigPayload{
-		GRPCConfig: config,
-		Metadata:   emptyIfNil(config.Metadata),
+		GRPCConfig:   config,
+		Metadata:     emptyIfNil(config.Metadata),
+		ProtoContent: nullIfZero(config.ProtoContent),
 	}
-	// An empty mode means BEHAVIOR, the API's default.
-	if config.Mode == "HEALTH" {
+	// An empty mode means BEHAVIOR, the API's default. The mode is always
+	// sent: an update without it makes the API discard every BEHAVIOR-mode
+	// field of the request.
+	if config.Mode == "" {
+		payload.Mode = "BEHAVIOR"
+	}
+	if payload.Mode == "HEALTH" {
 		payload.Service = &config.Service
 	} else {
 		payload.Message = &config.Message
+		// An empty proto content is sent only with an explicit REFLECTION
+		// service definition. The API validates the content against the
+		// definition in the request alone, treating an omitted one as
+		// REFLECTION, so an empty content without it would leave a stored
+		// PROTO_FILE definition with an empty proto file.
+		if config.ServiceDefinition == "REFLECTION" {
+			payload.ProtoContent = &config.ProtoContent
+		}
 	}
 	return payload
 }
@@ -134,6 +171,9 @@ func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
 			Assertions:  emptyIfNil(monitor.Request.Assertions),
 			GRPCConfig:  createGRPCConfigPayload(monitor.Request.GRPCConfig),
 		},
+		Tags:                      emptyIfNil(monitor.Tags),
+		GroupOrder:                nullIfZero(monitor.GroupOrder),
+		AlertChannelSubscriptions: emptyIfNil(monitor.AlertChannelSubscriptions),
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.
@@ -152,6 +192,17 @@ func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
 	}
 
 	return payload
+}
+
+func updateGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorUpdatePayload {
+	payload := createGRPCMonitorPayload(monitor)
+	return grpcMonitorUpdatePayload{
+		grpcMonitorPayload: payload,
+		Request: grpcUpdateRequestPayload{
+			grpcRequestPayload: payload.Request,
+			Timeout:            nullIfZero(monitor.Request.Timeout),
+		},
+	}
 }
 
 func (c *client) CreateGRPCMonitor(
@@ -186,7 +237,7 @@ func (c *client) UpdateGRPCMonitor(
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/grpc/%s", ID)), createGRPCMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/grpc/%s", ID)), updateGRPCMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

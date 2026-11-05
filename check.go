@@ -110,11 +110,29 @@ func (c *client) CreateCheck(
 type checkPayload struct {
 	Check
 	GroupID *int64 `json:"groupId"`
+	// The update endpoint keeps the stored value of an omitted key. The
+	// fields below shadow embedded fields whose zero value would be omitted,
+	// so that an update resets them: lists are sent empty, and the rest as
+	// null, which is also their default on create.
+	Tags                      []string                   `json:"tags"`
+	SetupSnippetID            *int64                     `json:"setupSnippetId"`
+	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
+	LocalSetupScript          *string                    `json:"localSetupScript"`
+	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	GroupOrder                *int                       `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createCheckPayload(check Check) checkPayload {
 	payload := checkPayload{
-		Check: check,
+		Check:                     check,
+		Tags:                      emptyIfNil(check.Tags),
+		SetupSnippetID:            nullIfZero(check.SetupSnippetID),
+		TearDownSnippetID:         nullIfZero(check.TearDownSnippetID),
+		LocalSetupScript:          nullIfZero(check.LocalSetupScript),
+		LocalTearDownScript:       nullIfZero(check.LocalTearDownScript),
+		GroupOrder:                nullIfZero(check.GroupOrder),
+		AlertChannelSubscriptions: emptyIfNil(check.AlertChannelSubscriptions),
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.

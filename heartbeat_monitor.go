@@ -35,12 +35,11 @@ type Heartbeat struct {
 type heartbeatMonitorPayload struct {
 	HeartbeatMonitor
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
-	// their server-side value. The field below shadows an embedded field
-	// whose zero value would be omitted so that it is always sent and can
-	// actually be cleared via an update. AlertChannelSubscriptions is not
-	// shadowed: this endpoint verifiably clears subscriptions when the key
-	// is omitted.
-	Tags []string `json:"tags"`
+	// their server-side value. The fields below shadow embedded fields whose
+	// zero value would be omitted so that they are always sent and can
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
 func createHeartbeatMonitorPayload(monitor HeartbeatMonitor) heartbeatMonitorPayload {
@@ -49,6 +48,7 @@ func createHeartbeatMonitorPayload(monitor HeartbeatMonitor) heartbeatMonitorPay
 	}
 
 	payload.Tags = emptyIfNil(monitor.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
 
 	return payload
 }

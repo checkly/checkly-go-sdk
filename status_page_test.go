@@ -206,3 +206,73 @@ func TestGetStatusPage(t *testing.T) {
 		t.Error(cmp.Diff(testStatusPage, *response, ignoreStatusPageFields))
 	}
 }
+
+// validateStatusPageEmptyPayload asserts that the optional keys of an empty
+// status page are sent, as the update endpoint keeps the stored value of an
+// omitted key: the custom domain as null, which removes it, and the others as
+// empty strings.
+func validateStatusPageEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "customDomain", `null`)
+	assertRawBodyField(t, body, "logo", `""`)
+	assertRawBodyField(t, body, "redirectTo", `""`)
+	assertRawBodyField(t, body, "favicon", `""`)
+}
+
+func TestStatusPageSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	page := checkly.StatusPage{Name: "Foo status page", URL: "foo-status-page"}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateStatusPage",
+			method:   http.MethodPost,
+			url:      "/v1/status-pages",
+			status:   http.StatusCreated,
+			fixture:  "CreateStatusPage.json",
+			validate: validateStatusPageEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateStatusPage(ctx, page)
+				return err
+			},
+		},
+		{
+			name:     "UpdateStatusPage",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/status-pages/%s", testStatusPage.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateStatusPage.json",
+			validate: validateStatusPageEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateStatusPage(ctx, testStatusPage.ID, page)
+				return err
+			},
+		},
+	})
+}
+
+func TestStatusPageSerializesSetValues(t *testing.T) {
+	t.Parallel()
+	runPayloadCases(t, []payloadCase{{
+		name:    "UpdateStatusPage",
+		method:  http.MethodPut,
+		url:     fmt.Sprintf("/v1/status-pages/%s", testStatusPage.ID),
+		status:  http.StatusOK,
+		fixture: "UpdateStatusPage.json",
+		validate: func(t *testing.T, body []byte) {
+			assertRawBodyField(t, body, "customDomain", `"status.example.com"`)
+			assertRawBodyField(t, body, "logo", `"https://example.com/logo.png"`)
+			assertRawBodyField(t, body, "redirectTo", `"https://example.com"`)
+			assertRawBodyField(t, body, "favicon", `"https://example.com/favicon.ico"`)
+		},
+		call: func(ctx context.Context, c checkly.Client) error {
+			_, err := c.UpdateStatusPage(ctx, testStatusPage.ID, checkly.StatusPage{
+				Name:         "Foo status page",
+				URL:          "foo-status-page",
+				CustomDomain: "status.example.com",
+				Logo:         "https://example.com/logo.png",
+				RedirectTo:   "https://example.com",
+				Favicon:      "https://example.com/favicon.ico",
+			})
+			return err
+		},
+	}})
+}

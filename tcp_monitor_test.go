@@ -11,6 +11,7 @@ import (
 
 func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)

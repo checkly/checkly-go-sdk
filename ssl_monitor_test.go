@@ -177,25 +177,71 @@ func TestGetSSLMonitor(t *testing.T) {
 
 // TestSSLConfigOmitsSecurityBaselineWhenNil asserts a create body with a nil
 // SecurityBaseline omits the `securityBaseline` key so the server applies its
-// default baseline rather than receiving an empty override.
+// default baseline rather than receiving an empty override, while a nil
+// SSLClientCertificateID is sent as null.
 func TestSSLConfigOmitsSecurityBaselineWhenNil(t *testing.T) {
 	t.Parallel()
-	body, err := json.Marshal(testSSLMonitor.Request)
-	if err != nil {
-		t.Fatal(err)
+	monitor := testSSLMonitor
+	monitor.Request.SSLConfig.SecurityBaseline = nil
+	monitor.Request.SSLClientCertificateID = nil
+	runPayloadCases(t, []payloadCase{{
+		name:    "CreateSSLMonitor",
+		method:  http.MethodPost,
+		url:     "/v1/checks/ssl?autoAssignAlerts=false",
+		status:  http.StatusCreated,
+		fixture: "CreateSSLMonitor.json",
+		validate: func(t *testing.T, body []byte) {
+			assertRawBodyPathAbsent(t, body, "request", "sslConfig", "securityBaseline")
+			assertRawBodyPath(t, body, `null`, "request", "sslClientCertificateId")
+		},
+		call: func(ctx context.Context, c checkly.Client) error {
+			_, err := c.CreateSSLMonitor(ctx, monitor)
+			return err
+		},
+	}})
+}
+
+// validateSSLMonitorEmptyPayload asserts that the keys the update endpoint
+// would otherwise keep at their stored value are sent for an empty monitor.
+func validateSSLMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyPath(t, body, `[]`, "request", "assertions")
+	assertRawBodyPath(t, body, `null`, "request", "sslClientCertificateId")
+	assertRawBodyPath(t, body, `null`, "request", "sslConfig", "serverName")
+}
+
+func TestSSLMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	monitor := checkly.SSLMonitor{
+		Name:    "SSL Monitor #1",
+		Request: checkly.SSLRequest{SSLConfig: checkly.SSLConfig{Hostname: "example.com"}},
 	}
-	var reqBody map[string]interface{}
-	if err := json.Unmarshal(body, &reqBody); err != nil {
-		t.Fatal(err)
-	}
-	sslConfig, ok := reqBody["sslConfig"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("expected `sslConfig` object in request body, got: %s", body)
-	}
-	if _, ok := sslConfig["securityBaseline"]; ok {
-		t.Errorf("SSL config must omit `securityBaseline` when nil, got: %s", body)
-	}
-	if _, ok := reqBody["sslClientCertificateId"]; ok {
-		t.Errorf("SSL request must omit `sslClientCertificateId` when nil, got: %s", body)
-	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateSSLMonitor",
+			method:   http.MethodPost,
+			url:      "/v1/checks/ssl?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateSSLMonitor.json",
+			validate: validateSSLMonitorEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateSSLMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:     "UpdateSSLMonitor",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/ssl/%s?autoAssignAlerts=false", testSSLMonitor.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateSSLMonitor.json",
+			validate: validateSSLMonitorEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateSSLMonitor(ctx, testSSLMonitor.ID, monitor)
+				return err
+			},
+		},
+	})
 }

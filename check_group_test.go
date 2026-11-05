@@ -188,6 +188,27 @@ func validateGroupEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
 	assertRawBodyField(t, body, "localSetupScript", `null`)
 	assertRawBodyField(t, body, "localTearDownScript", `null`)
+	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
+	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
+}
+
+func TestUpdateGroupSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v1/check-groups/17?autoAssignAlerts=false",
+		validateGroupEmptyPayload,
+		http.StatusOK,
+		"UpdateGroup.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	_, err := client.UpdateGroup(context.Background(), 17, checkly.Group{
+		Name: "Group #1",
+	})
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestCreateGroupSerializesEmptyValues(t *testing.T) {

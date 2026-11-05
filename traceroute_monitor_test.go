@@ -192,3 +192,124 @@ func TestTracerouteRequestStripsPortForICMP(t *testing.T) {
 		t.Errorf("non-ICMP traceroute body must keep `port`, got: %s", tcp)
 	}
 }
+
+// tracerouteRequestDefaultKeys are the request keys that create leaves out
+// when unset, so the API stores its defaults, and that update sends as null.
+var tracerouteRequestDefaultKeys = []string{"protocol", "port", "maxHops", "maxUnknownHops", "timeout"}
+
+// validateTracerouteMonitorEmptyPayload asserts that the keys the update
+// endpoint would otherwise keep at their stored value are sent for an empty
+// monitor, on create and update alike.
+func validateTracerouteMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+}
+
+func TestTracerouteMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	monitor := checkly.TracerouteMonitor{
+		Name:    "Traceroute Monitor #1",
+		Request: checkly.TracerouteRequest{URL: "traceroute.example.com"},
+	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:    "CreateTracerouteMonitor",
+			method:  http.MethodPost,
+			url:     "/v1/checks/traceroute?autoAssignAlerts=false",
+			status:  http.StatusCreated,
+			fixture: "CreateTracerouteMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				validateTracerouteMonitorEmptyPayload(t, body)
+				for _, key := range tracerouteRequestDefaultKeys {
+					assertRawBodyPathAbsent(t, body, "request", key)
+				}
+			},
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateTracerouteMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:    "UpdateTracerouteMonitor",
+			method:  http.MethodPut,
+			url:     fmt.Sprintf("/v1/checks/traceroute/%s?autoAssignAlerts=false", testTracerouteMonitor.ID),
+			status:  http.StatusOK,
+			fixture: "UpdateTracerouteMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				validateTracerouteMonitorEmptyPayload(t, body)
+				for _, key := range tracerouteRequestDefaultKeys {
+					assertRawBodyPath(t, body, `null`, "request", key)
+				}
+				assertRawBodyPath(t, body, `[]`, "request", "assertions")
+				// A null IP family or PTR lookup would not mean the default.
+				assertRawBodyPathAbsent(t, body, "request", "ipFamily")
+				assertRawBodyPathAbsent(t, body, "request", "ptrLookup")
+			},
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateTracerouteMonitor(ctx, testTracerouteMonitor.ID, monitor)
+				return err
+			},
+		},
+	})
+}
+
+func TestUpdateTracerouteMonitorSerializesSetValues(t *testing.T) {
+	t.Parallel()
+	ptrLookup := false
+	request := checkly.TracerouteRequest{
+		URL:            "traceroute.example.com",
+		Protocol:       "UDP",
+		Port:           33434,
+		IPFamily:       "IPv6",
+		MaxHops:        20,
+		MaxUnknownHops: 10,
+		PtrLookup:      &ptrLookup,
+		Timeout:        5,
+	}
+	icmp := request
+	icmp.Protocol = "ICMP"
+	update := func(request checkly.TracerouteRequest) func(context.Context, checkly.Client) error {
+		return func(ctx context.Context, c checkly.Client) error {
+			_, err := c.UpdateTracerouteMonitor(ctx, testTracerouteMonitor.ID, checkly.TracerouteMonitor{
+				Name:    "Traceroute Monitor #1",
+				Request: request,
+			})
+			return err
+		}
+	}
+	url := fmt.Sprintf("/v1/checks/traceroute/%s?autoAssignAlerts=false", testTracerouteMonitor.ID)
+	runPayloadCases(t, []payloadCase{
+		{
+			name:    "UDP",
+			method:  http.MethodPut,
+			url:     url,
+			status:  http.StatusOK,
+			fixture: "UpdateTracerouteMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				assertRawBodyPath(t, body, `"traceroute.example.com"`, "request", "url")
+				assertRawBodyPath(t, body, `"UDP"`, "request", "protocol")
+				assertRawBodyPath(t, body, `33434`, "request", "port")
+				assertRawBodyPath(t, body, `"IPv6"`, "request", "ipFamily")
+				assertRawBodyPath(t, body, `20`, "request", "maxHops")
+				assertRawBodyPath(t, body, `10`, "request", "maxUnknownHops")
+				assertRawBodyPath(t, body, `false`, "request", "ptrLookup")
+				assertRawBodyPath(t, body, `5`, "request", "timeout")
+			},
+			call: update(request),
+		},
+		{
+			// The API discards the port of an ICMP probe.
+			name:    "ICMP",
+			method:  http.MethodPut,
+			url:     url,
+			status:  http.StatusOK,
+			fixture: "UpdateTracerouteMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				assertRawBodyPath(t, body, `"ICMP"`, "request", "protocol")
+				assertRawBodyPath(t, body, `null`, "request", "port")
+			},
+			call: update(icmp),
+		},
+	})
+}

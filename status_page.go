@@ -29,15 +29,15 @@ type StatusPage struct {
 	CustomDomain string `json:"customDomain,omitempty"`
 
 	// Logo is a URL to an image file to use as the logo for the status page.
-	Logo string `json:"logo,omitempty"`
+	Logo string `json:"logo"`
 
 	// RedirectTo is the URL the user should be redirected to when clicking
 	// the logo.
-	RedirectTo string `json:"redirectTo,omitempty"`
+	RedirectTo string `json:"redirectTo"`
 
 	// Favicon is a URL to an image file to use as the favicon of the status
 	// page.
-	Favicon string `json:"favicon,omitempty"`
+	Favicon string `json:"favicon"`
 
 	// DefaultTheme is the default theme of the status page.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
@@ -62,12 +62,27 @@ type StatusPageService struct {
 	Name string `json:"name"`
 }
 
+// statusPagePayload sends an empty custom domain as null, which removes it,
+// rather than omitting it: the update endpoint keeps the stored value of an
+// omitted key.
+type statusPagePayload struct {
+	StatusPage
+	CustomDomain *string `json:"customDomain"`
+}
+
+func createStatusPagePayload(page StatusPage) statusPagePayload {
+	return statusPagePayload{
+		StatusPage:   page,
+		CustomDomain: nullIfZero(page.CustomDomain),
+	}
+}
+
 func (c *client) CreateStatusPage(
 	ctx context.Context,
 	page StatusPage,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, http.MethodPost, "/v1/status-pages", page, &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, "/v1/status-pages", createStatusPagePayload(page), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +107,7 @@ func (c *client) UpdateStatusPage(
 	page StatusPage,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/%s", ID), page, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/%s", ID), createStatusPagePayload(page), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

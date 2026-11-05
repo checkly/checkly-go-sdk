@@ -10,6 +10,9 @@ import (
 
 func validateHeartbeatMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
+	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
 }
 
 func TestCreateHeartbeatMonitorSerializesEmptyValues(t *testing.T) {

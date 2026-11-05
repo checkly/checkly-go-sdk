@@ -47,9 +47,9 @@ type SSLMonitor struct {
 type SSLRequest struct {
 	SSLConfig SSLConfig `json:"sslConfig"`
 	// SSLClientCertificateID is the FK to a stored client certificate. It is
-	// required when SSLConfig.ClientCertificateMode is "explicit" and omitted
-	// otherwise, so it is a pointer with omitempty.
-	SSLClientCertificateID *string     `json:"sslClientCertificateId,omitempty"`
+	// required when SSLConfig.ClientCertificateMode is "explicit". Nil is sent
+	// as null, which removes a stored certificate.
+	SSLClientCertificateID *string     `json:"sslClientCertificateId"`
 	Assertions             []Assertion `json:"assertions,omitempty"`
 }
 
@@ -59,8 +59,9 @@ type SSLRequest struct {
 type SSLConfig struct {
 	Hostname string `json:"hostname"`
 	Port     int    `json:"port,omitempty"`
-	// ServerName is an optional SNI override (nullable in the API).
-	ServerName            *string           `json:"serverName,omitempty"`
+	// ServerName is an optional SNI override. Nil is sent as null, which
+	// removes a stored override.
+	ServerName            *string           `json:"serverName"`
 	IPFamily              string            `json:"ipFamily,omitempty"`
 	SkipChainValidation   bool              `json:"skipChainValidation"`
 	HandshakeTimeoutMs    int               `json:"handshakeTimeoutMs,omitempty"`
@@ -113,6 +114,21 @@ type sslMonitorPayload struct {
 	Type        string `json:"checkType"`
 	DoubleCheck bool   `json:"doubleCheck"`
 	GroupID     *int64 `json:"groupId"`
+	// The update endpoint keeps the stored value of an omitted key. The
+	// fields below shadow embedded fields whose zero value would be omitted,
+	// so that an update resets them: lists are sent empty, and the group
+	// order as null, which is also its default on create.
+	Tags                      []string                   `json:"tags"`
+	GroupOrder                *int                       `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	Request                   sslRequestPayload          `json:"request"`
+}
+
+// sslRequestPayload sends an unset assertion list as [] rather than omitting
+// it, as the update endpoint keeps the stored value of an omitted key.
+type sslRequestPayload struct {
+	SSLRequest
+	Assertions []Assertion `json:"assertions"`
 }
 
 func createSSLMonitorPayload(monitor SSLMonitor) sslMonitorPayload {
@@ -121,7 +137,14 @@ func createSSLMonitorPayload(monitor SSLMonitor) sslMonitorPayload {
 		// Unfortunately `checkType` is required for this endpoint.
 		Type: "SSL",
 		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
+		DoubleCheck:               false,
+		Tags:                      emptyIfNil(monitor.Tags),
+		GroupOrder:                nullIfZero(monitor.GroupOrder),
+		AlertChannelSubscriptions: emptyIfNil(monitor.AlertChannelSubscriptions),
+		Request: sslRequestPayload{
+			SSLRequest: monitor.Request,
+			Assertions: emptyIfNil(monitor.Request.Assertions),
+		},
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.

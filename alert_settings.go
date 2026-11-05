@@ -20,7 +20,7 @@ type AlertSettings struct {
 // ParallelRunFailureThreshold represent an alert escalation based on the number
 // of failing regions, only applicable for parallel checks
 type ParallelRunFailureThreshold struct {
-	Enabled    bool `json:"enabled,omitempty"`
+	Enabled    bool `json:"enabled"`
 	Percentage int  `json:"percentage,omitempty"`
 }
 
@@ -39,6 +39,6 @@ type TimeBasedEscalation struct {
 // Reminders represents the number of reminders to send after an alert
 // notification, and the time interval between them.
 type Reminders struct {
-	Amount   int `json:"amount,omitempty"`
+	Amount   int `json:"amount"`
 	Interval int `json:"interval,omitempty"`
 }
