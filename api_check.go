@@ -8,51 +8,83 @@ import (
 	"time"
 )
 
-// APICheck represents an API check.
+// APICheck is an API check: it sends an HTTP request and runs assertions on
+// the response. It is the input and result of [Client.CreateAPICheck] and
+// [Client.UpdateAPICheck], and the result of [Client.GetAPICheck].
 //
-// The per-type check update endpoints are PATCH-style: keys omitted from the
-// payload keep their server-side value. Clearable fields of APICheck,
-// BrowserCheck and MultiStepCheck are therefore serialized even when empty,
-// and the client sends nil slices as empty lists.
+// Fields whose zero value would be left out of the request are sent anyway
+// where the zero value is how they are cleared: nil Locations,
+// PrivateLocations, Tags and AlertChannelSubscriptions are sent as empty
+// lists, and a GroupID, SetupSnippetID or TearDownSnippetID of 0 as null.
 type APICheck struct {
-	ID              string   `json:"id,omitempty"`
-	Name            string   `json:"name"`
-	Description     *string  `json:"description"`
-	Frequency       int      `json:"frequency"`
-	FrequencyOffset int      `json:"frequencyOffset,omitempty"`
-	Activated       bool     `json:"activated"`
-	Muted           bool     `json:"muted"`
-	ShouldFail      bool     `json:"shouldFail"`
-	RunParallel     bool     `json:"runParallel"`
-	Locations       []string `json:"locations"`
-	// DegradedResponseTime is the response time in milliseconds where the
-	// check should be considered degraded. The API accepts values between 0
-	// and 30000. It is always sent, so leaving it at 0 sets a limit of 0
-	// rather than the API's default of 5000.
-	DegradedResponseTime int `json:"degradedResponseTime"`
-	// MaxResponseTime is the response time in milliseconds where the check
-	// should be considered failing. The API accepts values between 0 and
-	// 30000. It is always sent, so leaving it at 0 sets a limit of 0 rather
-	// than the API's default of 20000.
-	MaxResponseTime           int                        `json:"maxResponseTime"`
-	Tags                      []string                   `json:"tags"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   Request                    `json:"request"`
-	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          *string                    `json:"localSetupScript"`
-	LocalTearDownScript       *string                    `json:"localTearDownScript"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder"`
+	// ID is the check's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
+	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
+	// (rounded up) above 60. FrequencyOffset is left out of the request
+	// when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the check fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the check in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds, each at most 45000.
+	DegradedResponseTime int      `json:"degradedResponseTime"`
+	MaxResponseTime      int      `json:"maxResponseTime"`
+	Tags                 []string `json:"tags"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool    `json:"useGlobalAlertSettings"`
+	Request                Request `json:"request"`
+	// SetupSnippetID and TearDownSnippetID are the IDs of the [Snippet] run
+	// in the setup and teardown phase; 0 means none.
+	SetupSnippetID    int64 `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID int64 `json:"tearDownSnippetId,omitempty"`
+	// LocalSetupScript and LocalTearDownScript are Node.js code run in the
+	// setup and teardown phase.
+	LocalSetupScript    *string `json:"localSetupScript"`
+	LocalTearDownScript *string `json:"localTearDownScript"`
+	// GroupID is the ID of the check group the check belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the check's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// check's alerts. The SDK disables automatic assignment, so an empty
+	// list leaves the check without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
-
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version the check runs with, such as
+	// "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the check open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 	// Intent describes what the check protects, for automatic AI repair.
 	// It is sent as null when nil, so an update with a nil Intent clears an
 	// intent set elsewhere, for example in the web app.
@@ -88,25 +120,27 @@ const (
 	IPFamilyIPv6 IPFamily = "IPv6"
 )
 
-// Request represents the parameters for the request made by the check.
+// Request is the HTTP request of an API check, with the assertions run on
+// its response.
 type Request struct {
 	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
 	// constants such as http.MethodGet name them.
-	Method          string      `json:"method"`
-	URL             string      `json:"url"`
-	FollowRedirects bool        `json:"followRedirects"`
-	SkipSSL         bool        `json:"skipSSL"`
-	Body            string      `json:"body"`
+	Method          string `json:"method"`
+	URL             string `json:"url"`
+	FollowRedirects bool   `json:"followRedirects"`
+	SkipSSL         bool   `json:"skipSSL"`
+	Body            string `json:"body"`
+	// BodyType is left out of the request when empty.
 	BodyType        BodyType    `json:"bodyType,omitempty"`
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
-	// BasicAuth must always be serialized (as null when absent): the check
-	// update endpoints are PATCH-style and keep the server-side credentials
-	// when the key is omitted, so omitting it would make it impossible to
-	// remove previously configured credentials.
+	// BasicAuth is always sent, as null when nil: the update endpoints keep
+	// the stored credentials when the key is left out, so sending null is how
+	// previously configured credentials are removed.
 	BasicAuth *BasicAuth `json:"basicAuth"`
-	IPFamily  IPFamily   `json:"ipFamily,omitempty"`
+	// IPFamily is left out of the request when empty.
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 
 // MarshalJSON sends unset headers, query parameters and assertions as [],
@@ -119,14 +153,14 @@ func (r Request) MarshalJSON() ([]byte, error) {
 	return json.Marshal(alias(r))
 }
 
-// BasicAuth represents the HTTP basic authentication credentials for a request.
+// BasicAuth holds the HTTP basic authentication credentials of a [Request]
+// or of [APICheckDefaults].
 type BasicAuth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-// KeyValue represents a key-value pair, for example a request header setting,
-// or a query parameter.
+// KeyValue is a key-value pair, such as a request header or query parameter.
 type KeyValue struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`

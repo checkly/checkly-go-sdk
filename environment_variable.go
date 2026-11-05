@@ -6,13 +6,26 @@ import (
 	"net/http"
 )
 
-// EnvironmentVariable represents a key-value pair for setting environment
-// values during check execution.
+// EnvironmentVariable is an environment variable that checks can read when
+// they run. It is the input and result of CreateEnvironmentVariable and
+// UpdateEnvironmentVariable for account-level variables, and the element
+// type of the EnvironmentVariables fields of checks and groups.
 type EnvironmentVariable struct {
-	Key    string `json:"key,omitempty"`
-	Value  string `json:"value"`
-	Locked bool   `json:"locked"`
-	Secret bool   `json:"secret"`
+	// Key is the variable's name, such as "API_KEY". UpdateEnvironmentVariable
+	// rejects a different key. Key is left out of the request when empty.
+	Key string `json:"key,omitempty"`
+
+	// Value must not be empty for an account-level variable. Reads return an
+	// empty Value for a secret variable, because the API never returns secret
+	// values.
+	Value string `json:"value"`
+
+	// Locked hides the value in the Checkly UI, like a password.
+	Locked bool `json:"locked"`
+
+	// Secret stores the value as a secret, which reads never return. A
+	// secret variable cannot be made non-secret again.
+	Secret bool `json:"secret"`
 }
 
 func (c *client) CreateEnvironmentVariable(

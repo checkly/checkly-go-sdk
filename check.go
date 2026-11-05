@@ -32,46 +32,93 @@ const (
 	CheckTypeGRPC       CheckType = "GRPC"
 )
 
-// Check represents the parameters for an existing check.
+// Check is a check of any type, as used by [Client.CreateCheck],
+// [Client.GetCheck] and [Client.UpdateCheck].
 //
 // Deprecated: use APICheck, BrowserCheck, MultiStepCheck or a monitor type
 // such as HeartbeatMonitor, with the client methods of their type.
 type Check struct {
-	ID                        string                     `json:"id"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Type                      CheckType                  `json:"checkType"`
-	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime"`
-	MaxResponseTime           int                        `json:"maxResponseTime"`
-	Script                    string                     `json:"script,omitempty"`
-	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	SSLCheckDomain            string                     `json:"sslCheckDomain"`
-	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
-	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
-	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   Request                    `json:"request"`
-	Heartbeat                 Heartbeat                  `json:"heartbeat"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	// ID is the check's UUID, assigned by the API.
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Type is the check type, such as [CheckTypeAPI].
+	Type CheckType `json:"checkType"`
+	// Frequency is the number of minutes between runs.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
+	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
+	// (rounded up) above 60. FrequencyOffset is left out of the request
+	// when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the check fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the check in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds.
+	DegradedResponseTime int `json:"degradedResponseTime"`
+	MaxResponseTime      int `json:"maxResponseTime"`
+	// Script is left out of the request when empty.
+	Script               string                `json:"script,omitempty"`
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
+	// Tags is left out of the request when empty.
+	Tags           []string `json:"tags,omitempty"`
+	SSLCheckDomain string   `json:"sslCheckDomain"`
+	// SetupSnippetID and TearDownSnippetID are the IDs of the [Snippet] run
+	// in the setup and teardown phase of an API check. SetupSnippetID and
+	// TearDownSnippetID are left out of the request when zero.
+	SetupSnippetID    int64 `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID int64 `json:"tearDownSnippetId,omitempty"`
+	// LocalSetupScript and LocalTearDownScript are Node.js code run in the
+	// setup and teardown phase of an API check. LocalSetupScript and
+	// LocalTearDownScript are left out of the request when empty.
+	LocalSetupScript    string        `json:"localSetupScript,omitempty"`
+	LocalTearDownScript string        `json:"localTearDownScript,omitempty"`
+	AlertSettings       AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool `json:"useGlobalAlertSettings"`
+	// Request is the request of an API check.
+	Request Request `json:"request"`
+	// Heartbeat is the configuration of a heartbeat monitor.
+	Heartbeat Heartbeat `json:"heartbeat"`
+	// GroupID is the ID of the check group the check belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the check's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	// GroupOrder is left out of the request when zero.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// check's alerts. The SDK disables automatic assignment, so an empty
+	// list leaves the check without any.
+	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	CreatedAt                 time.Time                  `json:"created_at"`
 	UpdatedAt                 time.Time                  `json:"updated_at"`
 
-	PrivateLocations *[]string        `json:"privateLocations"`
-	RuntimeID        *string          `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
-	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version the check runs with, such as
+	// "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried. Nil, with DoubleCheck
+	// false, disables retries. In a group whose RetryStrategy is not
+	// [RetryStrategyTypeFallback], the group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the check open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
 
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`

@@ -6,20 +6,33 @@ import (
 	"net/http"
 )
 
-// PrivateLocationKey represents the keys that the private location has.
+// PrivateLocationKey is an API key of a private location, in
+// PrivateLocation.Keys.
 type PrivateLocationKey struct {
 	ID        string `json:"id"`
 	MaskedKey string `json:"maskedKey"`
+
+	// RawKey is the full key. Only the response of CreatePrivateLocation
+	// includes it, for the key that the new location gets.
 	RawKey    string `json:"rawKey"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
-// PrivateLocation defines a type for a private location.
+// PrivateLocation is a location that runs checks on the account's own
+// infrastructure, through Checkly agents. It is the input and result of
+// CreatePrivateLocation and UpdatePrivateLocation.
 type PrivateLocation struct {
-	ID         string               `json:"id"`
-	Name       string               `json:"name"`
-	SlugName   string               `json:"slugName"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+
+	// SlugName identifies the location in the PrivateLocations fields of
+	// checks and groups. It is required on create and cannot be changed:
+	// the API ignores it on update.
+	SlugName string `json:"slugName"`
+
+	// Icon defaults to "location" on create.
+	// Icon is left out of the request when empty.
 	Icon       string               `json:"icon,omitempty"`
 	Keys       []PrivateLocationKey `json:"keys,omitempty"`
 	LastSeen   string               `json:"lastSeen,omitempty"`

@@ -19,7 +19,8 @@ const (
 	MaintenanceWindowRepeatUnitMonth MaintenanceWindowRepeatUnit = "MONTH"
 )
 
-// MaintenanceWindow defines a type for a maintenance window.
+// MaintenanceWindow is a scheduled, optionally recurring period during which
+// checks are paused or their alerts silenced.
 //
 // Create and update requests always send every field, so an update replaces
 // the whole window: the API keeps a field's stored value only when the field
@@ -28,14 +29,22 @@ const (
 // default: no repeat, UTC, no description, empty tag lists, nothing paused or
 // silenced, and a StatusPageVisibility that is hidden and unlinked.
 type MaintenanceWindow struct {
-	ID             int64                       `json:"id"`
-	Name           string                      `json:"name"`
-	StartsAt       string                      `json:"startsAt"`
-	EndsAt         string                      `json:"endsAt"`
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	StartsAt string `json:"startsAt"`
+	EndsAt   string `json:"endsAt"`
+
+	// RepeatInterval, between 1 and 365, and RepeatUnit repeat the window
+	// from its first occurrence. A zero RepeatInterval means no repeat.
 	RepeatInterval int                         `json:"repeatInterval"`
 	RepeatUnit     MaintenanceWindowRepeatUnit `json:"repeatUnit"`
-	RepeatEndsAt   string                      `json:"repeatEndsAt"`
-	Tags           []string                    `json:"tags"`
+
+	// RepeatEndsAt is the last calendar date, in Timezone, on which an
+	// occurrence may start, preferably as YYYY-MM-DD.
+	RepeatEndsAt string `json:"repeatEndsAt"`
+
+	// Tags selects, by tag, the checks and groups the window applies to.
+	Tags []string `json:"tags"`
 
 	// Timezone is the named IANA time zone used for recurring maintenance
 	// scheduling, e.g. "America/New_York". UTC offset identifiers such as
@@ -154,8 +163,7 @@ type MaintenanceWindowComponentConfig struct {
 // progress.
 type MaintenanceWindowComponentImpact struct {
 	ComponentID string `json:"componentId"`
-	// Status is the status the component shows. Empty means
-	// UNDER_MAINTENANCE.
+	// Empty means [StatusPageComponentStatusV3UnderMaintenance].
 	Status StatusPageComponentStatusV3 `json:"status,omitempty"`
 }
 

@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-// Snippet defines Snippet type
+// Snippet is a reusable piece of Node.js code: a setup or teardown script
+// that checks and groups refer to by ID (SetupSnippetID, TearDownSnippetID),
+// or a partial for browser checks. It is the input and result of
+// CreateSnippet and UpdateSnippet, which both require Name and Script.
 type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`

@@ -7,9 +7,10 @@ import (
 	"net/netip"
 )
 
-// This type is used to describe Checkly's official
-// public range of IP addresses checks are executed from
-// see https://www.checklyhq.com/docs/monitoring/allowlisting/#ip-range-allowlisting
+// StaticIP is one of the public IP addresses or ranges that Checkly runs
+// checks from, as returned by GetStaticIPs. Region is a location code such as
+// "us-east-1". Address is an IPv6 range, or an IPv4 address as a /32 prefix.
+// See https://www.checklyhq.com/docs/monitoring/allowlisting/#ip-range-allowlisting.
 type StaticIP struct {
 	Region  string
 	Address netip.Prefix

@@ -32,12 +32,14 @@ const (
 	AssertionSourceCertificate AssertionSource = "CERTIFICATE"
 	// AssertionSourceConnection is a connection field of an SSL monitor, such
 	// as tlsVersion, named by the assertion's Property.
-	AssertionSourceConnection            AssertionSource = "CONNECTION"
-	AssertionSourceJSONResponse          AssertionSource = "JSON_RESPONSE"
-	AssertionSourceTextResponse          AssertionSource = "TEXT_RESPONSE"
-	AssertionSourceResponseCode          AssertionSource = "RESPONSE_CODE"
-	AssertionSourceTextAnswer            AssertionSource = "TEXT_ANSWER"
-	AssertionSourceJSONAnswer            AssertionSource = "JSON_ANSWER"
+	AssertionSourceConnection   AssertionSource = "CONNECTION"
+	AssertionSourceJSONResponse AssertionSource = "JSON_RESPONSE"
+	AssertionSourceTextResponse AssertionSource = "TEXT_RESPONSE"
+	AssertionSourceResponseCode AssertionSource = "RESPONSE_CODE"
+	AssertionSourceTextAnswer   AssertionSource = "TEXT_ANSWER"
+	AssertionSourceJSONAnswer   AssertionSource = "JSON_ANSWER"
+	// AssertionSourceLatency is the ping latency of an ICMP monitor, with
+	// the Property "avg", "min", "max" or "stdDev".
 	AssertionSourceLatency               AssertionSource = "LATENCY"
 	AssertionSourceHopCount              AssertionSource = "HOP_COUNT"
 	AssertionSourcePacketLoss            AssertionSource = "PACKET_LOSS"
@@ -85,16 +87,23 @@ const (
 	AssertionComparisonNotNull     AssertionComparison = "NOT_NULL"
 )
 
-// Assertion represents an assertion about an API response, which will be
-// verified as part of the check.
+// Assertion is a condition on the result of a check run, such as the status
+// code of an API check's response. It is used in [Request] and in the
+// requests of the monitor types; which sources and comparisons are accepted
+// depends on the check type.
 type Assertion struct {
-	Source     AssertionSource     `json:"source"`
-	Property   string              `json:"property"`
+	// Source is the value the assertion checks, such as
+	// [AssertionSourceStatusCode].
+	Source AssertionSource `json:"source"`
+	// Property selects a part of the source, such as the certificate field
+	// for [AssertionSourceCertificate].
+	Property string `json:"property"`
+	// Comparison is how the source is compared with Target, such as
+	// [AssertionComparisonEquals].
 	Comparison AssertionComparison `json:"comparison"`
 	Target     string              `json:"target"`
-	// Regex, when set on a HEADERS assertion, is matched against the header
-	// value, and the assertion compares the first capture group instead of
-	// the whole value; a value it does not match compares as empty. Empty
-	// compares the whole value.
+	// Regex, on an [AssertionSourceHeaders] assertion, extracts the first
+	// capture group of the header value to compare instead of the whole
+	// value; a value it does not match compares as empty.
 	Regex string `json:"regex"`
 }

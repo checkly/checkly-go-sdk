@@ -71,8 +71,9 @@ type Client interface {
 		check APICheck,
 	) (*APICheck, error)
 
-	// GetAPICheck returns the API check with the given ID. It returns an error,
-	// not an [*APIError], when the ID belongs to a check of another type.
+	// GetAPICheck returns the API check with the given ID. It fails with an error
+	// matching [ErrCheckTypeMismatch] when the ID belongs to a check of another
+	// type.
 	GetAPICheck(
 		ctx context.Context,
 		ID string,
@@ -99,8 +100,8 @@ type Client interface {
 	) (*BrowserCheck, error)
 
 	// GetBrowserCheck returns the browser check with the given ID, including its
-	// script dependencies. It returns an error, not an [*APIError], when the ID
-	// belongs to a check of another type.
+	// script dependencies. It fails with an error matching [ErrCheckTypeMismatch]
+	// when the ID belongs to a check of another type.
 	GetBrowserCheck(
 		ctx context.Context,
 		ID string,
@@ -127,9 +128,9 @@ type Client interface {
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
-	// GetMultiStepCheck returns the multi-step check with the given ID,
-	// including its script dependencies. It returns an error, not an
-	// [*APIError], when the ID belongs to a check of another type.
+	// GetMultiStepCheck returns the multi-step check with the given ID, including
+	// its script dependencies. It fails with an error matching
+	// [ErrCheckTypeMismatch] when the ID belongs to a check of another type.
 	GetMultiStepCheck(
 		ctx context.Context,
 		ID string,
@@ -157,17 +158,18 @@ type Client interface {
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
-	// GetPlaywrightCheck returns the Playwright check with the given ID. It does
-	// not verify the check type.
+	// GetPlaywrightCheck returns the Playwright check with the given ID. It fails
+	// with an error matching [ErrCheckTypeMismatch] when the ID belongs to a check
+	// of another type.
 	GetPlaywrightCheck(
 		ctx context.Context,
 		ID string,
 	) (*PlaywrightCheck, error)
 
 	// UpdatePlaywrightCheck updates the Playwright check with the given ID and
-	// returns it. An empty Tags, a nil AlertSettings, or a zero GroupID or
-	// GroupOrder, which are left out of the request, resets that field to the
-	// API default.
+	// returns it. An empty Tags or Browsers, a nil AlertSettings, or a zero
+	// GroupID or GroupOrder, which are left out of the request, resets that
+	// field to the API default.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
 		ID string,
@@ -207,7 +209,8 @@ type Client interface {
 	) (*HeartbeatMonitor, error)
 
 	// GetHeartbeatMonitor returns the heartbeat monitor with the given ID. It
-	// does not verify the check type.
+	// fails with an error matching [ErrCheckTypeMismatch] when the ID belongs to a
+	// check of another type.
 	GetHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
@@ -234,8 +237,9 @@ type Client interface {
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
-	// GetURLMonitor returns the URL monitor with the given ID. It does not
-	// verify the check type.
+	// GetURLMonitor returns the URL monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetURLMonitor(
 		ctx context.Context,
 		ID string,
@@ -261,8 +265,9 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
-	// GetTCPMonitor returns the TCP monitor with the given ID. It does not
-	// verify the check type.
+	// GetTCPMonitor returns the TCP monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetTCPMonitor(
 		ctx context.Context,
 		ID string,
@@ -288,8 +293,9 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
-	// GetDNSMonitor returns the DNS monitor with the given ID. It does not
-	// verify the check type.
+	// GetDNSMonitor returns the DNS monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetDNSMonitor(
 		ctx context.Context,
 		ID string,
@@ -317,8 +323,9 @@ type Client interface {
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
-	// GetICMPMonitor returns the ICMP monitor with the given ID. It does not
-	// verify the check type.
+	// GetICMPMonitor returns the ICMP monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetICMPMonitor(
 		ctx context.Context,
 		ID string,
@@ -345,8 +352,9 @@ type Client interface {
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
-	// GetGRPCMonitor returns the gRPC monitor with the given ID. It does not
-	// verify the check type.
+	// GetGRPCMonitor returns the gRPC monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetGRPCMonitor(
 		ctx context.Context,
 		ID string,
@@ -375,7 +383,8 @@ type Client interface {
 	) (*TracerouteMonitor, error)
 
 	// GetTracerouteMonitor returns the traceroute monitor with the given ID. It
-	// does not verify the check type.
+	// fails with an error matching [ErrCheckTypeMismatch] when the ID belongs to a
+	// check of another type.
 	GetTracerouteMonitor(
 		ctx context.Context,
 		ID string,
@@ -402,8 +411,9 @@ type Client interface {
 		monitor SSLMonitor,
 	) (*SSLMonitor, error)
 
-	// GetSSLMonitor returns the SSL monitor with the given ID. It does not
-	// verify the check type.
+	// GetSSLMonitor returns the SSL monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetSSLMonitor(
 		ctx context.Context,
 		ID string,
@@ -563,9 +573,9 @@ type Client interface {
 	) (*AlertChannel, error)
 
 	// UpdateAlertChannel updates the alert channel with the given ID and returns
-	// it. A nil SSLExpiry or SSLExpiryThreshold resets it to the API default,
-	// while a nil SendRecovery, SendFailure or SendDegraded keeps its current
-	// value.
+	// it. A nil SSLExpiry, SSLExpiryThreshold or AutoSubscribe resets it to the
+	// API default, while a nil SendRecovery, SendFailure or SendDegraded keeps
+	// its current value.
 	UpdateAlertChannel(
 		ctx context.Context,
 		ID int64,
@@ -591,11 +601,12 @@ type Client interface {
 	) (*Dashboard, error)
 
 	// UpdateDashboard updates the dashboard whose [Dashboard.DashboardID] is ID
-	// and returns it. A nil ShowHeader, ShowP95 or ShowP99, a false IsPrivate,
-	// HideTags or UseTagsAndOperator, an empty Width or Tags, or a zero
-	// ChecksPerPage resets that field to the API default, while an empty
-	// Header, Description, Logo, Link, Favicon or CustomDomain keeps its
-	// current value.
+	// and returns it. A nil ShowHeader, Paginate, ShowGroupNames, ShowP95 or
+	// ShowP99, a false IsPrivate, SortByStatus, HideTags or
+	// UseTagsAndOperator, an empty Width or Tags, or a zero RefreshRate,
+	// ChecksPerPage or PaginationRate resets that field to the API default,
+	// while an empty Header, Description, Logo, Link, Favicon or CustomDomain
+	// removes it.
 	UpdateDashboard(
 		ctx context.Context,
 		ID string,

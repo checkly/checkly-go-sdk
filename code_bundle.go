@@ -10,16 +10,26 @@ import (
 	"time"
 )
 
+// UploadCodeBundleOptions are the options of [Client.UploadCodeBundle].
 type UploadCodeBundleOptions struct {
+	// ChecksumSha256, when set, is the hex-encoded SHA-256 digest of the
+	// bundle, sent with the upload and stored with it.
 	ChecksumSha256 string
 }
 
+// CodeBundle describes a code bundle in Checkly storage, as returned by
+// [Client.UploadCodeBundle] and [Client.PeekCodeBundle].
 type CodeBundle struct {
-	Key            string    `json:"key"`
-	VersionID      string    `json:"versionID,omitempty"`
-	LastModified   time.Time `json:"lastModified,omitempty"`
-	ContentLength  int64     `json:"contentLength"`
-	ChecksumSha256 string    `json:"checksumSha256"`
+	// Key identifies the bundle in Checkly storage.
+	Key       string `json:"key"`
+	VersionID string `json:"versionID,omitempty"`
+	// LastModified and ContentLength are set by PeekCodeBundle only; an
+	// upload leaves them zero.
+	LastModified  time.Time `json:"lastModified,omitempty"`
+	ContentLength int64     `json:"contentLength"`
+	// ChecksumSha256 is the hex-encoded SHA-256 digest stored with the
+	// bundle, or empty if it has none.
+	ChecksumSha256 string `json:"checksumSha256"`
 }
 
 // The code bundle endpoints belong to the /next API. An upload streams its

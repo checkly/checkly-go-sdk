@@ -8,47 +8,62 @@ import (
 	"time"
 )
 
-// CheckResult represents a Check result
+// CheckResult is the result of one check run, as returned by
+// [Client.GetCheckResult] and [Client.GetCheckResults].
 type CheckResult struct {
-	ID                  string              `json:"id"`
-	Name                string              `json:"name"`
-	CheckID             string              `json:"checkId"`
-	HasFailures         bool                `json:"hasFailures"`
-	HasErrors           bool                `json:"hasErrors"`
-	IsDegraded          bool                `json:"isDegraded"`
-	OverMaxResponseTime bool                `json:"overMaxResponseTime"`
-	RunLocation         string              `json:"runLocation"`
-	ResponseTime        int64               `json:"responseTime"`
-	APICheckResult      *APICheckResult     `json:"apiCheckResult"`
-	BrowserCheckResult  *BrowserCheckResult `json:"browserCheckResult"`
-	// Typed failure-debug diagnostics for the uptime-monitor types. Each is nil
-	// for the other check types, mirroring the apiCheckResult sibling.
+	ID string `json:"id"`
+	// Name is the name of the check.
+	Name    string `json:"name"`
+	CheckID string `json:"checkId"`
+	// HasFailures reports whether the run failed, for example through a
+	// failing assertion, a timeout or a failing script.
+	HasFailures bool `json:"hasFailures"`
+	// HasErrors reports an internal error in Checkly rather than in the
+	// checked service.
+	HasErrors bool `json:"hasErrors"`
+	// IsDegraded and OverMaxResponseTime report whether the run exceeded the
+	// degraded and failing limits of the check or monitor, such as its
+	// DegradedResponseTime and MaxResponseTime.
+	IsDegraded          bool `json:"isDegraded"`
+	OverMaxResponseTime bool `json:"overMaxResponseTime"`
+	// RunLocation is the location the check ran from.
+	RunLocation string `json:"runLocation"`
+	// ResponseTime is the time in milliseconds the check spent producing its
+	// result: the measured operation, such as the request or the TLS
+	// handshake, for API checks and protocol monitors, and the whole run for
+	// browser, multi-step and Playwright checks.
+	ResponseTime       int64               `json:"responseTime"`
+	APICheckResult     *APICheckResult     `json:"apiCheckResult"`
+	BrowserCheckResult *BrowserCheckResult `json:"browserCheckResult"`
+	// TracerouteCheckResult, GRPCCheckResult and SSLCheckResult hold the
+	// diagnostics of a traceroute, gRPC or SSL monitor run, and are nil for
+	// the other check types.
 	TracerouteCheckResult *TracerouteCheckResult `json:"tracerouteCheckResult"`
 	GRPCCheckResult       *GRPCCheckResult       `json:"grpcCheckResult"`
 	SSLCheckResult        *SSLCheckResult        `json:"sslCheckResult"`
-	CheckRunID            int64                  `json:"checkRunId"`
-	Attempts              int64                  `json:"attempts"`
-	StartedAt             time.Time              `json:"startedAt"`
-	StoppedAt             time.Time              `json:"stoppedAt"`
-	CreatedAt             time.Time              `json:"created_at"`
+	// CheckRunID is the ID of the check run that produced this result.
+	CheckRunID int64 `json:"checkRunId"`
+	// Attempts is how often the run was retried.
+	Attempts  int64     `json:"attempts"`
+	StartedAt time.Time `json:"startedAt"`
+	StoppedAt time.Time `json:"stoppedAt"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// APICheckResult represents an API Check result
+// APICheckResult is the request and response detail of an API check run,
+// decoded as an untyped JSON object.
 type APICheckResult map[string]interface{}
 
-// BrowserCheckResult represents a Browser Check result
+// BrowserCheckResult is the detail of a browser check run, decoded as an
+// untyped JSON object.
 type BrowserCheckResult map[string]interface{}
 
-// The TRACEROUTE / GRPC / SSL result types below mirror the additive optional
-// fields the public check-results response carries alongside apiCheckResult (see
-// the backend public-api check-results schemas). They are the read-path types an
-// SDK consumer decodes to debug a failing uptime-monitor result. Documented
-// scalars are typed; the open runner sub-objects (timingPhases / request /
-// assertions / certificate / securityBaseline) stay map/slice of interface{} so
-// the full runner artifact survives JSON decoding without dropping fields.
+// The traceroute, gRPC and SSL result types below type the fields the API
+// documents, and keep its open-ended objects (timing phases, the request,
+// assertions, certificate and security baseline) as maps, so that decoding
+// drops nothing the API reports.
 
-// TracerouteCheckResult holds the failure-debug diagnostics for a traceroute
-// check result.
+// TracerouteCheckResult holds the diagnostics of a traceroute monitor run.
 type TracerouteCheckResult struct {
 	TotalHops          *int                     `json:"totalHops,omitempty"`
 	DestinationReached *bool                    `json:"destinationReached,omitempty"`
@@ -60,7 +75,8 @@ type TracerouteCheckResult struct {
 	Response           *TracerouteCheckResponse `json:"response,omitempty"`
 }
 
-// TracerouteCheckResponse is the detailed traceroute response artifact.
+// TracerouteCheckResponse is the detailed response of a traceroute monitor
+// run.
 type TracerouteCheckResponse struct {
 	Hostname           string                   `json:"hostname,omitempty"`
 	ResolvedIP         string                   `json:"resolvedIp,omitempty"`
@@ -73,7 +89,7 @@ type TracerouteCheckResponse struct {
 	ProbeProtocol      string                   `json:"probeProtocol,omitempty"`
 }
 
-// GRPCCheckResult holds the failure-debug diagnostics for a gRPC check result.
+// GRPCCheckResult holds the diagnostics of a gRPC monitor run.
 type GRPCCheckResult struct {
 	GRPCStatusCode *int                     `json:"grpcStatusCode,omitempty"`
 	HealthStatus   *int                     `json:"healthStatus,omitempty"`
@@ -84,7 +100,7 @@ type GRPCCheckResult struct {
 	Response       *GRPCCheckResponse       `json:"response,omitempty"`
 }
 
-// GRPCCheckResponse is the detailed gRPC response artifact.
+// GRPCCheckResponse is the detailed response of a gRPC monitor run.
 type GRPCCheckResponse struct {
 	GRPCMode          string                 `json:"grpcMode,omitempty"`
 	Host              string                 `json:"host,omitempty"`
@@ -102,7 +118,7 @@ type GRPCCheckResponse struct {
 	TimingPhases      map[string]interface{} `json:"timingPhases,omitempty"`
 }
 
-// SSLCheckResult holds the failure-debug diagnostics for an SSL check result.
+// SSLCheckResult holds the diagnostics of an SSL monitor run.
 type SSLCheckResult struct {
 	TLSVersion       string                   `json:"tlsVersion,omitempty"`
 	CipherSuite      string                   `json:"cipherSuite,omitempty"`
@@ -119,7 +135,7 @@ type SSLCheckResult struct {
 	Response         *SSLCheckResponse        `json:"response,omitempty"`
 }
 
-// SSLCheckResponse is the detailed SSL/TLS response artifact.
+// SSLCheckResponse is the detailed response of an SSL monitor run.
 type SSLCheckResponse struct {
 	ResolvedIP       string                   `json:"resolvedIp,omitempty"`
 	Protocol         string                   `json:"protocol,omitempty"`
@@ -134,17 +150,27 @@ type SSLCheckResponse struct {
 	Chain            []map[string]interface{} `json:"chain,omitempty"`
 }
 
-// CheckResultsFilter represents the parameters that can be passed while
-// getting Check Results. Zero-valued fields are not sent. A non-empty
-// CheckType, such as "MULTI_STEP" or "URL", is sent as is: the API answers
-// 404 when the check is of another type, and 400 for a type it does not know.
+// CheckResultsFilter narrows the results returned by
+// [Client.GetCheckResults]. Zero-valued fields are not sent.
 type CheckResultsFilter struct {
-	Limit       int64
-	Page        int64
-	Location    string
-	To          int64
-	From        int64
-	CheckType   CheckType
+	// Limit is the number of results per page, at most 100; the API
+	// defaults to 10.
+	Limit int64
+	// Page is the 1-based page number.
+	Page int64
+	// Location limits the results to one location, such as "eu-west-1".
+	Location string
+	// From and To limit the results to runs from From (inclusive) to To
+	// (exclusive), as Unix timestamps in seconds, at most six hours apart.
+	// An unset From defaults to six hours before To, or to six hours ago
+	// when To is unset too; an unset To defaults to six hours after From.
+	To   int64
+	From int64
+	// CheckType is the type of the check, such as [CheckTypeMultiStep] or
+	// [CheckTypeURL]. The API answers 404 when the check is of another type,
+	// and 400 for a type it does not know.
+	CheckType CheckType
+	// HasFailures limits the results to failed runs.
 	HasFailures bool
 }
 

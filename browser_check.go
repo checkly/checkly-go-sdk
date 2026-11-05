@@ -7,42 +7,77 @@ import (
 	"time"
 )
 
-// ScriptDependency represents a dependency file attached to a browser or
-// multi-step check script.
+// ScriptDependency is a file attached to the script of a [BrowserCheck] or
+// [MultiStepCheck]. The API silently drops a dependency whose Path is empty
+// or longer than 1000 characters, or whose Content is empty.
 type ScriptDependency struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 }
 
-// BrowserCheck represents a browser check.
+// BrowserCheck is a browser check, which runs a script in a browser. It is
+// the input and result of [Client.CreateBrowserCheck] and
+// [Client.UpdateBrowserCheck], and the result of [Client.GetBrowserCheck].
 type BrowserCheck struct {
-	ID                        string                     `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Frequency                 int                        `json:"frequency"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	Script                    string                     `json:"script"`
-	ScriptPath                *string                    `json:"scriptPath"`
-	Dependencies              []ScriptDependency         `json:"dependencies"`
-	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	SSLCheckDomain            string                     `json:"sslCheckDomain"`
-	Tags                      []string                   `json:"tags"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder"`
+	// ID is the check's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 1, 2, 5, 10, 15, 30,
+	// 60, 120, 180, 360, 720 or 1440.
+	Frequency int  `json:"frequency"`
+	Activated bool `json:"activated"`
+	// Muted stops notifications when the check fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the check in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// Script is the check's code. An empty Script is sent as null.
+	Script string `json:"script"`
+	// ScriptPath is the path of the script in the runtime.
+	ScriptPath *string `json:"scriptPath"`
+	// Dependencies are files attached to the script. Nil is sent as an
+	// empty list.
+	Dependencies         []ScriptDependency    `json:"dependencies"`
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
+	SSLCheckDomain       string                `json:"sslCheckDomain"`
+	Tags                 []string              `json:"tags"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool `json:"useGlobalAlertSettings"`
+	// GroupID is the ID of the check group the check belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the check's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// check's alerts. The SDK disables automatic assignment, so an empty
+	// list leaves the check without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
-
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version the check runs with, such as
+	// "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the check open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 	// Intent describes what the check protects, for automatic AI repair.
 	// It is sent as null when nil, so an update with a nil Intent clears an
 	// intent set elsewhere, for example in the web app.

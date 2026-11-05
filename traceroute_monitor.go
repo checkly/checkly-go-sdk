@@ -8,36 +8,77 @@ import (
 	"time"
 )
 
-// TracerouteMonitor represents a traceroute monitor.
+// TracerouteMonitor traces the network path to a host and checks the response
+// time, hop count and packet loss against its assertions. It is the input of
+// [Client.CreateTracerouteMonitor] and [Client.UpdateTracerouteMonitor], and
+// is returned by [Client.GetTracerouteMonitor].
 type TracerouteMonitor struct {
-	ID                        string                     `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   TracerouteRequest          `json:"request"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
+	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
+	// (rounded up) above 60. FrequencyOffset is left out of the request
+	// when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the monitor in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds, each at most 30000.
+	// DegradedResponseTime and MaxResponseTime are left out of the request when
+	// zero.
+	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int `json:"maxResponseTime,omitempty"`
+	// Tags is left out of the request when empty.
+	Tags []string `json:"tags,omitempty"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool              `json:"useGlobalAlertSettings"`
+	Request                TracerouteRequest `json:"request"`
+	// GroupID is the ID of the check group the monitor belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the monitor's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	// GroupOrder is left out of the request when zero.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
+	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	// PrivateLocations are the slugs of the private locations the monitor runs
-	// from. The Checkly agent at those locations must be version 8.4.0 or later and
-	// have the NET_RAW capability.
-	PrivateLocations *[]string        `json:"privateLocations"`
-	RuntimeID        *string          `json:"runtimeId"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
-	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
-	CreatedAt        time.Time        `json:"created_at,omitempty"`
-	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list. The Checkly agent
+	// at those locations must be version 8.4.0 or later and have the NET_RAW
+	// capability.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version, such as "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
 // TracerouteProtocol is the protocol of a traceroute monitor's probes, in
@@ -53,31 +94,42 @@ const (
 	TracerouteProtocolSCTP TracerouteProtocol = "SCTP"
 )
 
-// TracerouteRequest represents the parameters for a traceroute monitor's probe.
-//
-// Port is stripped from the marshaled body when Protocol is ICMP, mirroring
-// the public API's `Joi.any().strip()` for that case (see MarshalJSON).
+// TracerouteRequest is the probe of a [TracerouteMonitor].
 type TracerouteRequest struct {
-	URL            string             `json:"url"`
-	Protocol       TracerouteProtocol `json:"protocol,omitempty"`
-	Port           int                `json:"port,omitempty"`
-	IPFamily       IPFamily           `json:"ipFamily,omitempty"`
-	MaxHops        int                `json:"maxHops,omitempty"`
-	MaxUnknownHops int                `json:"maxUnknownHops,omitempty"`
-	// PtrLookup is a pointer so that an explicit `false` can be sent; the API
-	// defaults it to true when the field is omitted.
-	PtrLookup  *bool       `json:"ptrLookup,omitempty"`
-	Timeout    int         `json:"timeout,omitempty"`
+	URL string `json:"url"`
+	// Protocol is left out of the request when empty.
+	Protocol TracerouteProtocol `json:"protocol,omitempty"`
+	// Port is 1 to 65535. The API defaults it to 443 for TCP and 33434 for
+	// UDP and SCTP. Port is left out of the request when zero, and also when
+	// Protocol is [TracerouteProtocolICMP] (see
+	// [TracerouteRequest.MarshalJSON]).
+	Port int `json:"port,omitempty"`
+	// IPFamily is left out of the request when empty.
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+	// MaxHops is 1 to 64; the API defaults to 30.
+	// MaxHops is left out of the request when zero.
+	MaxHops int `json:"maxHops,omitempty"`
+	// MaxUnknownHops is 1 to 30 and at most MaxHops; the API defaults to 15,
+	// or MaxHops if that is lower.
+	// MaxUnknownHops is left out of the request when zero.
+	MaxUnknownHops int `json:"maxUnknownHops,omitempty"`
+	// PtrLookup is a pointer so that an explicit false can be sent; the API
+	// defaults it to true. PtrLookup is left out of the request when nil.
+	PtrLookup *bool `json:"ptrLookup,omitempty"`
+	// Timeout is 1 to 30; the API defaults to 10.
+	// Timeout is left out of the request when zero.
+	Timeout int `json:"timeout,omitempty"`
+	// Assertions is left out of the request when empty.
 	Assertions []Assertion `json:"assertions,omitempty"`
 }
 
-// MarshalJSON drops the `port` field when the probe protocol is ICMP,
-// mirroring the public API schema which strips `port` for ICMP traceroutes.
+// MarshalJSON leaves out Port when Protocol is [TracerouteProtocolICMP], as
+// the API ignores the port of an ICMP traceroute.
 func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
 	type alias TracerouteRequest
 	if r.Protocol == TracerouteProtocolICMP {
 		// Zero value combined with the `omitempty` tag drops `port` from the
-		// marshaled body, matching the Joi `.strip()` behavior.
+		// marshaled body, matching the API, which ignores it for ICMP.
 		r.Port = 0
 	}
 	return json.Marshal(alias(r))
