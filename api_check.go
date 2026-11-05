@@ -2,6 +2,7 @@ package checkly
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -79,6 +80,16 @@ type Request struct {
 	// remove previously configured credentials.
 	BasicAuth *BasicAuth `json:"basicAuth"`
 	IPFamily  string     `json:"ipFamily,omitempty"`
+}
+
+// MarshalJSON sends unset headers, query parameters and assertions as [],
+// as the API rejects null for these lists.
+func (r Request) MarshalJSON() ([]byte, error) {
+	type alias Request
+	r.Headers = emptyIfNil(r.Headers)
+	r.QueryParameters = emptyIfNil(r.QueryParameters)
+	r.Assertions = emptyIfNil(r.Assertions)
+	return json.Marshal(alias(r))
 }
 
 // BasicAuth represents the HTTP basic authentication credentials for a request.

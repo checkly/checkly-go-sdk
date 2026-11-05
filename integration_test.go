@@ -79,11 +79,8 @@ func TestCheckGroupUnset(t *testing.T) {
 		Type:      checkly.TypeAPI,
 		Frequency: 10,
 		Request: checkly.Request{
-			Method:          "GET",
-			URL:             "https://api.checklyhq.com",
-			Headers:         []checkly.KeyValue{},
-			QueryParameters: []checkly.KeyValue{},
-			Assertions:      []checkly.Assertion{},
+			Method: "GET",
+			URL:    "https://api.checklyhq.com",
 		},
 		AlertSettings: checkly.AlertSettings{
 			EscalationType: checkly.RunBased,
@@ -1819,13 +1816,9 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 		Type:      checkly.TypeAPI,
 		Frequency: 10,
 		Locations: []string{"us-east-1"},
-		// The API check endpoint rejects null request lists.
 		Request: checkly.Request{
-			Method:          "GET",
-			URL:             "https://api.checklyhq.com",
-			Headers:         []checkly.KeyValue{},
-			QueryParameters: []checkly.KeyValue{},
-			Assertions:      []checkly.Assertion{},
+			Method: "GET",
+			URL:    "https://api.checklyhq.com",
 		},
 		// A zero AlertSettings still sends runBasedEscalation, which the
 		// API rejects without a threshold.
@@ -1867,6 +1860,193 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 	if got.LocalSetupScript != "" || got.LocalTearDownScript != "" {
 		t.Errorf("local scripts = %q, %q, want none", got.LocalSetupScript, got.LocalTearDownScript)
 	}
+}
+
+// TestUnsetListsAreAccepted verifies that create and update succeed when the
+// lists the API rejects as null are left nil: the client sends them as [].
+func TestUnsetListsAreAccepted(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	alertSettings := checkly.AlertSettings{
+		EscalationType: checkly.RunBased,
+		RunBasedEscalation: checkly.RunBasedEscalation{
+			FailedRunThreshold: 1,
+		},
+	}
+
+	t.Run("APICheck", func(t *testing.T) {
+		check := checkly.APICheck{
+			Name:                 "Unset lists API check",
+			Frequency:            10,
+			Locations:            []string{"us-east-1"},
+			DegradedResponseTime: 5000,
+			MaxResponseTime:      20000,
+			AlertSettings:        &alertSettings,
+			Request: checkly.Request{
+				Method: "GET",
+				URL:    "https://api.checklyhq.com",
+			},
+		}
+		created, err := client.CreateAPICheck(ctx, check)
+		if err != nil {
+			t.Fatalf("failed to create API check: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteAPICheck(ctx, created.ID)
+		}()
+		if _, err := client.UpdateAPICheck(ctx, created.ID, check); err != nil {
+			t.Fatalf("failed to update API check: %v", err)
+		}
+	})
+
+	t.Run("Check", func(t *testing.T) {
+		check := checkly.Check{
+			Name:          "Unset lists check",
+			Type:          checkly.TypeAPI,
+			Frequency:     10,
+			Locations:     []string{"us-east-1"},
+			AlertSettings: alertSettings,
+			Request: checkly.Request{
+				Method: "GET",
+				URL:    "https://api.checklyhq.com",
+			},
+		}
+		created, err := client.CreateCheck(ctx, check)
+		if err != nil {
+			t.Fatalf("failed to create check: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteCheck(ctx, created.ID)
+		}()
+		if _, err := client.UpdateCheck(ctx, created.ID, check); err != nil {
+			t.Fatalf("failed to update check: %v", err)
+		}
+	})
+
+	t.Run("URLMonitor", func(t *testing.T) {
+		monitor := checkly.URLMonitor{
+			Name:      "Unset lists URL monitor",
+			Frequency: 10,
+			Locations: []string{"us-east-1"},
+			Request: checkly.URLRequest{
+				URL: "https://api.checklyhq.com",
+			},
+		}
+		created, err := client.CreateURLMonitor(ctx, monitor)
+		if err != nil {
+			t.Fatalf("failed to create URL monitor: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteURLMonitor(ctx, created.ID)
+		}()
+		if _, err := client.UpdateURLMonitor(ctx, created.ID, monitor); err != nil {
+			t.Fatalf("failed to update URL monitor: %v", err)
+		}
+	})
+
+	t.Run("DNSMonitor", func(t *testing.T) {
+		monitor := checkly.DNSMonitor{
+			Name:                 "Unset lists DNS monitor",
+			Frequency:            10,
+			Locations:            []string{"us-east-1"},
+			DegradedResponseTime: 500,
+			MaxResponseTime:      1000,
+			Request: checkly.DNSRequest{
+				RecordType: "A",
+				Query:      "welcome.checklyhq.com",
+			},
+		}
+		created, err := client.CreateDNSMonitor(ctx, monitor)
+		if err != nil {
+			t.Fatalf("failed to create DNS monitor: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteDNSMonitor(ctx, created.ID)
+		}()
+		if _, err := client.UpdateDNSMonitor(ctx, created.ID, monitor); err != nil {
+			t.Fatalf("failed to update DNS monitor: %v", err)
+		}
+	})
+
+	t.Run("ICMPMonitor", func(t *testing.T) {
+		monitor := checkly.ICMPMonitor{
+			Name:                        "Unset lists ICMP monitor",
+			Frequency:                   10,
+			Locations:                   []string{"us-east-1"},
+			DegradedPacketLossThreshold: 10,
+			MaxPacketLossThreshold:      20,
+			Request: checkly.ICMPRequest{
+				Hostname: "welcome.checklyhq.com",
+			},
+		}
+		created, err := client.CreateICMPMonitor(ctx, monitor)
+		if err != nil {
+			t.Fatalf("failed to create ICMP monitor: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteICMPMonitor(ctx, created.ID)
+		}()
+		if _, err := client.UpdateICMPMonitor(ctx, created.ID, monitor); err != nil {
+			t.Fatalf("failed to update ICMP monitor: %v", err)
+		}
+	})
+
+	t.Run("Group", func(t *testing.T) {
+		group := checkly.Group{
+			Name:          "Unset lists group",
+			Concurrency:   3,
+			Locations:     []string{"us-east-1"},
+			AlertSettings: alertSettings,
+		}
+		created, err := client.CreateGroup(ctx, group)
+		if err != nil {
+			t.Fatalf("failed to create group: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteGroup(ctx, created.ID)
+		}()
+		if _, err := client.UpdateGroup(ctx, created.ID, group); err != nil {
+			t.Fatalf("failed to update group: %v", err)
+		}
+	})
+
+	t.Run("GroupV2", func(t *testing.T) {
+		group := checkly.GroupV2{
+			Name:          "Unset lists group v2",
+			Concurrency:   3,
+			Locations:     []string{"us-east-1"},
+			AlertSettings: &alertSettings,
+		}
+		created, err := client.CreateGroupV2(ctx, group)
+		if err != nil {
+			t.Fatalf("failed to create group v2: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteGroupV2(ctx, created.ID)
+		}()
+		if _, err := client.UpdateGroupV2(ctx, created.ID, group); err != nil {
+			t.Fatalf("failed to update group v2: %v", err)
+		}
+	})
+
+	t.Run("StatusPage", func(t *testing.T) {
+		page := checkly.StatusPage{
+			Name:  "Unset lists status page",
+			URL:   fmt.Sprintf("sdk-unset-lists-%d", time.Now().UnixNano()),
+			Cards: []checkly.StatusPageCard{{Name: "No services"}},
+		}
+		created, err := client.CreateStatusPage(ctx, page)
+		if err != nil {
+			t.Fatalf("failed to create status page: %v", err)
+		}
+		defer func() {
+			_ = client.DeleteStatusPage(ctx, created.ID)
+		}()
+		if _, err := client.UpdateStatusPage(ctx, created.ID, page); err != nil {
+			t.Fatalf("failed to update status page: %v", err)
+		}
+	})
 }
 
 // TestMonitorPrivateLocations verifies that DNS, ICMP and traceroute monitors
@@ -1915,8 +2095,6 @@ func TestMonitorPrivateLocations(t *testing.T) {
 			Request: checkly.DNSRequest{
 				RecordType: "A",
 				Query:      "welcome.checklyhq.com",
-				// The API rejects null assertions, which a nil slice sends.
-				Assertions: []checkly.Assertion{},
 			},
 		}
 		created, err := client.CreateDNSMonitor(ctx, pending)
@@ -1954,8 +2132,6 @@ func TestMonitorPrivateLocations(t *testing.T) {
 			MaxPacketLossThreshold:      20,
 			Request: checkly.ICMPRequest{
 				Hostname: "welcome.checklyhq.com",
-				// The API rejects null assertions, which a nil slice sends.
-				Assertions: []checkly.Assertion{},
 			},
 		}
 		created, err := client.CreateICMPMonitor(ctx, pending)

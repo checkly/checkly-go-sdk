@@ -181,6 +181,7 @@ func TestDeleteGroup(t *testing.T) {
 }
 
 func validateGroupEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
@@ -241,6 +242,7 @@ func TestUpdateGroupSerializesSetValues(t *testing.T) {
 			assertRawBodyField(t, body, "localSetupScript", `"setup"`)
 			assertRawBodyField(t, body, "localTearDownScript", `"teardown"`)
 			assertRawBodyField(t, body, "alertChannelSubscriptions", `[{"alertChannelId":42,"activated":true}]`)
+			assertRawBodyField(t, body, "tags", `["prod"]`)
 		},
 		http.StatusOK,
 		"UpdateGroup.json",
@@ -253,6 +255,7 @@ func TestUpdateGroupSerializesSetValues(t *testing.T) {
 		TearDownSnippetID:   6,
 		LocalSetupScript:    "setup",
 		LocalTearDownScript: "teardown",
+		Tags:                []string{"prod"},
 		AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
 			{
 				ChannelID: 42,
@@ -271,6 +274,7 @@ func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
 		http.MethodPost,
 		"/v2/check-groups?autoAssignAlerts=false",
 		func(t *testing.T, body []byte) {
+			assertRawBodyField(t, body, "tags", `[]`)
 			assertRawBodyField(t, body, "locations", `[]`)
 			assertRawBodyField(t, body, "privateLocations", `[]`)
 			assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)

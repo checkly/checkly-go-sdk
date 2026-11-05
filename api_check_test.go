@@ -217,6 +217,10 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	// request object, or the backend would keep previously configured
 	// credentials on update.
 	assertRawNestedBodyField(t, body, "request", "basicAuth", `null`)
+	// The API rejects null for the request lists.
+	assertRawNestedBodyField(t, body, "request", "headers", `[]`)
+	assertRawNestedBodyField(t, body, "request", "queryParameters", `[]`)
+	assertRawNestedBodyField(t, body, "request", "assertions", `[]`)
 }
 
 func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
