@@ -29,12 +29,15 @@ type TracerouteMonitor struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slugs of the private locations the monitor runs
+	// from. The Checkly agent at those locations must be version 8.4.0 or later and
+	// have the NET_RAW capability.
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RuntimeID        *string          `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt        time.Time        `json:"created_at,omitempty"`
+	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
 // TracerouteRequest represents the parameters for a traceroute monitor's probe.
