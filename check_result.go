@@ -135,7 +135,9 @@ type SSLCheckResponse struct {
 }
 
 // CheckResultsFilter represents the parameters that can be passed while
-// getting Check Results
+// getting Check Results. Zero-valued fields are not sent. A non-empty
+// CheckType, such as "MULTI_STEP" or "URL", is sent as is: the API answers
+// 404 when the check is of another type, and 400 for a type it does not know.
 type CheckResultsFilter struct {
 	Limit       int64
 	Page        int64
@@ -181,7 +183,7 @@ func (c *client) GetCheckResults(
 		if filters.To > 0 {
 			q.Add("to", fmt.Sprintf("%d", filters.To))
 		}
-		if filters.CheckType == TypeBrowser || filters.CheckType == TypeAPI {
+		if filters.CheckType != "" {
 			q.Add("checkType", string(filters.CheckType))
 		}
 		if filters.HasFailures {
@@ -190,7 +192,9 @@ func (c *client) GetCheckResults(
 		if len(filters.Location) > 0 {
 			q.Add("location", filters.Location)
 		}
-		uri = uri + "?" + q.Encode()
+		if len(q) > 0 {
+			uri += "?" + q.Encode()
+		}
 	}
 
 	result := []CheckResult{}
