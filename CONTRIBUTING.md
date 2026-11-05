@@ -10,7 +10,7 @@ Hi! We are really excited that you are interested in contributing to Checkly Go 
 - [Development Setup](#development-setup)
 - [Scripts](#scripts)
 - [Project Structure](#project-structure)
-- [Release Process](#releases-process)
+- [Release Process](#release-process)
 
 ## Issue Reporting Guidelines
 
@@ -39,7 +39,9 @@ Hi! We are really excited that you are interested in contributing to Checkly Go 
 
 - Make sure tests pass!
 
-- Commit messages must follow the [semantic commit messages](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716) so that changelogs can be automatically generated.
+- Pull request titles must follow the [semantic commit messages](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716) format, as GitHub's generated release notes list each pull request by its title. Pull requests are squash-merged, so keep the commit message of a single-commit pull request in the same format: GitHub uses it as the squash commit message.
+
+- Describe in the pull request description, under "Changes for SDK Users", what changes for SDK users, and call out breaking changes with what to do instead. The release notes are written from these descriptions.
 
 ## Pull request review: Ship / Show / Ask
 
@@ -136,7 +138,8 @@ When adding a resource, add its types, payloads and methods in a new `<resource>
 
 
 ## Release Process
-The release process is automatically handled by GitHub `release` action.
-To trigger a new release you need to create a new git tag, using [SemVer](https://semver.org) pattern and then push it to the `main` branch.
+Releases are published by hand on GitHub. Publishing a release creates its git tag, which must follow the [SemVer](https://semver.org) pattern. Go modules are fetched from the tag, so there is nothing to build or upload.
 
-Remember to create releases candidates releases and spend some time testing in production before publishing a final version. You can also tag the release as "Pre-Release" on GitHub until you consider it mature enough.
+The GitHub release is the changelog: there is no `CHANGELOG.md`. Generate its notes from the merged pull requests, then expand them from the pull request descriptions. The notes can be edited after the release to clarify things.
+
+Remember to create release candidates and spend some time testing in production before publishing a final version. You can also mark the release as "Pre-release" on GitHub until you consider it mature enough.
