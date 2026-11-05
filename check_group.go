@@ -222,6 +222,9 @@ func (c *client) GetGroupV2(
 	ID int64,
 ) (*GroupV2, error) {
 	var result GroupV2
+	// The API has no v2 route for reading a group. The v1 read response has
+	// the same shape as the v2 create and update responses, plus the
+	// read-only projectBindings, which GroupV2 does not decode.
 	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
@@ -250,5 +253,7 @@ func (c *client) DeleteGroupV2(
 	ctx context.Context,
 	ID int64,
 ) error {
+	// The API has no v2 route for deleting a group; the v1 route deletes
+	// groups created through either version.
 	return c.DeleteGroup(ctx, ID)
 }
