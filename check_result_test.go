@@ -254,7 +254,7 @@ func TestGetCheckResultsWithFilters2(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
-		"/v1/check-results/73d29e72-6540?",
+		"/v1/check-results/73d29e72-6540",
 		validateEmptyBody,
 		http.StatusOK,
 		"GetCheckResults.json",
@@ -272,5 +272,53 @@ func TestGetCheckResultsWithFilters2(t *testing.T) {
 	if len(results) != 10 {
 		t.Errorf("Expected to get 10 results got %d", len(results))
 		return
+	}
+}
+
+// TestGetCheckResultsQuery pins the query string GetCheckResults sends for
+// each filter: zero-valued fields are left out, a filter with no field set
+// adds no "?", and every check type is passed through as the checkType filter.
+func TestGetCheckResultsQuery(t *testing.T) {
+	t.Parallel()
+	const path = "/v1/check-results/73d29e72-6540"
+	tests := map[string]struct {
+		filters *checkly.CheckResultsFilter
+		wantURL string
+	}{
+		"nil filter":       {nil, path},
+		"empty filter":     {&checkly.CheckResultsFilter{}, path},
+		"limit":            {&checkly.CheckResultsFilter{Limit: 100}, path + "?limit=100"},
+		"page":             {&checkly.CheckResultsFilter{Page: 2}, path + "?page=2"},
+		"from":             {&checkly.CheckResultsFilter{From: 1}, path + "?from=1"},
+		"to":               {&checkly.CheckResultsFilter{To: 1000}, path + "?to=1000"},
+		"has failures":     {&checkly.CheckResultsFilter{HasFailures: true}, path + "?hasFailures=1"},
+		"location":         {&checkly.CheckResultsFilter{Location: "us-east-1"}, path + "?location=us-east-1"},
+		"API check type":   {&checkly.CheckResultsFilter{CheckType: checkly.TypeAPI}, path + "?checkType=API"},
+		"browser type":     {&checkly.CheckResultsFilter{CheckType: checkly.TypeBrowser}, path + "?checkType=BROWSER"},
+		"heartbeat type":   {&checkly.CheckResultsFilter{CheckType: checkly.TypeHeartbeat}, path + "?checkType=HEARTBEAT"},
+		"multi-step type":  {&checkly.CheckResultsFilter{CheckType: "MULTI_STEP"}, path + "?checkType=MULTI_STEP"},
+		"URL monitor type": {&checkly.CheckResultsFilter{CheckType: "URL"}, path + "?checkType=URL"},
+		"type and paging": {
+			&checkly.CheckResultsFilter{CheckType: "TCP", Limit: 5, Page: 3},
+			path + "?checkType=TCP&limit=5&page=3",
+		},
+	}
+	for name, tc := range tests {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			ts := cannedResponseServer(t,
+				http.MethodGet,
+				tc.wantURL,
+				validateEmptyBody,
+				http.StatusOK,
+				"GetCheckResults.json",
+			)
+			defer ts.Close()
+			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+			if _, err := client.GetCheckResults(context.Background(), "73d29e72-6540", tc.filters); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
