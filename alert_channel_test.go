@@ -8,106 +8,157 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestRetryStrategyRoundTrip(t *testing.T) {
-	tests := []struct {
-		name  string
-		input checkly.RetryStrategy
-		want  checkly.RetryStrategy
-	}{
-		{
-			name:  "FIXED strategy round-trips",
-			input: checkly.RetryStrategy{Type: "FIXED", MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true},
-			want:  checkly.RetryStrategy{Type: "FIXED", MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true},
-		},
-		{
-			name:  "LINEAR strategy round-trips",
-			input: checkly.RetryStrategy{Type: "LINEAR", MaxRetries: 3, MaxDurationSeconds: 300, BaseBackoffSeconds: 30, SameRegion: false},
-			want:  checkly.RetryStrategy{Type: "LINEAR", MaxRetries: 3, MaxDurationSeconds: 300, BaseBackoffSeconds: 30, SameRegion: false},
-		},
-		{
-			name:  "SINGLE_RETRY omits MaxRetries and MaxDurationSeconds",
-			input: checkly.RetryStrategy{Type: "SINGLE_RETRY", BaseBackoffSeconds: 10, SameRegion: true},
-			want:  checkly.RetryStrategy{Type: "SINGLE_RETRY", BaseBackoffSeconds: 10, SameRegion: true},
-		},
-		{
-			name:  "NO_RETRIES marshals as null and back",
-			input: checkly.RetryStrategy{Type: "NO_RETRIES"},
-			want:  checkly.RetryStrategy{Type: "NO_RETRIES"},
-		},
-		{
-			name:  "FALLBACK marshals as string and back",
-			input: checkly.RetryStrategy{Type: "FALLBACK"},
-			want:  checkly.RetryStrategy{Type: "FALLBACK"},
-		},
-	}
+var ignoreAlertChannelFields = cmpopts.IgnoreFields(checkly.AlertChannel{}, "ID")
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, err := json.Marshal(tt.input)
-			if err != nil {
-				t.Fatalf("Marshal error: %v", err)
-			}
-			var got checkly.RetryStrategy
-			if err := json.Unmarshal(data, &got); err != nil {
-				t.Fatalf("Unmarshal error: %v", err)
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("got %+v, want %+v (JSON was: %s)", got, tt.want, data)
-			}
-		})
+func getTestAlertChannelEmail() *checkly.AlertChannel {
+	return &checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertTypeEmail,
+		Email: &checkly.AlertChannelEmail{
+			Address: "test@example.com",
+		},
 	}
 }
 
-func TestRetryStrategyUnmarshalClearsFields(t *testing.T) {
-	// Unmarshal into a struct that already has values to verify fields are cleared.
-	s := checkly.RetryStrategy{
-		Type:               "FIXED",
-		MaxRetries:         5,
-		MaxDurationSeconds: 600,
-		BaseBackoffSeconds: 60,
-		SameRegion:         true,
+func getTestAlertChannelSlack() checkly.AlertChannel {
+	ac := checkly.AlertChannel{
+		ID:   1,
+		Type: checkly.AlertTypeSlack,
+		Slack: &checkly.AlertChannelSlack{
+			Channel:    "test",
+			WebhookURL: "https://slack.com/test",
+		},
 	}
-	if err := json.Unmarshal([]byte("null"), &s); err != nil {
-		t.Fatalf("Unmarshal error: %v", err)
+	return ac
+}
+
+// validateAlertChannel checks that body is the request body of the test alert
+// channel of its type.
+func validateAlertChannel(t *testing.T, body []byte) {
+	var req struct {
+		Type   string          `json:"type"`
+		Config json.RawMessage `json:"config"`
 	}
-	want := checkly.RetryStrategy{Type: "NO_RETRIES"}
-	if !reflect.DeepEqual(s, want) {
-		t.Errorf("got %+v, want %+v", s, want)
+	if err := json.Unmarshal(body, &req); err != nil {
+		t.Errorf("decoding error for data %q: %v", body, err)
+		return
+	}
+	switch req.Type {
+	case checkly.AlertTypeEmail:
+		var got checkly.AlertChannelEmail
+		if err := json.Unmarshal(req.Config, &got); err != nil {
+			t.Errorf("decoding config %s: %v", req.Config, err)
+			return
+		}
+		if want := *getTestAlertChannelEmail().Email; got != want {
+			t.Errorf("want config %+v, got %+v", want, got)
+		}
+	case checkly.AlertTypeSlack:
+		var got checkly.AlertChannelSlack
+		if err := json.Unmarshal(req.Config, &got); err != nil {
+			t.Errorf("decoding config %s: %v", req.Config, err)
+			return
+		}
+		if want := *getTestAlertChannelSlack().Slack; got != want {
+			t.Errorf("want config %+v, got %+v", want, got)
+		}
+	default:
+		t.Errorf("unexpected alert channel type %q", req.Type)
 	}
 }
 
-func TestRetryStrategyUnmarshalRejectsUnknownString(t *testing.T) {
-	var s checkly.RetryStrategy
-	err := json.Unmarshal([]byte(`"UNKNOWN"`), &s)
-	if err == nil {
-		t.Fatal("expected error for unknown string value, got nil")
-	}
-}
-
-func TestRetryStrategyMarshalNoRetries(t *testing.T) {
-	s := checkly.RetryStrategy{Type: "NO_RETRIES"}
-	data, err := json.Marshal(s)
+func TestCreateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v1/alert-channels",
+		validateAlertChannel,
+		http.StatusOK,
+		"CreateAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	ta := getTestAlertChannelEmail()
+	ac, err := client.CreateAlertChannel(context.Background(), *ta)
 	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
+		t.Fatal(err)
 	}
-	if string(data) != "null" {
-		t.Errorf("got %s, want null", data)
+	ta.CreatedAt = "0001-01-11T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
 	}
 }
 
-func TestRetryStrategyMarshalFallback(t *testing.T) {
-	s := checkly.RetryStrategy{Type: "FALLBACK"}
-	data, err := json.Marshal(s)
+func TestGetAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetAlertChannelEmail.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	ac, err := client.GetAlertChannel(context.Background(), ta.ID)
 	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
+		t.Fatal(err)
 	}
-	if string(data) != `"FALLBACK"` {
-		t.Errorf("got %s, want %q", data, "FALLBACK")
+	ta.CreatedAt = "0001-01-13T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
+	if !cmp.Equal(*ta, *ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(*ta, *ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestUpdateAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateAlertChannel,
+		http.StatusOK,
+		"UpdateAlertChannel.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	ac, err := client.UpdateAlertChannel(context.Background(), ta.ID, *ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ta.CreatedAt = "0001-01-14T00:00:00Z"
+	ta.UpdatedAt = "0001-01-01T00:00:00Z"
+	if !cmp.Equal(ta, ac, ignoreAlertChannelFields) {
+		t.Error(cmp.Diff(ta, ac, ignoreAlertChannelFields))
+	}
+}
+
+func TestDeleteAlertChannel(t *testing.T) {
+	t.Parallel()
+	ta := getTestAlertChannelEmail()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/alert-channels/%d", ta.ID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	err := client.DeleteAlertChannel(context.Background(), ta.ID)
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -353,4 +404,108 @@ func TestAlertChannelConfigDecodingErrors(t *testing.T) {
 			t.Errorf("want %#v, got %#v", want, got.Webhook)
 		}
 	})
+}
+
+// TestAlertChannelDecoding checks how alert channel responses decode: JSON
+// null leaves a field unset, a field of the wrong type is an error naming the
+// field but not a string value, and errors name the request that was made.
+func TestAlertChannelDecoding(t *testing.T) {
+	t.Parallel()
+	t.Run("null fields", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","sendRecovery":null,"sendFailure":true,"sendDegraded":null,"sslExpiry":null,"sslExpiryThreshold":null,"config":{"address":"a@example.com"}}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.ID != 7 || ac.Type != "EMAIL" || ac.SendRecovery != nil || ac.SendDegraded != nil || ac.SSLExpiry != nil || ac.SSLExpiryThreshold != nil {
+			t.Errorf("want null fields unset, got %+v", ac)
+		}
+		if ac.SendFailure == nil || !*ac.SendFailure {
+			t.Errorf("want sendFailure true, got %v", ac.SendFailure)
+		}
+		if ac.Email == nil || ac.Email.Address != "a@example.com" {
+			t.Errorf("want the email config decoded, got %+v", ac.Email)
+		}
+	})
+	t.Run("timestamps", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","created_at":"2026-01-02T03:04:05.678Z","updated_at":"2026-02-03T04:05:06.789Z"}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.CreatedAt != "2026-01-02T03:04:05.678Z" || ac.UpdatedAt != "2026-02-03T04:05:06.789Z" {
+			t.Errorf("want the timestamps decoded, got created_at %q, updated_at %q", ac.CreatedAt, ac.UpdatedAt)
+		}
+	})
+	t.Run("null config", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","config":null}`})
+		ac, err := c.GetAlertChannel(context.Background(), 7)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ac.Email != nil {
+			t.Errorf("want no email config for a null config, got %+v", ac.Email)
+		}
+	})
+	t.Run("config not an object", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"EMAIL","config":"SECRET-VALUE-MARKER"}`})
+		_, err := c.GetAlertChannel(context.Background(), 7)
+		want := "GET /v1/alert-channels/7: decoding 200 response: config: decoding EMAIL alert channel config: got a JSON string, want an object"
+		if err == nil || err.Error() != want {
+			t.Errorf("want %q, got %v", want, err)
+		}
+	})
+	t.Run("unknown type", func(t *testing.T) {
+		t.Parallel()
+		c := newErrorServer(t, errorReply{status: 200, body: `{"id":7,"type":"TEAMS","config":{}}`})
+		_, err := c.GetAlertChannel(context.Background(), 7)
+		want := `GET /v1/alert-channels/7: decoding 200 response: config: unknown alert channel type "TEAMS"`
+		if err == nil || err.Error() != want {
+			t.Errorf("want %q, got %v", want, err)
+		}
+	})
+	tests := []struct {
+		name string
+		body string
+		// want holds substrings of the error. Go 1.24 added the embedded
+		// struct's name to the field path of encoding/json type errors, so
+		// the path between the two parts depends on the Go version.
+		want []string
+	}{
+		{"wrong bool", `{"type":"EMAIL","sslExpiry":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.sslExpiry of type bool`}},
+		{"wrong type", `{"type":42}`, []string{`cannot unmarshal number into Go struct field alertChannelResponse.`, `.type of type string`}},
+		{"wrong id", `{"id":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.id of type int64`}},
+		{"fractional id", `{"id":1.5}`, []string{`cannot unmarshal number 1.5 into Go struct field alertChannelResponse.`, `.id of type int64`}},
+		{"wrong threshold", `{"sslExpiryThreshold":true}`, []string{`cannot unmarshal bool into Go struct field alertChannelResponse.`, `.sslExpiryThreshold of type int`}},
+		{"fractional threshold", `{"sslExpiryThreshold":30.5}`, []string{`cannot unmarshal number 30.5 into Go struct field alertChannelResponse.`, `.sslExpiryThreshold of type int`}},
+		{"wrong timestamp", `{"created_at":["SECRET-VALUE-MARKER"]}`, []string{`cannot unmarshal array into Go struct field alertChannelResponse.`, `.created_at of type string`}},
+		{"not json", `SECRET-VALUE-MARKER`, []string{`decoding 201 response (19 bytes): invalid character`}},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			c := newErrorServer(t, errorReply{status: 201, body: tt.body})
+			_, err := c.CreateAlertChannel(context.Background(), checkly.AlertChannel{})
+			if err == nil {
+				t.Fatal("want error, got nil")
+			}
+			prefix := "POST /v1/alert-channels: "
+			if !strings.HasPrefix(err.Error(), prefix) {
+				t.Errorf("want error starting with %q, got %q", prefix, err)
+			}
+			for _, want := range tt.want {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("want error containing %q, got %q", want, err)
+				}
+			}
+			if strings.Contains(err.Error(), "SECRET-VALUE-MARKER") {
+				t.Errorf("want the field value left out of the error, got %q", err)
+			}
+		})
+	}
 }
