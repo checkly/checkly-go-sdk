@@ -116,6 +116,9 @@ func createGroupPayload(group Group) groupPayload {
 
 	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
 
+	// The API rejects null tags.
+	payload.Tags = emptyIfNil(group.Tags)
+
 	return payload
 }
 
@@ -158,6 +161,9 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 	}
 
 	payload.AlertChannelSubscriptions = emptyIfNil(group.AlertChannelSubscriptions)
+
+	// The API rejects null tags.
+	payload.Tags = emptyIfNil(group.Tags)
 
 	return payload
 }

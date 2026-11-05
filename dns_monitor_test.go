@@ -150,6 +150,8 @@ func TestGetDNSMonitor(t *testing.T) {
 
 func validateDNSMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tags", `[]`)
+	// The API rejects null assertions.
+	assertRawNestedBodyField(t, body, "request", "assertions", `[]`)
 	assertRawBodyField(t, body, "groupOrder", `null`)
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)

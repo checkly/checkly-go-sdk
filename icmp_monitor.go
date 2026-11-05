@@ -76,6 +76,9 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 		ShouldFail: false,
 	}
 
+	// The API rejects null for the assertion list.
+	payload.Request.Assertions = emptyIfNil(monitor.Request.Assertions)
+
 	// GroupID must be null if empty or the group will not get unset on update.
 	if monitor.GroupID != 0 {
 		payload.GroupID = &monitor.GroupID

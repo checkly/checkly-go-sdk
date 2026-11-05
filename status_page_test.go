@@ -216,6 +216,8 @@ func validateStatusPageEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "logo", `""`)
 	assertRawBodyField(t, body, "redirectTo", `""`)
 	assertRawBodyField(t, body, "favicon", `""`)
+	// The API rejects null cards.
+	assertRawBodyField(t, body, "cards", `[]`)
 }
 
 func TestStatusPageSerializesEmptyValues(t *testing.T) {

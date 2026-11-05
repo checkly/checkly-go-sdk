@@ -64,13 +64,22 @@ type StatusPageService struct {
 
 // statusPagePayload sends an empty custom domain as null, which removes it,
 // rather than omitting it: the update endpoint keeps the stored value of an
-// omitted key.
+// omitted key. Unset card and service lists are sent as [], as the API
+// rejects null for them.
 type statusPagePayload struct {
 	StatusPage
 	CustomDomain *string `json:"customDomain"`
 }
 
 func createStatusPagePayload(page StatusPage) statusPagePayload {
+	// Copy the cards so that filling in their services leaves the caller's
+	// slice unchanged.
+	cards := make([]StatusPageCard, len(page.Cards))
+	for i, card := range page.Cards {
+		card.Services = emptyIfNil(card.Services)
+		cards[i] = card
+	}
+	page.Cards = cards
 	return statusPagePayload{
 		StatusPage:   page,
 		CustomDomain: nullIfZero(page.CustomDomain),
