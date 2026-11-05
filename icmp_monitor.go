@@ -126,9 +126,6 @@ func (c *client) CreateICMPMonitor(
 	return &result, nil
 }
 
-// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetICMPMonitor(
 	ctx context.Context,
 	ID string,

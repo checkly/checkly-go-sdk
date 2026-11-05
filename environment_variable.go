@@ -15,9 +15,6 @@ type EnvironmentVariable struct {
 	Secret bool   `json:"secret"`
 }
 
-// CreateEnvironmentVariable creates a new environment variable with the
-// specified details.  It returns the newly-created environment variable,
-// or an error.
 func (c *client) CreateEnvironmentVariable(
 	ctx context.Context,
 	envVar EnvironmentVariable,
@@ -30,8 +27,6 @@ func (c *client) CreateEnvironmentVariable(
 	return &result, nil
 }
 
-// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
-// corresponding environment variable, or an error.
 func (c *client) GetEnvironmentVariable(
 	ctx context.Context,
 	key string,
@@ -44,9 +39,6 @@ func (c *client) GetEnvironmentVariable(
 	return &result, nil
 }
 
-// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
-// corresponding environment variable to match the supplied environment variable. It returns the updated
-// environment variable, or an error.
 func (c *client) UpdateEnvironmentVariable(
 	ctx context.Context,
 	key string,
@@ -60,7 +52,6 @@ func (c *client) UpdateEnvironmentVariable(
 	return &result, nil
 }
 
-// DeleteEnvironmentVariable deletes the environment variable with the specified ID.
 func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,

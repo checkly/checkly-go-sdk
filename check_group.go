@@ -29,7 +29,6 @@ type Group struct {
 	CreatedAt                 time.Time                  `json:"created_at"`
 	UpdatedAt                 time.Time                  `json:"updated_at"`
 
-	// Pointers
 	RuntimeID        *string        `json:"runtimeId"`
 	PrivateLocations *[]string      `json:"privateLocations"`
 	RetryStrategy    *RetryStrategy `json:"retryStrategy"`
@@ -122,8 +121,6 @@ func createGroupPayload(group Group) groupPayload {
 	return payload
 }
 
-// CreateGroup creates a new check group with the specified details. It returns
-// the newly-created group, or an error.
 func (c *client) CreateGroup(
 	ctx context.Context,
 	group Group,
@@ -168,8 +165,6 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 	return payload
 }
 
-// GetGroup takes the ID of an existing check group, and returns the
-// corresponding group, or an error.
 func (c *client) GetGroup(
 	ctx context.Context,
 	ID int64,
@@ -182,9 +177,6 @@ func (c *client) GetGroup(
 	return &result, nil
 }
 
-// UpdateGroup takes the ID of an existing check group, and updates the
-// corresponding check group to match the supplied group. It returns the updated
-// group, or an error.
 func (c *client) UpdateGroup(
 	ctx context.Context,
 	ID int64,
@@ -198,7 +190,6 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
-// DeleteGroup deletes the check group with the specified ID.
 func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
@@ -207,8 +198,6 @@ func (c *client) DeleteGroup(
 	return err
 }
 
-// CreateGroupV2 creates a new check group with the specified details. It returns
-// the newly-created group, or an error.
 func (c *client) CreateGroupV2(
 	ctx context.Context,
 	group GroupV2,
@@ -221,8 +210,6 @@ func (c *client) CreateGroupV2(
 	return &result, nil
 }
 
-// GetGroupV2 takes the ID of an existing check group, and returns the
-// corresponding group, or an error.
 func (c *client) GetGroupV2(
 	ctx context.Context,
 	ID int64,
@@ -238,9 +225,6 @@ func (c *client) GetGroupV2(
 	return &result, nil
 }
 
-// UpdateGroupV2 takes the ID of an existing check group, and updates the
-// corresponding check group to match the supplied group. It returns the updated
-// group, or an error.
 func (c *client) UpdateGroupV2(
 	ctx context.Context,
 	ID int64,
@@ -254,7 +238,6 @@ func (c *client) UpdateGroupV2(
 	return &result, nil
 }
 
-// DeleteGroupV2 deletes the check group with the specified ID.
 func (c *client) DeleteGroupV2(
 	ctx context.Context,
 	ID int64,

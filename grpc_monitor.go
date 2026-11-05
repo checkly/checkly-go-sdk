@@ -254,9 +254,6 @@ func (c *client) CreateGRPCMonitor(
 	return &result, nil
 }
 
-// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetGRPCMonitor(
 	ctx context.Context,
 	ID string,

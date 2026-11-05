@@ -91,9 +91,6 @@ func (c *client) CreatePlaywrightCheck(
 	return &result, nil
 }
 
-// GetPlaywrightCheck takes the ID of an existing Playwright check, and returns
-// the check parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetPlaywrightCheck(
 	ctx context.Context,
 	ID string,

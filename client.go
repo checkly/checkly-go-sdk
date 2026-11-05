@@ -67,9 +67,9 @@ type Client interface {
 		check APICheck,
 	) (*APICheck, error)
 
-	// GetAPICheck takes the ID of an existing API check, and returns the check
-	// parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetAPICheck takes the ID of an existing API check, and returns the
+	// check parameters, or an error. It returns an error when the ID belongs
+	// to a check of another type.
 	GetAPICheck(
 		ctx context.Context,
 		ID string,
@@ -97,9 +97,9 @@ type Client interface {
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
-	// GetBrowserCheck takes the ID of an existing browser check, and returns the
-	// check parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetBrowserCheck takes the ID of an existing browser check, and returns
+	// the check parameters, including its script dependencies, or an error.
+	// It returns an error when the ID belongs to a check of another type.
 	GetBrowserCheck(
 		ctx context.Context,
 		ID string,
@@ -128,8 +128,9 @@ type Client interface {
 	) (*MultiStepCheck, error)
 
 	// GetMultiStepCheck takes the ID of an existing multi-step check, and
-	// returns the check parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// returns the check parameters, including its script dependencies, or an
+	// error. It returns an error when the ID belongs to a check of another
+	// type.
 	GetMultiStepCheck(
 		ctx context.Context,
 		ID string,
@@ -826,12 +827,16 @@ type Client interface {
 		ID string,
 	) error
 
-	// GetRuntime returns the runtime with the specified ID, or an error.
+	// GetRuntime returns the specs of the runtime with the specified ID, or an
+	// error. The endpoint is public, so the request is sent without
+	// credentials.
 	GetRuntime(
 		ctx context.Context,
 		ID string,
 	) (*Runtime, error)
 
+	// GetStaticIPs returns the static IP addresses of every region. The
+	// endpoints are public, so the requests are sent without credentials.
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
 }
 

@@ -188,9 +188,6 @@ func (c *client) CreateTracerouteMonitor(
 	return &result, nil
 }
 
-// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
-// returns the monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetTracerouteMonitor(
 	ctx context.Context,
 	ID string,

@@ -176,8 +176,6 @@ func (a *AlertChannel) configField() any {
 	return nil
 }
 
-// CreateAlertChannel creates a new alert channel with the specified details. It returns
-// the newly-created alert channel, or an error.
 func (c *client) CreateAlertChannel(
 	ctx context.Context,
 	ac AlertChannel,
@@ -189,8 +187,6 @@ func (c *client) CreateAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// GetAlertChannel takes the ID of an existing alert channel, and returns the
-// corresponding alert channel, or an error.
 func (c *client) GetAlertChannel(
 	ctx context.Context,
 	ID int64,
@@ -202,9 +198,6 @@ func (c *client) GetAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
-// corresponding alert channel to match the supplied alert channel. It returns the updated
-// alert channel, or an error.
 func (c *client) UpdateAlertChannel(
 	ctx context.Context,
 	ID int64,
@@ -217,7 +210,6 @@ func (c *client) UpdateAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
 func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,

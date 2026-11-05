@@ -44,7 +44,6 @@ func createPrivateLocationPayload(pl PrivateLocation) PrivateLocation {
 	return pl
 }
 
-// CreatePrivateLocation creates a new private location with the specified details.
 func (c *client) CreatePrivateLocation(
 	ctx context.Context,
 	pl PrivateLocation,
@@ -57,8 +56,6 @@ func (c *client) CreatePrivateLocation(
 	return &result, nil
 }
 
-// GetPrivateLocation takes the ID of an existing location, and returns the
-// corresponding one.
 func (c *client) GetPrivateLocation(
 	ctx context.Context,
 	ID string,
@@ -71,8 +68,6 @@ func (c *client) GetPrivateLocation(
 	return &result, nil
 }
 
-// UpdatePrivateLocation takes the ID of an existing private location and updates it
-// to match the new one.
 func (c *client) UpdatePrivateLocation(
 	ctx context.Context,
 	ID string,
@@ -86,7 +81,6 @@ func (c *client) UpdatePrivateLocation(
 	return &result, nil
 }
 
-// DeletePrivateLocation deletes the private location with the specified ID.
 func (c *client) DeletePrivateLocation(
 	ctx context.Context,
 	ID string,

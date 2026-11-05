@@ -152,9 +152,6 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
-// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetDNSMonitor(
 	ctx context.Context,
 	ID string,

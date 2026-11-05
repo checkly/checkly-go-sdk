@@ -15,8 +15,6 @@ type StaticIP struct {
 	Address netip.Prefix
 }
 
-// GetStaticIPs returns the static IP addresses of every region. The endpoints
-// are public, so the requests are sent without credentials.
 func (c *client) GetStaticIPs(
 	ctx context.Context,
 ) ([]StaticIP, error) {

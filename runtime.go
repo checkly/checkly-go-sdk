@@ -27,8 +27,6 @@ type Runtime struct {
 	Description      string       `json:"description"`
 }
 
-// GetRuntime returns the specs of a runtime. The endpoint is public, so the
-// request is sent without credentials.
 func (c *client) GetRuntime(
 	ctx context.Context,
 	ID string,

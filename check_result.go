@@ -148,7 +148,6 @@ type CheckResultsFilter struct {
 	HasFailures bool
 }
 
-// GetCheckResult gets a specific Check result
 func (c *client) GetCheckResult(
 	ctx context.Context,
 	checkID,
@@ -162,7 +161,6 @@ func (c *client) GetCheckResult(
 	return &result, nil
 }
 
-// GetCheckResults gets the results of the given Check
 func (c *client) GetCheckResults(
 	ctx context.Context,
 	checkID string,

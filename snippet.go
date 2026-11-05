@@ -16,8 +16,6 @@ type Snippet struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// CreateSnippet creates a new snippet with the specified details. It returns
-// the newly-created snippet, or an error.
 func (c *client) CreateSnippet(
 	ctx context.Context,
 	snippet Snippet,
@@ -30,8 +28,6 @@ func (c *client) CreateSnippet(
 	return &result, nil
 }
 
-// GetSnippet takes the ID of an existing snippet, and returns the
-// corresponding snippet, or an error.
 func (c *client) GetSnippet(
 	ctx context.Context,
 	ID int64,
@@ -44,9 +40,6 @@ func (c *client) GetSnippet(
 	return &result, nil
 }
 
-// UpdateSnippet takes the ID of an existing snippet, and updates the
-// corresponding snippet to match the supplied snippet. It returns the updated
-// snippet, or an error.
 func (c *client) UpdateSnippet(
 	ctx context.Context,
 	ID int64,
@@ -60,7 +53,6 @@ func (c *client) UpdateSnippet(
 	return &result, nil
 }
 
-// DeleteSnippet deletes the snippet with the specified ID. It returns a
 func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,

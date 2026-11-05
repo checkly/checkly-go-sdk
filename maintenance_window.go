@@ -193,7 +193,6 @@ func (v MaintenanceWindowStatusPageVisibility) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// CreateMaintenanceWindow creates a new window with the specified details.
 func (c *client) CreateMaintenanceWindow(
 	ctx context.Context,
 	mw MaintenanceWindow,
@@ -206,8 +205,6 @@ func (c *client) CreateMaintenanceWindow(
 	return &result, nil
 }
 
-// GetMaintenanceWindow takes the ID of an existing window, and returns the
-// corresponding window.
 func (c *client) GetMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
@@ -220,8 +217,6 @@ func (c *client) GetMaintenanceWindow(
 	return &result, nil
 }
 
-// UpdateMaintenanceWindow takes the ID of an existing window, and updates the
-// corresponding window to match the supplied one.
 func (c *client) UpdateMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
@@ -235,7 +230,6 @@ func (c *client) UpdateMaintenanceWindow(
 	return &result, nil
 }
 
-// DeleteMaintenanceWindow deletes the window with the specified ID.
 func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
 	ID int64,

@@ -210,9 +210,6 @@ func (c *client) CreateSSLMonitor(
 	return &result, nil
 }
 
-// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetSSLMonitor(
 	ctx context.Context,
 	ID string,

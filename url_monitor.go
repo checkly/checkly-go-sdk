@@ -127,9 +127,6 @@ func (c *client) CreateURLMonitor(
 	return &result, nil
 }
 
-// GetURLMonitor takes the ID of an existing URL monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetURLMonitor(
 	ctx context.Context,
 	ID string,

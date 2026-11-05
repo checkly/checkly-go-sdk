@@ -87,8 +87,6 @@ func newDashboardUpdatePayload(dashboard Dashboard) dashboardUpdatePayload {
 	}
 }
 
-// CreateDashboard creates a new dashboard with the specified details. It returns
-// the newly-created dashboard, or an error.
 func (c *client) CreateDashboard(
 	ctx context.Context,
 	dashboard Dashboard,
@@ -101,8 +99,6 @@ func (c *client) CreateDashboard(
 	return &result, nil
 }
 
-// GetDashboard takes the ID of an existing dashboard, and returns the
-// corresponding dashboard, or an error.
 func (c *client) GetDashboard(
 	ctx context.Context,
 	ID string,
@@ -115,9 +111,6 @@ func (c *client) GetDashboard(
 	return &result, nil
 }
 
-// UpdateDashboard takes the ID of an existing dashboard, and updates the
-// corresponding dashboard to match the supplied dashboard. It returns the updated
-// dashboard, or an error.
 func (c *client) UpdateDashboard(
 	ctx context.Context,
 	ID string,
@@ -131,7 +124,6 @@ func (c *client) UpdateDashboard(
 	return &result, nil
 }
 
-// DeleteDashboard deletes the dashboard with the specified ID.
 func (c *client) DeleteDashboard(
 	ctx context.Context,
 	ID string,

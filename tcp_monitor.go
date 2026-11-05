@@ -136,9 +136,6 @@ func (c *client) CreateTCPMonitor(
 	return &result, nil
 }
 
-// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetTCPMonitor(
 	ctx context.Context,
 	ID string,

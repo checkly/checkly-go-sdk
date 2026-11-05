@@ -68,7 +68,6 @@ type Check struct {
 	CreatedAt                 time.Time                  `json:"created_at"`
 	UpdatedAt                 time.Time                  `json:"updated_at"`
 
-	// Pointers
 	PrivateLocations *[]string        `json:"privateLocations"`
 	RuntimeID        *string          `json:"runtimeId"`
 	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
@@ -78,8 +77,6 @@ type Check struct {
 	DoubleCheck bool `json:"doubleCheck"`
 }
 
-// CreateCheck creates a new check with the specified details. It returns the
-// newly-created check, or an error.
 func (c *client) CreateCheck(
 	ctx context.Context,
 	check Check,
@@ -169,8 +166,6 @@ func createCheckPayload(check Check) checkPayload {
 	return payload
 }
 
-// GetCheck takes the ID of an existing check, and returns the check
-// parameters, or an error.
 func (c *client) GetCheck(
 	ctx context.Context,
 	ID string,
@@ -183,8 +178,6 @@ func (c *client) GetCheck(
 	return &result, nil
 }
 
-// UpdateCheck updates an existing check with the specified details. It
-// returns the updated check, or an error.
 func (c *client) UpdateCheck(
 	ctx context.Context,
 	ID string,
@@ -198,7 +191,6 @@ func (c *client) UpdateCheck(
 	return &result, nil
 }
 
-// DeleteCheck deletes the check with the specified ID.
 func (c *client) DeleteCheck(
 	ctx context.Context,
 	ID string,
