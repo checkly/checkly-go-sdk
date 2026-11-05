@@ -63,6 +63,13 @@ var (
 	ErrInvalidAccountID = errors.New("the account ID is not a UUID")
 )
 
+// ErrCheckTypeMismatch is matched by the error a check or monitor getter, such
+// as GetAPICheck or GetURLMonitor, returns when the ID belongs to a check of
+// another type, prefixed with the request and naming both types as in
+// "GET /v1/checks/abc: check is of type \"BROWSER\", not \"API\"". It is not
+// an *APIError: the API answered successfully.
+var ErrCheckTypeMismatch = errors.New("check type mismatch")
+
 // IsNotFound reports whether err is, or wraps, an API error for a 404
 // response. It is equivalent to errors.Is(err, ErrNotFound).
 func IsNotFound(err error) bool {

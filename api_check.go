@@ -137,8 +137,8 @@ func (c *client) CreateAPICheck(
 }
 
 // GetAPICheck takes the ID of an existing API check, and returns the check
-// parameters, or an error. It returns an error when the ID belongs to a check
-// of another type.
+// parameters, or an error. It fails with an error matching ErrCheckTypeMismatch
+// when the ID belongs to a check of another type.
 func (c *client) GetAPICheck(
 	ctx context.Context,
 	ID string,

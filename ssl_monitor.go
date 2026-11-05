@@ -155,14 +155,14 @@ func (c *client) CreateSSLMonitor(
 }
 
 // GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-// monitor parameters, or an error.
+// monitor parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetSSLMonitor(
 	ctx context.Context,
 	ID string,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "SSL", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

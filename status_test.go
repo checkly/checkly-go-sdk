@@ -78,7 +78,7 @@ func ignoreResult[T any](_ T, err error) error { return err }
 // followed by "/" and a variant name when one method needs several cases.
 var statusCases = map[string]statusCase{
 	// Checks
-	"GetHeartbeatMonitor": getCheckCase(checkly.Client.GetHeartbeatMonitor),
+	"GetHeartbeatMonitor": getCheckOfTypeCase(checkly.Client.GetHeartbeatMonitor, "HEARTBEAT"),
 	"CreateCheck": {
 		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
 		accept:   statusCreated,
@@ -275,24 +275,17 @@ var statusCases = map[string]statusCase{
 	"DeleteBrowserCheck":      deleteCheckCase(checkly.Client.DeleteBrowserCheck),
 	"DeleteMultiStepCheck":    deleteCheckCase(checkly.Client.DeleteMultiStepCheck),
 	"GetCheck":                getCheckCase(checkly.Client.GetCheck),
-	"GetTCPMonitor":           getCheckCase(checkly.Client.GetTCPMonitor),
-	"GetGRPCMonitor":          getCheckCase(checkly.Client.GetGRPCMonitor),
-	"GetTracerouteMonitor":    getCheckCase(checkly.Client.GetTracerouteMonitor),
-	"GetSSLMonitor":           getCheckCase(checkly.Client.GetSSLMonitor),
-	"GetURLMonitor":           getCheckCase(checkly.Client.GetURLMonitor),
-	"GetDNSMonitor":           getCheckCase(checkly.Client.GetDNSMonitor),
-	"GetICMPMonitor":          getCheckCase(checkly.Client.GetICMPMonitor),
-	"GetPlaywrightCheck":      getCheckCase(checkly.Client.GetPlaywrightCheck),
-	// The per-type getters reject a response whose checkType differs from
-	// theirs, so the canned body has to name the right type.
-	"GetAPICheck": {
-		requests: []string{"GET /v1/checks/id1"},
-		accept:   statusOK,
-		body:     `{"checkType":"API"}`,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.GetAPICheck(ctx, testID))
-		},
-	},
+	"GetTCPMonitor":           getCheckOfTypeCase(checkly.Client.GetTCPMonitor, "TCP"),
+	"GetGRPCMonitor":          getCheckOfTypeCase(checkly.Client.GetGRPCMonitor, "GRPC"),
+	"GetTracerouteMonitor":    getCheckOfTypeCase(checkly.Client.GetTracerouteMonitor, "TRACEROUTE"),
+	"GetSSLMonitor":           getCheckOfTypeCase(checkly.Client.GetSSLMonitor, "SSL"),
+	"GetURLMonitor":           getCheckOfTypeCase(checkly.Client.GetURLMonitor, "URL"),
+	"GetDNSMonitor":           getCheckOfTypeCase(checkly.Client.GetDNSMonitor, "DNS"),
+	"GetICMPMonitor":          getCheckOfTypeCase(checkly.Client.GetICMPMonitor, "ICMP"),
+	"GetPlaywrightCheck":      getCheckOfTypeCase(checkly.Client.GetPlaywrightCheck, "PLAYWRIGHT"),
+	"GetAPICheck":             getCheckOfTypeCase(checkly.Client.GetAPICheck, "API"),
+	// Like getCheckOfTypeCase, but these getters add includeDependencies=true
+	// to the request; the canned body still has to name the right type.
 	"GetBrowserCheck": {
 		requests: []string{"GET /v1/checks/id1?includeDependencies=true"},
 		accept:   statusOK,
@@ -784,12 +777,26 @@ func deleteCheckCase(del func(checkly.Client, context.Context, string) error) st
 	}
 }
 
-// getCheckCase covers the check and monitor getters that read the generic
-// check endpoint without checking the type of the returned check.
+// getCheckCase covers GetCheck, which reads the generic check endpoint
+// without checking the type of the returned check.
 func getCheckCase[T any](get func(checkly.Client, context.Context, string) (T, error)) statusCase {
 	return statusCase{
 		requests: []string{"GET /v1/checks/id1"},
 		accept:   statusOK,
+		call: func(ctx context.Context, c checkly.Client) error {
+			return ignoreResult(get(c, ctx, testID))
+		},
+	}
+}
+
+// getCheckOfTypeCase covers a monitor or check getter that reads the generic
+// check endpoint and rejects a check whose checkType is not checkType, so the
+// canned body names that type.
+func getCheckOfTypeCase[T any](get func(checkly.Client, context.Context, string) (T, error), checkType string) statusCase {
+	return statusCase{
+		requests: []string{"GET /v1/checks/id1"},
+		accept:   statusOK,
+		body:     `{"checkType":"` + checkType + `"}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(get(c, ctx, testID))
 		},

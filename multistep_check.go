@@ -88,9 +88,10 @@ func (c *client) CreateMultiStepCheck(
 }
 
 // GetMultiStepCheck takes the ID of an existing multi-step check, and returns
-// the check parameters, or an error. It returns an error when the ID belongs
-// to a check of another type. The includeDependencies query parameter is
-// required for the response to contain the check's script dependencies.
+// the check parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type. The
+// includeDependencies query parameter is required for the response to contain
+// the check's script dependencies.
 func (c *client) GetMultiStepCheck(
 	ctx context.Context,
 	ID string,

@@ -67,8 +67,9 @@ type Client interface {
 		check APICheck,
 	) (*APICheck, error)
 
-	// GetAPICheck takes the ID of an existing API check, and returns the
-	// check parameters, or an error.
+	// GetAPICheck takes the ID of an existing API check, and returns the check
+	// parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetAPICheck(
 		ctx context.Context,
 		ID string,
@@ -96,8 +97,9 @@ type Client interface {
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
-	// GetBrowserCheck takes the ID of an existing browser check, and returns
-	// the check parameters, or an error.
+	// GetBrowserCheck takes the ID of an existing browser check, and returns the
+	// check parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetBrowserCheck(
 		ctx context.Context,
 		ID string,
@@ -126,7 +128,8 @@ type Client interface {
 	) (*MultiStepCheck, error)
 
 	// GetMultiStepCheck takes the ID of an existing multi-step check, and
-	// returns the check parameters, or an error.
+	// returns the check parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetMultiStepCheck(
 		ctx context.Context,
 		ID string,
@@ -153,7 +156,9 @@ type Client interface {
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
-	// GetPlaywrightCheck retrieves an existing Playwright check.
+	// GetPlaywrightCheck takes the ID of an existing Playwright check, and
+	// returns the check parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetPlaywrightCheck(
 		ctx context.Context,
 		ID string,
@@ -195,6 +200,10 @@ type Client interface {
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
 
+	// GetHeartbeatMonitor takes the ID of an existing heartbeat monitor, and
+	// returns the monitor parameters, or an error. It fails with an error
+	// matching ErrCheckTypeMismatch when the ID belongs to a check of another
+	// type.
 	GetHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
@@ -222,7 +231,8 @@ type Client interface {
 	) (*URLMonitor, error)
 
 	// GetURLMonitor takes the ID of an existing URL monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetURLMonitor(
 		ctx context.Context,
 		ID string,
@@ -250,7 +260,8 @@ type Client interface {
 	) (*TCPMonitor, error)
 
 	// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetTCPMonitor(
 		ctx context.Context,
 		ID string,
@@ -278,7 +289,8 @@ type Client interface {
 	) (*DNSMonitor, error)
 
 	// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetDNSMonitor(
 		ctx context.Context,
 		ID string,
@@ -306,7 +318,8 @@ type Client interface {
 	) (*ICMPMonitor, error)
 
 	// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetICMPMonitor(
 		ctx context.Context,
 		ID string,
@@ -334,7 +347,8 @@ type Client interface {
 	) (*GRPCMonitor, error)
 
 	// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetGRPCMonitor(
 		ctx context.Context,
 		ID string,
@@ -361,8 +375,10 @@ type Client interface {
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
-	// GetTracerouteMonitor takes the ID of an existing traceroute monitor,
-	// and returns the monitor parameters, or an error.
+	// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
+	// returns the monitor parameters, or an error. It fails with an error
+	// matching ErrCheckTypeMismatch when the ID belongs to a check of another
+	// type.
 	GetTracerouteMonitor(
 		ctx context.Context,
 		ID string,
@@ -390,7 +406,8 @@ type Client interface {
 	) (*SSLMonitor, error)
 
 	// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-	// monitor parameters, or an error.
+	// monitor parameters, or an error. It fails with an error matching
+	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 	GetSSLMonitor(
 		ctx context.Context,
 		ID string,

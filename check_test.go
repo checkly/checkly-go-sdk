@@ -3,9 +3,11 @@ package checkly_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -259,51 +261,100 @@ func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
 	}
 }
 
+// typedCheckGetters lists every getter that only accepts a check of its own
+// type, with the checkType it expects and the query it sends.
+var typedCheckGetters = []struct {
+	name      string
+	checkType string
+	query     string
+	// get calls the getter and returns the decoded check's ID.
+	get func(c checkly.Client, id string) (string, error)
+}{
+	{"GetAPICheck", "API", "", getID(checkly.Client.GetAPICheck)},
+	{"GetBrowserCheck", "BROWSER", "?includeDependencies=true", getID(checkly.Client.GetBrowserCheck)},
+	{"GetMultiStepCheck", "MULTI_STEP", "?includeDependencies=true", getID(checkly.Client.GetMultiStepCheck)},
+	{"GetPlaywrightCheck", "PLAYWRIGHT", "", getID(checkly.Client.GetPlaywrightCheck)},
+	{"GetHeartbeatMonitor", "HEARTBEAT", "", getID(checkly.Client.GetHeartbeatMonitor)},
+	{"GetURLMonitor", "URL", "", getID(checkly.Client.GetURLMonitor)},
+	{"GetTCPMonitor", "TCP", "", getID(checkly.Client.GetTCPMonitor)},
+	{"GetDNSMonitor", "DNS", "", getID(checkly.Client.GetDNSMonitor)},
+	{"GetICMPMonitor", "ICMP", "", getID(checkly.Client.GetICMPMonitor)},
+	{"GetGRPCMonitor", "GRPC", "", getID(checkly.Client.GetGRPCMonitor)},
+	{"GetTracerouteMonitor", "TRACEROUTE", "", getID(checkly.Client.GetTracerouteMonitor)},
+	{"GetSSLMonitor", "SSL", "", getID(checkly.Client.GetSSLMonitor)},
+}
+
+// getID adapts a getter to return only the ID field of the check it decodes.
+func getID[T any](get func(checkly.Client, context.Context, string) (*T, error)) func(checkly.Client, string) (string, error) {
+	return func(c checkly.Client, id string) (string, error) {
+		r, err := get(c, context.Background(), id)
+		if err != nil {
+			return "", err
+		}
+		return reflect.ValueOf(r).Elem().FieldByName("ID").String(), nil
+	}
+}
+
+// checkBodyServer answers a GET of /v1/checks/{id}{query} with a check of
+// the given checkType.
+func checkBodyServer(t *testing.T, id, query, checkType string) *httptest.Server {
+	t.Helper()
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if want := "/v1/checks/" + id + query; r.Method != http.MethodGet || r.URL.String() != want {
+			t.Errorf("want GET %q, got %s %q", want, r.Method, r.URL.String())
+		}
+		fmt.Fprintf(w, `{"id":%q,"checkType":%q}`, id, checkType)
+	}))
+	t.Cleanup(ts.Close)
+	return ts
+}
+
 func TestGetPerTypeCheckRejectsOtherCheckTypes(t *testing.T) {
 	t.Parallel()
 	// Each getter is served a check of another type and must refuse it
 	// instead of decoding a mostly empty check.
-	tests := []struct {
-		name    string
-		path    string
-		fixture string
-		get     func(client checkly.Client) error
-	}{
-		{
-			name:    "GetAPICheck",
-			path:    fmt.Sprintf("/v1/checks/%s", testBrowserCheck.ID),
-			fixture: "GetBrowserCheck.json",
-			get: func(client checkly.Client) error {
-				_, err := client.GetAPICheck(context.Background(), testBrowserCheck.ID)
-				return err
-			},
-		},
-		{
-			name:    "GetBrowserCheck",
-			path:    fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testAPICheck.ID),
-			fixture: "GetAPICheck.json",
-			get: func(client checkly.Client) error {
-				_, err := client.GetBrowserCheck(context.Background(), testAPICheck.ID)
-				return err
-			},
-		},
-		{
-			name:    "GetMultiStepCheck",
-			path:    fmt.Sprintf("/v1/checks/%s?includeDependencies=true", testAPICheck.ID),
-			fixture: "GetAPICheck.json",
-			get: func(client checkly.Client) error {
-				_, err := client.GetMultiStepCheck(context.Background(), testAPICheck.ID)
-				return err
-			},
-		},
-	}
-	for _, tt := range tests {
+	const id = "check-id"
+	for _, tt := range typedCheckGetters {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ts := cannedResponseServer(t, http.MethodGet, tt.path, validateEmptyBody, http.StatusOK, tt.fixture)
-			defer ts.Close()
+			t.Parallel()
+			other := "API"
+			if tt.checkType == other {
+				other = "BROWSER"
+			}
+			ts := checkBodyServer(t, id, tt.query, other)
 			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-			if err := tt.get(client); err == nil || !strings.Contains(err.Error(), "check is of type") {
-				t.Errorf("expected a check type error, got %v", err)
+			_, err := tt.get(client, id)
+			if !errors.Is(err, checkly.ErrCheckTypeMismatch) {
+				t.Fatalf("want an error matching ErrCheckTypeMismatch, got %v", err)
+			}
+			var apiErr *checkly.APIError
+			if errors.As(err, &apiErr) {
+				t.Errorf("want no *APIError, got %v", apiErr)
+			}
+			want := fmt.Sprintf("GET /v1/checks/%s: check is of type %q, not %q", id, other, tt.checkType)
+			if err.Error() != want {
+				t.Errorf("want error %q, got %q", want, err.Error())
+			}
+		})
+	}
+}
+
+func TestGetPerTypeCheckAcceptsOwnCheckType(t *testing.T) {
+	t.Parallel()
+	const id = "check-id"
+	for _, tt := range typedCheckGetters {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ts := checkBodyServer(t, id, tt.query, tt.checkType)
+			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+			got, err := tt.get(client, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != id {
+				t.Errorf("want ID %q, got %q", id, got)
 			}
 		})
 	}

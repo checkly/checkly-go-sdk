@@ -176,7 +176,8 @@ func (c *client) DeleteCheck(
 // getCheckOfType fetches the check at path and decodes it into result. The
 // generic check endpoint returns checks of every type, so the response's
 // checkType is compared with the expected one: decoding a check of another
-// type would silently drop its type-specific fields.
+// type would silently drop its type-specific fields, so it fails with an error
+// matching ErrCheckTypeMismatch instead.
 func (c *client) getCheckOfType(
 	ctx context.Context,
 	path string,
@@ -194,7 +195,10 @@ func (c *client) getCheckOfType(
 		return err
 	}
 	if header.CheckType != checkType {
-		return fmt.Errorf("%s %s: check is of type %q, not %q", res.method, res.path, header.CheckType, checkType)
+		return &messageError{
+			msg:     fmt.Sprintf("%s %s: check is of type %q, not %q", res.method, res.path, header.CheckType, checkType),
+			wrapped: ErrCheckTypeMismatch,
+		}
 	}
 	return decode(res, result)
 }

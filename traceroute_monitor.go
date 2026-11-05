@@ -118,14 +118,14 @@ func (c *client) CreateTracerouteMonitor(
 }
 
 // GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
-// returns the monitor parameters, or an error.
+// returns the monitor parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetTracerouteMonitor(
 	ctx context.Context,
 	ID string,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "TRACEROUTE", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
