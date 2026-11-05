@@ -167,14 +167,14 @@ func (c *client) CreateGRPCMonitor(
 }
 
 // GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-// monitor parameters, or an error.
+// monitor parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetGRPCMonitor(
 	ctx context.Context,
 	ID string,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "GRPC", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

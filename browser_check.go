@@ -96,9 +96,10 @@ func (c *client) CreateBrowserCheck(
 }
 
 // GetBrowserCheck takes the ID of an existing browser check, and returns the
-// check parameters, or an error. It returns an error when the ID belongs to a
-// check of another type. The includeDependencies query parameter is required
-// for the response to contain the check's script dependencies.
+// check parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type. The
+// includeDependencies query parameter is required for the response to contain
+// the check's script dependencies.
 func (c *client) GetBrowserCheck(
 	ctx context.Context,
 	ID string,

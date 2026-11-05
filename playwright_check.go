@@ -75,14 +75,15 @@ func (c *client) CreatePlaywrightCheck(
 	return &result, nil
 }
 
-// GetPlaywrightCheck retrieves an existing Playwright check.
+// GetPlaywrightCheck takes the ID of an existing Playwright check, and returns
+// the check parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetPlaywrightCheck(
 	ctx context.Context,
 	ID string,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "PLAYWRIGHT", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

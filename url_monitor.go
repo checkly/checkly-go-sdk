@@ -128,14 +128,14 @@ func (c *client) CreateURLMonitor(
 }
 
 // GetURLMonitor takes the ID of an existing URL monitor, and returns the
-// monitor parameters, or an error.
+// monitor parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetURLMonitor(
 	ctx context.Context,
 	ID string,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "URL", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

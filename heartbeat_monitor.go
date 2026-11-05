@@ -65,13 +65,15 @@ func (c *client) CreateHeartbeatMonitor(
 	return &result, nil
 }
 
+// GetHeartbeatMonitor takes the ID of an existing heartbeat monitor, and
+// returns the monitor parameters, or an error. It fails with an error matching
+// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetHeartbeatMonitor(
 	ctx context.Context,
 	ID string,
 ) (*HeartbeatMonitor, error) {
-	result := HeartbeatMonitor{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s", ID), nil, &result, http.StatusOK)
-	if err != nil {
+	var result HeartbeatMonitor
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "HEARTBEAT", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
