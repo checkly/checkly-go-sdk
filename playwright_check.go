@@ -27,15 +27,19 @@ type PlaywrightCheck struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 
-	CacheHash         string   `json:"cacheHash"`
-	PlaywrightVersion *string  `json:"playwrightVersion"`
-	TestCommand       *string  `json:"testCommand"`
-	InstallCommand    *string  `json:"installCommand"`
-	Browsers          []string `json:"browsers"`
-	CodeBundlePath    string   `json:"codeBundlePath"`
-	WorkingDir        *string  `json:"workingDir"`
-	Engine            *string  `json:"engine"`
-	EngineVersion     *string  `json:"engineVersion"`
+	CacheHash         string  `json:"cacheHash"`
+	PlaywrightVersion *string `json:"playwrightVersion"`
+	TestCommand       *string `json:"testCommand"`
+	InstallCommand    *string `json:"installCommand"`
+	// Browsers lists the browsers the tests run in. The API requires at least
+	// one, so a nil or empty list is left out of create and update requests
+	// and the API's default applies (on update too, because the update
+	// endpoint applies create defaults to omitted keys).
+	Browsers       []string `json:"browsers,omitempty"`
+	CodeBundlePath string   `json:"codeBundlePath"`
+	WorkingDir     *string  `json:"workingDir"`
+	Engine         *string  `json:"engine"`
+	EngineVersion  *string  `json:"engineVersion"`
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
@@ -50,17 +54,11 @@ type playwrightCheckPayload struct {
 }
 
 func createPlaywrightCheckPayload(check PlaywrightCheck) playwrightCheckPayload {
-	payload := playwrightCheckPayload{
+	return playwrightCheckPayload{
 		PlaywrightCheck: check,
 		// Unfortunately `checkType` is required for this endpoint.
 		Type: "PLAYWRIGHT",
 	}
-
-	if payload.Browsers == nil {
-		payload.Browsers = []string{}
-	}
-
-	return payload
 }
 
 func (c *client) CreatePlaywrightCheck(

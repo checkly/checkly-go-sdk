@@ -1,0 +1,12 @@
+{
+  "id": "id1",
+  "checkType": "PLAYWRIGHT",
+  "name": "Playwright check",
+  "frequency": 10,
+  "activated": true,
+  "locations": ["us-east-1"],
+  "privateLocations": [],
+  "browsers": ["chromium"],
+  "cacheHash": "abc",
+  "codeBundlePath": "path/to/bundle"
+}
