@@ -27,10 +27,14 @@ type ICMPMonitor struct {
 	GroupID                     int64                      `json:"groupId,omitempty"`
 	GroupOrder                  int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions   []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RetryStrategy               *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident             *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                   time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                   time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slugs of the private locations the monitor runs
+	// from. The Checkly agent at those locations must be version 7.0.0 or later and
+	// have the NET_RAW capability.
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt        time.Time        `json:"created_at,omitempty"`
+	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
 // ICMPRequest represents the parameters for the request made by an ICMP monitor.
@@ -81,6 +85,10 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 	// We must send empty lists instead.
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
 	}
 
 	payload.Tags = emptyIfNil(monitor.Tags)

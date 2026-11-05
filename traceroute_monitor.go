@@ -9,10 +9,6 @@ import (
 )
 
 // TracerouteMonitor represents a traceroute monitor.
-//
-// Unlike the other monitor types it has no PrivateLocations field: the public
-// create schema marks `privateLocations` as forbidden ("Traceroute monitors do
-// not support private locations"), so the field must never reach the wire.
 type TracerouteMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
@@ -33,11 +29,15 @@ type TracerouteMonitor struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slugs of the private locations the monitor runs
+	// from. The Checkly agent at those locations must be version 8.4.0 or later and
+	// have the NET_RAW capability.
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RuntimeID        *string          `json:"runtimeId"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt        time.Time        `json:"created_at,omitempty"`
+	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
 // TracerouteRequest represents the parameters for a traceroute monitor's probe.
@@ -135,10 +135,9 @@ func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 		payload.Locations = []string{}
 	}
 
-	// NOTE: traceroute monitors forbid private locations (the create schema
-	// marks `privateLocations` as forbidden), so — unlike the other monitor
-	// payloads — we must not emit that field at all. TracerouteMonitor has no
-	// PrivateLocations field, so nothing to set here.
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
+	}
 
 	return payload
 }

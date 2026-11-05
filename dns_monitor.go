@@ -27,10 +27,13 @@ type DNSMonitor struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slugs of the private locations the monitor runs
+	// from. The Checkly agent at those locations must be version 7.0.0 or later.
+	PrivateLocations *[]string        `json:"privateLocations"`
+	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
+	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt        time.Time        `json:"created_at,omitempty"`
+	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
 // DNSRequest represents the parameters for the request made by a DNS monitor.
@@ -83,6 +86,10 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	// We must send empty lists instead.
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
 	}
 
 	payload.Tags = emptyIfNil(monitor.Tags)

@@ -24,13 +24,14 @@ func validateDNSMonitor(t *testing.T, body []byte) {
 }
 
 var testDNSMonitor = checkly.DNSMonitor{
-	ID:              "25797fe8-3b88-46f5-a3c2-448167007a68",
-	Name:            "DNS Monitor #1",
-	Frequency:       10,
-	FrequencyOffset: 80,
-	Activated:       false,
-	Muted:           false,
-	Locations:       []string{"us-east-1"},
+	ID:               "25797fe8-3b88-46f5-a3c2-448167007a68",
+	Name:             "DNS Monitor #1",
+	Frequency:        10,
+	FrequencyOffset:  80,
+	Activated:        false,
+	Muted:            false,
+	Locations:        []string{"us-east-1"},
+	PrivateLocations: &[]string{},
 	Tags: []string{
 		"tag-1",
 	},
@@ -152,6 +153,7 @@ func validateDNSMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "groupOrder", `null`)
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
 	// 0 is a schema-valid response time limit and must be serialized, or the
 	// backend would default (create) or keep (update) the previous values.
@@ -208,4 +210,39 @@ func TestUpdateDNSMonitorSerializesEmptyValues(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestDNSMonitorSendsPrivateLocations(t *testing.T) {
+	t.Parallel()
+	monitor := testDNSMonitor
+	monitor.PrivateLocations = &[]string{"my-private-location"}
+	validate := func(t *testing.T, body []byte) {
+		assertRawBodyField(t, body, "privateLocations", `["my-private-location"]`)
+	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateDNSMonitor",
+			method:   http.MethodPost,
+			url:      "/v1/checks/dns?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateDNSMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateDNSMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:     "UpdateDNSMonitor",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/dns/%s?autoAssignAlerts=false", monitor.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateDNSMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateDNSMonitor(ctx, monitor.ID, monitor)
+				return err
+			},
+		},
+	})
 }

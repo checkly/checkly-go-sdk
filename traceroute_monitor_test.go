@@ -26,13 +26,14 @@ func validateTracerouteMonitor(t *testing.T, body []byte) {
 }
 
 var testTracerouteMonitor = checkly.TracerouteMonitor{
-	ID:              "b2c3d4e5-1111-2222-3333-444455556666",
-	Name:            "Traceroute Monitor #1",
-	Frequency:       10,
-	FrequencyOffset: 80,
-	Activated:       false,
-	Muted:           false,
-	Locations:       []string{"us-east-1"},
+	ID:               "b2c3d4e5-1111-2222-3333-444455556666",
+	Name:             "Traceroute Monitor #1",
+	Frequency:        10,
+	FrequencyOffset:  80,
+	Activated:        false,
+	Muted:            false,
+	Locations:        []string{"us-east-1"},
+	PrivateLocations: &[]string{},
 	Tags: []string{
 		"tag-1",
 	},
@@ -204,6 +205,8 @@ func validateTracerouteMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tags", `[]`)
 	assertRawBodyField(t, body, "groupOrder", `null`)
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
 }
 
 func TestTracerouteMonitorSerializesEmptyValues(t *testing.T) {
@@ -310,6 +313,41 @@ func TestUpdateTracerouteMonitorSerializesSetValues(t *testing.T) {
 				assertRawBodyPath(t, body, `null`, "request", "port")
 			},
 			call: update(icmp),
+		},
+	})
+}
+
+func TestTracerouteMonitorSendsPrivateLocations(t *testing.T) {
+	t.Parallel()
+	monitor := testTracerouteMonitor
+	monitor.PrivateLocations = &[]string{"my-private-location"}
+	validate := func(t *testing.T, body []byte) {
+		assertRawBodyField(t, body, "privateLocations", `["my-private-location"]`)
+	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateTracerouteMonitor",
+			method:   http.MethodPost,
+			url:      "/v1/checks/traceroute?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateTracerouteMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateTracerouteMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:     "UpdateTracerouteMonitor",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/traceroute/%s?autoAssignAlerts=false", monitor.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateTracerouteMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateTracerouteMonitor(ctx, monitor.ID, monitor)
+				return err
+			},
 		},
 	})
 }
