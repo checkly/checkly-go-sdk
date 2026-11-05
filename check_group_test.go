@@ -266,3 +266,68 @@ func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+// GetGroupV2 reads through the v1 route, whose response carries the v2 group
+// shape plus projectBindings. The fixture is such a response, with the FALLBACK
+// retry strategy and nulls for the nullable settings.
+func TestGetGroupV2(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodGet,
+		fmt.Sprintf("/v1/check-groups/%d", wantGroupID),
+		validateEmptyBody,
+		http.StatusOK,
+		"GetGroupV2.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	gotGroup, err := client.GetGroupV2(context.Background(), wantGroupID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runParallel := false
+	want := checkly.GroupV2{
+		ID:          156,
+		Name:        "test",
+		Activated:   true,
+		RunParallel: &runParallel,
+		Tags:        []string{"auto"},
+		Locations:   []string{"eu-west-1"},
+		Concurrency: 3,
+		APICheckDefaults: checkly.APICheckDefaults{
+			BaseURL:         "example.com/api/test",
+			Headers:         []checkly.KeyValue{},
+			QueryParameters: []checkly.KeyValue{},
+			Assertions:      []checkly.Assertion{},
+		},
+		EnvironmentVariables: []checkly.EnvironmentVariable{},
+		AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
+			{Activated: true, ChannelID: 2996},
+		},
+		PrivateLocations: &[]string{},
+		RetryStrategy:    &checkly.RetryStrategy{Type: "FALLBACK"},
+	}
+	// This test is about the v1 read shape; timestamp decoding is tested
+	// separately.
+	ignored := cmpopts.IgnoreFields(checkly.GroupV2{}, "CreatedAt", "UpdatedAt")
+	if !cmp.Equal(want, *gotGroup, ignored) {
+		t.Error(cmp.Diff(want, *gotGroup, ignored))
+	}
+}
+
+// DeleteGroupV2 deletes through the v1 route, as the API has no v2 one.
+func TestDeleteGroupV2(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodDelete,
+		fmt.Sprintf("/v1/check-groups/%d", wantGroupID),
+		validateEmptyBody,
+		http.StatusNoContent,
+		"Empty.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	if err := client.DeleteGroupV2(context.Background(), wantGroupID); err != nil {
+		t.Error(err)
+	}
+}
