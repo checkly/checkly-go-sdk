@@ -98,7 +98,7 @@ func validateGroup(t *testing.T, body []byte) {
 	}
 }
 
-var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "PrivateLocations")
+var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "PrivateLocations", "CreatedAt", "UpdatedAt")
 
 func TestCreateGroup(t *testing.T) {
 	t.Parallel()
@@ -115,7 +115,7 @@ func TestCreateGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
@@ -136,7 +136,7 @@ func TestGetGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignored))
 	}
@@ -157,7 +157,7 @@ func TestUpdateGroup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations")
+	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}

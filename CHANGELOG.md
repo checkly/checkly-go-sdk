@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `AlertChannel.GetConfig`, `AlertChannel.SetConfig` and `AlertChannelConfigFromJSON`. Set and read the config field that matches `Type`, such as `Email` for `AlertTypeEmail`; the alert channel methods encode and decode it
 
 ### Fixed
+- `CreatedAt` and `UpdatedAt` on `Check`, `HeartbeatMonitor`, `Group`, `GroupV2` and `Snippet` are now populated: they decode from the `created_at` and `updated_at` keys the API returns, as on the other check types, instead of `createdAt` and `updatedAt`, which the API never sends. Their JSON keys change accordingly. The API ignores both keys on create and update
 - `GetCheckResults` sends any non-empty `CheckResultsFilter.CheckType` as the `checkType` filter. It used to send only `API` and `BROWSER` and silently drop every other type, such as `MULTI_STEP` or a monitor type, so the request was sent without the filter. The API answers 404 when the check is not of the given type. A filter with no field set no longer adds a trailing `?` to the request
 
 ## [v1.27.0](https://github.com/checkly/checkly-go-sdk/releases/tag/v1.27.0) - 2026-10-07
