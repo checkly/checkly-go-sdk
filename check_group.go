@@ -26,8 +26,8 @@ type Group struct {
 	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
 	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	CreatedAt                 time.Time                  `json:"createdAt"`
-	UpdatedAt                 time.Time                  `json:"updatedAt"`
+	CreatedAt                 time.Time                  `json:"created_at"`
+	UpdatedAt                 time.Time                  `json:"updated_at"`
 
 	// Pointers
 	RuntimeID        *string        `json:"runtimeId"`
@@ -60,8 +60,8 @@ type GroupV2 struct {
 	RuntimeID                 *string                    `json:"runtimeId"`
 	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	CreatedAt                 time.Time                  `json:"createdAt"`
-	UpdatedAt                 time.Time                  `json:"updatedAt"`
+	CreatedAt                 time.Time                  `json:"created_at"`
+	UpdatedAt                 time.Time                  `json:"updated_at"`
 }
 
 // APICheckDefaults represents the default settings for API checks within a
