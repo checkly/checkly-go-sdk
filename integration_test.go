@@ -1644,3 +1644,153 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 		t.Errorf("local scripts = %q, %q, want none", got.LocalSetupScript, got.LocalTearDownScript)
 	}
 }
+
+// TestMonitorPrivateLocations verifies that DNS, ICMP and traceroute monitors
+// can be created with a private location, that reads return it, and that an
+// update with unset private locations removes it. The private location is
+// created by the test, so the account needs none, and is deleted after the
+// monitors that use it.
+func TestMonitorPrivateLocations(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	suffix := time.Now().UnixNano()
+	location, err := client.CreatePrivateLocation(ctx, checkly.PrivateLocation{
+		Name: fmt.Sprintf("SDK monitor private location %d", suffix),
+		// Slug names are limited to 30 characters.
+		SlugName: fmt.Sprintf("sdk-mpl-%d", suffix),
+		Icon:     "location",
+	})
+	if err != nil {
+		t.Fatalf("failed to create private location: %v", err)
+	}
+	defer func() {
+		if err := client.DeletePrivateLocation(ctx, location.ID); err != nil {
+			t.Errorf("failed to delete private location %s: %v", location.ID, err)
+		}
+	}()
+	want := []string{location.SlugName}
+
+	assertPrivateLocations := func(t *testing.T, step string, got *[]string, want []string) {
+		t.Helper()
+		var values []string
+		if got != nil {
+			values = *got
+		}
+		if !cmp.Equal(want, values, cmpopts.EquateEmpty()) {
+			t.Errorf("%s: privateLocations = %v, want %v", step, values, want)
+		}
+	}
+
+	t.Run("DNS", func(t *testing.T) {
+		pending := checkly.DNSMonitor{
+			Name:             "Private location DNS monitor",
+			Frequency:        10,
+			Locations:        []string{"us-east-1"},
+			PrivateLocations: &want,
+			Request: checkly.DNSRequest{
+				RecordType: "A",
+				Query:      "welcome.checklyhq.com",
+				// The API rejects null assertions, which a nil slice sends.
+				Assertions: []checkly.Assertion{},
+			},
+		}
+		created, err := client.CreateDNSMonitor(ctx, pending)
+		if err != nil {
+			t.Fatalf("failed to create DNS monitor: %v", err)
+		}
+		defer func() { _ = client.DeleteDNSMonitor(ctx, created.ID) }()
+		assertPrivateLocations(t, "create", created.PrivateLocations, want)
+
+		got, err := client.GetDNSMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get DNS monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get", got.PrivateLocations, want)
+
+		update := pending
+		update.PrivateLocations = nil
+		if _, err := client.UpdateDNSMonitor(ctx, created.ID, update); err != nil {
+			t.Fatalf("failed to update DNS monitor: %v", err)
+		}
+		got, err = client.GetDNSMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get DNS monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get after update", got.PrivateLocations, nil)
+	})
+
+	t.Run("ICMP", func(t *testing.T) {
+		pending := checkly.ICMPMonitor{
+			Name:                        "Private location ICMP monitor",
+			Frequency:                   10,
+			Locations:                   []string{"us-east-1"},
+			PrivateLocations:            &want,
+			DegradedPacketLossThreshold: 10,
+			MaxPacketLossThreshold:      20,
+			Request: checkly.ICMPRequest{
+				Hostname: "welcome.checklyhq.com",
+				// The API rejects null assertions, which a nil slice sends.
+				Assertions: []checkly.Assertion{},
+			},
+		}
+		created, err := client.CreateICMPMonitor(ctx, pending)
+		if err != nil {
+			t.Fatalf("failed to create ICMP monitor: %v", err)
+		}
+		defer func() { _ = client.DeleteICMPMonitor(ctx, created.ID) }()
+		assertPrivateLocations(t, "create", created.PrivateLocations, want)
+
+		got, err := client.GetICMPMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get ICMP monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get", got.PrivateLocations, want)
+
+		update := pending
+		update.PrivateLocations = nil
+		if _, err := client.UpdateICMPMonitor(ctx, created.ID, update); err != nil {
+			t.Fatalf("failed to update ICMP monitor: %v", err)
+		}
+		got, err = client.GetICMPMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get ICMP monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get after update", got.PrivateLocations, nil)
+	})
+
+	t.Run("Traceroute", func(t *testing.T) {
+		pending := checkly.TracerouteMonitor{
+			Name:             "Private location traceroute monitor",
+			Frequency:        10,
+			Locations:        []string{"us-east-1"},
+			PrivateLocations: &want,
+			Request: checkly.TracerouteRequest{
+				URL: "api.checklyhq.com",
+			},
+		}
+		created, err := client.CreateTracerouteMonitor(ctx, pending)
+		if err != nil {
+			t.Fatalf("failed to create traceroute monitor: %v", err)
+		}
+		defer func() { _ = client.DeleteTracerouteMonitor(ctx, created.ID) }()
+		assertPrivateLocations(t, "create", created.PrivateLocations, want)
+
+		got, err := client.GetTracerouteMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get traceroute monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get", got.PrivateLocations, want)
+
+		update := pending
+		update.PrivateLocations = nil
+		if _, err := client.UpdateTracerouteMonitor(ctx, created.ID, update); err != nil {
+			t.Fatalf("failed to update traceroute monitor: %v", err)
+		}
+		got, err = client.GetTracerouteMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("failed to get traceroute monitor: %v", err)
+		}
+		assertPrivateLocations(t, "get after update", got.PrivateLocations, nil)
+	})
+}

@@ -30,6 +30,7 @@
   "maxResponseTime": 1000,
   "muted": false,
   "name": "DNS Monitor #1",
+  "privateLocations": [],
   "request": {
     "assertions": [
       {

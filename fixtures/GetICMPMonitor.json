@@ -30,6 +30,7 @@
   "maxPacketLossThreshold": 50,
   "muted": false,
   "name": "ICMP Monitor #1",
+  "privateLocations": [],
   "request": {
     "assertions": [
       {

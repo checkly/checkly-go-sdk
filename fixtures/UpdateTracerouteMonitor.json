@@ -30,6 +30,7 @@
   "maxResponseTime": 5000,
   "muted": false,
   "name": "Traceroute Monitor #1",
+  "privateLocations": [],
   "request": {
     "assertions": [
       {

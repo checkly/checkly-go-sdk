@@ -24,13 +24,14 @@ func validateICMPMonitor(t *testing.T, body []byte) {
 }
 
 var testICMPMonitor = checkly.ICMPMonitor{
-	ID:              "ab1c2d3e-e4f5-6789-0abc-def012345678",
-	Name:            "ICMP Monitor #1",
-	Frequency:       10,
-	FrequencyOffset: 20,
-	Activated:       true,
-	Muted:           false,
-	Locations:       []string{"us-east-1"},
+	ID:               "ab1c2d3e-e4f5-6789-0abc-def012345678",
+	Name:             "ICMP Monitor #1",
+	Frequency:        10,
+	FrequencyOffset:  20,
+	Activated:        true,
+	Muted:            false,
+	Locations:        []string{"us-east-1"},
+	PrivateLocations: &[]string{},
 	Tags: []string{
 		"tag-1",
 	},
@@ -152,6 +153,7 @@ func validateICMPMonitorEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "groupOrder", `null`)
 	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
 	assertRawBodyField(t, body, "locations", `[]`)
+	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
 	// The thresholds are always sent, so a 0 reaches the backend, which
 	// rejects it, instead of being replaced by the default or prior value.
@@ -206,4 +208,39 @@ func TestUpdateICMPMonitorSerializesEmptyValues(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestICMPMonitorSendsPrivateLocations(t *testing.T) {
+	t.Parallel()
+	monitor := testICMPMonitor
+	monitor.PrivateLocations = &[]string{"my-private-location"}
+	validate := func(t *testing.T, body []byte) {
+		assertRawBodyField(t, body, "privateLocations", `["my-private-location"]`)
+	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateICMPMonitor",
+			method:   http.MethodPost,
+			url:      "/v1/checks/icmp?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateICMPMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateICMPMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:     "UpdateICMPMonitor",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/icmp/%s?autoAssignAlerts=false", monitor.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateICMPMonitor.json",
+			validate: validate,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateICMPMonitor(ctx, monitor.ID, monitor)
+				return err
+			},
+		},
+	})
 }

@@ -27,6 +27,7 @@ type DNSMonitor struct {
 	GroupID                   int64                      `json:"groupId,omitempty"`
 	GroupOrder                int                        `json:"groupOrder,omitempty"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	PrivateLocations          *[]string                  `json:"privateLocations"`
 	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
 	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
 	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
@@ -83,6 +84,10 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	// We must send empty lists instead.
 	if monitor.Locations == nil {
 		payload.Locations = []string{}
+	}
+
+	if monitor.PrivateLocations == nil {
+		payload.PrivateLocations = &[]string{}
 	}
 
 	payload.Tags = emptyIfNil(monitor.Tags)

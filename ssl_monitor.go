@@ -10,8 +10,7 @@ import (
 // SSLMonitor represents an SSL/TLS certificate monitor.
 //
 // Like the other connection monitors (gRPC, traceroute), the response-time
-// thresholds are top-level DegradedResponseTime/MaxResponseTime fields. SSL
-// monitors do support private locations.
+// thresholds are top-level DegradedResponseTime/MaxResponseTime fields.
 type SSLMonitor struct {
 	ID                        string                     `json:"id,omitempty"`
 	Name                      string                     `json:"name"`
