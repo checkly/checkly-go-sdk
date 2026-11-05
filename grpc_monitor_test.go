@@ -246,3 +246,78 @@ func TestGRPCConfigFlatBuffersRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+// validateGRPCMonitorEmptyPayload asserts that the keys the update endpoint
+// would otherwise keep at their stored value are sent for an empty monitor,
+// on create and update alike, and that an empty mode is sent as BEHAVIOR.
+func validateGRPCMonitorEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyPath(t, body, `"BEHAVIOR"`, "request", "grpcConfig", "mode")
+}
+
+func TestGRPCMonitorSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	monitor := checkly.GRPCMonitor{
+		Name:    "gRPC Monitor #1",
+		Request: checkly.GRPCRequest{URL: "grpc.example.com", Port: 443},
+	}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:    "CreateGRPCMonitor",
+			method:  http.MethodPost,
+			url:     "/v1/checks/grpc?autoAssignAlerts=false",
+			status:  http.StatusCreated,
+			fixture: "CreateGRPCMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				validateGRPCMonitorEmptyPayload(t, body)
+				// Create leaves an unset timeout out, so the API stores its
+				// default rather than null.
+				assertRawBodyPathAbsent(t, body, "request", "timeout")
+			},
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateGRPCMonitor(ctx, monitor)
+				return err
+			},
+		},
+		{
+			name:    "UpdateGRPCMonitor",
+			method:  http.MethodPut,
+			url:     fmt.Sprintf("/v1/checks/grpc/%s?autoAssignAlerts=false", testGRPCMonitor.ID),
+			status:  http.StatusOK,
+			fixture: "UpdateGRPCMonitor.json",
+			validate: func(t *testing.T, body []byte) {
+				validateGRPCMonitorEmptyPayload(t, body)
+				assertRawBodyPath(t, body, `null`, "request", "timeout")
+			},
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateGRPCMonitor(ctx, testGRPCMonitor.ID, monitor)
+				return err
+			},
+		},
+	})
+}
+
+func TestUpdateGRPCMonitorSerializesSetTimeout(t *testing.T) {
+	t.Parallel()
+	monitor := checkly.GRPCMonitor{
+		Name:    "gRPC Monitor #1",
+		Request: checkly.GRPCRequest{URL: "grpc.example.com", Port: 443, Timeout: 30},
+	}
+	runPayloadCases(t, []payloadCase{{
+		name:    "UpdateGRPCMonitor",
+		method:  http.MethodPut,
+		url:     fmt.Sprintf("/v1/checks/grpc/%s?autoAssignAlerts=false", testGRPCMonitor.ID),
+		status:  http.StatusOK,
+		fixture: "UpdateGRPCMonitor.json",
+		validate: func(t *testing.T, body []byte) {
+			assertRawBodyPath(t, body, `30`, "request", "timeout")
+			assertRawBodyPath(t, body, `"grpc.example.com"`, "request", "url")
+		},
+		call: func(ctx context.Context, c checkly.Client) error {
+			_, err := c.UpdateGRPCMonitor(ctx, testGRPCMonitor.ID, monitor)
+			return err
+		},
+	}})
+}

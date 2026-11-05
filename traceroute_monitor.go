@@ -75,6 +75,41 @@ type tracerouteMonitorPayload struct {
 	Type        string `json:"checkType"`
 	DoubleCheck bool   `json:"doubleCheck"`
 	GroupID     *int64 `json:"groupId"`
+	// The update endpoint keeps the stored value of an omitted key. The
+	// fields below shadow embedded fields whose zero value would be omitted,
+	// so that an update resets them: lists are sent empty, and the group
+	// order as null, which is also its default on create.
+	Tags                      []string                   `json:"tags"`
+	GroupOrder                *int                       `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+}
+
+// tracerouteMonitorUpdatePayload is the update request. It differs from the
+// create request only in its request object, see
+// tracerouteUpdateRequestPayload.
+type tracerouteMonitorUpdatePayload struct {
+	tracerouteMonitorPayload
+	Request tracerouteUpdateRequestPayload `json:"request"`
+}
+
+// tracerouteUpdateRequestPayload is the request object of an update. The
+// create request leaves unset fields out so that the API stores its
+// defaults, but the update endpoint keeps the stored value of an omitted
+// key, so here unset fields are sent as null, which the runner treats as its
+// default, and an empty assertion list is sent as []. IPFamily and PtrLookup
+// stay omitted when unset: the API cannot store a null IP family, and a null
+// PTR lookup would run as false rather than the default true. The port of an
+// ICMP probe is sent as null, as the API discards it anyway.
+type tracerouteUpdateRequestPayload struct {
+	URL            string      `json:"url"`
+	Protocol       *string     `json:"protocol"`
+	Port           *int        `json:"port"`
+	IPFamily       string      `json:"ipFamily,omitempty"`
+	MaxHops        *int        `json:"maxHops"`
+	MaxUnknownHops *int        `json:"maxUnknownHops"`
+	PtrLookup      *bool       `json:"ptrLookup,omitempty"`
+	Timeout        *int        `json:"timeout"`
+	Assertions     []Assertion `json:"assertions"`
 }
 
 func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitorPayload {
@@ -83,7 +118,10 @@ func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 		// Unfortunately `checkType` is required for this endpoint.
 		Type: "TRACEROUTE",
 		// Unfortunately, this will default to true if not set.
-		DoubleCheck: false,
+		DoubleCheck:               false,
+		Tags:                      emptyIfNil(monitor.Tags),
+		GroupOrder:                nullIfZero(monitor.GroupOrder),
+		AlertChannelSubscriptions: emptyIfNil(monitor.AlertChannelSubscriptions),
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.
@@ -102,6 +140,27 @@ func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 	// payloads — we must not emit that field at all. TracerouteMonitor has no
 	// PrivateLocations field, so nothing to set here.
 
+	return payload
+}
+
+func updateTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitorUpdatePayload {
+	request := monitor.Request
+	payload := tracerouteMonitorUpdatePayload{
+		tracerouteMonitorPayload: createTracerouteMonitorPayload(monitor),
+		Request: tracerouteUpdateRequestPayload{
+			URL:            request.URL,
+			Protocol:       nullIfZero(request.Protocol),
+			IPFamily:       request.IPFamily,
+			MaxHops:        nullIfZero(request.MaxHops),
+			MaxUnknownHops: nullIfZero(request.MaxUnknownHops),
+			PtrLookup:      request.PtrLookup,
+			Timeout:        nullIfZero(request.Timeout),
+			Assertions:     emptyIfNil(request.Assertions),
+		},
+	}
+	if request.Protocol != "ICMP" {
+		payload.Request.Port = nullIfZero(request.Port)
+	}
 	return payload
 }
 
@@ -137,7 +196,7 @@ func (c *client) UpdateTracerouteMonitor(
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", ID)), createTracerouteMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", ID)), updateTracerouteMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

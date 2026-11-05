@@ -5,9 +5,11 @@ package checkly_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -1321,5 +1323,324 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 
 	if updatedMonitor.GroupID != 0 {
 		t.Fatalf("wrong GroupID after update")
+	}
+}
+
+// createResetTestGroup creates a group for the update-reset tests, so that
+// their monitors can carry a group order, and deletes it when the test ends.
+func createResetTestGroup(ctx context.Context, t *testing.T, client checkly.Client) *checkly.Group {
+	t.Helper()
+	group, err := client.CreateGroup(ctx, checkly.Group{
+		Name:        "Update reset test group",
+		Concurrency: 3,
+		Tags:        []string{},
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		Locations: []string{"us-east-1"},
+	})
+	if err != nil {
+		t.Fatalf("failed to create group: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = client.DeleteGroup(ctx, group.ID)
+	})
+	return group
+}
+
+// TestTracerouteMonitorUpdateResetsFields verifies that an update with unset
+// request fields replaces the stored values rather than keeping them. The
+// fields are sent as null, so a read returns either the zero value or the
+// API default, never the value set on create.
+func TestTracerouteMonitorUpdateResetsFields(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	ptrLookup := true
+	pending := checkly.TracerouteMonitor{
+		Name:      "Update reset traceroute monitor",
+		Frequency: 10,
+		Locations: []string{"us-east-1"},
+		Tags:      []string{"reset"},
+		Request: checkly.TracerouteRequest{
+			URL:            "api.checklyhq.com",
+			Protocol:       "UDP",
+			Port:           33435,
+			MaxHops:        20,
+			MaxUnknownHops: 10,
+			PtrLookup:      &ptrLookup,
+			Timeout:        5,
+			Assertions: []checkly.Assertion{{
+				Source:     "RESPONSE_TIME",
+				Property:   "avg",
+				Comparison: "LESS_THAN",
+				Target:     "1000",
+			}},
+		},
+	}
+	created, err := client.CreateTracerouteMonitor(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create traceroute monitor: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteTracerouteMonitor(ctx, created.ID)
+	}()
+
+	update := pending
+	update.Tags = nil
+	update.Request = checkly.TracerouteRequest{URL: pending.Request.URL, PtrLookup: &ptrLookup}
+	if _, err := client.UpdateTracerouteMonitor(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update traceroute monitor: %v", err)
+	}
+
+	got, err := client.GetTracerouteMonitor(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get traceroute monitor: %v", err)
+	}
+	request := got.Request
+	if request.Protocol != "" && request.Protocol != "TCP" {
+		t.Errorf("protocol = %q, want empty or TCP", request.Protocol)
+	}
+	if request.Port != 0 && request.Port != 443 {
+		t.Errorf("port = %d, want 0 or 443", request.Port)
+	}
+	if request.MaxHops != 0 && request.MaxHops != 30 {
+		t.Errorf("maxHops = %d, want 0 or 30", request.MaxHops)
+	}
+	if request.MaxUnknownHops != 0 && request.MaxUnknownHops != 15 {
+		t.Errorf("maxUnknownHops = %d, want 0 or 15", request.MaxUnknownHops)
+	}
+	if request.Timeout != 0 && request.Timeout != 10 {
+		t.Errorf("timeout = %d, want 0 or 10", request.Timeout)
+	}
+	if len(request.Assertions) != 0 {
+		t.Errorf("assertions = %v, want none", request.Assertions)
+	}
+	if len(got.Tags) != 0 {
+		t.Errorf("tags = %v, want none", got.Tags)
+	}
+}
+
+// TestGRPCMonitorUpdateResetsFields verifies that an update with unset fields
+// replaces the stored timeout, tags and group order, and that an update with
+// an empty mode applies its BEHAVIOR-mode fields.
+func TestGRPCMonitorUpdateResetsFields(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+	group := createResetTestGroup(ctx, t, client)
+
+	pending := checkly.GRPCMonitor{
+		Name:       "Update reset gRPC monitor",
+		Frequency:  10,
+		Locations:  []string{"us-east-1"},
+		Tags:       []string{"reset"},
+		GroupID:    group.ID,
+		GroupOrder: 2,
+		Request: checkly.GRPCRequest{
+			URL:     "grpc.example.com",
+			Port:    443,
+			Timeout: 30,
+			GRPCConfig: checkly.GRPCConfig{
+				Mode:   "BEHAVIOR",
+				Method: "example.Service/Old",
+			},
+		},
+	}
+	created, err := client.CreateGRPCMonitor(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create gRPC monitor: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteGRPCMonitor(ctx, created.ID)
+	}()
+
+	update := pending
+	update.Tags = nil
+	update.GroupOrder = 0
+	update.Request.Timeout = 0
+	update.Request.GRPCConfig = checkly.GRPCConfig{Method: "example.Service/New"}
+	if _, err := client.UpdateGRPCMonitor(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update gRPC monitor: %v", err)
+	}
+
+	got, err := client.GetGRPCMonitor(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get gRPC monitor: %v", err)
+	}
+	if got.Request.Timeout != 0 && got.Request.Timeout != 60 {
+		t.Errorf("timeout = %d, want 0 or 60", got.Request.Timeout)
+	}
+	if len(got.Tags) != 0 {
+		t.Errorf("tags = %v, want none", got.Tags)
+	}
+	if got.GroupOrder != 0 {
+		t.Errorf("groupOrder = %d, want 0", got.GroupOrder)
+	}
+	if got.Request.GRPCConfig.Mode != "BEHAVIOR" {
+		t.Errorf("mode = %q, want BEHAVIOR", got.Request.GRPCConfig.Mode)
+	}
+	if got.Request.GRPCConfig.Method != "example.Service/New" {
+		t.Errorf("method = %q, want the updated method", got.Request.GRPCConfig.Method)
+	}
+}
+
+// TestSSLMonitorUpdateResetsFields verifies that an update with unset tags
+// and group order replaces the stored values.
+func TestSSLMonitorUpdateResetsFields(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+	group := createResetTestGroup(ctx, t, client)
+
+	pending := checkly.SSLMonitor{
+		Name:       "Update reset SSL monitor",
+		Frequency:  10,
+		Locations:  []string{"us-east-1"},
+		Tags:       []string{"reset"},
+		GroupID:    group.ID,
+		GroupOrder: 2,
+		Request: checkly.SSLRequest{
+			SSLConfig: checkly.SSLConfig{Hostname: "api.checklyhq.com"},
+		},
+	}
+	created, err := client.CreateSSLMonitor(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create SSL monitor: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteSSLMonitor(ctx, created.ID)
+	}()
+
+	update := pending
+	update.Tags = nil
+	update.GroupOrder = 0
+	if _, err := client.UpdateSSLMonitor(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update SSL monitor: %v", err)
+	}
+
+	got, err := client.GetSSLMonitor(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get SSL monitor: %v", err)
+	}
+	if len(got.Tags) != 0 {
+		t.Errorf("tags = %v, want none", got.Tags)
+	}
+	if got.GroupOrder != 0 {
+		t.Errorf("groupOrder = %d, want 0", got.GroupOrder)
+	}
+}
+
+// TestStatusPageUpdateResetsFields verifies that an update with an empty
+// custom domain and logo removes the stored values.
+func TestStatusPageUpdateResetsFields(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	suffix := time.Now().UnixNano()
+	pending := checkly.StatusPage{
+		Name:         "Update reset status page",
+		URL:          fmt.Sprintf("sdk-update-reset-%d", suffix),
+		CustomDomain: fmt.Sprintf("sdk-update-reset-%d.checklyhq.com", suffix),
+		Logo:         "https://www.checklyhq.com/images/logo.png",
+		Cards:        []checkly.StatusPageCard{},
+	}
+	created, err := client.CreateStatusPage(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create status page: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteStatusPage(ctx, created.ID)
+	}()
+
+	update := pending
+	update.CustomDomain = ""
+	update.Logo = ""
+	if _, err := client.UpdateStatusPage(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update status page: %v", err)
+	}
+
+	got, err := client.GetStatusPage(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get status page: %v", err)
+	}
+	if got.CustomDomain != "" {
+		t.Errorf("customDomain = %q, want empty", got.CustomDomain)
+	}
+	if got.Logo != "" {
+		t.Errorf("logo = %q, want empty", got.Logo)
+	}
+}
+
+// TestCheckUpdateResetsScripts verifies that UpdateCheck with unset snippet
+// IDs and local scripts removes the stored values.
+func TestCheckUpdateResetsScripts(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	snippet, err := client.CreateSnippet(ctx, checkly.Snippet{
+		Name:   "Update reset snippet",
+		Script: "console.log('setup')",
+	})
+	if err != nil {
+		t.Fatalf("failed to create snippet: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteSnippet(ctx, snippet.ID)
+	}()
+
+	pending := checkly.Check{
+		Name:      "Update reset check",
+		Type:      checkly.TypeAPI,
+		Frequency: 10,
+		Locations: []string{"us-east-1"},
+		// The API check endpoint rejects null request lists.
+		Request: checkly.Request{
+			Method:          "GET",
+			URL:             "https://api.checklyhq.com",
+			Headers:         []checkly.KeyValue{},
+			QueryParameters: []checkly.KeyValue{},
+			Assertions:      []checkly.Assertion{},
+		},
+		// A zero AlertSettings still sends runBasedEscalation, which the
+		// API rejects without a threshold.
+		AlertSettings: checkly.AlertSettings{
+			EscalationType: checkly.RunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 1,
+			},
+		},
+		SetupSnippetID:      snippet.ID,
+		TearDownSnippetID:   snippet.ID,
+		LocalSetupScript:    "console.log('local setup')",
+		LocalTearDownScript: "console.log('local teardown')",
+	}
+	created, err := client.CreateCheck(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create check: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteCheck(ctx, created.ID)
+	}()
+
+	update := pending
+	update.SetupSnippetID = 0
+	update.TearDownSnippetID = 0
+	update.LocalSetupScript = ""
+	update.LocalTearDownScript = ""
+	if _, err := client.UpdateCheck(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update check: %v", err)
+	}
+
+	got, err := client.GetCheck(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get check: %v", err)
+	}
+	if got.SetupSnippetID != 0 || got.TearDownSnippetID != 0 {
+		t.Errorf("snippet IDs = %d, %d, want none", got.SetupSnippetID, got.TearDownSnippetID)
+	}
+	if got.LocalSetupScript != "" || got.LocalTearDownScript != "" {
+		t.Errorf("local scripts = %q, %q, want none", got.LocalSetupScript, got.LocalTearDownScript)
 	}
 }

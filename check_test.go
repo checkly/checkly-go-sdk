@@ -101,8 +101,9 @@ func validateCheck(t *testing.T, body []byte) {
 	if err != nil {
 		t.Fatalf("decoding error for data %q: %v", body, err)
 	}
-	if !cmp.Equal(wantCheck, gotCheck) {
-		t.Error(cmp.Diff(wantCheck, gotCheck))
+	// The payload sends unset lists as [], which decodes to an empty slice.
+	if !cmp.Equal(wantCheck, gotCheck, cmpopts.EquateEmpty()) {
+		t.Error(cmp.Diff(wantCheck, gotCheck, cmpopts.EquateEmpty()))
 	}
 }
 
@@ -358,4 +359,51 @@ func TestGetPerTypeCheckAcceptsOwnCheckType(t *testing.T) {
 			}
 		})
 	}
+}
+
+// validateCheckEmptyPayload asserts that the keys the update endpoint would
+// otherwise keep at their stored value are sent for an empty check: lists as
+// [], the snippet IDs, local scripts and group order as null, and the alert
+// settings' zero values.
+func validateCheckEmptyPayload(t *testing.T, body []byte) {
+	assertRawBodyField(t, body, "tags", `[]`)
+	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
+	assertRawBodyField(t, body, "setupSnippetId", `null`)
+	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
+	assertRawBodyField(t, body, "localSetupScript", `null`)
+	assertRawBodyField(t, body, "localTearDownScript", `null`)
+	assertRawBodyField(t, body, "groupOrder", `null`)
+	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
+	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
+}
+
+func TestCheckSerializesEmptyValues(t *testing.T) {
+	t.Parallel()
+	check := checkly.Check{Name: "test", Type: checkly.TypeAPI}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateCheck",
+			method:   http.MethodPost,
+			url:      "/v1/checks/api?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateCheck.json",
+			validate: validateCheckEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateCheck(ctx, check)
+				return err
+			},
+		},
+		{
+			name:     "UpdateCheck",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
+			status:   http.StatusOK,
+			fixture:  "UpdateCheck.json",
+			validate: validateCheckEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateCheck(ctx, wantCheckID, check)
+				return err
+			},
+		},
+	})
 }

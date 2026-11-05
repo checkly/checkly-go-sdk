@@ -68,14 +68,13 @@ type tcpMonitorPayload struct {
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
 	// zero value would be omitted so that they are always sent and can
-	// actually be cleared via an update. AlertChannelSubscriptions is not
-	// shadowed: this endpoint verifiably clears subscriptions when the key
-	// is omitted.
-	Tags                 []string          `json:"tags"`
-	DegradedResponseTime int               `json:"degradedResponseTime"`
-	MaxResponseTime      int               `json:"maxResponseTime"`
-	GroupOrder           int               `json:"groupOrder"`
-	Request              tcpRequestPayload `json:"request"`
+	// actually be cleared via an update.
+	Tags                      []string                   `json:"tags"`
+	DegradedResponseTime      int                        `json:"degradedResponseTime"`
+	MaxResponseTime           int                        `json:"maxResponseTime"`
+	GroupOrder                int                        `json:"groupOrder"`
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	Request                   tcpRequestPayload          `json:"request"`
 }
 
 func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
@@ -103,6 +102,7 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 	}
 
 	payload.Tags = emptyIfNil(monitor.Tags)
+	payload.AlertChannelSubscriptions = emptyIfNil(monitor.AlertChannelSubscriptions)
 
 	// The response time limits must always be sent: 0 is a valid value, and
 	// omitting the keys would make the backend default them on create and

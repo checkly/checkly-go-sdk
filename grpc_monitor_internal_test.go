@@ -68,3 +68,39 @@ func TestGRPCPayloadPreservesRequest(t *testing.T) {
 		t.Errorf("BEHAVIOR payload must omit service, got %v", config)
 	}
 }
+
+// TestGRPCConfigPayloadModeAndProtoContent asserts that an empty mode is sent
+// as BEHAVIOR, and that an empty proto content is sent only with an explicit
+// REFLECTION service definition: with an omitted definition the API would
+// keep a stored PROTO_FILE definition and store an empty proto file for it.
+func TestGRPCConfigPayloadModeAndProtoContent(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		config       GRPCConfig
+		wantMode     string
+		protoContent any // nil means the key is absent
+	}{
+		{name: "empty", config: GRPCConfig{}, wantMode: "BEHAVIOR"},
+		{name: "reflection", config: GRPCConfig{ServiceDefinition: "REFLECTION"}, wantMode: "BEHAVIOR", protoContent: ""},
+		{name: "proto file", config: GRPCConfig{Mode: "BEHAVIOR", ServiceDefinition: "PROTO_FILE"}, wantMode: "BEHAVIOR"},
+		{name: "proto content set", config: GRPCConfig{ProtoContent: "syntax"}, wantMode: "BEHAVIOR", protoContent: "syntax"},
+		{name: "health", config: GRPCConfig{Mode: "HEALTH", ServiceDefinition: "REFLECTION"}, wantMode: "HEALTH"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			config := marshalToMap(t, createGRPCConfigPayload(test.config))
+			if config["mode"] != test.wantMode {
+				t.Errorf("mode = %v, want %s", config["mode"], test.wantMode)
+			}
+			got, ok := config["protoContent"]
+			if test.protoContent == nil {
+				if ok {
+					t.Errorf("protoContent must be omitted, got %v", got)
+				}
+			} else if !ok || got != test.protoContent {
+				t.Errorf("protoContent = %v (present %v), want %v", got, ok, test.protoContent)
+			}
+		})
+	}
+}

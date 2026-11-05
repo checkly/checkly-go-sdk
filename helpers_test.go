@@ -1,6 +1,7 @@
 package checkly_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -93,31 +94,14 @@ func marshalToMap(t *testing.T, v interface{}) map[string]interface{} {
 // the public struct cannot verify.
 func assertRawBodyField(t *testing.T, body []byte, key, want string) {
 	t.Helper()
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(body, &raw); err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
-	}
-	got, ok := raw[key]
-	if !ok {
-		t.Errorf("missing key %q in request body", key)
-		return
-	}
-	if string(got) != want {
-		t.Errorf("key %q in request body: want %s, got %s", key, want, got)
-	}
+	assertRawBodyPath(t, body, want, key)
 }
 
 // assertRawBodyKeyAbsent asserts that the raw JSON request body does not
 // contain the given key.
 func assertRawBodyKeyAbsent(t *testing.T, body []byte, key string) {
 	t.Helper()
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(body, &raw); err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
-	}
-	if got, ok := raw[key]; ok {
-		t.Errorf("expected key %q to be absent from request body, got %s", key, got)
-	}
+	assertRawBodyPathAbsent(t, body, key)
 }
 
 // assertRawNestedBodyField asserts that the JSON object at the given
@@ -125,25 +109,76 @@ func assertRawBodyKeyAbsent(t *testing.T, body []byte, key string) {
 // exactly the given serialized value.
 func assertRawNestedBodyField(t *testing.T, body []byte, key, nestedKey, want string) {
 	t.Helper()
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(body, &raw); err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
+	assertRawBodyPath(t, body, want, key, nestedKey)
+}
+
+// lookupRawBodyPath returns the raw JSON value at the given path of nested
+// object keys in body, and whether every key on the path is present.
+func lookupRawBodyPath(t *testing.T, body []byte, path []string) (json.RawMessage, bool) {
+	t.Helper()
+	value := json.RawMessage(body)
+	for _, key := range path {
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(value, &object); err != nil {
+			t.Fatalf("decoding error at %v for data %q: %v", path, body, err)
+		}
+		next, ok := object[key]
+		if !ok {
+			return nil, false
+		}
+		value = next
 	}
-	outer, ok := raw[key]
+	return value, true
+}
+
+// assertRawBodyPath asserts that the raw JSON request body contains the
+// value want, serialized exactly, at the given path of nested object keys.
+func assertRawBodyPath(t *testing.T, body []byte, want string, path ...string) {
+	t.Helper()
+	got, ok := lookupRawBodyPath(t, body, path)
 	if !ok {
-		t.Errorf("missing key %q in request body", key)
-		return
-	}
-	var nested map[string]json.RawMessage
-	if err := json.Unmarshal(outer, &nested); err != nil {
-		t.Fatalf("decoding error for key %q data %q: %v", key, outer, err)
-	}
-	got, ok := nested[nestedKey]
-	if !ok {
-		t.Errorf("missing key %q.%q in request body", key, nestedKey)
+		t.Errorf("missing key %v in request body", path)
 		return
 	}
 	if string(got) != want {
-		t.Errorf("key %q.%q in request body: want %s, got %s", key, nestedKey, want, got)
+		t.Errorf("key %v in request body: want %s, got %s", path, want, got)
+	}
+}
+
+// assertRawBodyPathAbsent asserts that the raw JSON request body has no key
+// at the given path of nested object keys.
+func assertRawBodyPathAbsent(t *testing.T, body []byte, path ...string) {
+	t.Helper()
+	if got, ok := lookupRawBodyPath(t, body, path); ok {
+		t.Errorf("expected key %v to be absent from request body, got %s", path, got)
+	}
+}
+
+// payloadCase is a client call whose request body a test validates.
+type payloadCase struct {
+	name     string
+	method   string
+	url      string
+	status   int
+	fixture  string
+	validate func(*testing.T, []byte)
+	call     func(context.Context, checkly.Client) error
+}
+
+// runPayloadCases runs each case against a server that validates the
+// request body and answers with the case's fixture.
+func runPayloadCases(t *testing.T, cases []payloadCase) {
+	t.Helper()
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			ts := cannedResponseServer(t, tc.method, tc.url, tc.validate, tc.status, tc.fixture)
+			defer ts.Close()
+			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+			if err := tc.call(context.Background(), client); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
