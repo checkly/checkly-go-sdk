@@ -24,7 +24,7 @@ Hi! We are really excited that you are interested in contributing to Checkly Go 
 
 - Add accompanying documentation, usage samples & test cases
 - Add or update the runnable examples in `example_test.go` to showcase your changes.
-- Use existing resources as templates and ensure that each property has a corresponding `description` field.
+- Use existing resources as templates, and give every exported type, field and method a doc comment.
 - Each PR should be linked with an issue, use [GitHub keywords](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests) for that.
 - Be sure to follow up project code styles (`$ make fmt`)
 
@@ -81,7 +81,7 @@ pull requests** must be enabled, and branch protection on `main` must require an
 
 The development branch is `main`. This is the branch that all pull requests should be made against.
 
-> ⚠️ Before you start, is recommended to have a good understanding on how the provider works, the resources it has and its different configurations. Here are the ["getting started"](https://github.com/checkly/checkly-go-sdk#getting-started) guides.
+> ⚠️ Before you start, we recommend getting familiar with how the SDK works and the resources it covers. The README's [Getting Started](README.md#getting-started) section is a good place to begin.
 
 ### Pre-requirements
 - [Go](https://go.dev/doc/install) 1.26 or later
