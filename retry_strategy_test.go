@@ -38,6 +38,13 @@ func TestRetryStrategyRoundTrip(t *testing.T) {
 			wantJSON: `{"type":"SINGLE_RETRY","baseBackoffSeconds":10,"sameRegion":true,"onlyOn":["NETWORK_ERROR"]}`,
 		},
 		{
+			// With its other fields zero, this is the strategy every plan can
+			// use, including on a group.
+			name:     "SINGLE_RETRY with zero fields",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeSingleRetry},
+			wantJSON: `{"type":"SINGLE_RETRY","baseBackoffSeconds":0,"sameRegion":false}`,
+		},
+		{
 			name:     "NO_RETRIES marshals as null",
 			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeNoRetries},
 			wantJSON: `null`,

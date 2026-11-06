@@ -297,25 +297,11 @@ var statusCases = map[string]statusCase{
 	},
 
 	// Groups
-	"CreateGroup": {
-		requests: []string{"POST /v1/check-groups?autoAssignAlerts=false"},
-		accept:   statusCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateGroup(ctx, checkly.Group{}))
-		},
-	},
 	"CreateGroupV2": {
 		requests: []string{"POST /v2/check-groups?autoAssignAlerts=false"},
 		accept:   statusCreated,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateGroupV2(ctx, checkly.GroupV2{}))
-		},
-	},
-	"GetGroup": {
-		requests: []string{"GET /v1/check-groups/7"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.GetGroup(ctx, testIntID))
 		},
 	},
 	"GetGroupV2": {
@@ -325,24 +311,12 @@ var statusCases = map[string]statusCase{
 			return ignoreResult(c.GetGroupV2(ctx, testIntID))
 		},
 	},
-	"UpdateGroup": {
-		requests: []string{"PUT /v1/check-groups/7?autoAssignAlerts=false"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.UpdateGroup(ctx, testIntID, checkly.Group{}))
-		},
-	},
 	"UpdateGroupV2": {
 		requests: []string{"PUT /v2/check-groups/7?autoAssignAlerts=false"},
 		accept:   statusOK,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.UpdateGroupV2(ctx, testIntID, checkly.GroupV2{}))
 		},
-	},
-	"DeleteGroup": {
-		requests: []string{"DELETE /v1/check-groups/7"},
-		accept:   statusNoContent,
-		call:     func(ctx context.Context, c checkly.Client) error { return c.DeleteGroup(ctx, testIntID) },
 	},
 	"DeleteGroupV2": {
 		requests: []string{"DELETE /v1/check-groups/7"},
