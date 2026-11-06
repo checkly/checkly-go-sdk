@@ -165,8 +165,11 @@ func TestDeleteIntegration(t *testing.T) {
 	}
 }
 
-func makeTestAlertChannel(client checkly.Client) (*checkly.AlertChannel, error) {
-	return client.CreateAlertChannel(
+// makeTestAlertChannel creates an email alert channel and deletes it when the
+// test ends, after the test's deferred calls have deleted what subscribes to it.
+func makeTestAlertChannel(t *testing.T, client checkly.Client) *checkly.AlertChannel {
+	t.Helper()
+	ac, err := client.CreateAlertChannel(
 		context.Background(),
 		checkly.AlertChannel{
 			Type: checkly.AlertTypeEmail,
@@ -175,15 +178,21 @@ func makeTestAlertChannel(client checkly.Client) (*checkly.AlertChannel, error) 
 			},
 		},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := client.DeleteAlertChannel(context.Background(), ac.ID); err != nil {
+			t.Errorf("deleting alert channel %d: %v", ac.ID, err)
+		}
+	})
+	return ac
 }
 
 func TestCreateGroupIntegration(t *testing.T) {
 	client := setupClient(t)
 	wantGroupCopy := wantGroup
-	ac, err := makeTestAlertChannel(client)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	ac := makeTestAlertChannel(t, client)
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
 	gotGroup, err := client.CreateGroup(context.Background(), wantGroupCopy)
 	if err != nil {
@@ -199,7 +208,7 @@ func TestCreateGroupIntegration(t *testing.T) {
 
 func TestGetGroupIntegration(t *testing.T) {
 	client := setupClient(t)
-	ac, err := makeTestAlertChannel(client)
+	ac := makeTestAlertChannel(t, client)
 	wantGroupCopy := wantGroup
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
 	group, err := client.CreateGroup(context.Background(), wantGroupCopy)
