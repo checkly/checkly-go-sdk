@@ -14,10 +14,11 @@ const (
 )
 
 // IncidentTrigger makes a check or monitor open and resolve an incident on a
-// status page service, based on its alert configuration. The API requires
-// every field.
+// v1 status page service, based on its alert configuration. The API requires
+// every field. It applies only to v1 services: v3 pages automate incidents
+// with [StatusPageAutomationRuleV3].
 type IncidentTrigger struct {
-	// ServiceID is the UUID of the status page service the incident is
+	// ServiceID is the UUID of the v1 status page service the incident is
 	// opened on.
 	ServiceID   string           `json:"serviceId"`
 	Severity    IncidentSeverity `json:"severity"`
