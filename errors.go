@@ -15,10 +15,20 @@ import (
 
 // Sentinel errors for the API failures callers commonly branch on. An
 // *APIError matches them with errors.Is according to its status code (and,
-// for ErrAccountNotAccessible, its error code), also when wrapped:
+// for ErrAccountNotAccessible and ErrValidation, its body), also when wrapped:
 //
 //	if errors.Is(err, checkly.ErrNotFound) { ... }
 var (
+	// ErrBadRequest matches any 400 response.
+	ErrBadRequest = errors.New("bad request")
+	// ErrValidation matches a 400 response whose body has a validation block,
+	// which the API sends when a request fails schema validation, such as a
+	// missing field or a value of the wrong type. [APIError].Details lists
+	// the fields it names, if any. Such an error also matches ErrBadRequest.
+	// Most other rule failures, such as a date range that ends before it
+	// starts, have no block, so they match only ErrBadRequest and only their
+	// Message says what is wrong.
+	ErrValidation = errors.New("validation failed")
 	// ErrNotFound matches a 404 response.
 	ErrNotFound = errors.New("not found")
 	// ErrUnauthorized matches a 401 response: the server rejected the API
@@ -136,7 +146,9 @@ type APIError struct {
 	// 500 bytes.
 	Message string
 	// Details lists the request fields a validation error refers to, from
-	// the validation.keys field of the response body.
+	// the validation.keys field of the response body. It is non-nil, though
+	// possibly empty, when the body has a validation block, and that is
+	// what [ErrValidation] matches.
 	Details []string
 	// RetryAfter is how long the server asked the client to wait before
 	// retrying a rate-limited (429) request, if it said so in a Retry-After
@@ -213,6 +225,10 @@ func (e *APIError) Error() string {
 // Is reports whether e matches one of the sentinel errors of this package.
 func (e *APIError) Is(target error) bool {
 	switch target {
+	case ErrBadRequest:
+		return e.StatusCode == http.StatusBadRequest
+	case ErrValidation:
+		return e.StatusCode == http.StatusBadRequest && e.Details != nil
 	case ErrNotFound:
 		return e.StatusCode == http.StatusNotFound
 	case ErrUnauthorized:
@@ -275,7 +291,7 @@ type errorBody struct {
 	Error      string `json:"error"`
 	Message    string `json:"message"`
 	ErrorCode  string `json:"errorCode"`
-	Validation struct {
+	Validation *struct {
 		Keys []string `json:"keys"`
 	} `json:"validation"`
 }
@@ -304,7 +320,9 @@ func newAPIError(res rawResponse, want []int, accountID string) *APIError {
 			e.reason = parsed.Error
 			e.Code = parsed.ErrorCode
 			e.Message = excerpt(parsed.Message)
-			e.Details = parsed.Validation.Keys
+			if parsed.Validation != nil {
+				e.Details = emptyIfNil(parsed.Validation.Keys)
+			}
 		} else {
 			e.Message = excerpt(trimmed)
 		}

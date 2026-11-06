@@ -204,6 +204,11 @@ func ExampleAPIError() {
 		fmt.Println("the check exists")
 	case errors.Is(err, checkly.ErrNotFound):
 		fmt.Println("the check does not exist")
+	case errors.Is(err, checkly.ErrValidation):
+		var apiErr *checkly.APIError
+		if errors.As(err, &apiErr) {
+			fmt.Println("invalid request fields:", apiErr.Details)
+		}
 	case errors.Is(err, checkly.ErrRateLimited):
 		fmt.Println("rate limited; try again later")
 	default:

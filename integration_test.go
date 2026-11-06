@@ -2504,6 +2504,52 @@ func TestMonitorPrivateLocations(t *testing.T) {
 	})
 }
 
+// TestBadRequestErrorsIntegration verifies that the API's two kinds of 400
+// response are told apart: a schema failure matches ErrValidation, and a
+// rule failure in a handler matches only ErrBadRequest.
+func TestBadRequestErrorsIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	check := checkly.APICheck{
+		Name:                 "Bad request errors integration check",
+		Frequency:            7,
+		Locations:            []string{"us-east-1"},
+		Tags:                 []string{"integration"},
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
+		Request: checkly.Request{
+			Method: "GET",
+			URL:    "https://api.checklyhq.com",
+		},
+	}
+	_, err := client.CreateAPICheck(ctx, check)
+	if !errors.Is(err, checkly.ErrValidation) || !errors.Is(err, checkly.ErrBadRequest) {
+		t.Fatalf("want ErrValidation and ErrBadRequest for an invalid frequency, got %v", err)
+	}
+	var apiErr *checkly.APIError
+	if !errors.As(err, &apiErr) || len(apiErr.Details) == 0 {
+		t.Errorf("want Details to name the field, got %v", err)
+	}
+
+	check.Frequency = 10
+	created, err := client.CreateAPICheck(ctx, check)
+	if err != nil {
+		t.Fatalf("failed to create check: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = client.DeleteAPICheck(context.Background(), created.ID)
+	})
+
+	_, err = client.GetCheckResults(ctx, created.ID, &checkly.CheckResultsFilter{From: 2000, To: 1000})
+	if !errors.Is(err, checkly.ErrBadRequest) {
+		t.Fatalf("want ErrBadRequest for a range that ends before it starts, got %v", err)
+	}
+	if errors.Is(err, checkly.ErrValidation) {
+		t.Errorf("want a rule failure not to match ErrValidation, got %v", err)
+	}
+}
+
 // TestGetCheckResultsIntegration verifies that the API accepts the requests
 // GetCheckResults sends, including the HasFailures filter, and that an empty
 // page decodes. The check is never activated, so it has no results.

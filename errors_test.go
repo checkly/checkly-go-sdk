@@ -95,7 +95,34 @@ func TestErrorMessages(t *testing.T) {
 			name:  "validation error with keys",
 			reply: errorReply{status: 400, body: readFixture(t, "BadRequest.json")},
 			want:  `GET /v1/checks/abc: 400 Bad Request: child "frequency" fails because ["frequency" must be one of [5, 10, 15, 30, 60, 720, 1440]] (keys: frequency)`,
+			is:    []error{checkly.ErrValidation, checkly.ErrBadRequest},
 			isNot: []error{checkly.ErrNotFound},
+		},
+		{
+			name:  "validation error without keys",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Invalid request","validation":{"source":"payload","keys":[]}}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request: Invalid request",
+			is:    []error{checkly.ErrValidation, checkly.ErrBadRequest},
+		},
+		{
+			name:  "validation block without a keys field",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Invalid request","validation":{"source":"payload"}}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request: Invalid request",
+			is:    []error{checkly.ErrValidation, checkly.ErrBadRequest},
+		},
+		{
+			name:  "null validation block",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Invalid request","validation":null}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request: Invalid request",
+			is:    []error{checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation},
+		},
+		{
+			name:  "bad request without a validation block",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"The \"to\" date should be after the \"from\" date."}`},
+			want:  `GET /v1/checks/abc: 400 Bad Request: The "to" date should be after the "from" date.`,
+			is:    []error{checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation},
 		},
 		{
 			name:  "bad token",
@@ -304,6 +331,12 @@ func TestAPIErrorLiteral(t *testing.T) {
 	}
 	if checkly.IsNotFound(nil) {
 		t.Error("want nil not to match IsNotFound")
+	}
+	if !errors.Is(&checkly.APIError{StatusCode: 400, Details: []string{"name"}}, checkly.ErrValidation) {
+		t.Error("want a 400 with Details to match ErrValidation")
+	}
+	if errors.Is(&checkly.APIError{StatusCode: 409, Details: []string{"name"}}, checkly.ErrValidation) {
+		t.Error("want a 409 not to match ErrValidation, whatever its Details")
 	}
 }
 

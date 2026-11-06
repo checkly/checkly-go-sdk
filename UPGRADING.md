@@ -118,6 +118,8 @@ log.Println(monitor.Name)
 
   | Sentinel | Matches |
   |---|---|
+  | `ErrBadRequest` | any 400 |
+  | `ErrValidation` | 400 with the API's validation block, sent when a request fails schema validation; also matches `ErrBadRequest` |
   | `ErrNotFound` (also `IsNotFound(err)`) | 404 |
   | `ErrUnauthorized` | 401: the server rejected the API key |
   | `ErrForbidden` | any 403 |
