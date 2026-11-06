@@ -23,7 +23,7 @@ Hi! We are really excited that you are interested in contributing to Checkly Go 
 - [Make sure to tick the "Allow edits from maintainers" box](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork). This allows us to directly make minor edits / refactors and saves a lot of time.
 
 - Add accompanying documentation, usage samples & test cases
-- Add/update demo files to showcase your changes.
+- Add or update the runnable examples in `example_test.go` to showcase your changes.
 - Use existing resources as templates and ensure that each property has a corresponding `description` field.
 - Each PR should be linked with an issue, use [GitHub keywords](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests) for that.
 - Be sure to follow up project code styles (`$ make fmt`)
@@ -33,7 +33,7 @@ Hi! We are really excited that you are interested in contributing to Checkly Go 
   - Each new feature should be linked to
 
 - If fixing a bug:
-  - Provide a detailed description of the bug in the PR. A working demo would be great!
+  - Provide a detailed description of the bug in the PR. A minimal program that reproduces it would be great!
 
 - It's OK to have multiple small commits as you work on the PR - GitHub can automatically squash them before merging.
 
@@ -133,7 +133,7 @@ The SDK is a single package, `checkly`, in the repository root.
 - `<resource>_test.go` tests a resource through the exported API, and `<resource>_internal_test.go` tests unexported code, such as request payloads. Shared helpers are in `helpers_test.go` and `helpers_internal_test.go`. `status_test.go` checks the status codes, credentials and retries of every client method.
 - `integration_test.go`: tests against the real API, built with the `integration` tag.
 - `fixtures/`: canned API responses for the tests.
-- `demo/`: an example program, in its own module.
+- `example_test.go`: the examples shown on pkg.go.dev. They are compiled by `go test` but not run, as they call the API.
 - `.github/`: GitHub and GitHub Actions configuration.
 
 When adding a resource, add its types, payloads and methods in a new `<resource>.go`, its methods to the `Client` interface next to the related ones, and a row per method to `statusCases` in `status_test.go`.

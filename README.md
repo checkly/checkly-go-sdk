@@ -107,7 +107,7 @@ client.CreateAPICheck(ctx, apiCheck)
 client.CreateBrowserCheck(ctx, browserCheck)
 ```
 
->  A complete example program! You can see an example program which creates a Checkly check in the [demo](demo/main.go) folder.
+> Complete, runnable examples, such as creating an API check or a URL monitor, are in the [package documentation on pkg.go.dev](https://pkg.go.dev/github.com/checkly/checkly-go-sdk#pkg-examples).
 
 ### Handling errors
 
