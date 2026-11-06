@@ -1,7 +1,7 @@
 # Checkly Go SDK
 
 [![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/checkly/checkly-go-sdk.svg)](https://pkg.go.dev/github.com/checkly/checkly-go-sdk)
+[![Go Reference](https://pkg.go.dev/badge/github.com/checkly/checkly-go-sdk/v2.svg)](https://pkg.go.dev/github.com/checkly/checkly-go-sdk/v2)
 [![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/checkly/checkly-go-sdk)
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/checkly/checkly-go-sdk?label=Version)
@@ -11,15 +11,12 @@ The Checkly Go SDK is a Go client for the [Checkly](https://www.checklyhq.com) [
 ## Installation
 
 ```bash
-go get github.com/checkly/checkly-go-sdk
+go get github.com/checkly/checkly-go-sdk/v2
 ```
 
 ```go
-import "github.com/checkly/checkly-go-sdk"
+import "github.com/checkly/checkly-go-sdk/v2"
 ```
-
-> [!NOTE]
-> This README describes the `main` branch, which becomes v2.0.0. The latest release, v1.27.0, has a different API; see [its README](https://github.com/checkly/checkly-go-sdk/blob/v1.27.0/README.md).
 
 ## Getting Started
 
@@ -139,7 +136,7 @@ The SDK never adds the API key or the request body to an error. It does keep the
 
 ## Documentation
 
-- The [package reference](https://pkg.go.dev/github.com/checkly/checkly-go-sdk) on pkg.go.dev, with [examples](https://pkg.go.dev/github.com/checkly/checkly-go-sdk#pkg-examples).
+- The [package reference](https://pkg.go.dev/github.com/checkly/checkly-go-sdk/v2) on pkg.go.dev, with [examples](https://pkg.go.dev/github.com/checkly/checkly-go-sdk/v2#pkg-examples).
 - [Upgrading from v1](UPGRADING.md): the changes in v2 and how to update your code.
 - The [Checkly API reference](https://www.checklyhq.com/docs/api) for the resources and their fields.
 

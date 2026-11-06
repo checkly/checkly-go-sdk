@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // statusCase describes one call of a Client method for TestSuccessStatuses:

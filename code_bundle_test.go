@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // TestCodeBundleErrors checks the errors of the code bundle methods. The

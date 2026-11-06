@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 func validateHeartbeatMonitorEmptyPayload(t *testing.T, body []byte) {

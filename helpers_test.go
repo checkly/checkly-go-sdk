@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // testAccountID is the account ID test clients authenticate with: account

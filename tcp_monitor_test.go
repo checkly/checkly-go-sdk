@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
