@@ -229,8 +229,9 @@ dropped its type-specific fields.
 | Type aliases `HeartbeatCheck`, `TCPCheck` | `HeartbeatMonitor`, `TCPMonitor` |
 | `CreateTriggerCheck`, `GetTriggerCheck`, `DeleteTriggerCheck`, `CreateTriggerGroup`, `GetTriggerGroup`, `DeleteTriggerGroup`, types `TriggerCheck`, `TriggerGroup` | To run checks on demand, the Checkly CLI (`checkly trigger`) or `POST /v1/check-sessions/trigger` |
 | `SetAccountId`, `SetChecklySource`, `NewClient`'s `debug` argument | See [Creating the client](#creating-the-client) |
-| `AlertChannel.GetConfig`, `AlertChannel.SetConfig`, `AlertChannelConfigFromJSON` | The config field that matches `Type`, such as `Email` for `AlertTypeEmail` |
+| `AlertChannel.GetConfig`, `AlertChannel.SetConfig`, `AlertChannelConfigFromJSON` | The config field that matches `Type`, such as `Email` for `AlertChannelTypeEmail` |
 | `Check.SSLCheck`, `AlertSettings.SSLCertificates`, type `SSLCertificates` | Nothing: the public API no longer has them |
+| `Assertion.Edit`, `Assertion.Order`, `Assertion.ArrayIndex`, `Assertion.ArraySelector` | Nothing: the API discarded them, and requests no longer send them |
 
 `Create` posted every check to `/v1/checks`. Its replacements post to the endpoint of the check's
 type, and the deprecated `CreateCheck` rejects monitor types, which have their own create methods.
@@ -245,7 +246,7 @@ created, err := client.CreateAlertChannel(ctx, channel)
 ```go
 // v2
 channel := checkly.AlertChannel{
-	Type:  checkly.AlertTypeEmail,
+	Type:  checkly.AlertChannelTypeEmail,
 	Email: &checkly.AlertChannelEmail{Address: "ops@example.com"},
 }
 created, err := client.CreateAlertChannel(ctx, channel)
@@ -265,10 +266,61 @@ Exported names now use Go's initialism casing. JSON tags are unchanged.
 | `DashboardKey.Id` | `DashboardKey.ID` |
 | type `ApiCheckResult`, field `CheckResult.ApiCheckResult` | type `APICheckResult`, field `CheckResult.APICheckResult` |
 
+Constants for a fixed set of API values are typed, and named after their type, like the existing
+`IncidentSeverityMinor`. Their values are unchanged.
+
+| v1 | v2 |
+|---|---|
+| `StatusCode`, `JSONBody`, `TextBody`, `Headers`, `ResponseTime`, `ResponseData`, `Certificate`, `Connection`, `JSONResponse`, `TextResponse` | `AssertionSourceStatusCode`, `AssertionSourceJSONBody`, `AssertionSourceTextBody`, `AssertionSourceHeaders`, `AssertionSourceResponseTime`, `AssertionSourceResponseData`, `AssertionSourceCertificate`, `AssertionSourceConnection`, `AssertionSourceJSONResponse`, `AssertionSourceTextResponse` |
+| `Equals`, `NotEquals`, `IsEmpty`, `NotEmpty`, `GreaterThan`, `LessThan`, `Contains`, `NotContains`, `IsNull`, `NotNull` | `AssertionComparisonEquals`, `AssertionComparisonNotEquals`, `AssertionComparisonIsEmpty`, `AssertionComparisonNotEmpty`, `AssertionComparisonGreaterThan`, `AssertionComparisonLessThan`, `AssertionComparisonContains`, `AssertionComparisonNotContains`, `AssertionComparisonIsNull`, `AssertionComparisonNotNull` |
+| `RunBased`, `TimeBased` | `EscalationTypeRunBased`, `EscalationTypeTimeBased` |
+| `AlertTypeEmail`, `AlertTypeSlack`, `AlertTypeSlackApp`, `AlertTypeWebhook`, `AlertTypeSMS`, `AlertTypePagerduty`, `AlertTypeOpsgenie`, `AlertTypeCall` | `AlertChannelTypeEmail`, `AlertChannelTypeSlack`, `AlertChannelTypeSlackApp`, `AlertChannelTypeWebhook`, `AlertChannelTypeSMS`, `AlertChannelTypePagerduty`, `AlertChannelTypeOpsgenie`, `AlertChannelTypeCall` |
+| `TypeAPI`, `TypeBrowser`, `TypeHeartbeat` | `CheckTypeAPI`, `CheckTypeBrowser`, `CheckTypeHeartbeat` |
+
 | Field | v1 type | v2 type |
 |---|---|---|
 | `Dashboard.Paginate` | `bool` | `*bool`; nil gets the API default, `true` |
 | `MultiStepCheck.AlertSettings` | `AlertSettings` | `*AlertSettings` |
+| `Assertion.Source` | `string` | `AssertionSource` |
+| `Assertion.Comparison` | `string` | `AssertionComparison` |
+| `AlertSettings.EscalationType` | `string` | `EscalationType` |
+| `AlertChannel.Type` | `string` | `AlertChannelType` |
+| `Check.Type` | `string` | `CheckType` |
+| `Request.BodyType` | `string` | `BodyType` |
+| `IPFamily` of `Request`, `URLRequest`, `TCPRequest`, `ICMPRequest`, `TracerouteRequest`, `GRPCRequest` and `SSLConfig` | `string` | `IPFamily` |
+| `DNSRequest.RecordType` | `string` | `DNSRecordType` |
+| `DNSRequest.Protocol` | `string` | `DNSProtocol` |
+| `TracerouteRequest.Protocol` | `string` | `TracerouteProtocol` |
+| `GRPCConfig.Mode` | `string` | `GRPCMode` |
+| `GRPCConfig.Encoding` | `string` | `GRPCEncoding` |
+| `GRPCConfig.ServiceDefinition` | `string` | `GRPCServiceDefinition` |
+| `Heartbeat.PeriodUnit`, `Heartbeat.GraceUnit` | `string` | `HeartbeatUnit` |
+| `SSLConfig.ClientCertificateMode` | `string` | `SSLClientCertificateMode` |
+| `SSLBaselineTLSRule.Value` | `string` | `TLSVersion` |
+| `Severity` of `SSLBaselineTLSRule`, `SSLBaselineKeySizeRule` and `SSLBaselineSeverityRule` | `string` | `SSLBaselineSeverity` |
+| `PlaywrightCheck.Engine` | `*string` | `*PlaywrightEngine` |
+| `AlertChannelOpsgenie.Region` | `string` | `OpsgenieRegion` |
+| `AlertChannelOpsgenie.Priority` | `string` | `OpsgeniePriority` |
+| `RetryStrategy.Type` | `string` | `RetryStrategyType` |
+| `RetryStrategy.OnlyOn` | `[]string` | `[]RetryOnlyOn` |
+| `MaintenanceWindow.RepeatUnit` | `string` | `MaintenanceWindowRepeatUnit` |
+| `MaintenanceWindowStatusPageVisibility.Severity` | `string` | `IncidentSeverity` |
+| `Dashboard.Width` | `string` | `DashboardWidth` |
+| `Runtime.Stage` | `string` | `RuntimeStage` |
+
+Untyped constants and string literals, such as `"IPv4"` or `checkly.IPFamilyIPv4`, still compile in these
+fields. A `string` variable needs a conversion, such as `checkly.IPFamily(s)`, and so does
+passing one of these fields to a `string` parameter or comparing it with a `string` variable. A
+`*string` engine converts with `(*checkly.PlaywrightEngine)(p)`; a `[]string` cannot be converted,
+so build `OnlyOn` as a `[]checkly.RetryOnlyOn`. Check result fields, such as
+`GRPCCheckResponse.GRPCMode` and `SSLCheckResult.TLSVersion`, stay `string`.
+
+New constants cover the rest of each value set: the DNS, ICMP, traceroute and gRPC assertion
+sources (such as `AssertionSourceResponseCode` and `AssertionSourceGRPCStatusCode`), the comparisons
+`AssertionComparisonHasKey`, `AssertionComparisonNotHasKey`, `AssertionComparisonHasValue` and
+`AssertionComparisonNotHasValue`, and a `CheckType` constant for every check type, including
+`CheckTypeAgentic`. The new `MaintenanceWindowComponentImpact.Status` is a
+`StatusPageComponentStatusV3`.
 
 ## Behaviour changes on create and update
 
