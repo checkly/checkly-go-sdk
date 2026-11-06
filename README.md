@@ -1,43 +1,33 @@
 # Checkly Go SDK
 
-![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)
 [![Tests](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/checkly/checkly-go-sdk/actions/workflows/test.yml)
-[![GoDoc](https://godoc.org/github.com/checkly/checkly-go-sdk?status.png)](http://godoc.org/github.com/checkly/checkly-go-sdk)
+[![Go Reference](https://pkg.go.dev/badge/github.com/checkly/checkly-go-sdk.svg)](https://pkg.go.dev/github.com/checkly/checkly-go-sdk)
 [![Go Report Card](https://goreportcard.com/badge/github.com/checkly/checkly-go-sdk)](https://goreportcard.com/report/github.com/checkly/checkly-go-sdk)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/checkly/checkly-go-sdk)
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/checkly/checkly-go-sdk?label=Version)
 
-
-This project is a Go SDK for [Checkly](https://checklyhq.com/?utm_source=github&lmref=1374) monitoring service. It allows you to handle your checks, check groups, snippets, environments variables and everything you can do with our [REST API](https://www.checklyhq.com/docs/api).
+The Checkly Go SDK is a Go client for the [Checkly](https://www.checklyhq.com) [public REST API](https://www.checklyhq.com/docs/api). It manages checks and monitors, check groups, alert channels, dashboards, status pages, maintenance windows, environment variables, snippets, private locations and more. The [Checkly Terraform provider](https://github.com/checkly/terraform-provider-checkly) is built on it.
 
 ## Installation
 
-To use the client library with your Checkly account, you will need an API Key for the account. Go to the [Account Settings: API Keys page](https://app.checklyhq.com/account/api-keys) and click 'Create API Key'.
-
-Make sure your project is using Go Modules (it will have a go.mod file in its root if it already is):
-
 ```bash
-$ go mod init
+go get github.com/checkly/checkly-go-sdk
 ```
 
-Then, add the reference of checkly-go-sdk in a Go program using `import`:
 ```go
-import checkly "github.com/checkly/checkly-go-sdk"
+import "github.com/checkly/checkly-go-sdk"
 ```
 
-Run any of the normal go commands (`build/install/test`) and the  Go toolchain will resolve and fetch the  checkly-go-sdk module automatically.
-
-Alternatively, you can also explicitly go get the package into a project:
-
-```bash
-$ go get -u github.com/checkly/checkly-go-sdk
-```
+> [!NOTE]
+> This README describes the `main` branch, which becomes v2.0.0. The latest release, v1.27.0, has a different API; see [its README](https://github.com/checkly/checkly-go-sdk/blob/v1.27.0/README.md).
 
 ## Getting Started
 
-Create a new checkly `Client` by calling `checkly.NewClient()` with options. Every option is optional: without any, the client talks to `checkly.DefaultBaseURL` through `http.DefaultClient` and has no auth, so only the public methods (`GetStaticIPs`, `GetRuntime`) work. Most methods need auth: an API key together with the ID of the account it acts on, a UUID.
+Most methods need an API key and the ID of the Checkly account it acts on, a UUID. You can create an API key [in the Checkly web app](https://app.checklyhq.com/account/api-keys).
 
-`WithAuthFromEnv()` reads the API key and account ID from `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID`, the variables the Checkly CLI uses. Both are required, and `NewClient` fails if either is not set:
+### Creating a client
+
+`NewClient` builds a client, configured by options. `WithAuthFromEnv` reads the API key and account ID from the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` environment variables, the same ones the Checkly CLI and the Terraform provider use. `NewClient` fails if either is not set:
 
 ```go
 client, err := checkly.NewClient(checkly.WithAuthFromEnv())
@@ -46,68 +36,85 @@ if err != nil {
 }
 ```
 
-Or pass the credentials with `WithAuth(apiKey, accountID)`, which also requires both; for a client without auth, pass no auth option. `NewClient` returns an error for an invalid option, such as an empty value or an account ID that is not a UUID:
+`WithAuth` takes the credentials as arguments instead, and `WithHTTPClient` sets the HTTP client, for example to bound how long a single request may take. `NewClient` returns an error for an invalid option, such as an empty value or an account ID that is not a UUID:
 
 ```go
 client, err := checkly.NewClient(
 	checkly.WithAuth(apiKey, accountID),
-	// Optional: another API root, and a custom HTTP client, for example with
-	// a timeout.
-	checkly.WithBaseURL("https://api.checklyhq.com"),
-	checkly.WithHTTPClient(&http.Client{Timeout: 30 * time.Second}),
+	checkly.WithHTTPClient(&http.Client{Timeout: 10 * time.Second}),
 )
 if err != nil {
 	log.Fatal(err)
 }
 ```
 
-> Note: if you don't have an API key, you can create one at [here](https://app.checklyhq.com/account/api-keys)
+Without an auth option, only the public methods `GetStaticIPs` and `GetRuntime` work; every other method fails with `checkly.ErrMissingAPIKey` without sending a request.
 
-### Create your first checks
+### Creating an API check
 
-Once you have a client, you can create a check. See here how to create your first API & Browser checks.
+An API check sends an HTTP request every `Frequency` minutes from each of its locations and fails when an assertion does not hold. Set both response time limits: they are always sent, so leaving them at 0 sets a limit of 0 milliseconds.
 
 ```go
-apiCheck := checkly.APICheck{
-	Name:                 "My API Check",
-	Frequency:            5,
-	Activated:            true,
-	DegradedResponseTime: 5000,
-	MaxResponseTime:      20000,
-	Locations: []string{
-		"eu-west-1",
-		"ap-northeast-2",
-	},
-	Tags: []string{ "production" },
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+check, err := client.CreateAPICheck(ctx, checkly.APICheck{
+	Name:                   "Example API",
+	Frequency:              10,
+	Activated:              true,
+	Locations:              []string{"eu-west-1", "us-east-1"},
+	Tags:                   []string{"example"},
+	DegradedResponseTime:   5000,
+	MaxResponseTime:        20000,
+	UseGlobalAlertSettings: true,
 	Request: checkly.Request{
-		Method: http.MethodGet,
-		URL:    "https://api.checklyhq.com/v1",
+		Method:          http.MethodGet,
+		URL:             "https://example.com/api/health",
+		FollowRedirects: true,
+		Headers: []checkly.KeyValue{
+			{Key: "Accept", Value: "application/json"},
+		},
+		Assertions: []checkly.Assertion{
+			{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+			{Source: checkly.ResponseTime, Comparison: checkly.LessThan, Target: "2000"},
+		},
 	},
+})
+if err != nil {
+	log.Fatal(err)
 }
-
-browserCheck := checkly.BrowserCheck{
-	Name:          "My Browser Check",
-	Frequency:     5,
-	Activated:     true,
-	Locations:     []string{"eu-west-1"},
-	Script: `const assert = require("chai").assert;
-	const puppeteer = require("puppeteer");
-
-	const browser = await puppeteer.launch();
-	const page = await browser.newPage();
-	await page.goto("https://example.com");
-	const title = await page.title();
-
-	assert.equal(title, "Example Site");
-	await browser.close();`,
-}
-
-ctx := context.WithTimeout(context.Background(), time.Second * 5)
-client.CreateAPICheck(ctx, apiCheck)
-client.CreateBrowserCheck(ctx, browserCheck)
+fmt.Printf("created API check %q with ID %s\n", check.Name, check.ID)
 ```
 
-> Complete, runnable examples, such as creating an API check or a URL monitor, are in the [package documentation on pkg.go.dev](https://pkg.go.dev/github.com/checkly/checkly-go-sdk#pkg-examples).
+Each check and monitor type has its own type and methods, such as `GetAPICheck`, `UpdateAPICheck` and `DeleteAPICheck` for API checks.
+
+### Creating a URL monitor
+
+A URL monitor requests a URL with GET and checks the response status, which is cheaper than an API check when that is all you need:
+
+```go
+monitor, err := client.CreateURLMonitor(ctx, checkly.URLMonitor{
+	Name:                   "Example homepage",
+	Frequency:              5,
+	Activated:              true,
+	Locations:              []string{"eu-west-1", "us-east-1"},
+	Tags:                   []string{"example"},
+	DegradedResponseTime:   3000,
+	MaxResponseTime:        10000,
+	UseGlobalAlertSettings: true,
+	Request: checkly.URLRequest{
+		URL:             "https://example.com/",
+		FollowRedirects: true,
+		Assertions: []checkly.Assertion{
+			{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+		},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Printf("created URL monitor %q with ID %s\n", monitor.Name, monitor.ID)
+```
 
 ### Handling errors
 
@@ -115,8 +122,8 @@ When the API answers with a status a method does not accept, the method returns 
 
 ```go
 _, err := client.GetAPICheck(ctx, id)
-if errors.Is(err, checkly.ErrNotFound) { // or checkly.IsNotFound(err)
-	// The check no longer exists.
+if errors.Is(err, checkly.ErrNotFound) {
+	// The check does not exist.
 }
 var apiErr *checkly.APIError
 if errors.As(err, &apiErr) {
@@ -124,19 +131,28 @@ if errors.As(err, &apiErr) {
 }
 ```
 
-Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too.
+Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too. A request answered with HTTP 429 is retried a few times, waiting as the API asks while the context's deadline allows.
 
 The SDK never adds the API key or the request body to an error. It does keep the backend's error message, and the start of an error body that is not JSON, cut at 500 bytes. A validation message can quote a submitted value, and so can the text of such a body, so take care when logging errors from requests that carry secrets.
 
+## Documentation
+
+- The [package reference](https://pkg.go.dev/github.com/checkly/checkly-go-sdk) on pkg.go.dev, with [examples](https://pkg.go.dev/github.com/checkly/checkly-go-sdk#pkg-examples).
+- [Upgrading from v1](UPGRADING.md): the changes in v2 and how to update your code.
+- The [Checkly API reference](https://www.checklyhq.com/docs/api) for the resources and their fields.
+
 ## Questions
-For questions and support please open a new  [discussion](https://github.com/checkly/checkly-go-sdk/discussions). The issue list of this repo is exclusively for bug reports and feature/docs requests.
+
+For questions and support, please open a [discussion](https://github.com/checkly/checkly-go-sdk/discussions). The issue list of this repository is for bug reports and feature or documentation requests only.
 
 ## Issues
-Please make sure to respect issue requirements and choose the proper [issue template](https://github.com/checkly/checkly-go-sdk/issues/new/choose) when opening an issue. Issues not conforming to the guidelines may be closed.
 
-## Contribution
-Please make sure to read the [Contributing Guide](https://github.com/checkly/checkly-go-sdk/blob/main/CONTRIBUTING.md) before making a pull request.
+Please choose the matching [issue template](https://github.com/checkly/checkly-go-sdk/issues/new/choose) when opening an issue. Issues that do not follow the templates may be closed.
+
+## Contributing
+
+Please read the [Contributing Guide](CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-[MIT](https://github.com/checkly/checkly-go-sdk/blob/main/LICENSE)
+[MIT](LICENSE)
