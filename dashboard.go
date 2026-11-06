@@ -156,10 +156,10 @@ func (c *client) CreateDashboard(
 
 func (c *client) GetDashboard(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*Dashboard, error) {
 	result := Dashboard{}
-	err := c.callJSON(ctx, http.MethodGet, "/v1/dashboards/"+ID, nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, "/v1/dashboards/"+id, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -168,11 +168,11 @@ func (c *client) GetDashboard(
 
 func (c *client) UpdateDashboard(
 	ctx context.Context,
-	ID string,
+	id string,
 	dashboard Dashboard,
 ) (*Dashboard, error) {
 	var result Dashboard
-	err := c.callJSON(ctx, http.MethodPut, "/v1/dashboards/"+ID, newDashboardUpdatePayload(dashboard), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, "/v1/dashboards/"+id, newDashboardUpdatePayload(dashboard), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +181,8 @@ func (c *client) UpdateDashboard(
 
 func (c *client) DeleteDashboard(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, "/v1/dashboards/"+ID, nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, "/v1/dashboards/"+id, nil, http.StatusNoContent)
 	return err
 }

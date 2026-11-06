@@ -295,10 +295,10 @@ func (c *client) CreateStatusPageV3(
 
 func (c *client) GetStatusPageV3(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*StatusPageV3, error) {
 	var result StatusPageV3
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -307,11 +307,11 @@ func (c *client) GetStatusPageV3(
 
 func (c *client) UpdateStatusPageV3(
 	ctx context.Context,
-	ID string,
+	id string,
 	page StatusPageV3,
 ) (*StatusPageV3, error) {
 	var result StatusPageV3
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s", ID), page, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s", id), page, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -320,9 +320,9 @@ func (c *client) UpdateStatusPageV3(
 
 func (c *client) DeleteStatusPageV3(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s", id), nil, http.StatusNoContent)
 	return err
 }
 
@@ -342,10 +342,10 @@ func (c *client) CreateStatusPageComponentV3(
 func (c *client) GetStatusPageComponentV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	componentID string,
 ) (*StatusPageComponentV3, error) {
 	var result StatusPageComponentV3
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, componentID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -355,11 +355,11 @@ func (c *client) GetStatusPageComponentV3(
 func (c *client) UpdateStatusPageComponentV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	componentID string,
 	component StatusPageComponentV3,
 ) (*StatusPageComponentV3, error) {
 	var result StatusPageComponentV3
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), component, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, componentID), component, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -369,9 +369,9 @@ func (c *client) UpdateStatusPageComponentV3(
 func (c *client) DeleteStatusPageComponentV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	componentID string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/components/%s", statusPageID, componentID), nil, http.StatusNoContent)
 	return err
 }
 
@@ -391,10 +391,10 @@ func (c *client) CreateStatusPageAutomationRuleV3(
 func (c *client) GetStatusPageAutomationRuleV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	ruleID string,
 ) (*StatusPageAutomationRuleV3, error) {
 	var result StatusPageAutomationRuleV3
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ruleID), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -404,11 +404,11 @@ func (c *client) GetStatusPageAutomationRuleV3(
 func (c *client) UpdateStatusPageAutomationRuleV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	ruleID string,
 	rule StatusPageAutomationRuleV3,
 ) (*StatusPageAutomationRuleV3, error) {
 	var result StatusPageAutomationRuleV3
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), rule, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ruleID), rule, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -418,8 +418,8 @@ func (c *client) UpdateStatusPageAutomationRuleV3(
 func (c *client) DeleteStatusPageAutomationRuleV3(
 	ctx context.Context,
 	statusPageID string,
-	ID string,
+	ruleID string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v3/status-pages/%s/automation-rules/%s", statusPageID, ruleID), nil, http.StatusNoContent)
 	return err
 }

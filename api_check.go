@@ -223,10 +223,10 @@ func (c *client) CreateAPICheck(
 
 func (c *client) GetAPICheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*APICheck, error) {
 	var result APICheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeAPI, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeAPI, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -234,11 +234,11 @@ func (c *client) GetAPICheck(
 
 func (c *client) UpdateAPICheck(
 	ctx context.Context,
-	ID string,
+	id string,
 	check APICheck,
 ) (*APICheck, error) {
 	var result APICheck
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/api/%s", ID)), createAPICheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/api/%s", id)), createAPICheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (c *client) UpdateAPICheck(
 
 func (c *client) DeleteAPICheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

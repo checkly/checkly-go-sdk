@@ -183,10 +183,10 @@ func (c *client) CreateTCPMonitor(
 
 func (c *client) GetTCPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeTCP, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeTCP, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -194,11 +194,11 @@ func (c *client) GetTCPMonitor(
 
 func (c *client) UpdateTCPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor TCPMonitor,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/tcp/%s", ID)), createTCPMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/tcp/%s", id)), createTCPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (c *client) UpdateTCPMonitor(
 
 func (c *client) DeleteTCPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

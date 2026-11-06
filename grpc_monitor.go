@@ -318,10 +318,10 @@ func (c *client) CreateGRPCMonitor(
 
 func (c *client) GetGRPCMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeGRPC, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeGRPC, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -329,11 +329,11 @@ func (c *client) GetGRPCMonitor(
 
 func (c *client) UpdateGRPCMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor GRPCMonitor,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/grpc/%s", ID)), updateGRPCMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/grpc/%s", id)), updateGRPCMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func (c *client) UpdateGRPCMonitor(
 
 func (c *client) DeleteGRPCMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

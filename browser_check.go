@@ -141,11 +141,11 @@ func (c *client) CreateBrowserCheck(
 
 func (c *client) GetBrowserCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*BrowserCheck, error) {
 	var result BrowserCheck
 	// Without includeDependencies the response omits the script dependencies.
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), CheckTypeBrowser, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", id), CheckTypeBrowser, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -153,11 +153,11 @@ func (c *client) GetBrowserCheck(
 
 func (c *client) UpdateBrowserCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 	check BrowserCheck,
 ) (*BrowserCheck, error) {
 	var result BrowserCheck
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/browser/%s", ID)), createBrowserCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/browser/%s", id)), createBrowserCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (c *client) UpdateBrowserCheck(
 
 func (c *client) DeleteBrowserCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

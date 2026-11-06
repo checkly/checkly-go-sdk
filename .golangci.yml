@@ -7,6 +7,16 @@ run:
 
 linters:
   default: standard
+  enable:
+    - gocritic
+  settings:
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        # Parameters are lowerCamelCase; a capitalized name reads like an
+        # exported identifier. Interface methods need review by eye, as the
+        # check only sees functions with bodies.
+        - captLocal
 
 formatters:
   enable:

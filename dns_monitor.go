@@ -193,10 +193,10 @@ func (c *client) CreateDNSMonitor(
 
 func (c *client) GetDNSMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeDNS, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeDNS, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -204,11 +204,11 @@ func (c *client) GetDNSMonitor(
 
 func (c *client) UpdateDNSMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor DNSMonitor,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/dns/%s", ID)), createDNSMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/dns/%s", id)), createDNSMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (c *client) UpdateDNSMonitor(
 
 func (c *client) DeleteDNSMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

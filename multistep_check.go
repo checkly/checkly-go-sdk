@@ -133,11 +133,11 @@ func (c *client) CreateMultiStepCheck(
 
 func (c *client) GetMultiStepCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*MultiStepCheck, error) {
 	var result MultiStepCheck
 	// Without includeDependencies the response omits the script dependencies.
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), CheckTypeMultiStep, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", id), CheckTypeMultiStep, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -145,11 +145,11 @@ func (c *client) GetMultiStepCheck(
 
 func (c *client) UpdateMultiStepCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 	check MultiStepCheck,
 ) (*MultiStepCheck, error) {
 	var result MultiStepCheck
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/multistep/%s", ID)), createMultiStepCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/multistep/%s", id)), createMultiStepCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (c *client) UpdateMultiStepCheck(
 
 func (c *client) DeleteMultiStepCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

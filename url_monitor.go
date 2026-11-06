@@ -171,10 +171,10 @@ func (c *client) CreateURLMonitor(
 
 func (c *client) GetURLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeURL, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeURL, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -182,11 +182,11 @@ func (c *client) GetURLMonitor(
 
 func (c *client) UpdateURLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor URLMonitor,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/url/%s", ID)), createURLMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/url/%s", id)), createURLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *client) UpdateURLMonitor(
 
 func (c *client) DeleteURLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

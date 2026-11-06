@@ -46,11 +46,11 @@ type Check interface {
 
 func (c *client) GetCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (Check, error) {
 	// The type is not known before the response, and browser and multi-step
 	// checks omit their script dependencies without includeDependencies.
-	res, err := c.call(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", ID), nil, http.StatusOK)
+	res, err := c.call(ctx, http.MethodGet, fmt.Sprintf("/v1/checks/%s?includeDependencies=true", id), nil, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *client) GetCheck(
 	case CheckTypeTraceroute:
 		check = &TracerouteMonitor{}
 	default:
-		return nil, &UnsupportedCheckTypeError{ID: ID, Type: checkType}
+		return nil, &UnsupportedCheckTypeError{ID: id, Type: checkType}
 	}
 	if err := decode(res, check); err != nil {
 		return nil, err
@@ -95,9 +95,9 @@ func (c *client) GetCheck(
 
 func (c *client) DeleteCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/checks/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/checks/%s", id), nil, http.StatusNoContent)
 	return err
 }
 

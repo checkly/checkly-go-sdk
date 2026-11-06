@@ -33,10 +33,10 @@ func (c *client) CreateSnippet(
 
 func (c *client) GetSnippet(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) (*Snippet, error) {
 	result := Snippet{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/snippets/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/snippets/%d", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +45,11 @@ func (c *client) GetSnippet(
 
 func (c *client) UpdateSnippet(
 	ctx context.Context,
-	ID int64,
+	id int64,
 	snippet Snippet,
 ) (*Snippet, error) {
 	var result Snippet
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/snippets/%d", ID), snippet, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/snippets/%d", id), snippet, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +58,8 @@ func (c *client) UpdateSnippet(
 
 func (c *client) DeleteSnippet(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/snippets/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/snippets/%d", id), nil, http.StatusNoContent)
 	return err
 }

@@ -130,13 +130,13 @@ func (c *client) CreateGroupV2(
 
 func (c *client) GetGroupV2(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) (*GroupV2, error) {
 	var result GroupV2
 	// The API has no v2 route for reading a group. The v1 read response has
 	// the same shape as the v2 create and update responses, plus the
 	// read-only projectBindings, which GroupV2 does not decode.
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/check-groups/%d", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +145,11 @@ func (c *client) GetGroupV2(
 
 func (c *client) UpdateGroupV2(
 	ctx context.Context,
-	ID int64,
+	id int64,
 	group GroupV2,
 ) (*GroupV2, error) {
 	var result GroupV2
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v2/check-groups/%d", ID)), createGroupV2Payload(group), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v2/check-groups/%d", id)), createGroupV2Payload(group), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -158,10 +158,10 @@ func (c *client) UpdateGroupV2(
 
 func (c *client) DeleteGroupV2(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) error {
 	// The API has no v2 route for deleting a group; the v1 route deletes
 	// groups created through either version.
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/check-groups/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/check-groups/%d", id), nil, http.StatusNoContent)
 	return err
 }

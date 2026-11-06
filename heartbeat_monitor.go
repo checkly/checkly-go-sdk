@@ -103,10 +103,10 @@ func (c *client) CreateHeartbeatMonitor(
 
 func (c *client) GetHeartbeatMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeHeartbeat, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeHeartbeat, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -114,11 +114,11 @@ func (c *client) GetHeartbeatMonitor(
 
 func (c *client) UpdateHeartbeatMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor HeartbeatMonitor,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/heartbeat/%s", ID)), createHeartbeatMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/heartbeat/%s", id)), createHeartbeatMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (c *client) UpdateHeartbeatMonitor(
 
 func (c *client) DeleteHeartbeatMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }
