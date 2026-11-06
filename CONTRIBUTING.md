@@ -117,11 +117,13 @@ To inspect the requests the client sends and the responses it receives, route th
 
 ## Scripts
 
-In order to facilitate the development process, we have a `Makefile` with a few scripts that are used to build, test and run working examples.
+In order to facilitate the development process, we have a `Makefile` with a few scripts that are used to test, format and lint the code.
 
 - `make test`: run the unit tests and then the integration tests.
 - `make test-unit`: run the unit tests, which use canned responses and need no Checkly account.
 - `make test-integration`: build with the `integration` tag and run the integration tests against the real API, along with the unit tests. They need the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` environment variables, plus `CHECKLY_API_URL` (it defaults to `http://localhost:3000`), and they create and delete resources in that account.
+- `make fmt`: format the code with `go fmt`.
+- `make lint`: run the checks of the Lint job of the Lint workflow: `go vet` (with and without the `integration` build tag) and [golangci-lint](https://golangci-lint.run/) with the configuration in `.golangci.yml`, which also checks `gofmt` formatting. Install the golangci-lint version that `.github/workflows/lint.yml` pins.
 
 ## Project Structure
 

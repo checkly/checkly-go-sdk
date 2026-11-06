@@ -176,7 +176,7 @@ func requestConfig(t *testing.T, ac checkly.AlertChannel) json.RawMessage {
 		}
 		configs <- body.Config
 		w.WriteHeader(http.StatusCreated)
-		io.WriteString(w, `{"id":1}`)
+		_, _ = io.WriteString(w, `{"id":1}`)
 	}))
 	t.Cleanup(srv.Close)
 	c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))

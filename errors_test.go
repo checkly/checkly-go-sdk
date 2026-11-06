@@ -54,12 +54,12 @@ type errorReply struct {
 func newErrorServer(t *testing.T, reply errorReply, opts ...checkly.ClientOption) checkly.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		for k, v := range reply.header {
 			w.Header()[k] = v
 		}
 		w.WriteHeader(reply.status)
-		io.WriteString(w, reply.body)
+		_, _ = io.WriteString(w, reply.body)
 	}))
 	t.Cleanup(srv.Close)
 	opts = append([]checkly.ClientOption{checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()), checkly.WithoutRetryWaits()}, opts...)
@@ -445,7 +445,7 @@ func TestErrorOmitsSecrets(t *testing.T) {
 					body, _ := io.ReadAll(r.Body)
 					sentBodies <- string(body)
 					w.WriteHeader(500)
-					io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
+					_, _ = io.WriteString(w, tt.reply(r.Header.Get("Authorization"), string(body)))
 				}))
 				t.Cleanup(srv.Close)
 				c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth(apiKey, testAccountID), checkly.WithHTTPClient(srv.Client()))

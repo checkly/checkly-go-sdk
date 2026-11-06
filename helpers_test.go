@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -45,7 +44,7 @@ func cannedResponseServer(
 		if r.URL.String() != wantURL {
 			t.Errorf("want %q, got %q", wantURL, r.URL.String())
 		}
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Error(err)
 		}
@@ -55,8 +54,8 @@ func cannedResponseServer(
 		if err != nil {
 			t.Error(err)
 		}
-		defer data.Close()
-		io.Copy(w, data)
+		defer func() { _ = data.Close() }()
+		_, _ = io.Copy(w, data)
 	}))
 }
 
@@ -201,7 +200,7 @@ func newRecordingServer(t *testing.T, status int, body string) (checkly.Client, 
 		last = got
 		mu.Unlock()
 		w.WriteHeader(status)
-		io.WriteString(w, body)
+		_, _ = io.WriteString(w, body)
 	}))
 	t.Cleanup(srv.Close)
 	c := newTestClient(t, checkly.WithBaseURL(srv.URL), checkly.WithAuth("test-key", testAccountID), checkly.WithHTTPClient(srv.Client()))
