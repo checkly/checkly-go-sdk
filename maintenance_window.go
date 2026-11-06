@@ -108,7 +108,7 @@ func (mw MaintenanceWindow) MarshalJSON() ([]byte, error) {
 // change Enabled from true to false; any other change is rejected, so such an
 // account must send the stored settings back unchanged apart from Enabled.
 //
-// Status pages with services (v2) are linked with ServiceIDs or
+// Status pages with services (v1) are linked with ServiceIDs or
 // AffectAllServices, and status pages with components (v3) with
 // ComponentConfigs.
 type MaintenanceWindowStatusPageVisibility struct {

@@ -20,8 +20,10 @@ const (
 
 // StatusPage is a v1 status page, which shows StatusPageService entries
 // grouped into cards. It is the input and result of CreateStatusPage and
-// UpdateStatusPage, which both require Name, URL and Cards. See
-// [StatusPageV3] for the components-based status pages.
+// UpdateStatusPage, which both require Name, URL and Cards.
+//
+// Deprecated: Use [StatusPageV3] instead. The public API cannot migrate a v1
+// status page to v3, so this type remains for existing v1 pages.
 type StatusPage struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
@@ -54,6 +56,10 @@ type StatusPage struct {
 
 // StatusPageCard is a card of a v1 status page, in StatusPage.Cards: a named
 // group of services.
+//
+// Deprecated: Use a [StatusPageComponentV3] of type
+// [StatusPageComponentV3TypeGroup] instead. The public API cannot migrate a v1
+// status page to v3, so this type remains for existing v1 pages.
 type StatusPageCard struct {
 	Name string `json:"name"`
 
@@ -67,6 +73,11 @@ type StatusPageCard struct {
 // status a card shows and that incidents affect, as IncidentTrigger.ServiceID
 // refers to it. It is the input and result of CreateStatusPageService and
 // UpdateStatusPageService, which both require only Name.
+//
+// Deprecated: Use [StatusPageComponentV3] instead. The public API cannot
+// migrate a v1 status page to v3, so this type remains for existing v1 pages.
+// [IncidentTrigger].ServiceID takes only v1 services, not component IDs: v3
+// pages automate incidents with [StatusPageAutomationRuleV3].
 type StatusPageService struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`

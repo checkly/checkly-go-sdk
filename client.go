@@ -666,12 +666,20 @@ type Client interface {
 	) error
 
 	// CreateStatusPage creates a status page and returns it with its ID.
+	//
+	// Deprecated: Use [Client.CreateStatusPageV3] instead. The public API
+	// cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	CreateStatusPage(
 		ctx context.Context,
 		page StatusPage,
 	) (*StatusPage, error)
 
 	// GetStatusPage returns the status page with the given ID.
+	//
+	// Deprecated: Use [Client.GetStatusPageV3] instead. The public API cannot
+	// migrate a v1 status page to v3, so this method remains for existing v1
+	// pages.
 	GetStatusPage(
 		ctx context.Context,
 		ID string,
@@ -680,6 +688,10 @@ type Client interface {
 	// UpdateStatusPage updates the status page with the given ID and returns
 	// it. An empty DefaultTheme, which is left out of the request, resets the
 	// theme to [StatusPageThemeAuto].
+	//
+	// Deprecated: Use [Client.UpdateStatusPageV3] instead. The public API
+	// cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	UpdateStatusPage(
 		ctx context.Context,
 		ID string,
@@ -687,6 +699,10 @@ type Client interface {
 	) (*StatusPage, error)
 
 	// DeleteStatusPage deletes the status page with the given ID.
+	//
+	// Deprecated: Use [Client.DeleteStatusPageV3] instead. The public API
+	// cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	DeleteStatusPage(
 		ctx context.Context,
 		ID string,
@@ -694,12 +710,20 @@ type Client interface {
 
 	// CreateStatusPageService creates a status page service and returns it with
 	// its ID.
+	//
+	// Deprecated: Use [Client.CreateStatusPageComponentV3] instead. The public
+	// API cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	CreateStatusPageService(
 		ctx context.Context,
 		service StatusPageService,
 	) (*StatusPageService, error)
 
 	// GetStatusPageService returns the status page service with the given ID.
+	//
+	// Deprecated: Use [Client.GetStatusPageComponentV3] instead. The public API
+	// cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	GetStatusPageService(
 		ctx context.Context,
 		ID string,
@@ -707,6 +731,10 @@ type Client interface {
 
 	// UpdateStatusPageService renames the status page service with the given ID
 	// and returns it.
+	//
+	// Deprecated: Use [Client.UpdateStatusPageComponentV3] instead. The public
+	// API cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	UpdateStatusPageService(
 		ctx context.Context,
 		ID string,
@@ -715,6 +743,10 @@ type Client interface {
 
 	// DeleteStatusPageService deletes the status page service with the given
 	// ID.
+	//
+	// Deprecated: Use [Client.DeleteStatusPageComponentV3] instead. The public
+	// API cannot migrate a v1 status page to v3, so this method remains for
+	// existing v1 pages.
 	DeleteStatusPageService(
 		ctx context.Context,
 		ID string,

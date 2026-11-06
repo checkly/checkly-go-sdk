@@ -444,3 +444,13 @@ when the check is not of the given type.
   config that is not a JSON object, or one for an unknown channel type, returns an error.
 - `CreateDashboard`, `CreateMaintenanceWindow` and `CreatePrivateLocation` check the status before
   decoding, so an error page that is not JSON returns an `*APIError` instead of a JSON syntax error.
+
+## Deprecated APIs
+
+`CreateStatusPage`, `GetStatusPage`, `UpdateStatusPage`, `DeleteStatusPage`,
+`CreateStatusPageService`, `GetStatusPageService`, `UpdateStatusPageService`,
+`DeleteStatusPageService` and the types `StatusPage`, `StatusPageCard` and `StatusPageService` are
+deprecated. Use the V3 methods, such as `CreateStatusPageV3` and `CreateStatusPageComponentV3`, and
+the types `StatusPageV3` and `StatusPageComponentV3` instead. The public API cannot migrate a v1
+status page to v3, so the deprecated identifiers remain for existing v1 pages.
+`IncidentTrigger.ServiceID` takes only v1 services, not component IDs: v3 pages automate incidents with `StatusPageAutomationRuleV3` and `CreateStatusPageAutomationRuleV3`.
