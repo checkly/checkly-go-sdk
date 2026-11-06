@@ -132,10 +132,10 @@ func (c *client) CreatePlaywrightCheck(
 
 func (c *client) GetPlaywrightCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypePlaywright, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypePlaywright, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -143,11 +143,11 @@ func (c *client) GetPlaywrightCheck(
 
 func (c *client) UpdatePlaywrightCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 	check PlaywrightCheck,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/playwright/%s", ID)), createPlaywrightCheckPayload(check), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/playwright/%s", id)), createPlaywrightCheckPayload(check), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (c *client) UpdatePlaywrightCheck(
 
 func (c *client) DeletePlaywrightCheck(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

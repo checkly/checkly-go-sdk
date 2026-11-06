@@ -121,10 +121,10 @@ func (c *client) CreateStatusPage(
 
 func (c *client) GetStatusPage(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/%s", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -133,11 +133,11 @@ func (c *client) GetStatusPage(
 
 func (c *client) UpdateStatusPage(
 	ctx context.Context,
-	ID string,
+	id string,
 	page StatusPage,
 ) (*StatusPage, error) {
 	var result StatusPage
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/%s", ID), createStatusPagePayload(page), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/%s", id), createStatusPagePayload(page), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -146,9 +146,9 @@ func (c *client) UpdateStatusPage(
 
 func (c *client) DeleteStatusPage(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/%s", id), nil, http.StatusNoContent)
 	return err
 }
 
@@ -166,10 +166,10 @@ func (c *client) CreateStatusPageService(
 
 func (c *client) GetStatusPageService(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*StatusPageService, error) {
 	var result StatusPageService
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/services/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/status-pages/services/%s", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +178,11 @@ func (c *client) GetStatusPageService(
 
 func (c *client) UpdateStatusPageService(
 	ctx context.Context,
-	ID string,
+	id string,
 	service StatusPageService,
 ) (*StatusPageService, error) {
 	var result StatusPageService
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/services/%s", ID), service, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/status-pages/services/%s", id), service, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +191,8 @@ func (c *client) UpdateStatusPageService(
 
 func (c *client) DeleteStatusPageService(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/services/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/status-pages/services/%s", id), nil, http.StatusNoContent)
 	return err
 }

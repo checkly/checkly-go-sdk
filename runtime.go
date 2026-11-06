@@ -38,10 +38,10 @@ type Runtime struct {
 
 func (c *client) GetRuntime(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*Runtime, error) {
 	result := Runtime{}
-	err := c.callPublicJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/runtimes/%s", ID), &result, http.StatusOK)
+	err := c.callPublicJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/runtimes/%s", id), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

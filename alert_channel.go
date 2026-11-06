@@ -231,9 +231,9 @@ func (c *client) CreateAlertChannel(
 
 func (c *client) GetAlertChannel(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, http.MethodGet, fmt.Sprintf("/v1/alert-channels/%d", ID), nil, http.StatusOK)
+	res, err := c.call(ctx, http.MethodGet, fmt.Sprintf("/v1/alert-channels/%d", id), nil, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -242,10 +242,10 @@ func (c *client) GetAlertChannel(
 
 func (c *client) UpdateAlertChannel(
 	ctx context.Context,
-	ID int64,
+	id int64,
 	ac AlertChannel,
 ) (*AlertChannel, error) {
-	res, err := c.call(ctx, http.MethodPut, fmt.Sprintf("/v1/alert-channels/%d", ID), createAlertChannelPayload(ac), http.StatusOK)
+	res, err := c.call(ctx, http.MethodPut, fmt.Sprintf("/v1/alert-channels/%d", id), createAlertChannelPayload(ac), http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -254,9 +254,9 @@ func (c *client) UpdateAlertChannel(
 
 func (c *client) DeleteAlertChannel(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/alert-channels/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/alert-channels/%d", id), nil, http.StatusNoContent)
 	return err
 }
 

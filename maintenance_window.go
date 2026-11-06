@@ -212,10 +212,10 @@ func (c *client) CreateMaintenanceWindow(
 
 func (c *client) GetMaintenanceWindow(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) (*MaintenanceWindow, error) {
 	result := MaintenanceWindow{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/maintenance-windows/%d", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -224,11 +224,11 @@ func (c *client) GetMaintenanceWindow(
 
 func (c *client) UpdateMaintenanceWindow(
 	ctx context.Context,
-	ID int64,
+	id int64,
 	mw MaintenanceWindow,
 ) (*MaintenanceWindow, error) {
 	var result MaintenanceWindow
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/maintenance-windows/%d", ID), mw, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/maintenance-windows/%d", id), mw, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -237,8 +237,8 @@ func (c *client) UpdateMaintenanceWindow(
 
 func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
-	ID int64,
+	id int64,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/maintenance-windows/%d", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/maintenance-windows/%d", id), nil, http.StatusNoContent)
 	return err
 }

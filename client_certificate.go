@@ -60,10 +60,10 @@ func (c *client) CreateClientCertificate(
 
 func (c *client) GetClientCertificate(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*ClientCertificate, error) {
 	var result ClientCertificate
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/client-certificates/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/client-certificates/%s", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func (c *client) GetClientCertificate(
 
 func (c *client) DeleteClientCertificate(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/client-certificates/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/client-certificates/%s", id), nil, http.StatusNoContent)
 	return err
 }

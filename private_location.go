@@ -71,10 +71,10 @@ func (c *client) CreatePrivateLocation(
 
 func (c *client) GetPrivateLocation(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*PrivateLocation, error) {
 	result := PrivateLocation{}
-	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/private-locations/%s", ID), nil, &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodGet, fmt.Sprintf("/v1/private-locations/%s", id), nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func (c *client) GetPrivateLocation(
 
 func (c *client) UpdatePrivateLocation(
 	ctx context.Context,
-	ID string,
+	id string,
 	pl PrivateLocation,
 ) (*PrivateLocation, error) {
 	var result PrivateLocation
-	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/private-locations/%s", ID), createPrivateLocationPayload(pl), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, fmt.Sprintf("/v1/private-locations/%s", id), createPrivateLocationPayload(pl), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,8 @@ func (c *client) UpdatePrivateLocation(
 
 func (c *client) DeletePrivateLocation(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/private-locations/%s", ID), nil, http.StatusNoContent)
+	_, err := c.call(ctx, http.MethodDelete, fmt.Sprintf("/v1/private-locations/%s", id), nil, http.StatusNoContent)
 	return err
 }

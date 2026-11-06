@@ -284,10 +284,10 @@ func (c *client) CreateSSLMonitor(
 
 func (c *client) GetSSLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeSSL, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeSSL, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -295,11 +295,11 @@ func (c *client) GetSSLMonitor(
 
 func (c *client) UpdateSSLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor SSLMonitor,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/ssl/%s", ID)), createSSLMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/ssl/%s", id)), createSSLMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (c *client) UpdateSSLMonitor(
 
 func (c *client) DeleteSSLMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

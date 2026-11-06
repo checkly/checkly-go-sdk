@@ -27,13 +27,13 @@ type Client interface {
 	// [ErrUnsupportedCheckType], for a type the SDK has no resource type for.
 	GetCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (Check, error)
 
 	// DeleteCheck deletes the check with the given ID, whatever its type.
 	DeleteCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateAPICheck creates an API check and returns it with its ID.
@@ -47,13 +47,13 @@ type Client interface {
 	// type.
 	GetAPICheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*APICheck, error)
 
 	// UpdateAPICheck updates the API check with the given ID and returns it.
 	UpdateAPICheck(
 		ctx context.Context,
-		ID string,
+		id string,
 		check APICheck,
 	) (*APICheck, error)
 
@@ -61,7 +61,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteAPICheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateBrowserCheck creates a browser check and returns it with its ID.
@@ -75,14 +75,14 @@ type Client interface {
 	// when the ID belongs to a check of another type.
 	GetBrowserCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*BrowserCheck, error)
 
 	// UpdateBrowserCheck updates the browser check with the given ID and returns
 	// it.
 	UpdateBrowserCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
@@ -90,7 +90,7 @@ type Client interface {
 	// not verify the check type, so it deletes a check of any type.
 	DeleteBrowserCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateMultiStepCheck creates a multi-step check and returns it with its ID.
@@ -104,14 +104,14 @@ type Client interface {
 	// [ErrCheckTypeMismatch] when the ID belongs to a check of another type.
 	GetMultiStepCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*MultiStepCheck, error)
 
 	// UpdateMultiStepCheck updates the multi-step check with the given ID and
 	// returns it.
 	UpdateMultiStepCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
@@ -119,7 +119,7 @@ type Client interface {
 	// does not verify the check type, so it deletes a check of any type.
 	DeleteMultiStepCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreatePlaywrightCheck creates a Playwright check and returns it with its
@@ -134,7 +134,7 @@ type Client interface {
 	// of another type.
 	GetPlaywrightCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*PlaywrightCheck, error)
 
 	// UpdatePlaywrightCheck updates the Playwright check with the given ID and
@@ -143,7 +143,7 @@ type Client interface {
 	// field to the API default.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
@@ -151,7 +151,7 @@ type Client interface {
 	// does not verify the check type, so it deletes a check of any type.
 	DeletePlaywrightCheck(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// UploadCodeBundle uploads size bytes read from data as a code bundle for
@@ -184,14 +184,14 @@ type Client interface {
 	// check of another type.
 	GetHeartbeatMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*HeartbeatMonitor, error)
 
 	// UpdateHeartbeatMonitor updates the heartbeat monitor with the given ID and
 	// returns it.
 	UpdateHeartbeatMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
 
@@ -199,7 +199,7 @@ type Client interface {
 	// It does not verify the check type, so it deletes a check of any type.
 	DeleteHeartbeatMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateURLMonitor creates a URL monitor and returns it with its ID.
@@ -213,13 +213,13 @@ type Client interface {
 	// another type.
 	GetURLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*URLMonitor, error)
 
 	// UpdateURLMonitor updates the URL monitor with the given ID and returns it.
 	UpdateURLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
@@ -227,7 +227,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteURLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateTCPMonitor creates a TCP monitor and returns it with its ID.
@@ -241,13 +241,13 @@ type Client interface {
 	// another type.
 	GetTCPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*TCPMonitor, error)
 
 	// UpdateTCPMonitor updates the TCP monitor with the given ID and returns it.
 	UpdateTCPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
@@ -255,7 +255,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteTCPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateDNSMonitor creates a DNS monitor and returns it with its ID.
@@ -269,7 +269,7 @@ type Client interface {
 	// another type.
 	GetDNSMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*DNSMonitor, error)
 
 	// UpdateDNSMonitor updates the DNS monitor with the given ID and returns it.
@@ -277,7 +277,7 @@ type Client interface {
 	// settings to the API default.
 	UpdateDNSMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
@@ -285,7 +285,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteDNSMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateICMPMonitor creates an ICMP monitor and returns it with its ID.
@@ -299,14 +299,14 @@ type Client interface {
 	// another type.
 	GetICMPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*ICMPMonitor, error)
 
 	// UpdateICMPMonitor updates the ICMP monitor with the given ID and returns
 	// it.
 	UpdateICMPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
@@ -314,7 +314,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteICMPMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateGRPCMonitor creates a gRPC monitor and returns it with its ID.
@@ -328,14 +328,14 @@ type Client interface {
 	// another type.
 	GetGRPCMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*GRPCMonitor, error)
 
 	// UpdateGRPCMonitor updates the gRPC monitor with the given ID and returns
 	// it.
 	UpdateGRPCMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
@@ -343,7 +343,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteGRPCMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateTracerouteMonitor creates a traceroute monitor and returns it with
@@ -358,14 +358,14 @@ type Client interface {
 	// check of another type.
 	GetTracerouteMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*TracerouteMonitor, error)
 
 	// UpdateTracerouteMonitor updates the traceroute monitor with the given ID
 	// and returns it.
 	UpdateTracerouteMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
@@ -373,7 +373,7 @@ type Client interface {
 	// It does not verify the check type, so it deletes a check of any type.
 	DeleteTracerouteMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateSSLMonitor creates an SSL monitor and returns it with its ID.
@@ -387,7 +387,7 @@ type Client interface {
 	// another type.
 	GetSSLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*SSLMonitor, error)
 
 	// UpdateSSLMonitor updates the SSL monitor with the given ID and returns it.
@@ -395,7 +395,7 @@ type Client interface {
 	// which are left out of the request, resets that field to the API default.
 	UpdateSSLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 		monitor SSLMonitor,
 	) (*SSLMonitor, error)
 
@@ -403,7 +403,7 @@ type Client interface {
 	// verify the check type, so it deletes a check of any type.
 	DeleteSSLMonitor(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateGroupV2 creates a check group and returns it with its ID.
@@ -415,20 +415,20 @@ type Client interface {
 	// GetGroupV2 returns the check group with the given ID.
 	GetGroupV2(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) (*GroupV2, error)
 
 	// UpdateGroupV2 updates the check group with the given ID and returns it.
 	UpdateGroupV2(
 		ctx context.Context,
-		ID int64,
+		id int64,
 		group GroupV2,
 	) (*GroupV2, error)
 
 	// DeleteGroupV2 deletes the check group with the given ID.
 	DeleteGroupV2(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) error
 
 	// GetCheckResult returns the result with ID checkResultID of the check with
@@ -458,21 +458,21 @@ type Client interface {
 	// GetSnippet returns the snippet with the given ID.
 	GetSnippet(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) (*Snippet, error)
 
 	// UpdateSnippet replaces the name and script of the snippet with the given ID
 	// and returns it.
 	UpdateSnippet(
 		ctx context.Context,
-		ID int64,
+		id int64,
 		snippet Snippet,
 	) (*Snippet, error)
 
 	// DeleteSnippet deletes the snippet with the given ID.
 	DeleteSnippet(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) error
 
 	// CreateEnvironmentVariable creates an environment variable and returns it.
@@ -514,7 +514,7 @@ type Client interface {
 	// GetAlertChannel returns the alert channel with the given ID.
 	GetAlertChannel(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) (*AlertChannel, error)
 
 	// UpdateAlertChannel updates the alert channel with the given ID and returns
@@ -523,14 +523,14 @@ type Client interface {
 	// its current value.
 	UpdateAlertChannel(
 		ctx context.Context,
-		ID int64,
+		id int64,
 		ac AlertChannel,
 	) (*AlertChannel, error)
 
 	// DeleteAlertChannel deletes the alert channel with the given ID.
 	DeleteAlertChannel(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) error
 
 	// CreateDashboard creates a dashboard and returns it with its IDs.
@@ -542,7 +542,7 @@ type Client interface {
 	// GetDashboard returns the dashboard whose [Dashboard.DashboardID] is ID.
 	GetDashboard(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*Dashboard, error)
 
 	// UpdateDashboard updates the dashboard whose [Dashboard.DashboardID] is ID
@@ -554,14 +554,14 @@ type Client interface {
 	// removes it.
 	UpdateDashboard(
 		ctx context.Context,
-		ID string,
+		id string,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
 	// DeleteDashboard deletes the dashboard whose [Dashboard.DashboardID] is ID.
 	DeleteDashboard(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateMaintenanceWindow creates a maintenance window and returns it with
@@ -574,21 +574,21 @@ type Client interface {
 	// GetMaintenanceWindow returns the maintenance window with the given ID.
 	GetMaintenanceWindow(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) (*MaintenanceWindow, error)
 
 	// UpdateMaintenanceWindow updates the maintenance window with the given ID
 	// and returns it.
 	UpdateMaintenanceWindow(
 		ctx context.Context,
-		ID int64,
+		id int64,
 		mw MaintenanceWindow,
 	) (*MaintenanceWindow, error)
 
 	// DeleteMaintenanceWindow deletes the maintenance window with the given ID.
 	DeleteMaintenanceWindow(
 		ctx context.Context,
-		ID int64,
+		id int64,
 	) error
 
 	// CreatePrivateLocation creates a private location and returns it with its
@@ -601,21 +601,21 @@ type Client interface {
 	// GetPrivateLocation returns the private location with the given ID.
 	GetPrivateLocation(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*PrivateLocation, error)
 
 	// UpdatePrivateLocation updates the private location with the given ID and
 	// returns it. The slug name cannot be changed.
 	UpdatePrivateLocation(
 		ctx context.Context,
-		ID string,
+		id string,
 		pl PrivateLocation,
 	) (*PrivateLocation, error)
 
 	// DeletePrivateLocation deletes the private location with the given ID.
 	DeletePrivateLocation(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateClientCertificate creates a client certificate and returns it with
@@ -628,13 +628,13 @@ type Client interface {
 	// GetClientCertificate returns the client certificate with the given ID.
 	GetClientCertificate(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*ClientCertificate, error)
 
 	// DeleteClientCertificate deletes the client certificate with the given ID.
 	DeleteClientCertificate(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateStatusPage creates a status page and returns it with its ID.
@@ -654,7 +654,7 @@ type Client interface {
 	// pages.
 	GetStatusPage(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*StatusPage, error)
 
 	// UpdateStatusPage updates the status page with the given ID and returns
@@ -666,7 +666,7 @@ type Client interface {
 	// existing v1 pages.
 	UpdateStatusPage(
 		ctx context.Context,
-		ID string,
+		id string,
 		page StatusPage,
 	) (*StatusPage, error)
 
@@ -677,7 +677,7 @@ type Client interface {
 	// existing v1 pages.
 	DeleteStatusPage(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateStatusPageService creates a status page service and returns it with
@@ -698,7 +698,7 @@ type Client interface {
 	// existing v1 pages.
 	GetStatusPageService(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*StatusPageService, error)
 
 	// UpdateStatusPageService renames the status page service with the given ID
@@ -709,7 +709,7 @@ type Client interface {
 	// existing v1 pages.
 	UpdateStatusPageService(
 		ctx context.Context,
-		ID string,
+		id string,
 		service StatusPageService,
 	) (*StatusPageService, error)
 
@@ -721,7 +721,7 @@ type Client interface {
 	// existing v1 pages.
 	DeleteStatusPageService(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateStatusPageV3 creates a v3 status page and returns it with its ID.
@@ -733,7 +733,7 @@ type Client interface {
 	// GetStatusPageV3 returns the v3 status page with the given ID.
 	GetStatusPageV3(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*StatusPageV3, error)
 
 	// UpdateStatusPageV3 updates the v3 status page with the given ID and
@@ -741,14 +741,14 @@ type Client interface {
 	// resets the theme to [StatusPageThemeAuto].
 	UpdateStatusPageV3(
 		ctx context.Context,
-		ID string,
+		id string,
 		page StatusPageV3,
 	) (*StatusPageV3, error)
 
 	// DeleteStatusPageV3 deletes the v3 status page with the given ID.
 	DeleteStatusPageV3(
 		ctx context.Context,
-		ID string,
+		id string,
 	) error
 
 	// CreateStatusPageComponentV3 adds a component to the v3 status page with ID
@@ -759,15 +759,15 @@ type Client interface {
 		component StatusPageComponentV3,
 	) (*StatusPageComponentV3, error)
 
-	// GetStatusPageComponentV3 returns the component with the given ID of the v3
-	// status page with ID statusPageID.
+	// GetStatusPageComponentV3 returns the component with ID componentID of the
+	// v3 status page with ID statusPageID.
 	GetStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		componentID string,
 	) (*StatusPageComponentV3, error)
 
-	// UpdateStatusPageComponentV3 updates the component with the given ID of
+	// UpdateStatusPageComponentV3 updates the component with ID componentID of
 	// the v3 status page with ID statusPageID and returns it. An empty Type
 	// resets the type to [StatusPageComponentV3TypeService], a nil
 	// Configuration resets the configuration to the type's default, and an
@@ -775,17 +775,17 @@ type Client interface {
 	UpdateStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		componentID string,
 		component StatusPageComponentV3,
 	) (*StatusPageComponentV3, error)
 
-	// DeleteStatusPageComponentV3 deletes the component with the given ID of
+	// DeleteStatusPageComponentV3 deletes the component with ID componentID of
 	// the v3 status page with ID statusPageID. Child components are detached
 	// from a deleted [StatusPageComponentV3TypeGroup], not deleted.
 	DeleteStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		componentID string,
 	) error
 
 	// CreateStatusPageAutomationRuleV3 adds an automation rule to the v3 status
@@ -796,37 +796,37 @@ type Client interface {
 		rule StatusPageAutomationRuleV3,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// GetStatusPageAutomationRuleV3 returns the automation rule with the given
-	// ID of the v3 status page with ID statusPageID.
+	// GetStatusPageAutomationRuleV3 returns the automation rule with ID ruleID
+	// of the v3 status page with ID statusPageID.
 	GetStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		ruleID string,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// UpdateStatusPageAutomationRuleV3 updates the automation rule with the
-	// given ID of the v3 status page with ID statusPageID and returns it. An
+	// UpdateStatusPageAutomationRuleV3 updates the automation rule with ID
+	// ruleID of the v3 status page with ID statusPageID and returns it. An
 	// empty Components removes the rule's components.
 	UpdateStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		ruleID string,
 		rule StatusPageAutomationRuleV3,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// DeleteStatusPageAutomationRuleV3 deletes the automation rule with the
-	// given ID of the v3 status page with ID statusPageID.
+	// DeleteStatusPageAutomationRuleV3 deletes the automation rule with ID
+	// ruleID of the v3 status page with ID statusPageID.
 	DeleteStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
-		ID string,
+		ruleID string,
 	) error
 
 	// GetRuntime returns the runtime with the given ID, such as "2025.04". The
 	// endpoint is public, so the request is sent without credentials.
 	GetRuntime(
 		ctx context.Context,
-		ID string,
+		id string,
 	) (*Runtime, error)
 
 	// GetStaticIPs returns the IP ranges that checks run from, per region: IPv6

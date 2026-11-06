@@ -238,10 +238,10 @@ func (c *client) CreateTracerouteMonitor(
 
 func (c *client) GetTracerouteMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeTraceroute, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeTraceroute, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -249,11 +249,11 @@ func (c *client) GetTracerouteMonitor(
 
 func (c *client) UpdateTracerouteMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", ID)), updateTracerouteMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", id)), updateTracerouteMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (c *client) UpdateTracerouteMonitor(
 
 func (c *client) DeleteTracerouteMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }

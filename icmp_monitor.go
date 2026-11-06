@@ -173,10 +173,10 @@ func (c *client) CreateICMPMonitor(
 
 func (c *client) GetICMPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeICMP, &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", id), CheckTypeICMP, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -184,11 +184,11 @@ func (c *client) GetICMPMonitor(
 
 func (c *client) UpdateICMPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 	monitor ICMPMonitor,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/icmp/%s", ID)), createICMPMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/icmp/%s", id)), createICMPMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (c *client) UpdateICMPMonitor(
 
 func (c *client) DeleteICMPMonitor(
 	ctx context.Context,
-	ID string,
+	id string,
 ) error {
-	return c.DeleteCheck(ctx, ID)
+	return c.DeleteCheck(ctx, id)
 }
