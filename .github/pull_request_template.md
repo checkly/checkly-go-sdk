@@ -10,6 +10,9 @@
 * [ ] Go code is formatted with `go fmt`
 
 <!-- You can erase any parts of this template not applicable to your Pull Request. -->
+## Changes for SDK Users
+<!-- What changes for code that uses the SDK. Call out breaking changes and what to do instead. The release notes are written from this section. -->
+
 ## Notes for the Reviewer
 <!-- Anything the reviewer should pay extra attention to. -->
 
