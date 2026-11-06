@@ -20,5 +20,7 @@
   "expandChecks": false,
   "showCheckRunLinks": false,
   "showP95": true,
-  "showP99": true
+  "showP99": true,
+  "sortByStatus": true,
+  "showGroupNames": true
 }

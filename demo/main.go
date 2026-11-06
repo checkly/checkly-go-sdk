@@ -31,7 +31,6 @@ var dashboard = checkly.Dashboard{
 	Header:         "string",
 	Width:          "FULL",
 	RefreshRate:    60,
-	Paginate:       true,
 	PaginationRate: 30,
 	Tags:           []string{"string"},
 	HideTags:       false,

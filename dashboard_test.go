@@ -35,7 +35,7 @@ var testDashboard = checkly.Dashboard{
 	ShowHeader:         &trueVal,
 	Width:              "FULL",
 	RefreshRate:        60,
-	Paginate:           true,
+	Paginate:           &trueVal,
 	PaginationRate:     30,
 	Tags:               []string{"api"},
 	HideTags:           false,
@@ -47,6 +47,8 @@ var testDashboard = checkly.Dashboard{
 	ShowCheckRunLinks:  false,
 	ShowP95:            &trueVal,
 	ShowP99:            &trueVal,
+	SortByStatus:       true,
+	ShowGroupNames:     &trueVal,
 }
 
 var ignoreDashboardFields = cmpopts.IgnoreFields(checkly.Dashboard{}, "DashboardID", "CreatedAt", "ID", "Keys")
@@ -124,4 +126,105 @@ func TestGetDashboard(t *testing.T) {
 	if !cmp.Equal(testDashboard, *ac, ignoreDashboardFields) {
 		t.Error(cmp.Diff(testDashboard, *ac, ignoreDashboardFields))
 	}
+}
+
+// sendDashboard sends dashboard with send and returns the raw request body.
+func sendDashboard(t *testing.T, method, path string, send func(checkly.Client) error) []byte {
+	t.Helper()
+	var body []byte
+	ts := cannedResponseServer(t,
+		method,
+		path,
+		func(_ *testing.T, b []byte) { body = b },
+		http.StatusOK,
+		"CreateDashboard.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	if err := send(client); err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
+// Keys with an API default are left out when unset, on create and update, so
+// that the default applies instead of a zero value the API rejects (0 for
+// the rates) or that differs from the default (false for paginate and
+// showGroupNames).
+func TestDashboardOmitsUnsetDefaults(t *testing.T) {
+	t.Parallel()
+	dashboard := checkly.Dashboard{CustomURL: "status-page", Header: "Status"}
+	bodies := map[string][]byte{
+		"create": sendDashboard(t, http.MethodPost, "/v1/dashboards", func(c checkly.Client) error {
+			_, err := c.CreateDashboard(context.Background(), dashboard)
+			return err
+		}),
+		"update": sendDashboard(t, http.MethodPut, "/v1/dashboards/abcd1234", func(c checkly.Client) error {
+			_, err := c.UpdateDashboard(context.Background(), "abcd1234", dashboard)
+			return err
+		}),
+	}
+	for name, body := range bodies {
+		t.Run(name, func(t *testing.T) {
+			for _, key := range []string{"refreshRate", "paginationRate", "paginate", "sortByStatus", "showGroupNames"} {
+				assertRawBodyKeyAbsent(t, body, key)
+			}
+		})
+	}
+}
+
+func TestDashboardSendsSetDefaultedFields(t *testing.T) {
+	t.Parallel()
+	falseVal := false
+	body := sendDashboard(t, http.MethodPut, "/v1/dashboards/abcd1234", func(c checkly.Client) error {
+		_, err := c.UpdateDashboard(context.Background(), "abcd1234", checkly.Dashboard{
+			RefreshRate:    300,
+			PaginationRate: 30,
+			Paginate:       &falseVal,
+			SortByStatus:   true,
+			ShowGroupNames: &falseVal,
+		})
+		return err
+	})
+	assertRawBodyField(t, body, "refreshRate", "300")
+	assertRawBodyField(t, body, "paginationRate", "30")
+	assertRawBodyField(t, body, "paginate", "false")
+	assertRawBodyField(t, body, "sortByStatus", "true")
+	assertRawBodyField(t, body, "showGroupNames", "false")
+}
+
+// The update endpoint keeps the stored value of an omitted key without a
+// default, so update sends the empty optional texts as null (header, which
+// does not accept null, as "") to clear them. Create leaves them out.
+func TestDashboardEmptyTextsOnCreateAndUpdate(t *testing.T) {
+	t.Parallel()
+	nullable := []string{"customDomain", "logo", "link", "description", "favicon"}
+
+	created := sendDashboard(t, http.MethodPost, "/v1/dashboards", func(c checkly.Client) error {
+		_, err := c.CreateDashboard(context.Background(), checkly.Dashboard{CustomURL: "status-page", Header: "Status"})
+		return err
+	})
+	for _, key := range nullable {
+		assertRawBodyKeyAbsent(t, created, key)
+	}
+
+	updated := sendDashboard(t, http.MethodPut, "/v1/dashboards/abcd1234", func(c checkly.Client) error {
+		_, err := c.UpdateDashboard(context.Background(), "abcd1234", checkly.Dashboard{CustomURL: "status-page"})
+		return err
+	})
+	for _, key := range nullable {
+		assertRawBodyField(t, updated, key, "null")
+	}
+	assertRawBodyField(t, updated, "header", `""`)
+
+	set := sendDashboard(t, http.MethodPut, "/v1/dashboards/abcd1234", func(c checkly.Client) error {
+		_, err := c.UpdateDashboard(context.Background(), "abcd1234", testDashboard)
+		return err
+	})
+	assertRawBodyField(t, set, "customDomain", `"is.checkly.online"`)
+	assertRawBodyField(t, set, "logo", `"https://www.checklyhq.com/images/text_racoon_logo.svg"`)
+	assertRawBodyField(t, set, "link", `"https://www.checklyhq.com"`)
+	assertRawBodyField(t, set, "description", `"Checkly status page"`)
+	assertRawBodyField(t, set, "favicon", `"https://www.checklyhq.com/images/text_racoon_logo.svg"`)
+	assertRawBodyField(t, set, "header", `"Status"`)
 }
