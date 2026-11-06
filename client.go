@@ -57,8 +57,8 @@ type Client interface {
 		check APICheck,
 	) (*APICheck, error)
 
-	// DeleteAPICheck deletes the API check with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteAPICheck deletes the API check with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteAPICheck(
 		ctx context.Context,
 		ID string,
@@ -86,8 +86,8 @@ type Client interface {
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
-	// DeleteBrowserCheck deletes the browser check with the given ID. It uses
-	// the generic check endpoint and does not verify the check type.
+	// DeleteBrowserCheck deletes the browser check with the given ID. It does
+	// not verify the check type, so it deletes a check of any type.
 	DeleteBrowserCheck(
 		ctx context.Context,
 		ID string,
@@ -116,7 +116,7 @@ type Client interface {
 	) (*MultiStepCheck, error)
 
 	// DeleteMultiStepCheck deletes the multi-step check with the given ID. It
-	// uses the generic check endpoint and does not verify the check type.
+	// does not verify the check type, so it deletes a check of any type.
 	DeleteMultiStepCheck(
 		ctx context.Context,
 		ID string,
@@ -148,7 +148,7 @@ type Client interface {
 	) (*PlaywrightCheck, error)
 
 	// DeletePlaywrightCheck deletes the Playwright check with the given ID. It
-	// uses the generic check endpoint and does not verify the check type.
+	// does not verify the check type, so it deletes a check of any type.
 	DeletePlaywrightCheck(
 		ctx context.Context,
 		ID string,
@@ -195,8 +195,8 @@ type Client interface {
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
 
-	// DeleteHeartbeatMonitor deletes the heartbeat monitor with the given ID. It
-	// uses the generic check endpoint and does not verify the check type.
+	// DeleteHeartbeatMonitor deletes the heartbeat monitor with the given ID.
+	// It does not verify the check type, so it deletes a check of any type.
 	DeleteHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
@@ -223,8 +223,8 @@ type Client interface {
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
-	// DeleteURLMonitor deletes the URL monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteURLMonitor deletes the URL monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteURLMonitor(
 		ctx context.Context,
 		ID string,
@@ -251,8 +251,8 @@ type Client interface {
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
-	// DeleteTCPMonitor deletes the TCP monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteTCPMonitor deletes the TCP monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteTCPMonitor(
 		ctx context.Context,
 		ID string,
@@ -281,8 +281,8 @@ type Client interface {
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
-	// DeleteDNSMonitor deletes the DNS monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteDNSMonitor deletes the DNS monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteDNSMonitor(
 		ctx context.Context,
 		ID string,
@@ -310,8 +310,8 @@ type Client interface {
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
-	// DeleteICMPMonitor deletes the ICMP monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteICMPMonitor deletes the ICMP monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteICMPMonitor(
 		ctx context.Context,
 		ID string,
@@ -339,8 +339,8 @@ type Client interface {
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
-	// DeleteGRPCMonitor deletes the gRPC monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteGRPCMonitor deletes the gRPC monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteGRPCMonitor(
 		ctx context.Context,
 		ID string,
@@ -370,7 +370,7 @@ type Client interface {
 	) (*TracerouteMonitor, error)
 
 	// DeleteTracerouteMonitor deletes the traceroute monitor with the given ID.
-	// It uses the generic check endpoint and does not verify the check type.
+	// It does not verify the check type, so it deletes a check of any type.
 	DeleteTracerouteMonitor(
 		ctx context.Context,
 		ID string,
@@ -399,8 +399,8 @@ type Client interface {
 		monitor SSLMonitor,
 	) (*SSLMonitor, error)
 
-	// DeleteSSLMonitor deletes the SSL monitor with the given ID. It uses the
-	// generic check endpoint and does not verify the check type.
+	// DeleteSSLMonitor deletes the SSL monitor with the given ID. It does not
+	// verify the check type, so it deletes a check of any type.
 	DeleteSSLMonitor(
 		ctx context.Context,
 		ID string,
