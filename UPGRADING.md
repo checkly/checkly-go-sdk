@@ -367,8 +367,8 @@ sources (such as `AssertionSourceResponseCode` and `AssertionSourceGRPCStatusCod
 
 `GetCheckResults` moves to the v2 endpoint, which pages with a cursor. It returns a
 `*CheckResultsPage` instead of `[]CheckResult`, and `CheckResultsFilter.Page` is replaced by
-`CheckResultsFilter.NextID`. The number of results is `len(page.Entries)`. `GetCheckResult` is
-unchanged.
+`CheckResultsFilter.NextID`. The number of results is `len(page.Entries)`. The signature of
+`GetCheckResult` is unchanged.
 
 ```go
 // v1
@@ -488,6 +488,10 @@ drop a regex set elsewhere) and the maintenance window types `MaintenanceWindowC
 
 ## Decoding fixes
 
+- `CheckResult.ResponseTime` is a `float64` instead of an `int64`, in `GetCheckResult` and
+  `GetCheckResults`. ICMP and traceroute results report a fractional average latency, which failed to
+  decode in v1. Code using it as an `int64` needs a conversion, which truncates sub-millisecond values
+  to 0, and `%d` no longer formats it.
 - `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
   `MultiStepCheck` are now populated: they decode from the `created_at` and `updated_at` keys the API
   returns. If you marshal these structs yourself, their JSON keys change accordingly.

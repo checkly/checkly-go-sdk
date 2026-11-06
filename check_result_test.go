@@ -281,6 +281,39 @@ func TestGetCheckResultsWithFilters2(t *testing.T) {
 	}
 }
 
+// TestCheckResultFractionalResponseTime covers the sub-millisecond response
+// times of ICMP monitors, which both methods must decode without rounding.
+func TestCheckResultFractionalResponseTime(t *testing.T) {
+	t.Parallel()
+	const want = 0.817
+	result := fmt.Sprintf(`{"id":"res1","responseTime":%v}`, want)
+	t.Run("GetCheckResult", func(t *testing.T) {
+		t.Parallel()
+		client, _ := newRecordingServer(t, http.StatusOK, result)
+		got, err := client.GetCheckResult(context.Background(), wantCheckID, "res1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.ResponseTime != want {
+			t.Errorf("ResponseTime = %v, want %v", got.ResponseTime, want)
+		}
+	})
+	t.Run("GetCheckResults", func(t *testing.T) {
+		t.Parallel()
+		client, _ := newRecordingServer(t, http.StatusOK, `{"length":1,"entries":[`+result+`]}`)
+		got, err := client.GetCheckResults(context.Background(), wantCheckID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got.Entries) != 1 {
+			t.Fatalf("got %d entries, want 1", len(got.Entries))
+		}
+		if got.Entries[0].ResponseTime != want {
+			t.Errorf("ResponseTime = %v, want %v", got.Entries[0].ResponseTime, want)
+		}
+	})
+}
+
 // TestGetCheckResultsLastPage covers the responses that end the paging: the
 // API sends a null cursor, and may leave out either key.
 func TestGetCheckResultsLastPage(t *testing.T) {

@@ -32,8 +32,9 @@ type CheckResult struct {
 	// ResponseTime is the time in milliseconds the check spent producing its
 	// result: the measured operation, such as the request or the TLS
 	// handshake, for API checks and protocol monitors, and the whole run for
-	// browser, multi-step and Playwright checks.
-	ResponseTime       int64               `json:"responseTime"`
+	// browser, multi-step and Playwright checks. ICMP and traceroute monitors
+	// report their average latency, which has a fractional part.
+	ResponseTime       float64             `json:"responseTime"`
 	APICheckResult     *APICheckResult     `json:"apiCheckResult"`
 	BrowserCheckResult *BrowserCheckResult `json:"browserCheckResult"`
 	// TracerouteCheckResult, GRPCCheckResult and SSLCheckResult hold the
