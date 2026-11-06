@@ -48,7 +48,7 @@ type DNSRequest struct {
 
 type dnsMonitorPayload struct {
 	DNSMonitor
-	Type        string     `json:"checkType"`
+	Type        CheckType  `json:"checkType"`
 	DoubleCheck bool       `json:"doubleCheck"`
 	ShouldFail  bool       `json:"shouldFail"`
 	GroupID     *int64     `json:"groupId"`
@@ -70,7 +70,7 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	payload := dnsMonitorPayload{
 		DNSMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "DNS",
+		Type: CheckTypeDNS,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 		// Unfortunately, this will default to true if not set.
@@ -133,7 +133,7 @@ func (c *client) GetDNSMonitor(
 	ID string,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "DNS", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeDNS, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

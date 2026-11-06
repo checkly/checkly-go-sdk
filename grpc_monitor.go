@@ -82,7 +82,7 @@ type GRPCMetadata struct {
 
 type grpcMonitorPayload struct {
 	GRPCMonitor
-	Type        string             `json:"checkType"`
+	Type        CheckType          `json:"checkType"`
 	DoubleCheck bool               `json:"doubleCheck"`
 	Request     grpcRequestPayload `json:"request"`
 	GroupID     *int64             `json:"groupId"`
@@ -163,7 +163,7 @@ func createGRPCMonitorPayload(monitor GRPCMonitor) grpcMonitorPayload {
 	payload := grpcMonitorPayload{
 		GRPCMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "GRPC",
+		Type: CheckTypeGRPC,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 		Request: grpcRequestPayload{
@@ -225,7 +225,7 @@ func (c *client) GetGRPCMonitor(
 	ID string,
 ) (*GRPCMonitor, error) {
 	var result GRPCMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "GRPC", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeGRPC, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

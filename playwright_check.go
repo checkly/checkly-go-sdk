@@ -55,7 +55,7 @@ type PlaywrightCheck struct {
 
 type playwrightCheckPayload struct {
 	PlaywrightCheck
-	Type      string     `json:"checkType"`
+	Type      CheckType  `json:"checkType"`
 	ID        *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
@@ -65,7 +65,7 @@ func createPlaywrightCheckPayload(check PlaywrightCheck) playwrightCheckPayload 
 	return playwrightCheckPayload{
 		PlaywrightCheck: check,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "PLAYWRIGHT",
+		Type: CheckTypePlaywright,
 	}
 }
 
@@ -89,7 +89,7 @@ func (c *client) GetPlaywrightCheck(
 	ID string,
 ) (*PlaywrightCheck, error) {
 	var result PlaywrightCheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "PLAYWRIGHT", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypePlaywright, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

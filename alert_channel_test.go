@@ -21,7 +21,7 @@ var ignoreAlertChannelFields = cmpopts.IgnoreFields(checkly.AlertChannel{}, "ID"
 func getTestAlertChannelEmail() *checkly.AlertChannel {
 	return &checkly.AlertChannel{
 		ID:   1,
-		Type: checkly.AlertTypeEmail,
+		Type: checkly.AlertChannelTypeEmail,
 		Email: &checkly.AlertChannelEmail{
 			Address: "test@example.com",
 		},
@@ -31,7 +31,7 @@ func getTestAlertChannelEmail() *checkly.AlertChannel {
 func getTestAlertChannelSlack() checkly.AlertChannel {
 	ac := checkly.AlertChannel{
 		ID:   1,
-		Type: checkly.AlertTypeSlack,
+		Type: checkly.AlertChannelTypeSlack,
 		Slack: &checkly.AlertChannelSlack{
 			Channel:    "test",
 			WebhookURL: "https://slack.com/test",
@@ -44,15 +44,15 @@ func getTestAlertChannelSlack() checkly.AlertChannel {
 // channel of its type.
 func validateAlertChannel(t *testing.T, body []byte) {
 	var req struct {
-		Type   string          `json:"type"`
-		Config json.RawMessage `json:"config"`
+		Type   checkly.AlertChannelType `json:"type"`
+		Config json.RawMessage          `json:"config"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		t.Errorf("decoding error for data %q: %v", body, err)
 		return
 	}
 	switch req.Type {
-	case checkly.AlertTypeEmail:
+	case checkly.AlertChannelTypeEmail:
 		var got checkly.AlertChannelEmail
 		if err := json.Unmarshal(req.Config, &got); err != nil {
 			t.Errorf("decoding config %s: %v", req.Config, err)
@@ -61,7 +61,7 @@ func validateAlertChannel(t *testing.T, body []byte) {
 		if want := *getTestAlertChannelEmail().Email; got != want {
 			t.Errorf("want config %+v, got %+v", want, got)
 		}
-	case checkly.AlertTypeSlack:
+	case checkly.AlertChannelTypeSlack:
 		var got checkly.AlertChannelSlack
 		if err := json.Unmarshal(req.Config, &got); err != nil {
 			t.Errorf("decoding config %s: %v", req.Config, err)
@@ -198,32 +198,32 @@ func TestAlertChannelConfigEncoding(t *testing.T) {
 	}{
 		{
 			name: "email",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeEmail, Email: &checkly.AlertChannelEmail{Address: "foo@test.com"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeEmail, Email: &checkly.AlertChannelEmail{Address: "foo@test.com"}},
 			want: `{"address":"foo@test.com"}`,
 		},
 		{
 			name: "slack",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeSlack, Slack: &checkly.AlertChannelSlack{WebhookURL: "http://example.com/", Channel: "foochan"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeSlack, Slack: &checkly.AlertChannelSlack{WebhookURL: "http://example.com/", Channel: "foochan"}},
 			want: `{"url":"http://example.com/","channel":"foochan"}`,
 		},
 		{
 			name: "slack app",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeSlackApp, SlackApp: &checkly.AlertChannelSlackApp{SlackChannels: []string{"#ops", "@John"}}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeSlackApp, SlackApp: &checkly.AlertChannelSlackApp{SlackChannels: []string{"#ops", "@John"}}},
 			want: `{"slackChannels":["#ops","@John"]}`,
 		},
 		{
 			name: "sms",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeSMS, SMS: &checkly.AlertChannelSMS{Name: "foo", Number: "0123456789"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeSMS, SMS: &checkly.AlertChannelSMS{Name: "foo", Number: "0123456789"}},
 			want: `{"name":"foo","number":"0123456789"}`,
 		},
 		{
 			name: "call",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeCall, CALL: &checkly.AlertChannelCall{Name: "foo", Number: "0123456789"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeCall, CALL: &checkly.AlertChannelCall{Name: "foo", Number: "0123456789"}},
 			want: `{"name":"foo","number":"0123456789"}`,
 		},
 		{
 			name: "webhook",
-			ac: checkly.AlertChannel{Type: checkly.AlertTypeWebhook, Webhook: &checkly.AlertChannelWebhook{
+			ac: checkly.AlertChannel{Type: checkly.AlertChannelTypeWebhook, Webhook: &checkly.AlertChannelWebhook{
 				Name:            "foo",
 				Method:          "GET",
 				Template:        "bar",
@@ -238,17 +238,17 @@ func TestAlertChannelConfigEncoding(t *testing.T) {
 		},
 		{
 			name: "opsgenie",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeOpsgenie, Opsgenie: &checkly.AlertChannelOpsgenie{Name: "foo", APIKey: "bar", Region: "regio-1", Priority: "highp"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeOpsgenie, Opsgenie: &checkly.AlertChannelOpsgenie{Name: "foo", APIKey: "bar", Region: "regio-1", Priority: "highp"}},
 			want: `{"name":"foo","apiKey":"bar","region":"regio-1","priority":"highp"}`,
 		},
 		{
 			name: "pagerduty",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypePagerduty, Pagerduty: &checkly.AlertChannelPagerduty{Account: "foo", ServiceKey: "xxx", ServiceName: "bar"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypePagerduty, Pagerduty: &checkly.AlertChannelPagerduty{Account: "foo", ServiceKey: "xxx", ServiceName: "bar"}},
 			want: `{"account":"foo","serviceKey":"xxx","serviceName":"bar"}`,
 		},
 		{
 			name: "nil config",
-			ac:   checkly.AlertChannel{Type: checkly.AlertTypeEmail, SMS: &checkly.AlertChannelSMS{Name: "foo"}},
+			ac:   checkly.AlertChannel{Type: checkly.AlertChannelTypeEmail, SMS: &checkly.AlertChannelSMS{Name: "foo"}},
 			want: `null`,
 		},
 		{
@@ -290,7 +290,7 @@ func fixtureConfig(t *testing.T, name string) string {
 
 // getAlertChannel returns the alert channel GetAlertChannel decodes from a
 // response of type channelType with config, a JSON value.
-func getAlertChannel(t *testing.T, channelType, config string) (*checkly.AlertChannel, error) {
+func getAlertChannel(t *testing.T, channelType checkly.AlertChannelType, config string) (*checkly.AlertChannel, error) {
 	t.Helper()
 	body := fmt.Sprintf(`{"id":7,"type":%q,"config":%s}`, channelType, config)
 	c := newErrorServer(t, errorReply{status: http.StatusOK, body: body})
@@ -303,21 +303,21 @@ func getAlertChannel(t *testing.T, channelType, config string) (*checkly.AlertCh
 func TestAlertChannelConfigDecoding(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		channelType string
+		channelType checkly.AlertChannelType
 		config      string
 		want        checkly.AlertChannel
 	}{
-		{checkly.AlertTypeEmail, fixtureConfig(t, "CreateAlertChannelEmail.json"), checkly.AlertChannel{Email: &checkly.AlertChannelEmail{Address: "test@example.com"}}},
+		{checkly.AlertChannelTypeEmail, fixtureConfig(t, "CreateAlertChannelEmail.json"), checkly.AlertChannel{Email: &checkly.AlertChannelEmail{Address: "test@example.com"}}},
 		// The fixture's webhookUrl key is not the struct's url key, so only
 		// the channel decodes.
-		{checkly.AlertTypeSlack, fixtureConfig(t, "CreateAlertChannelSlack.json"), checkly.AlertChannel{Slack: &checkly.AlertChannelSlack{Channel: "test"}}},
-		{checkly.AlertTypeSlackApp, `{"slackChannels":["C123","C456"]}`, checkly.AlertChannel{SlackApp: &checkly.AlertChannelSlackApp{SlackChannels: []string{"C123", "C456"}}}},
-		{checkly.AlertTypeSMS, `{"name":"On call","number":"+15550100"}`, checkly.AlertChannel{SMS: &checkly.AlertChannelSMS{Name: "On call", Number: "+15550100"}}},
-		{checkly.AlertTypeCall, `{"name":"On call","number":"+15550100"}`, checkly.AlertChannel{CALL: &checkly.AlertChannelCall{Name: "On call", Number: "+15550100"}}},
-		{checkly.AlertTypeOpsgenie, `{"name":"Ops","apiKey":"fake-opsgenie-key","region":"EU","priority":"P3"}`, checkly.AlertChannel{Opsgenie: &checkly.AlertChannelOpsgenie{Name: "Ops", APIKey: "fake-opsgenie-key", Region: "EU", Priority: "P3"}}},
-		{checkly.AlertTypePagerduty, `{"account":"acme","serviceKey":"fake-service-key","serviceName":"API"}`, checkly.AlertChannel{Pagerduty: &checkly.AlertChannelPagerduty{Account: "acme", ServiceKey: "fake-service-key", ServiceName: "API"}}},
+		{checkly.AlertChannelTypeSlack, fixtureConfig(t, "CreateAlertChannelSlack.json"), checkly.AlertChannel{Slack: &checkly.AlertChannelSlack{Channel: "test"}}},
+		{checkly.AlertChannelTypeSlackApp, `{"slackChannels":["C123","C456"]}`, checkly.AlertChannel{SlackApp: &checkly.AlertChannelSlackApp{SlackChannels: []string{"C123", "C456"}}}},
+		{checkly.AlertChannelTypeSMS, `{"name":"On call","number":"+15550100"}`, checkly.AlertChannel{SMS: &checkly.AlertChannelSMS{Name: "On call", Number: "+15550100"}}},
+		{checkly.AlertChannelTypeCall, `{"name":"On call","number":"+15550100"}`, checkly.AlertChannel{CALL: &checkly.AlertChannelCall{Name: "On call", Number: "+15550100"}}},
+		{checkly.AlertChannelTypeOpsgenie, `{"name":"Ops","apiKey":"fake-opsgenie-key","region":"EU","priority":"P3"}`, checkly.AlertChannel{Opsgenie: &checkly.AlertChannelOpsgenie{Name: "Ops", APIKey: "fake-opsgenie-key", Region: "EU", Priority: "P3"}}},
+		{checkly.AlertChannelTypePagerduty, `{"account":"acme","serviceKey":"fake-service-key","serviceName":"API"}`, checkly.AlertChannel{Pagerduty: &checkly.AlertChannelPagerduty{Account: "acme", ServiceKey: "fake-service-key", ServiceName: "API"}}},
 		{
-			checkly.AlertTypeWebhook,
+			checkly.AlertChannelTypeWebhook,
 			`{"name":"Hook","url":"https://example.com/hook","webhookType":"WEBHOOK_GENERIC","method":"POST","template":"{}","webhookSecret":"fake-secret","headers":[{"key":"X-Env","value":"prod","locked":false}],"queryParameters":[]}`,
 			checkly.AlertChannel{Webhook: &checkly.AlertChannelWebhook{
 				Name:            "Hook",
@@ -333,7 +333,7 @@ func TestAlertChannelConfigDecoding(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.channelType, func(t *testing.T) {
+		t.Run(string(tt.channelType), func(t *testing.T) {
 			t.Parallel()
 			tt.want.ID = 7
 			tt.want.Type = tt.channelType
@@ -374,7 +374,7 @@ func TestAlertChannelConfigDecodingErrors(t *testing.T) {
 			`42`:                      "number",
 			`true`:                    "bool",
 		} {
-			_, err := getAlertChannel(t, checkly.AlertTypeWebhook, raw)
+			_, err := getAlertChannel(t, checkly.AlertChannelTypeWebhook, raw)
 			want := "GET /v1/alert-channels/7: decoding 200 response: config: decoding WEBHOOK alert channel config: got a JSON " + kind + ", want an object"
 			if err == nil || err.Error() != want {
 				t.Errorf("%s: want %q, got %v", raw, want, err)
@@ -385,7 +385,7 @@ func TestAlertChannelConfigDecodingErrors(t *testing.T) {
 	// config the API changed stays readable.
 	t.Run("type mismatch tolerated", func(t *testing.T) {
 		t.Parallel()
-		got, err := getAlertChannel(t, checkly.AlertTypeSMS, `{"name":"On call","number":15550100}`)
+		got, err := getAlertChannel(t, checkly.AlertChannelTypeSMS, `{"name":"On call","number":15550100}`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -395,7 +395,7 @@ func TestAlertChannelConfigDecodingErrors(t *testing.T) {
 	})
 	t.Run("nested type mismatch tolerated", func(t *testing.T) {
 		t.Parallel()
-		got, err := getAlertChannel(t, checkly.AlertTypeWebhook, `{"name":"Hook","headers":[{"key":"X-Env","value":7}]}`)
+		got, err := getAlertChannel(t, checkly.AlertChannelTypeWebhook, `{"name":"Hook","headers":[{"key":"X-Env","value":7}]}`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -477,7 +477,7 @@ func TestAlertChannelDecoding(t *testing.T) {
 		want []string
 	}{
 		{"wrong bool", `{"type":"EMAIL","sslExpiry":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.sslExpiry of type bool`}},
-		{"wrong type", `{"type":42}`, []string{`cannot unmarshal number into Go struct field alertChannelResponse.`, `.type of type string`}},
+		{"wrong type", `{"type":42}`, []string{`cannot unmarshal number into Go struct field alertChannelResponse.`, `.type of type checkly.AlertChannelType`}},
 		{"wrong id", `{"id":"SECRET-VALUE-MARKER"}`, []string{`cannot unmarshal string into Go struct field alertChannelResponse.`, `.id of type int64`}},
 		{"fractional id", `{"id":1.5}`, []string{`cannot unmarshal number 1.5 into Go struct field alertChannelResponse.`, `.id of type int64`}},
 		{"wrong threshold", `{"sslExpiryThreshold":true}`, []string{`cannot unmarshal bool into Go struct field alertChannelResponse.`, `.sslExpiryThreshold of type int`}},
@@ -517,7 +517,7 @@ func TestAlertChannelAutoSubscribe(t *testing.T) {
 	c, lastBody := newRecordingServer(t, http.StatusOK, `{"id":7,"type":"EMAIL","autoSubscribe":true,"config":{"address":"a@example.com"}}`)
 	on := true
 	ac, err := c.UpdateAlertChannel(context.Background(), 7, checkly.AlertChannel{
-		Type:          checkly.AlertTypeEmail,
+		Type:          checkly.AlertChannelTypeEmail,
 		Email:         &checkly.AlertChannelEmail{Address: "a@example.com"},
 		AutoSubscribe: &on,
 	})
@@ -530,7 +530,7 @@ func TestAlertChannelAutoSubscribe(t *testing.T) {
 	}
 
 	// The API rejects null, so nil is left out.
-	if _, err := c.CreateAlertChannel(context.Background(), checkly.AlertChannel{Type: checkly.AlertTypeEmail}); err != nil {
+	if _, err := c.CreateAlertChannel(context.Background(), checkly.AlertChannel{Type: checkly.AlertChannelTypeEmail}); err != nil {
 		t.Fatal(err)
 	}
 	assertRawBodyKeyAbsent(t, lastBody(), "autoSubscribe")

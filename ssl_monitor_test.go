@@ -37,7 +37,7 @@ var testSSLMonitor = checkly.SSLMonitor{
 		"tag-1",
 	},
 	AlertSettings: &checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
@@ -67,27 +67,27 @@ var testSSLMonitor = checkly.SSLMonitor{
 		},
 		Assertions: []checkly.Assertion{
 			{
-				Source:     checkly.Certificate,
+				Source:     checkly.AssertionSourceCertificate,
 				Property:   "daysUntilExpiry",
-				Comparison: checkly.GreaterThan,
+				Comparison: checkly.AssertionComparisonGreaterThan,
 				Target:     "14",
 			},
 			{
-				Source:     checkly.Connection,
+				Source:     checkly.AssertionSourceConnection,
 				Property:   "tlsVersion",
-				Comparison: checkly.Equals,
+				Comparison: checkly.AssertionComparisonEquals,
 				Target:     "TLSv1.3",
 			},
 			{
-				Source:     checkly.JSONResponse,
+				Source:     checkly.AssertionSourceJSONResponse,
 				Property:   "$.certificate.keySizeBits",
-				Comparison: checkly.GreaterThan,
+				Comparison: checkly.AssertionComparisonGreaterThan,
 				Target:     "2048",
 			},
 			{
-				Source:     checkly.TextResponse,
+				Source:     checkly.AssertionSourceTextResponse,
 				Property:   "Issuer:.*Let's Encrypt",
-				Comparison: checkly.Contains,
+				Comparison: checkly.AssertionComparisonContains,
 				Target:     "true",
 			},
 		},

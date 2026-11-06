@@ -47,7 +47,7 @@ type ICMPRequest struct {
 
 type icmpMonitorPayload struct {
 	ICMPMonitor
-	Type        string     `json:"checkType"`
+	Type        CheckType  `json:"checkType"`
 	DoubleCheck bool       `json:"doubleCheck"`
 	ShouldFail  bool       `json:"shouldFail"`
 	GroupID     *int64     `json:"groupId"`
@@ -69,7 +69,7 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 	payload := icmpMonitorPayload{
 		ICMPMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "ICMP",
+		Type: CheckTypeICMP,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 		// Unfortunately, this will default to true if not set.
@@ -134,7 +134,7 @@ func (c *client) GetICMPMonitor(
 	ID string,
 ) (*ICMPMonitor, error) {
 	var result ICMPMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "ICMP", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeICMP, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

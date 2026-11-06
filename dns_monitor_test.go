@@ -36,7 +36,7 @@ var testDNSMonitor = checkly.DNSMonitor{
 		"tag-1",
 	},
 	AlertSettings: &checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},

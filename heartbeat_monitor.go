@@ -73,7 +73,7 @@ func (c *client) GetHeartbeatMonitor(
 	ID string,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "HEARTBEAT", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeHeartbeat, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

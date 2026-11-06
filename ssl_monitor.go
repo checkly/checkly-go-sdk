@@ -110,9 +110,9 @@ type SSLBaselineSeverityRule struct {
 
 type sslMonitorPayload struct {
 	SSLMonitor
-	Type        string `json:"checkType"`
-	DoubleCheck bool   `json:"doubleCheck"`
-	GroupID     *int64 `json:"groupId"`
+	Type        CheckType `json:"checkType"`
+	DoubleCheck bool      `json:"doubleCheck"`
+	GroupID     *int64    `json:"groupId"`
 	// The update endpoint keeps the stored value of an omitted key. The
 	// fields below shadow embedded fields whose zero value would be omitted,
 	// so that an update resets them: lists are sent empty, and the group
@@ -134,7 +134,7 @@ func createSSLMonitorPayload(monitor SSLMonitor) sslMonitorPayload {
 	payload := sslMonitorPayload{
 		SSLMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "SSL",
+		Type: CheckTypeSSL,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck:               false,
 		Tags:                      emptyIfNil(monitor.Tags),
@@ -184,7 +184,7 @@ func (c *client) GetSSLMonitor(
 	ID string,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "SSL", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeSSL, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

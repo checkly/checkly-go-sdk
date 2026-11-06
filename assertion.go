@@ -1,84 +1,97 @@
 package checkly
 
-// Assertion source constants
+// AssertionSource is the value an [Assertion] checks, in Assertion.Source.
+// The sources a check type accepts:
+//
+//   - API checks and the API check defaults of groups: STATUS_CODE,
+//     JSON_BODY, HEADERS, TEXT_BODY, RESPONSE_TIME.
+//   - URL monitors: STATUS_CODE.
+//   - TCP monitors: RESPONSE_DATA, RESPONSE_TIME.
+//   - DNS monitors: RESPONSE_TIME, RESPONSE_CODE, TEXT_ANSWER, JSON_ANSWER.
+//   - ICMP monitors: LATENCY, JSON_RESPONSE.
+//   - Traceroute monitors: RESPONSE_TIME, HOP_COUNT, PACKET_LOSS.
+//   - gRPC monitors: RESPONSE_TIME, GRPC_STATUS_CODE,
+//     GRPC_HEALTHCHECK_STATUS, GRPC_RESPONSE, TEXT_BODY, GRPC_METADATA.
+//   - SSL monitors: CERTIFICATE, CONNECTION, RESPONSE_TIME, JSON_RESPONSE,
+//     TEXT_RESPONSE.
+//
+// Browser and multistep checks, Playwright check suites and heartbeat
+// monitors take no assertions.
+type AssertionSource string
 
-// StatusCode identifies the HTTP status code as an assertion source.
-const StatusCode = "STATUS_CODE"
+// Assertion sources, the values of [Assertion].Source.
+const (
+	AssertionSourceStatusCode   AssertionSource = "STATUS_CODE"
+	AssertionSourceJSONBody     AssertionSource = "JSON_BODY"
+	AssertionSourceTextBody     AssertionSource = "TEXT_BODY"
+	AssertionSourceHeaders      AssertionSource = "HEADERS"
+	AssertionSourceResponseTime AssertionSource = "RESPONSE_TIME"
+	AssertionSourceResponseData AssertionSource = "RESPONSE_DATA"
+	// AssertionSourceCertificate is a certificate field of an SSL monitor,
+	// named by the assertion's Property.
+	AssertionSourceCertificate AssertionSource = "CERTIFICATE"
+	// AssertionSourceConnection is a connection field of an SSL monitor, such
+	// as tlsVersion, named by the assertion's Property.
+	AssertionSourceConnection            AssertionSource = "CONNECTION"
+	AssertionSourceJSONResponse          AssertionSource = "JSON_RESPONSE"
+	AssertionSourceTextResponse          AssertionSource = "TEXT_RESPONSE"
+	AssertionSourceResponseCode          AssertionSource = "RESPONSE_CODE"
+	AssertionSourceTextAnswer            AssertionSource = "TEXT_ANSWER"
+	AssertionSourceJSONAnswer            AssertionSource = "JSON_ANSWER"
+	AssertionSourceLatency               AssertionSource = "LATENCY"
+	AssertionSourceHopCount              AssertionSource = "HOP_COUNT"
+	AssertionSourcePacketLoss            AssertionSource = "PACKET_LOSS"
+	AssertionSourceGRPCResponse          AssertionSource = "GRPC_RESPONSE"
+	AssertionSourceGRPCMetadata          AssertionSource = "GRPC_METADATA"
+	AssertionSourceGRPCHealthcheckStatus AssertionSource = "GRPC_HEALTHCHECK_STATUS"
+	AssertionSourceGRPCStatusCode        AssertionSource = "GRPC_STATUS_CODE"
+)
 
-// JSONBody identifies the JSON body data as an assertion source.
-const JSONBody = "JSON_BODY"
+// AssertionComparison is how an [Assertion] compares its source with its
+// target, in Assertion.Comparison. Below, "numeric" means EQUALS, NOT_EQUALS,
+// GREATER_THAN and LESS_THAN, and "text" means those plus IS_EMPTY,
+// NOT_EMPTY, CONTAINS and NOT_CONTAINS. The comparisons a check type accepts:
+//
+//   - API checks, the API check defaults of groups, and DNS monitors: all.
+//   - URL monitors: numeric.
+//   - TCP monitors: text for RESPONSE_DATA, numeric for RESPONSE_TIME.
+//   - ICMP monitors: numeric for LATENCY; text, IS_NULL and NOT_NULL for
+//     JSON_RESPONSE.
+//   - Traceroute monitors: numeric for RESPONSE_TIME; EQUALS, GREATER_THAN
+//     and LESS_THAN for HOP_COUNT and PACKET_LOSS.
+//   - gRPC monitors: numeric for RESPONSE_TIME and GRPC_STATUS_CODE; EQUALS
+//     and NOT_EQUALS for GRPC_HEALTHCHECK_STATUS; all for GRPC_RESPONSE,
+//     TEXT_BODY and GRPC_METADATA.
+//   - SSL monitors: numeric for RESPONSE_TIME; text for TEXT_RESPONSE; text,
+//     IS_NULL and NOT_NULL for JSON_RESPONSE; for CERTIFICATE and CONNECTION,
+//     a set that depends on the Property.
+type AssertionComparison string
 
-// TextBody identifies the response body text as an assertion source.
-const TextBody = "TEXT_BODY"
-
-// Headers identifies the HTTP headers as an assertion source.
-const Headers = "HEADERS"
-
-// ResponseTime identifies the response time as an assertion source.
-const ResponseTime = "RESPONSE_TIME"
-
-// ResponseData identifies the response data of a TCP check as an assertion source.
-const ResponseData = "RESPONSE_DATA"
-
-// Certificate identifies a certificate field selector (via the assertion
-// property) as an assertion source, for use with an SSL monitor.
-const Certificate = "CERTIFICATE"
-
-// Connection identifies a connection/handshake field selector (via the
-// assertion property) as an assertion source, for use with an SSL monitor.
-const Connection = "CONNECTION"
-
-// JSONResponse identifies a JSONPath over the response (via the assertion
-// property) as an assertion source, for use with SSL, ICMP and DNS monitors.
-const JSONResponse = "JSON_RESPONSE"
-
-// TextResponse identifies a regex applied to the serialized response (via the
-// assertion property) as an assertion source, for use with an SSL monitor.
-const TextResponse = "TEXT_RESPONSE"
-
-// Assertion comparison constants
-
-// Equals asserts that the source and target are equal.
-const Equals = "EQUALS"
-
-// NotEquals asserts that the source and target are not equal.
-const NotEquals = "NOT_EQUALS"
-
-// IsEmpty asserts that the source is empty.
-const IsEmpty = "IS_EMPTY"
-
-// NotEmpty asserts that the source is not empty.
-const NotEmpty = "NOT_EMPTY"
-
-// GreaterThan asserts that the source is greater than the target.
-const GreaterThan = "GREATER_THAN"
-
-// LessThan asserts that the source is less than the target.
-const LessThan = "LESS_THAN"
-
-// Contains asserts that the source contains a specified value.
-const Contains = "CONTAINS"
-
-// NotContains asserts that the source does not contain a specified value.
-const NotContains = "NOT_CONTAINS"
-
-// IsNull asserts that the source is null.
-const IsNull = "IS_NULL"
-
-// NotNull asserts that the source is not null.
-const NotNull = "NOT_NULL"
+// Assertion comparisons, the values of [Assertion].Comparison.
+const (
+	AssertionComparisonEquals      AssertionComparison = "EQUALS"
+	AssertionComparisonNotEquals   AssertionComparison = "NOT_EQUALS"
+	AssertionComparisonHasKey      AssertionComparison = "HAS_KEY"
+	AssertionComparisonNotHasKey   AssertionComparison = "NOT_HAS_KEY"
+	AssertionComparisonHasValue    AssertionComparison = "HAS_VALUE"
+	AssertionComparisonNotHasValue AssertionComparison = "NOT_HAS_VALUE"
+	AssertionComparisonIsEmpty     AssertionComparison = "IS_EMPTY"
+	AssertionComparisonNotEmpty    AssertionComparison = "NOT_EMPTY"
+	AssertionComparisonGreaterThan AssertionComparison = "GREATER_THAN"
+	AssertionComparisonLessThan    AssertionComparison = "LESS_THAN"
+	AssertionComparisonContains    AssertionComparison = "CONTAINS"
+	AssertionComparisonNotContains AssertionComparison = "NOT_CONTAINS"
+	AssertionComparisonIsNull      AssertionComparison = "IS_NULL"
+	AssertionComparisonNotNull     AssertionComparison = "NOT_NULL"
+)
 
 // Assertion represents an assertion about an API response, which will be
 // verified as part of the check.
 type Assertion struct {
-	Edit          bool   `json:"edit"`
-	Order         int    `json:"order"`
-	ArrayIndex    int    `json:"arrayIndex"`
-	ArraySelector int    `json:"arraySelector"`
-	Source        string `json:"source"`
-	Property      string `json:"property"`
-	Comparison    string `json:"comparison"`
-	Target        string `json:"target"`
+	Source     AssertionSource     `json:"source"`
+	Property   string              `json:"property"`
+	Comparison AssertionComparison `json:"comparison"`
+	Target     string              `json:"target"`
 	// Regex, when set on a HEADERS assertion, is matched against the header
 	// value, and the assertion compares the first capture group instead of
 	// the whole value; a value it does not match compares as empty. Empty

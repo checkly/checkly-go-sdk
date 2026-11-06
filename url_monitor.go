@@ -57,10 +57,10 @@ func (r *URLRequest) toRequest() Request {
 
 type urlMonitorPayload struct {
 	URLMonitor
-	Type        string  `json:"checkType"`
-	Request     Request `json:"request"`
-	DoubleCheck bool    `json:"doubleCheck"`
-	GroupID     *int64  `json:"groupId"`
+	Type        CheckType `json:"checkType"`
+	Request     Request   `json:"request"`
+	DoubleCheck bool      `json:"doubleCheck"`
+	GroupID     *int64    `json:"groupId"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
 	// zero value would be omitted so that they are always sent and can
@@ -76,7 +76,7 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 	payload := urlMonitorPayload{
 		URLMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type:    "URL",
+		Type:    CheckTypeURL,
 		Request: monitor.Request.toRequest(),
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
@@ -135,7 +135,7 @@ func (c *client) GetURLMonitor(
 	ID string,
 ) (*URLMonitor, error) {
 	var result URLMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "URL", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeURL, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

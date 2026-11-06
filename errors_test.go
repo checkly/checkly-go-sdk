@@ -31,7 +31,7 @@ func TestAPIError(t *testing.T) {
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
 	_, err := client.CreateCheck(context.Background(), checkly.Check{
-		Type: checkly.TypeAPI,
+		Type: checkly.CheckTypeAPI,
 	})
 	if err == nil {
 		t.Error("want error when API returns 'bad request' status, got nil")
@@ -388,7 +388,7 @@ func TestErrorOmitsSecrets(t *testing.T) {
 	}{
 		{"POST /v1/checks/api", func(ctx context.Context, c checkly.Client) error {
 			_, err := c.CreateCheck(ctx, checkly.Check{
-				Type:                 checkly.TypeAPI,
+				Type:                 checkly.CheckTypeAPI,
 				Name:                 payload,
 				EnvironmentVariables: []checkly.EnvironmentVariable{{Key: "TOKEN", Value: payload}},
 			})
@@ -396,7 +396,7 @@ func TestErrorOmitsSecrets(t *testing.T) {
 		}},
 		{"POST /v1/alert-channels", func(ctx context.Context, c checkly.Client) error {
 			_, err := c.CreateAlertChannel(ctx, checkly.AlertChannel{
-				Type:    checkly.AlertTypeWebhook,
+				Type:    checkly.AlertChannelTypeWebhook,
 				Webhook: &checkly.AlertChannelWebhook{Name: "hook", URL: "https://example.com", WebhookSecret: payload},
 			})
 			return err

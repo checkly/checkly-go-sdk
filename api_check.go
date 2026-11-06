@@ -108,7 +108,7 @@ type KeyValue struct {
 
 type apiCheckPayload struct {
 	APICheck
-	Type string `json:"checkType"`
+	Type CheckType `json:"checkType"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
 	// Go type cannot express the value that clears them.
@@ -122,7 +122,7 @@ func createAPICheckPayload(check APICheck) apiCheckPayload {
 	payload := apiCheckPayload{
 		APICheck: check,
 		// The endpoint defaults `checkType` correctly, but be explicit anyway.
-		Type: "API",
+		Type: CheckTypeAPI,
 		// Unfortunately, this will default to true if not set. Always sending
 		// false also clears the deprecated doubleCheck flag on updates of
 		// checks that still have it set; retryStrategy is its replacement.
@@ -164,7 +164,7 @@ func (c *client) GetAPICheck(
 	ID string,
 ) (*APICheck, error) {
 	var result APICheck
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "API", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeAPI, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

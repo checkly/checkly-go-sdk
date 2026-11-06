@@ -83,7 +83,7 @@ var statusCases = map[string]statusCase{
 		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
 		accept:   statusCreated,
 		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateCheck(ctx, checkly.Check{Type: checkly.TypeAPI}))
+			return ignoreResult(c.CreateCheck(ctx, checkly.Check{Type: checkly.CheckTypeAPI}))
 		},
 	},
 	"CreateHeartbeatMonitor": {
@@ -174,7 +174,7 @@ var statusCases = map[string]statusCase{
 		requests: []string{"PUT /v1/checks/id1?autoAssignAlerts=false"},
 		accept:   statusOK,
 		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.UpdateCheck(ctx, testID, checkly.Check{Type: checkly.TypeAPI}))
+			return ignoreResult(c.UpdateCheck(ctx, testID, checkly.Check{Type: checkly.CheckTypeAPI}))
 		},
 	},
 	"UpdateHeartbeatMonitor": {
@@ -384,7 +384,7 @@ var statusCases = map[string]statusCase{
 				Location:    "eu-west-1",
 				From:        1700000000,
 				To:          1700003600,
-				CheckType:   checkly.TypeAPI,
+				CheckType:   checkly.CheckTypeAPI,
 				HasFailures: true,
 			}))
 		},

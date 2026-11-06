@@ -38,7 +38,7 @@ var testURLMonitor = checkly.URLMonitor{
 	// empty list when unset, so that they can be cleared via an update.
 	AlertChannelSubscriptions: []checkly.AlertChannelSubscription{},
 	AlertSettings: &checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},

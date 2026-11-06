@@ -75,8 +75,8 @@ check, err := client.CreateAPICheck(ctx, checkly.APICheck{
 			{Key: "Accept", Value: "application/json"},
 		},
 		Assertions: []checkly.Assertion{
-			{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
-			{Source: checkly.ResponseTime, Comparison: checkly.LessThan, Target: "2000"},
+			{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
+			{Source: checkly.AssertionSourceResponseTime, Comparison: checkly.AssertionComparisonLessThan, Target: "2000"},
 		},
 	},
 })
@@ -106,7 +106,7 @@ monitor, err := client.CreateURLMonitor(ctx, checkly.URLMonitor{
 		URL:             "https://example.com/",
 		FollowRedirects: true,
 		Assertions: []checkly.Assertion{
-			{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+			{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
 		},
 	},
 })

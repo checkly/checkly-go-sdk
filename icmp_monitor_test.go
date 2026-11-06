@@ -38,7 +38,7 @@ var testICMPMonitor = checkly.ICMPMonitor{
 	DegradedPacketLossThreshold: 5,
 	MaxPacketLossThreshold:      50,
 	AlertSettings: &checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
