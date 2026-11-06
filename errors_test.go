@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 )
 
 func TestAPIError(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/checkly/checkly-go-sdk
+module github.com/checkly/checkly-go-sdk/v2
 
 go 1.26.0
 

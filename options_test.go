@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 )
 
 func TestNewClientDefaults(t *testing.T) {

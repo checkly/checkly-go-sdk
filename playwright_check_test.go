@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 )
 
 // The API rejects an empty browsers list, and its create and update schemas

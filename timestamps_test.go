@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 )
 
 // TestTimestampsDecode verifies that the getters of the resources whose

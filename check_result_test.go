@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 	"github.com/google/go-cmp/cmp"
 )
 

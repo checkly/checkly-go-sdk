@@ -5,7 +5,7 @@ types and methods for API, browser and multi-step checks, removes APIs that were
 longer backed by the public API, and changes what some create and update requests send. This guide
 lists every change from v1.27.0 that can affect your code, most disruptive first.
 
-With v2.0.0 the module path becomes `github.com/checkly/checkly-go-sdk/v2`:
+The module path is now `github.com/checkly/checkly-go-sdk/v2`:
 
 ```sh
 go get github.com/checkly/checkly-go-sdk/v2@v2.0.0

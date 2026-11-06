@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk"
+	checkly "github.com/checkly/checkly-go-sdk/v2"
 )
 
 // TestEnumWireValues pins every enum constant to the string the API uses, so

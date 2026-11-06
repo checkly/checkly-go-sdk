@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/checkly/checkly-go-sdk"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // NewClient with WithAuthFromEnv reads the API key and account ID from the
