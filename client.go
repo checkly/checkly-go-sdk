@@ -406,54 +406,26 @@ type Client interface {
 		ID string,
 	) error
 
-	// CreateGroup creates a check group and returns it with its ID.
-	CreateGroup(
-		ctx context.Context,
-		group Group,
-	) (*Group, error)
-
-	// GetGroup returns the check group with the given ID.
-	GetGroup(
-		ctx context.Context,
-		ID int64,
-	) (*Group, error)
-
-	// UpdateGroup updates the check group with the given ID and returns it.
-	UpdateGroup(
-		ctx context.Context,
-		ID int64,
-		group Group,
-	) (*Group, error)
-
-	// DeleteGroup deletes the check group with the given ID.
-	DeleteGroup(
-		ctx context.Context,
-		ID int64,
-	) error
-
-	// CreateGroupV2 creates a check group through the v2 check group endpoint
-	// and returns it with its ID.
+	// CreateGroupV2 creates a check group and returns it with its ID.
 	CreateGroupV2(
 		ctx context.Context,
 		group GroupV2,
 	) (*GroupV2, error)
 
-	// GetGroupV2 returns the check group with the given ID as a [GroupV2].
+	// GetGroupV2 returns the check group with the given ID.
 	GetGroupV2(
 		ctx context.Context,
 		ID int64,
 	) (*GroupV2, error)
 
-	// UpdateGroupV2 updates the check group with the given ID through the v2
-	// check group endpoint and returns it.
+	// UpdateGroupV2 updates the check group with the given ID and returns it.
 	UpdateGroupV2(
 		ctx context.Context,
 		ID int64,
 		group GroupV2,
 	) (*GroupV2, error)
 
-	// DeleteGroupV2 deletes the check group with the given ID, like
-	// DeleteGroup.
+	// DeleteGroupV2 deletes the check group with the given ID.
 	DeleteGroupV2(
 		ctx context.Context,
 		ID int64,

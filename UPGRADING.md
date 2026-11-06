@@ -261,6 +261,85 @@ default:
 }
 ```
 
+## Check groups
+
+`Group`, `CreateGroup`, `GetGroup`, `UpdateGroup` and `DeleteGroup` are removed, because the API
+deprecated the v1 create and update endpoints they used. Use `GroupV2`, `CreateGroupV2`, `GetGroupV2`,
+`UpdateGroupV2` and `DeleteGroupV2`.
+
+- **If you already use `GroupV2`,** the type and its methods keep their names and field types, and
+  the rest of this section doesn't apply. Changes elsewhere in this guide still reach it, such as
+  [renamed constants](#renamed-identifiers-and-changed-types) in its alert settings and assertions.
+  `Tags` and `AlertChannelSubscriptions` are now sent as `[]` when nil, and
+  [the timestamp JSON keys change](#decoding-fixes).
+- **If you use `Group`,** move to `GroupV2`, which behaves differently, as this section describes.
+  It is `Group` without `DoubleCheck`, with the fields in
+  [the table below](#renamed-identifiers-and-changed-types) changed to pointers.
+
+```go
+// v1
+group, err := client.CreateGroup(ctx, checkly.Group{
+	Name:             "API checks",
+	Concurrency:      3,
+	Locations:        []string{"us-east-1"},
+	RunParallel:      true,
+	DoubleCheck:      true,
+	AlertSettings:    settings,
+	LocalSetupScript: "setup()",
+})
+```
+
+```go
+// v2
+group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
+	Name:                   "API checks",
+	Concurrency:            3,
+	Locations:              []string{"us-east-1"},
+	RunParallel:            new(true),
+	RetryStrategy:          &checkly.RetryStrategy{Type: checkly.RetryStrategyTypeSingleRetry},
+	UseGlobalAlertSettings: new(false),
+	AlertSettings:          &settings,
+	LocalSetupScript:       new("setup()"),
+})
+```
+
+**A group that leaves these settings unset behaves differently.** A `Group` literal that never set
+`RunParallel`, `UseGlobalAlertSettings` or `AlertSettings` needs only the rename to compile as a
+`GroupV2`, but then sends `null` for each, so each check keeps its own setting. `Group` sent `false`
+for the first two and, on update, an empty `AlertSettings`, which replaced the settings of every
+check in the group.
+To keep overriding the checks, set the fields explicitly: a non-nil value replaces the setting of
+every check in the group. `AlertSettings` must be complete: the API answers
+`&checkly.AlertSettings{}` with a 400, on create and update, so set at least the threshold of its
+escalation type, such as `RunBasedEscalation.FailedRunThreshold`.
+
+**A group that sets `AlertSettings` needs `UseGlobalAlertSettings` too.** `Group` sent `false`
+implicitly, which took every check in the group off the account's alert settings. With
+`AlertSettings` alone, the key is `null`, so a check that uses global alert settings keeps them and ignores the group's. To
+override those checks as well, set `UseGlobalAlertSettings` to `new(false)`, as in the example above.
+
+**Group alert channels need one of these settings.** The API applies a group's
+`AlertChannelSubscriptions` only when `UseGlobalAlertSettings` is non-nil or `AlertSettings` is set.
+With both nil, each check uses its own subscriptions, so a group that only has channels of its own
+silently stops alerting them. If your group has alert channels, set `UseGlobalAlertSettings`:
+`new(false)` with `AlertSettings`, or `new(true)` to use the account's alert settings.
+
+With `GroupV2`, creating a group without locations succeeds, and each check then keeps its own
+locations. `Group` answered a 400.
+
+**Snippet IDs and local scripts are sent as given.** In `Group`, `0` and `""` meant none. A pointer
+to `0` or `""` is sent literally, so leave `SetupSnippetID`, `TearDownSnippetID`, `LocalSetupScript` and
+`LocalTearDownScript` nil for none.
+
+**A nil `RetryStrategy` still means no retries.** The API's default of `FALLBACK` applies only to
+a request that leaves the key out, and the SDK always sends it: nil is sent as `null`, and the group
+reads back with no retry strategy, so its checks don't retry. To let each check use its own retry
+strategy, set `&checkly.RetryStrategy{Type: checkly.RetryStrategyTypeFallback}`.
+
+**`DoubleCheck` is gone.** Replace `DoubleCheck: true` with
+`&checkly.RetryStrategy{Type: checkly.RetryStrategyTypeSingleRetry}`, leaving the other fields zero,
+which every plan can use. Other retry strategies need the retry feature on the account's plan.
+
 ## Removed APIs
 
 | Removed | Use instead |
@@ -274,6 +353,8 @@ default:
 | `AlertChannel.GetConfig`, `AlertChannel.SetConfig`, `AlertChannelConfigFromJSON` | The config field that matches `Type`, such as `Email` for `AlertChannelTypeEmail` |
 | `CreateCheck`, `UpdateCheck` | The per-type methods, such as `CreateAPICheck` and `UpdateAPICheck` |
 | `Check.DoubleCheck` | `RetryStrategy` |
+| `Group`, `CreateGroup`, `GetGroup`, `UpdateGroup`, `DeleteGroup` | `GroupV2`, `CreateGroupV2`, `GetGroupV2`, `UpdateGroupV2`, `DeleteGroupV2`. See [Check groups](#check-groups) |
+| `Group.DoubleCheck` | `RetryStrategy`. See [Check groups](#check-groups) |
 | `Check.SSLCheck`, `AlertSettings.SSLCertificates`, type `SSLCertificates` | Nothing: the public API no longer has them |
 | `Assertion.Edit`, `Assertion.Order`, `Assertion.ArrayIndex`, `Assertion.ArraySelector` | Nothing: the API discarded them, and requests no longer send them |
 
@@ -325,6 +406,11 @@ Constants for a fixed set of API values are typed, and named after their type, l
 |---|---|---|
 | `Dashboard.Paginate` | `bool` | `*bool`; nil gets the API default, `true` |
 | `MultiStepCheck.AlertSettings` | `AlertSettings` | `*AlertSettings` |
+| `Group.RunParallel` | `bool` | `*bool` on `GroupV2`; nil leaves each check its own setting |
+| `Group.UseGlobalAlertSettings` | `bool` | `*bool` on `GroupV2`; nil leaves each check its own setting |
+| `Group.AlertSettings` | `AlertSettings` | `*AlertSettings` on `GroupV2`; nil leaves each check its own |
+| `Group.SetupSnippetID`, `Group.TearDownSnippetID` | `int64` | `*int64` on `GroupV2`; nil means none |
+| `Group.LocalSetupScript`, `Group.LocalTearDownScript` | `string` | `*string` on `GroupV2`; nil means none |
 | `Assertion.Source` | `string` | `AssertionSource` |
 | `Assertion.Comparison` | `string` | `AssertionComparison` |
 | `AlertSettings.EscalationType` | `string` | `EscalationType` |
@@ -449,9 +535,9 @@ Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
   max hops, max unknown hops and timeout as `null` when zero.
 - **SSL monitors:** the request assertions as `[]`, and `SSLClientCertificateID` and
   `SSLConfig.ServerName` as `null` when nil.
-- **Check groups (`Group`):** `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and
-  `localTearDownScript` as `null`; `tags` and `alertChannelSubscriptions` as `[]` (also on
-  `GroupV2`).
+- **Check groups:** `tags` and `alertChannelSubscriptions` as `[]`. Code moving from `Group` to
+  `GroupV2` also sends `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and
+  `localTearDownScript` as `null`.
 - **`Request` (API checks, URL monitors):** `BasicAuth` as `null` when nil, so removing
   credentials clears them.
 - **`AlertSettings`:** `reminders.amount` and `parallelRunFailureThreshold.enabled`, on create too.
@@ -481,8 +567,8 @@ Fields now left out so the API default applies:
 
 Lists that the API rejected as `null` are now sent as `[]`, so leaving them unset no longer fails
 with a 400: `Request.Headers`, `Request.QueryParameters` and `Request.Assertions`,
-`URLRequest.Assertions`, `DNSRequest.Assertions`, `ICMPRequest.Assertions`, `Group.Tags`,
-`GroupV2.Tags`, `StatusPage.Cards` and `StatusPageCard.Services`.
+`URLRequest.Assertions`, `DNSRequest.Assertions`, `ICMPRequest.Assertions`, `GroupV2.Tags`,
+`StatusPage.Cards` and `StatusPageCard.Services`.
 
 Other new fields: `Assertion.Regex` (for `HEADERS` assertions; always sent, so updates no longer
 drop a regex set elsewhere) and the maintenance window types `MaintenanceWindowComponentConfig` and
@@ -494,9 +580,8 @@ drop a regex set elsewhere) and the maintenance window types `MaintenanceWindowC
   `GetCheckResults`. ICMP and traceroute results report a fractional average latency, which failed to
   decode in v1. Code using it as an `int64` needs a conversion, which truncates sub-millisecond values
   to 0, and `%d` no longer formats it.
-- `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
-  `MultiStepCheck` are now populated: they decode from the `created_at` and `updated_at` keys the API
-  returns. If you marshal these structs yourself, their JSON keys change accordingly.
+- `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `GroupV2`, `Snippet` and `MultiStepCheck` are
+  now populated: they decode from the `created_at` and `updated_at` keys the API returns. If you marshal these structs yourself, their JSON keys change accordingly.
 - Alert channels returned by `CreateAlertChannel`, `GetAlertChannel` and `UpdateAlertChannel` have
   `CreatedAt` and `UpdatedAt` set; they were always empty.
 - Alert channel responses with a `null` or wrongly typed field no longer panic. `null` leaves the

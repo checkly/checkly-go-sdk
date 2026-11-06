@@ -49,7 +49,7 @@ func TestTimestampsDecode(t *testing.T) {
 			name: "group",
 			body: readFixture(t, "UpdateGroup.json"),
 			get: func(ctx context.Context, c checkly.Client) (time.Time, time.Time, error) {
-				v, err := c.GetGroup(ctx, 1)
+				v, err := c.GetGroupV2(ctx, 1)
 				if err != nil {
 					return time.Time{}, time.Time{}, err
 				}
@@ -57,19 +57,6 @@ func TestTimestampsDecode(t *testing.T) {
 			},
 			wantCreated: mustParse("2020-05-26T11:55:49.670Z"),
 			wantUpdated: mustParse("2020-05-26T12:03:20.080Z"),
-		},
-		{
-			name: "group v2",
-			body: `{"id":1,"name":"group","created_at":"2026-01-02T03:04:05.678Z","updated_at":"2026-02-03T04:05:06.789Z"}`,
-			get: func(ctx context.Context, c checkly.Client) (time.Time, time.Time, error) {
-				v, err := c.GetGroupV2(ctx, 1)
-				if err != nil {
-					return time.Time{}, time.Time{}, err
-				}
-				return v.CreatedAt, v.UpdatedAt, nil
-			},
-			wantCreated: mustParse("2026-01-02T03:04:05.678Z"),
-			wantUpdated: mustParse("2026-02-03T04:05:06.789Z"),
 		},
 		{
 			name: "snippet",

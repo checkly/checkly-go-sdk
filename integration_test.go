@@ -330,11 +330,11 @@ func TestCheckGroupUnset(t *testing.T) {
 
 	client := setupClient(t)
 
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Test Group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -348,7 +348,7 @@ func TestCheckGroupUnset(t *testing.T) {
 	}
 
 	defer func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	}()
 
 	pendingCheck := checkly.APICheck{
@@ -429,13 +429,13 @@ func TestCreateGroupIntegration(t *testing.T) {
 	wantGroupCopy := wantGroup
 	ac := makeTestAlertChannel(t, client)
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
-	gotGroup, err := client.CreateGroup(context.Background(), wantGroupCopy)
+	gotGroup, err := client.CreateGroupV2(context.Background(), wantGroupCopy)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = client.DeleteGroup(context.Background(), gotGroup.ID) }()
+	defer func() { _ = client.DeleteGroupV2(context.Background(), gotGroup.ID) }()
 	// These are set by the APIs
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
+	ignored := cmpopts.IgnoreFields(checkly.GroupV2{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroupCopy, *gotGroup, ignored) {
 		t.Fatal(cmp.Diff(wantGroupCopy, *gotGroup, ignored))
 	}
@@ -446,12 +446,12 @@ func TestGetGroupIntegration(t *testing.T) {
 	ac := makeTestAlertChannel(t, client)
 	wantGroupCopy := wantGroup
 	wantGroupCopy.AlertChannelSubscriptions[0].ChannelID = ac.ID
-	group, err := client.CreateGroup(context.Background(), wantGroupCopy)
+	group, err := client.CreateGroupV2(context.Background(), wantGroupCopy)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = client.DeleteGroup(context.Background(), group.ID) }()
-	gotGroup, err := client.GetGroup(context.Background(), group.ID)
+	defer func() { _ = client.DeleteGroupV2(context.Background(), group.ID) }()
+	gotGroup, err := client.GetGroupV2(context.Background(), group.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -705,11 +705,11 @@ func TestTCPMonitorGroupUnset(t *testing.T) {
 
 	client := setupClient(t)
 
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Test Group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -723,7 +723,7 @@ func TestTCPMonitorGroupUnset(t *testing.T) {
 	}
 
 	defer func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	}()
 
 	pendingMonitor := checkly.TCPMonitor{
@@ -1210,11 +1210,11 @@ func TestURLMonitorGroupUnset(t *testing.T) {
 
 	client := setupClient(t)
 
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Test Group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -1228,7 +1228,7 @@ func TestURLMonitorGroupUnset(t *testing.T) {
 	}
 
 	defer func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	}()
 
 	pendingMonitor := checkly.URLMonitor{
@@ -1535,11 +1535,11 @@ func TestICMPMonitorGroupUnset(t *testing.T) {
 
 	client := setupClient(t)
 
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Test Group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -1553,7 +1553,7 @@ func TestICMPMonitorGroupUnset(t *testing.T) {
 	}
 
 	defer func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	}()
 
 	pendingMonitor := checkly.ICMPMonitor{
@@ -1600,11 +1600,11 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 
 	client := setupClient(t)
 
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Test Group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -1618,7 +1618,7 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 	}
 
 	defer func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	}()
 
 	pendingMonitor := checkly.DNSMonitor{
@@ -1884,13 +1884,13 @@ func TestMaintenanceWindowComponentConfigsIntegration(t *testing.T) {
 
 // createResetTestGroup creates a group for the update-reset tests, so that
 // their monitors can carry a group order, and deletes it when the test ends.
-func createResetTestGroup(ctx context.Context, t *testing.T, client checkly.Client) *checkly.Group {
+func createResetTestGroup(ctx context.Context, t *testing.T, client checkly.Client) *checkly.GroupV2 {
 	t.Helper()
-	group, err := client.CreateGroup(ctx, checkly.Group{
+	group, err := client.CreateGroupV2(ctx, checkly.GroupV2{
 		Name:        "Update reset test group",
 		Concurrency: 3,
 		Tags:        []string{},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -1902,7 +1902,7 @@ func createResetTestGroup(ctx context.Context, t *testing.T, client checkly.Clie
 		t.Fatalf("failed to create group: %v", err)
 	}
 	t.Cleanup(func() {
-		_ = client.DeleteGroup(ctx, group.ID)
+		_ = client.DeleteGroupV2(ctx, group.ID)
 	})
 	return group
 }
@@ -2298,25 +2298,6 @@ func TestUnsetListsAreAccepted(t *testing.T) {
 		}()
 		if _, err := client.UpdateICMPMonitor(ctx, created.ID, monitor); err != nil {
 			t.Fatalf("failed to update ICMP monitor: %v", err)
-		}
-	})
-
-	t.Run("Group", func(t *testing.T) {
-		group := checkly.Group{
-			Name:          "Unset lists group",
-			Concurrency:   3,
-			Locations:     []string{"us-east-1"},
-			AlertSettings: alertSettings,
-		}
-		created, err := client.CreateGroup(ctx, group)
-		if err != nil {
-			t.Fatalf("failed to create group: %v", err)
-		}
-		defer func() {
-			_ = client.DeleteGroup(ctx, created.ID)
-		}()
-		if _, err := client.UpdateGroup(ctx, created.ID, group); err != nil {
-			t.Fatalf("failed to update group: %v", err)
 		}
 	})
 

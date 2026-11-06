@@ -14,7 +14,7 @@ import (
 
 var wantGroupID int64 = 135
 
-var wantGroup = checkly.Group{
+var wantGroup = checkly.GroupV2{
 	Name:             "test",
 	Activated:        true,
 	Muted:            false,
@@ -59,8 +59,8 @@ var wantGroup = checkly.Group{
 		MaxRetries:         1,
 		MaxDurationSeconds: 600,
 	},
-	UseGlobalAlertSettings: false,
-	AlertSettings: checkly.AlertSettings{
+	UseGlobalAlertSettings: new(false),
+	AlertSettings: &checkly.AlertSettings{
 		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
@@ -83,12 +83,12 @@ var wantGroup = checkly.Group{
 			ChannelID: 2996,
 		},
 	},
-	LocalSetupScript:    "setup-test",
-	LocalTearDownScript: "teardown-test",
+	LocalSetupScript:    new("setup-test"),
+	LocalTearDownScript: new("teardown-test"),
 }
 
 func validateGroup(t *testing.T, body []byte) {
-	var gotGroup checkly.Group
+	var gotGroup checkly.GroupV2
 	err := json.Unmarshal(body, &gotGroup)
 	if err != nil {
 		t.Fatalf("decoding error for data %q: %v", body, err)
@@ -98,30 +98,30 @@ func validateGroup(t *testing.T, body []byte) {
 	}
 }
 
-var ignoreGroupFields = cmpopts.IgnoreFields(checkly.Group{}, "ID", "PrivateLocations", "CreatedAt", "UpdatedAt")
+var ignoreGroupFields = cmpopts.IgnoreFields(checkly.GroupV2{}, "ID", "PrivateLocations", "CreatedAt", "UpdatedAt")
 
-func TestCreateGroup(t *testing.T) {
+func TestCreateGroupV2(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPost,
-		"/v1/check-groups?autoAssignAlerts=false",
+		"/v2/check-groups?autoAssignAlerts=false",
 		validateGroup,
 		http.StatusCreated,
 		"CreateGroup.json",
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotGroup, err := client.CreateGroup(context.Background(), wantGroup)
+	gotGroup, err := client.CreateGroupV2(context.Background(), wantGroup)
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
+	ignored := cmpopts.IgnoreFields(checkly.GroupV2{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
 	}
 }
 
-func TestGetGroup(t *testing.T) {
+func TestGetGroupV2(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
@@ -132,51 +132,34 @@ func TestGetGroup(t *testing.T) {
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotGroup, err := client.GetGroup(context.Background(), wantGroupID)
+	gotGroup, err := client.GetGroupV2(context.Background(), wantGroupID)
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
+	ignored := cmpopts.IgnoreFields(checkly.GroupV2{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignored))
 	}
 }
 
-func TestUpdateGroup(t *testing.T) {
+func TestUpdateGroupV2(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		fmt.Sprintf("/v1/check-groups/%d?autoAssignAlerts=false", wantGroupID),
+		fmt.Sprintf("/v2/check-groups/%d?autoAssignAlerts=false", wantGroupID),
 		validateGroup,
 		http.StatusOK,
 		"UpdateGroup.json",
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotGroup, err := client.UpdateGroup(context.Background(), wantGroupID, wantGroup)
+	gotGroup, err := client.UpdateGroupV2(context.Background(), wantGroupID, wantGroup)
 	if err != nil {
 		t.Error(err)
 	}
-	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
+	ignored := cmpopts.IgnoreFields(checkly.GroupV2{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroup, *gotGroup, ignored) {
 		t.Error(cmp.Diff(wantGroup, *gotGroup, ignoreGroupFields))
-	}
-}
-
-func TestDeleteGroup(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodDelete,
-		fmt.Sprintf("/v1/check-groups/%d", wantGroupID),
-		validateEmptyBody,
-		http.StatusNoContent,
-		"Empty.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	err := client.DeleteGroup(context.Background(), wantGroupID)
-	if err != nil {
-		t.Error(err)
 	}
 }
 
@@ -189,79 +172,25 @@ func validateGroupEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
 	assertRawBodyField(t, body, "localSetupScript", `null`)
 	assertRawBodyField(t, body, "localTearDownScript", `null`)
-	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
-	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
+	assertRawBodyField(t, body, "runParallel", `null`)
+	assertRawBodyField(t, body, "useGlobalAlertSettings", `null`)
+	assertRawBodyField(t, body, "alertSettings", `null`)
+	assertRawBodyField(t, body, "retryStrategy", `null`)
 }
 
-func TestUpdateGroupSerializesEmptyValues(t *testing.T) {
+func TestUpdateGroupV2SerializesEmptyValues(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodPut,
-		"/v1/check-groups/17?autoAssignAlerts=false",
+		"/v2/check-groups/17?autoAssignAlerts=false",
 		validateGroupEmptyPayload,
 		http.StatusOK,
 		"UpdateGroup.json",
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.UpdateGroup(context.Background(), 17, checkly.Group{
+	_, err := client.UpdateGroupV2(context.Background(), 17, checkly.GroupV2{
 		Name: "Group #1",
-	})
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestCreateGroupSerializesEmptyValues(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPost,
-		"/v1/check-groups?autoAssignAlerts=false",
-		validateGroupEmptyPayload,
-		http.StatusCreated,
-		"CreateGroup.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.CreateGroup(context.Background(), checkly.Group{
-		Name: "Group #1",
-	})
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestUpdateGroupSerializesSetValues(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPut,
-		"/v1/check-groups/17?autoAssignAlerts=false",
-		func(t *testing.T, body []byte) {
-			assertRawBodyField(t, body, "setupSnippetId", `5`)
-			assertRawBodyField(t, body, "tearDownSnippetId", `6`)
-			assertRawBodyField(t, body, "localSetupScript", `"setup"`)
-			assertRawBodyField(t, body, "localTearDownScript", `"teardown"`)
-			assertRawBodyField(t, body, "alertChannelSubscriptions", `[{"alertChannelId":42,"activated":true}]`)
-			assertRawBodyField(t, body, "tags", `["prod"]`)
-		},
-		http.StatusOK,
-		"UpdateGroup.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.UpdateGroup(context.Background(), 17, checkly.Group{
-		Name:                "Group #1",
-		SetupSnippetID:      5,
-		TearDownSnippetID:   6,
-		LocalSetupScript:    "setup",
-		LocalTearDownScript: "teardown",
-		Tags:                []string{"prod"},
-		AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
-			{
-				ChannelID: 42,
-				Activated: true,
-			},
-		},
 	})
 	if err != nil {
 		t.Error(err)
@@ -273,12 +202,7 @@ func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
 	ts := cannedResponseServer(t,
 		http.MethodPost,
 		"/v2/check-groups?autoAssignAlerts=false",
-		func(t *testing.T, body []byte) {
-			assertRawBodyField(t, body, "tags", `[]`)
-			assertRawBodyField(t, body, "locations", `[]`)
-			assertRawBodyField(t, body, "privateLocations", `[]`)
-			assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
-		},
+		validateGroupEmptyPayload,
 		http.StatusCreated,
 		"CreateGroup.json",
 	)
@@ -292,10 +216,74 @@ func TestCreateGroupV2SerializesEmptyValues(t *testing.T) {
 	}
 }
 
+// Zero values inside a set AlertSettings are sent, not left out.
+func TestCreateGroupV2SerializesZeroAlertSettingsFields(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPost,
+		"/v2/check-groups?autoAssignAlerts=false",
+		func(t *testing.T, body []byte) {
+			assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
+			assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
+		},
+		http.StatusCreated,
+		"CreateGroup.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	_, err := client.CreateGroupV2(context.Background(), checkly.GroupV2{
+		Name: "Group #1",
+		AlertSettings: &checkly.AlertSettings{
+			EscalationType:     checkly.EscalationTypeRunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{FailedRunThreshold: 1},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUpdateGroupV2SerializesSetValues(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v2/check-groups/17?autoAssignAlerts=false",
+		func(t *testing.T, body []byte) {
+			assertRawBodyField(t, body, "setupSnippetId", `5`)
+			assertRawBodyField(t, body, "tearDownSnippetId", `6`)
+			assertRawBodyField(t, body, "localSetupScript", `"setup"`)
+			assertRawBodyField(t, body, "localTearDownScript", `"teardown"`)
+			assertRawBodyField(t, body, "alertChannelSubscriptions", `[{"alertChannelId":42,"activated":true}]`)
+			assertRawBodyField(t, body, "tags", `["prod"]`)
+		},
+		http.StatusOK,
+		"UpdateGroup.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	_, err := client.UpdateGroupV2(context.Background(), 17, checkly.GroupV2{
+		Name:                "Group #1",
+		SetupSnippetID:      new(int64(5)),
+		TearDownSnippetID:   new(int64(6)),
+		LocalSetupScript:    new("setup"),
+		LocalTearDownScript: new("teardown"),
+		Tags:                []string{"prod"},
+		AlertChannelSubscriptions: []checkly.AlertChannelSubscription{
+			{
+				ChannelID: 42,
+				Activated: true,
+			},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 // GetGroupV2 reads through the v1 route, whose response carries the v2 group
 // shape plus projectBindings. The fixture is such a response, with the FALLBACK
 // retry strategy and nulls for the nullable settings.
-func TestGetGroupV2(t *testing.T) {
+func TestGetGroupV2NullableSettings(t *testing.T) {
 	t.Parallel()
 	ts := cannedResponseServer(t,
 		http.MethodGet,
