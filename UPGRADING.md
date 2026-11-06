@@ -363,6 +363,65 @@ sources (such as `AssertionSourceResponseCode` and `AssertionSourceGRPCStatusCod
 `CheckTypeAgentic`. The new `MaintenanceWindowComponentImpact.Status` is a
 `StatusPageComponentStatusV3`.
 
+## Check results
+
+`GetCheckResults` moves to the v2 endpoint, which pages with a cursor. It returns a
+`*CheckResultsPage` instead of `[]CheckResult`, and `CheckResultsFilter.Page` is replaced by
+`CheckResultsFilter.NextID`. The number of results is `len(page.Entries)`. The signature of
+`GetCheckResult` is unchanged.
+
+```go
+// v1
+for page := int64(1); ; page++ {
+	results, err := client.GetCheckResults(ctx, checkID, &checkly.CheckResultsFilter{
+		Limit: 100,
+		Page:  page,
+	})
+	if err != nil {
+		return err
+	}
+	if len(results) == 0 {
+		break
+	}
+	process(results)
+}
+```
+
+```go
+// v2
+filter := checkly.CheckResultsFilter{
+	Limit: 100,
+	From:  time.Now().Add(-6 * time.Hour).Unix(),
+}
+for {
+	page, err := client.GetCheckResults(ctx, checkID, &filter)
+	if err != nil {
+		return err
+	}
+	process(page.Entries)
+	if page.NextID == "" {
+		break
+	}
+	filter.NextID = page.NextID
+}
+```
+
+- There is no longer a default window, or a six-hour limit between `From` and `To`. Where v1 read
+  the last six hours, a nil filter now spans all the raw results the account retains, which depends
+  on its plan. The v2 loop above sets `From` to keep reading six hours.
+- A filter with only `From` or only `To` no longer gets its counterpart six hours away: the other
+  end stays open. Set both for a bounded window.
+- On the free plan, a `From` or `To` older than the plan's retention no longer answers 402. On every
+  plan, the API returns only the results it retains.
+- A wide query can take too long, in which case the API answers 408. Narrow `From` and `To`,
+  especially with `HasFailures`. To detect it, use `errors.As` to get the `*APIError` and compare
+  its `StatusCode` with `http.StatusRequestTimeout`.
+- The endpoint allows 60 requests per 60 seconds, and a request that sets `HasFailures` counts as
+  five. A loop over many pages can reach that limit; set `Limit` to get more results per request.
+- `CheckType` is sent for every type. v1 sent only `API` and `BROWSER` and dropped other types,
+  returning unfiltered results. The API answers 404 when the check is not of the given type.
+- `HasFailures` now works. v1 sent `hasFailures=1`, which the API rejects with a 400.
+
 ## Behaviour changes on create and update
 
 Most update endpoints keep the stored value of a key the request leaves out. v1 left out many empty
@@ -427,12 +486,12 @@ Other new fields: `Assertion.Regex` (for `HEADERS` assertions; always sent, so u
 drop a regex set elsewhere) and the maintenance window types `MaintenanceWindowComponentConfig` and
 `MaintenanceWindowComponentImpact`.
 
-**`GetCheckResults`** sends any non-empty `CheckResultsFilter.CheckType`. v1 sent only `API` and
-`BROWSER` and silently dropped other types, returning unfiltered results; the API now answers 404
-when the check is not of the given type.
-
 ## Decoding fixes
 
+- `CheckResult.ResponseTime` is a `float64` instead of an `int64`, in `GetCheckResult` and
+  `GetCheckResults`. ICMP and traceroute results report a fractional average latency, which failed to
+  decode in v1. Code using it as an `int64` needs a conversion, which truncates sub-millisecond values
+  to 0, and `%d` no longer formats it.
 - `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
   `MultiStepCheck` are now populated: they decode from the `created_at` and `updated_at` keys the API
   returns. If you marshal these structs yourself, their JSON keys change accordingly.

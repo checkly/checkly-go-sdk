@@ -469,13 +469,13 @@ type Client interface {
 
 	// GetCheckResults returns one page of the final results of the check with ID
 	// checkID, narrowed by filters, which may be nil; [CheckResultsFilter] gives
-	// the defaults and limits. It uses the v1 check results endpoint, which the
-	// API has deprecated.
+	// the defaults and limits. To read the next page, call it again with the same
+	// filters and NextID set to the page's NextID, until that is empty.
 	GetCheckResults(
 		ctx context.Context,
 		checkID string,
 		filters *CheckResultsFilter,
-	) ([]CheckResult, error)
+	) (*CheckResultsPage, error)
 
 	// CreateSnippet creates a snippet and returns it with its ID.
 	CreateSnippet(
