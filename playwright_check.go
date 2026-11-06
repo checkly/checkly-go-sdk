@@ -66,13 +66,11 @@ type PlaywrightCheck struct {
 	// status page service, based on its alert configuration. Nil turns it
 	// off.
 	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
-	// Intent describes what the check protects, for automatic AI repair.
-	// It is sent as null when nil, so an update with a nil Intent clears an
-	// intent set elsewhere, for example in the web app.
+	// Intent describes what the check protects, for automatic AI repair; nil
+	// removes it.
 	Intent *CheckIntent `json:"intent"`
 	// AIAutoRepairEnabled overrides the account's automatic AI repair
-	// setting for this check. Nil inherits the account setting; it is sent
-	// as null, so an update with nil removes an override set elsewhere.
+	// setting for this check; nil uses the account setting.
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 
 	// CacheHash is a hash of the lock file and browsers, which the API

@@ -420,6 +420,8 @@ type Client interface {
 	) (*SSLMonitor, error)
 
 	// UpdateSSLMonitor updates the SSL monitor with the given ID and returns it.
+	// A nil Request.SSLConfig.SecurityBaseline or an empty ClientCertificateMode,
+	// which are left out of the request, resets that field to the API default.
 	UpdateSSLMonitor(
 		ctx context.Context,
 		ID string,

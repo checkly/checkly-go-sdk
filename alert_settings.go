@@ -29,8 +29,9 @@ type AlertSettings struct {
 // parallel alert only when a percentage of its parallel runs fail.
 type ParallelRunFailureThreshold struct {
 	Enabled bool `json:"enabled"`
-	// Percentage is 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100.
-	// Percentage is left out of the request when zero.
+	// Percentage is 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100; the API
+	// defaults it to 10 on create. Percentage is left out of the request when
+	// zero.
 	Percentage int `json:"percentage,omitempty"`
 }
 
@@ -57,6 +58,7 @@ type Reminders struct {
 	// Amount is the number of reminders: 0 to 5, or 100000.
 	Amount int `json:"amount"`
 	// Interval is the interval between reminders: 1, 2, 3, 4, 5, 10, 15 or
-	// 30. Interval is left out of the request when zero.
+	// 30; the API defaults it to 5 on create. Interval is left out of the
+	// request when zero.
 	Interval int `json:"interval,omitempty"`
 }

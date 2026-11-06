@@ -19,10 +19,11 @@ type TCPMonitor struct {
 	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
 	// 30, 60, 120, 180, 360, 720 or 1440.
 	Frequency int `json:"frequency"`
-	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
-	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
-	// (rounded up) above 60. FrequencyOffset is left out of the request
-	// when zero.
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -55,7 +56,6 @@ type TCPMonitor struct {
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
 	// locations to run from. Nil is sent as an empty list.
@@ -78,10 +78,13 @@ type TCPMonitor struct {
 type TCPRequest struct {
 	Hostname string `json:"hostname"`
 	Port     uint16 `json:"port"`
-	// Data is left out of the request when empty.
+	// Data is left out of the request when empty. An update with an empty
+	// Data keeps the stored data, as the API rejects an empty value.
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
-	// IPFamily is left out of the request when empty.
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 

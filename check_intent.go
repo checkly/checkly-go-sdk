@@ -2,12 +2,11 @@ package checkly
 
 import "encoding/json"
 
-// CheckIntent describes what a check protects. Automatic AI repair of a
-// check uses it to decide which changes keep the check meaningful.
-//
-// The API requires Goal, of 1 to 2000 characters, and accepts at
-// most 20 statements, of 1 to 1000 characters each, for each of
-// RequiredOutcomes and MustPreserve.
+// CheckIntent describes what a check protects, in the Intent field of API,
+// browser, multi-step and Playwright checks: automatic AI repair uses it to
+// decide which changes keep the check meaningful. Goal is required, of 1 to
+// 2000 characters; RequiredOutcomes and MustPreserve each hold at most 20
+// statements of 1 to 1000 characters.
 type CheckIntent struct {
 	// Goal is the user or system outcome the check protects.
 	Goal string `json:"goal"`

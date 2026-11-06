@@ -20,14 +20,10 @@ const (
 )
 
 // MaintenanceWindow is a scheduled, optionally recurring period during which
-// checks are paused or their alerts silenced.
-//
-// Create and update requests always send every field, so an update replaces
-// the whole window: the API keeps a field's stored value only when the field
-// is omitted, and this type omits only a nil
-// StatusPageVisibility.ComponentConfigs. A zero value means the API's
-// default: no repeat, UTC, no description, empty tag lists, nothing paused or
-// silenced, and a StatusPageVisibility that is hidden and unlinked.
+// checks are paused or their alerts silenced. It is the input and result of
+// CreateMaintenanceWindow and UpdateMaintenanceWindow. A zero value means the
+// API's default: no repeat, UTC, no description, empty tag lists, nothing
+// paused or silenced, and a StatusPageVisibility that is hidden and unlinked.
 type MaintenanceWindow struct {
 	ID       int64  `json:"id"`
 	Name     string `json:"name"`
@@ -138,32 +134,33 @@ type MaintenanceWindowStatusPageVisibility struct {
 	ServiceIDs    []string `json:"serviceIds"`
 
 	// ComponentConfigs lists the affected components of each linked status
-	// page with components, at most one entry per page. Unlike the other
-	// settings, nil is left out of the request, and an update then keeps
-	// the stored component configs; a non-nil slice replaces them all, so an
-	// empty one removes them. The API rejects an update that leaves them
-	// out while StatusPageIDs is non-empty and neither ServiceIDs nor
-	// AffectAllServices is set, so send back the ones a read returned.
+	// page with components, at most one entry per page. ComponentConfigs is
+	// left out of the request when nil. The API rejects an update without
+	// them that links status pages without ServiceIDs or AffectAllServices,
+	// so send back the ones a read returned.
 	ComponentConfigs []MaintenanceWindowComponentConfig `json:"componentConfigs"`
 }
 
 // MaintenanceWindowComponentConfig lists the components of one status page
-// that a maintenance window affects.
+// that a maintenance window affects, in
+// MaintenanceWindowStatusPageVisibility.ComponentConfigs.
 type MaintenanceWindowComponentConfig struct {
 	// StatusPageID is the ID of a status page listed in StatusPageIDs.
 	StatusPageID string `json:"statusPageId"`
 	// AffectAllComponents affects every component of the page, including
-	// components added later. It requires Components to be empty.
+	// components added later, and requires Components to be empty.
+	// Components is left out of the request when empty.
 	AffectAllComponents bool                               `json:"affectAllComponents"`
 	Components          []MaintenanceWindowComponentImpact `json:"components,omitempty"`
 }
 
 // MaintenanceWindowComponentImpact is a status page component affected by a
-// maintenance window, and the status it shows while the window is in
-// progress.
+// maintenance window, in MaintenanceWindowComponentConfig.Components, with
+// the status it shows while the window is in progress.
 type MaintenanceWindowComponentImpact struct {
 	ComponentID string `json:"componentId"`
-	// Empty means [StatusPageComponentStatusV3UnderMaintenance].
+	// Status is left out of the request when empty, so the API applies
+	// [StatusPageComponentStatusV3UnderMaintenance].
 	Status StatusPageComponentStatusV3 `json:"status,omitempty"`
 }
 

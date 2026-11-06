@@ -31,7 +31,7 @@ type StatusPage struct {
 	URL string `json:"url"`
 
 	// CustomDomain is an optional user-managed domain that hosts the status
-	// page. CustomDomain is left out of the request when empty.
+	// page; empty removes it.
 	CustomDomain string `json:"customDomain,omitempty"`
 
 	// Logo is a URL to an image file to use as the logo for the status page.

@@ -31,8 +31,9 @@ type PrivateLocation struct {
 	// the API ignores it on update.
 	SlugName string `json:"slugName"`
 
-	// Icon defaults to "location" on create.
-	// Icon is left out of the request when empty.
+	// Icon defaults to "location" on create. Icon is left out of the request
+	// when empty. An update with an empty Icon keeps the stored icon, as the
+	// API rejects an empty value.
 	Icon       string               `json:"icon,omitempty"`
 	Keys       []PrivateLocationKey `json:"keys,omitempty"`
 	LastSeen   string               `json:"lastSeen,omitempty"`
@@ -41,9 +42,8 @@ type PrivateLocation struct {
 	UpdatedAt  string               `json:"updated_at"`
 
 	// ProxyURL is the proxy that API checks running in the location send
-	// their HTTP requests through, such as https://user:password@host:3128.
-	// It can embed credentials, so treat it as sensitive. Nil and an empty
-	// string are sent as null, which removes the proxy on update.
+	// their HTTP requests through, such as https://user:password@host:3128,
+	// so it can hold credentials. Nil and an empty string remove the proxy.
 	ProxyURL *string `json:"proxyUrl"`
 }
 

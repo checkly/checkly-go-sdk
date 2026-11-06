@@ -70,13 +70,11 @@ type MultiStepCheck struct {
 	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
 	CreatedAt       time.Time        `json:"created_at,omitempty"`
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
-	// Intent describes what the check protects, for automatic AI repair.
-	// It is sent as null when nil, so an update with a nil Intent clears an
-	// intent set elsewhere, for example in the web app.
+	// Intent describes what the check protects, for automatic AI repair; nil
+	// removes it.
 	Intent *CheckIntent `json:"intent"`
 	// AIAutoRepairEnabled overrides the account's automatic AI repair
-	// setting for this check. Nil inherits the account setting; it is sent
-	// as null, so an update with nil removes an override set elsewhere.
+	// setting for this check; nil uses the account setting.
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 

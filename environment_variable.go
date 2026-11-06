@@ -16,8 +16,8 @@ type EnvironmentVariable struct {
 	Key string `json:"key,omitempty"`
 
 	// Value must not be empty for an account-level variable. Reads return an
-	// empty Value for a secret variable, because the API never returns secret
-	// values.
+	// empty Value for a secret variable, and a secret variable of a check or
+	// group sent with an empty Value keeps its stored value.
 	Value string `json:"value"`
 
 	// Locked hides the value in the Checkly UI, like a password.

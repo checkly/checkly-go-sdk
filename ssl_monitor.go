@@ -19,10 +19,11 @@ type SSLMonitor struct {
 	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
 	// 30, 60, 120, 180, 360, 720 or 1440.
 	Frequency int `json:"frequency"`
-	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
-	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
-	// (rounded up) above 60. FrequencyOffset is left out of the request
-	// when zero.
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -39,10 +40,9 @@ type SSLMonitor struct {
 	// response time limits in milliseconds, each at most 30000, with
 	// MaxResponseTime at least DegradedResponseTime. DegradedResponseTime and
 	// MaxResponseTime are left out of the request when zero.
-	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime      int `json:"maxResponseTime,omitempty"`
-	// Tags is left out of the request when empty.
-	Tags []string `json:"tags,omitempty"`
+	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
 	// AlertSettings is left out of the request when nil.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
@@ -54,12 +54,10 @@ type SSLMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD.
-	// GroupOrder is left out of the request when zero.
 	GroupOrder int `json:"groupOrder,omitempty"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
 	// locations to run from. Nil is sent as an empty list.
@@ -129,23 +127,30 @@ const (
 // SSLConfig is the TLS configuration in an [SSLRequest].
 type SSLConfig struct {
 	Hostname string `json:"hostname"`
-	// Port is 1 to 65535; the API defaults to 443.
-	// Port is left out of the request when zero.
+	// Port is 1 to 65535; the API defaults to 443. Port is left out of the
+	// request when zero. An update with a zero Port keeps the stored port, as
+	// the API rejects a zero value.
 	Port int `json:"port,omitempty"`
 	// ServerName is an optional SNI override. Nil is sent as null, which
 	// removes a stored override.
 	ServerName *string `json:"serverName"`
-	// IPFamily is left out of the request when empty.
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
 	IPFamily            IPFamily `json:"ipFamily,omitempty"`
 	SkipChainValidation bool     `json:"skipChainValidation"`
 	// HandshakeTimeoutMs is 1000 to 30000; the API defaults to 10000.
-	// HandshakeTimeoutMs is left out of the request when zero.
+	// HandshakeTimeoutMs is left out of the request when zero. An update
+	// with a zero HandshakeTimeoutMs keeps the stored timeout, as the API
+	// rejects a zero value.
 	HandshakeTimeoutMs int `json:"handshakeTimeoutMs,omitempty"`
 	// AlertDaysBeforeExpiry is 1 to 365; the API defaults to 20.
-	// AlertDaysBeforeExpiry is left out of the request when zero.
+	// AlertDaysBeforeExpiry is left out of the request when zero. An update
+	// with a zero AlertDaysBeforeExpiry keeps the stored value, as the API
+	// rejects a zero value.
 	AlertDaysBeforeExpiry int `json:"alertDaysBeforeExpiry,omitempty"`
 	// SecurityBaseline is left out of the request when nil, and the API
-	// then applies its default baseline on create.
+	// then applies its default baseline.
 	SecurityBaseline *SecurityBaseline `json:"securityBaseline,omitempty"`
 	// With [SSLClientCertificateModeExplicit],
 	// SSLRequest.SSLClientCertificateID is required.
@@ -157,8 +162,10 @@ type SSLConfig struct {
 // enforces or reports on, each with a severity. Set it only to override the
 // API defaults, which apply on create to the rules and values left unset.
 type SecurityBaseline struct {
-	// Enabled is a pointer so that an explicit false can be sent; the API
-	// defaults it to true. Enabled is left out of the request when nil.
+	// Enabled defaults to true, but an update that sets a MinTLSVersion or
+	// MinKeySizeBits value with a nil Enabled stores none, and the baseline
+	// then runs disabled; set Enabled explicitly. Enabled is left out of the
+	// request when nil.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Enforceable rules, with the default severity
 	// [SSLBaselineSeverityFail]. The defaults for MinTLSVersion and

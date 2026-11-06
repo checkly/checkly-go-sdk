@@ -36,10 +36,10 @@
 // out of the request when nil, empty, zero or false. A left-out field keeps
 // its current value, with these exceptions: fields an Update method names as
 // reset to the API default; AlertChannelSubscriptions, described below; and
-// fields nested in AlertSettings or in an alert channel's or status page
-// component's configuration, which the API replaces together with the object
-// they are in, as it does for the request of DNS and SSL monitors. To change
-// some fields, start from the value a Get returns.
+// fields nested in AlertSettings, in a group's APICheckDefaults, or in an
+// alert channel's or status page component's configuration, which the API
+// replaces together with the object they are in, as it does for the request
+// of DNS monitors. To change some fields, start from the value a Get returns.
 //
 // Creates and updates of checks, monitors and check groups ask the API not
 // to subscribe alert channels automatically, so a resource written with an

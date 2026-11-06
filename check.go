@@ -46,10 +46,11 @@ type Check struct {
 	Type CheckType `json:"checkType"`
 	// Frequency is the number of minutes between runs.
 	Frequency int `json:"frequency"`
-	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
-	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
-	// (rounded up) above 60. FrequencyOffset is left out of the request
-	// when zero.
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the check fails or recovers.
@@ -69,17 +70,14 @@ type Check struct {
 	// Script is left out of the request when empty.
 	Script               string                `json:"script,omitempty"`
 	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
-	// Tags is left out of the request when empty.
-	Tags           []string `json:"tags,omitempty"`
-	SSLCheckDomain string   `json:"sslCheckDomain"`
+	Tags                 []string              `json:"tags,omitempty"`
+	SSLCheckDomain       string                `json:"sslCheckDomain"`
 	// SetupSnippetID and TearDownSnippetID are the IDs of the [Snippet] run
-	// in the setup and teardown phase of an API check. SetupSnippetID and
-	// TearDownSnippetID are left out of the request when zero.
+	// in the setup and teardown phase of an API check; 0 means none.
 	SetupSnippetID    int64 `json:"setupSnippetId,omitempty"`
 	TearDownSnippetID int64 `json:"tearDownSnippetId,omitempty"`
 	// LocalSetupScript and LocalTearDownScript are Node.js code run in the
-	// setup and teardown phase of an API check. LocalSetupScript and
-	// LocalTearDownScript are left out of the request when empty.
+	// setup and teardown phase of an API check; empty means none.
 	LocalSetupScript    string        `json:"localSetupScript,omitempty"`
 	LocalTearDownScript string        `json:"localTearDownScript,omitempty"`
 	AlertSettings       AlertSettings `json:"alertSettings,omitempty"`
@@ -95,12 +93,10 @@ type Check struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the check's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD.
-	// GroupOrder is left out of the request when zero.
 	GroupOrder int `json:"groupOrder,omitempty"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// check's alerts. The SDK disables automatic assignment, so an empty
 	// list leaves the check without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	CreatedAt                 time.Time                  `json:"created_at"`
 	UpdatedAt                 time.Time                  `json:"updated_at"`

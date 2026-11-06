@@ -18,8 +18,10 @@ type HeartbeatMonitor struct {
 	Description *string `json:"description"`
 	Activated   bool    `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
-	Muted         bool          `json:"muted"`
-	Tags          []string      `json:"tags,omitempty"`
+	Muted bool     `json:"muted"`
+	Tags  []string `json:"tags,omitempty"`
+	// AlertSettings with the [EscalationTypeRunBased] escalation type
+	// requires RunBasedEscalation.FailedRunThreshold.
 	AlertSettings AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -27,7 +29,6 @@ type HeartbeatMonitor struct {
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	Heartbeat                 Heartbeat                  `json:"heartbeat"`
 	// TriggerIncident makes the monitor open and resolve an incident on a

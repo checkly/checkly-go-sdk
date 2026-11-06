@@ -24,10 +24,11 @@ type APICheck struct {
 	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
 	// 30, 60, 120, 180, 360, 720 or 1440.
 	Frequency int `json:"frequency"`
-	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
-	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
-	// (rounded up) above 60. FrequencyOffset is left out of the request
-	// when zero.
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the check fails or recovers.
@@ -85,13 +86,11 @@ type APICheck struct {
 	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
 	CreatedAt       time.Time        `json:"created_at,omitempty"`
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
-	// Intent describes what the check protects, for automatic AI repair.
-	// It is sent as null when nil, so an update with a nil Intent clears an
-	// intent set elsewhere, for example in the web app.
+	// Intent describes what the check protects, for automatic AI repair; nil
+	// removes it.
 	Intent *CheckIntent `json:"intent"`
 	// AIAutoRepairEnabled overrides the account's automatic AI repair
-	// setting for this check. Nil inherits the account setting; it is sent
-	// as null, so an update with nil removes an override set elsewhere.
+	// setting for this check; nil uses the account setting.
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
@@ -130,7 +129,8 @@ type Request struct {
 	FollowRedirects bool   `json:"followRedirects"`
 	SkipSSL         bool   `json:"skipSSL"`
 	Body            string `json:"body"`
-	// BodyType is left out of the request when empty.
+	// BodyType is left out of the request when empty. An update with an empty
+	// BodyType keeps the stored body type, as the API rejects an empty value.
 	BodyType        BodyType    `json:"bodyType,omitempty"`
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
@@ -139,7 +139,9 @@ type Request struct {
 	// the stored credentials when the key is left out, so sending null is how
 	// previously configured credentials are removed.
 	BasicAuth *BasicAuth `json:"basicAuth"`
-	// IPFamily is left out of the request when empty.
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 

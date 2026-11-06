@@ -20,10 +20,11 @@ type TracerouteMonitor struct {
 	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
 	// 30, 60, 120, 180, 360, 720 or 1440.
 	Frequency int `json:"frequency"`
-	// FrequencyOffset must be 10, 20 or 30 when Frequency is 0, at most ten
-	// times Frequency when Frequency is 1 to 60, and at most Frequency / 5
-	// (rounded up) above 60. FrequencyOffset is left out of the request
-	// when zero.
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -37,13 +38,12 @@ type TracerouteMonitor struct {
 	// as "us-east-1". Nil is sent as an empty list.
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
-	// response time limits in milliseconds, each at most 30000.
-	// DegradedResponseTime and MaxResponseTime are left out of the request when
-	// zero.
-	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime      int `json:"maxResponseTime,omitempty"`
-	// Tags is left out of the request when empty.
-	Tags []string `json:"tags,omitempty"`
+	// response time limits in milliseconds, each at most 30000; the API
+	// defaults them to 10000 and 20000. DegradedResponseTime and
+	// MaxResponseTime are left out of the request when zero.
+	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
 	// AlertSettings is left out of the request when nil.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
@@ -55,12 +55,10 @@ type TracerouteMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD.
-	// GroupOrder is left out of the request when zero.
 	GroupOrder int `json:"groupOrder,omitempty"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
 	// locations to run from. Nil is sent as an empty list. The Checkly agent
@@ -97,29 +95,25 @@ const (
 // TracerouteRequest is the probe of a [TracerouteMonitor].
 type TracerouteRequest struct {
 	URL string `json:"url"`
-	// Protocol is left out of the request when empty.
+	// An empty Protocol means [TracerouteProtocolTCP].
 	Protocol TracerouteProtocol `json:"protocol,omitempty"`
-	// Port is 1 to 65535. The API defaults it to 443 for TCP and 33434 for
-	// UDP and SCTP. Port is left out of the request when zero, and also when
-	// Protocol is [TracerouteProtocolICMP] (see
-	// [TracerouteRequest.MarshalJSON]).
+	// Port is 1 to 65535; zero means 443 for TCP and 33434 for UDP and SCTP.
+	// It is ignored when Protocol is [TracerouteProtocolICMP].
 	Port int `json:"port,omitempty"`
-	// IPFamily is left out of the request when empty.
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
-	// MaxHops is 1 to 64; the API defaults to 30.
-	// MaxHops is left out of the request when zero.
+	// MaxHops is 1 to 64; zero means 30.
 	MaxHops int `json:"maxHops,omitempty"`
-	// MaxUnknownHops is 1 to 30 and at most MaxHops; the API defaults to 15,
-	// or MaxHops if that is lower.
-	// MaxUnknownHops is left out of the request when zero.
+	// MaxUnknownHops is 1 to 30 and at most MaxHops; zero means 15, or
+	// MaxHops if that is lower.
 	MaxUnknownHops int `json:"maxUnknownHops,omitempty"`
 	// PtrLookup is a pointer so that an explicit false can be sent; the API
 	// defaults it to true. PtrLookup is left out of the request when nil.
 	PtrLookup *bool `json:"ptrLookup,omitempty"`
-	// Timeout is 1 to 30; the API defaults to 10.
-	// Timeout is left out of the request when zero.
-	Timeout int `json:"timeout,omitempty"`
-	// Assertions is left out of the request when empty.
+	// Timeout is 1 to 30; zero means 10.
+	Timeout    int         `json:"timeout,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
 }
 

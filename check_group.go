@@ -130,8 +130,8 @@ type GroupV2 struct {
 	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
-// APICheckDefaults are request settings of a [Group] for the API checks in
-// it.
+// APICheckDefaults are request settings of a [Group] or [GroupV2] for the
+// API checks in it.
 type APICheckDefaults struct {
 	// BaseURL is the group's base URL, which the checks' request URLs can
 	// reference as {{GROUP_BASE_URL}}.
