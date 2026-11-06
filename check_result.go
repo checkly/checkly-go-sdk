@@ -9,7 +9,8 @@ import (
 )
 
 // CheckResult is the result of one check run, as returned by
-// [Client.GetCheckResult] and [Client.GetCheckResults].
+// [Client.GetCheckResult] and, in a [CheckResultsPage],
+// [Client.GetCheckResults].
 type CheckResult struct {
 	ID string `json:"id"`
 	// Name is the name of the check.
@@ -150,20 +151,36 @@ type SSLCheckResponse struct {
 	Chain            []map[string]interface{} `json:"chain,omitempty"`
 }
 
+// CheckResultsPage is one page of the results of a check, as returned by
+// [Client.GetCheckResults].
+type CheckResultsPage struct {
+	// Entries holds the results of this page.
+	Entries []CheckResult `json:"entries"`
+	// NextID is the cursor of the next page, to set as
+	// [CheckResultsFilter].NextID. It is empty on the last page.
+	NextID string `json:"nextId"`
+}
+
 // CheckResultsFilter narrows the results returned by
 // [Client.GetCheckResults]. Zero-valued fields are not sent.
+//
+// The API allows 60 requests per 60 seconds to this endpoint, and a request
+// that sets HasFailures counts as five.
 type CheckResultsFilter struct {
 	// Limit is the number of results per page, at most 100; the API
 	// defaults to 10.
 	Limit int64
-	// Page is the 1-based page number.
-	Page int64
+	// NextID is the cursor of the page to read, from
+	// [CheckResultsPage].NextID; empty reads the first page. The cursor does
+	// not carry the other fields, so send the same ones on every page.
+	NextID string
 	// Location limits the results to one location, such as "eu-west-1".
 	Location string
 	// From and To limit the results to runs from From (inclusive) to To
-	// (exclusive), as Unix timestamps in seconds, at most six hours apart.
-	// An unset From defaults to six hours before To, or to six hours ago
-	// when To is unset too; an unset To defaults to six hours after From.
+	// (exclusive), as Unix timestamps in seconds. There is no default window:
+	// an unset From or To leaves that end open, so a nil filter spans all the
+	// raw results the account retains, which depends on its plan. The API
+	// answers 408 when a wide query takes too long.
 	To   int64
 	From int64
 	// CheckType is the type of the check, such as [CheckTypeMultiStep] or
@@ -191,12 +208,12 @@ func (c *client) GetCheckResults(
 	ctx context.Context,
 	checkID string,
 	filters *CheckResultsFilter,
-) ([]CheckResult, error) {
-	uri := fmt.Sprintf("/v1/check-results/%s", checkID)
+) (*CheckResultsPage, error) {
+	uri := fmt.Sprintf("/v2/check-results/%s", checkID)
 	if filters != nil {
 		q := url.Values{}
-		if filters.Page > 0 {
-			q.Add("page", fmt.Sprintf("%d", filters.Page))
+		if filters.NextID != "" {
+			q.Add("nextId", filters.NextID)
 		}
 		if filters.Limit > 0 {
 			q.Add("limit", fmt.Sprintf("%d", filters.Limit))
@@ -211,7 +228,7 @@ func (c *client) GetCheckResults(
 			q.Add("checkType", string(filters.CheckType))
 		}
 		if filters.HasFailures {
-			q.Add("hasFailures", "1")
+			q.Add("hasFailures", "true")
 		}
 		if len(filters.Location) > 0 {
 			q.Add("location", filters.Location)
@@ -221,10 +238,10 @@ func (c *client) GetCheckResults(
 		}
 	}
 
-	result := []CheckResult{}
+	result := CheckResultsPage{}
 	err := c.callJSON(ctx, http.MethodGet, uri, nil, &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return &result, nil
 }

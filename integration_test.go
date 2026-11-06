@@ -2503,3 +2503,49 @@ func TestMonitorPrivateLocations(t *testing.T) {
 		assertPrivateLocations(t, "get after update", got.PrivateLocations, nil)
 	})
 }
+
+// TestGetCheckResultsIntegration verifies that the API accepts the requests
+// GetCheckResults sends, including the HasFailures filter, and that an empty
+// page decodes. The check is never activated, so it has no results.
+func TestGetCheckResultsIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	created, err := client.CreateAPICheck(ctx, checkly.APICheck{
+		Name:                 "GetCheckResults integration check",
+		Frequency:            10,
+		Locations:            []string{"us-east-1"},
+		Tags:                 []string{"integration"},
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
+		Request: checkly.Request{
+			Method: "GET",
+			URL:    "https://api.checklyhq.com",
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create check: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = client.DeleteAPICheck(context.Background(), created.ID)
+	})
+
+	tests := map[string]*checkly.CheckResultsFilter{
+		"nil filter":   nil,
+		"has failures": {HasFailures: true},
+	}
+	for name, filter := range tests {
+		t.Run(name, func(t *testing.T) {
+			page, err := client.GetCheckResults(ctx, created.ID, filter)
+			if err != nil {
+				t.Fatalf("failed to get check results: %v", err)
+			}
+			if len(page.Entries) != 0 {
+				t.Errorf("got %d results, want none", len(page.Entries))
+			}
+			if page.NextID != "" {
+				t.Errorf("NextID = %q, want empty", page.NextID)
+			}
+		})
+	}
+}

@@ -359,21 +359,21 @@ var statusCases = map[string]statusCase{
 		},
 	},
 	"GetCheckResults/no filter": {
-		requests: []string{"GET /v1/check-results/id1"},
+		requests: []string{"GET /v2/check-results/id1"},
 		accept:   statusOK,
-		body:     `[]`,
+		body:     `{}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetCheckResults(ctx, testID, nil))
 		},
 	},
 	"GetCheckResults/all filters": {
-		requests: []string{"GET /v1/check-results/id1?checkType=API&from=1700000000&hasFailures=1&limit=5&location=eu-west-1&page=2&to=1700003600"},
+		requests: []string{"GET /v2/check-results/id1?checkType=API&from=1700000000&hasFailures=true&limit=5&location=eu-west-1&nextId=next-page-cursor&to=1700003600"},
 		accept:   statusOK,
-		body:     `[]`,
+		body:     `{}`,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.GetCheckResults(ctx, testID, &checkly.CheckResultsFilter{
 				Limit:       5,
-				Page:        2,
+				NextID:      "next-page-cursor",
 				Location:    "eu-west-1",
 				From:        1700000000,
 				To:          1700003600,
