@@ -100,6 +100,8 @@ type PlaywrightCheck struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
+func (*PlaywrightCheck) isCheck() {}
+
 type playwrightCheckPayload struct {
 	PlaywrightCheck
 	Type      CheckType  `json:"checkType"`

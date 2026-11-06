@@ -126,6 +126,7 @@ log.Println(monitor.Name)
   | `ErrConflict` | 409 |
   | `ErrRateLimited` | 429 still rate limited after the client's retries |
   | `ErrCheckTypeMismatch` | a typed getter got the ID of a check of another type (not an `*APIError`) |
+  | `ErrUnsupportedCheckType` | `GetCheck` got the ID of a check of a type the SDK has no type for (not an `*APIError`) |
   | `ErrMissingAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |
 
 - **`ErrCodeBundleNotFound`** is now returned wrapped together with the `*APIError`; replace
@@ -142,8 +143,8 @@ log.Println(monitor.Name)
 ## Checks
 
 v2 adds `APICheck` and `BrowserCheck`, redefines `MultiStepCheck`, and gives each its own methods
-backed by the per-type endpoints, which are now the only way to create and update a check. The
-generic `Check` type, `GetCheck` and `DeleteCheck` still work but are deprecated.
+backed by the per-type endpoints, which are now the only way to create and update a check.
+`DeleteCheck` still works but is deprecated.
 
 | Check type | Type | Methods | Create and update endpoint |
 |---|---|---|---|
@@ -156,7 +157,8 @@ The monitor types (`URLMonitor`, `TCPMonitor`, `DNSMonitor`, `ICMPMonitor`, `GRP
 `TracerouteMonitor`, `SSLMonitor`) and `PlaywrightCheck` keep their methods.
 
 The `Client` interface gains the twelve methods in the first three rows, so your own types that
-implement `Client`, such as mocks or wrappers, must add them.
+implement `Client`, such as mocks or wrappers, must add them. They must also change `GetCheck`,
+which now returns `(Check, error)`.
 
 ```go
 // v1
@@ -221,6 +223,41 @@ Moving from `Check` to a per-type struct:
 monitor getters return an error matching `ErrCheckTypeMismatch` when the ID belongs to a check of
 another type. In v1, the Playwright, heartbeat and monitor getters decoded the check anyway and
 dropped its type-specific fields.
+
+**`GetCheck` returns the check's own type.** Use it for an ID whose check type you don't know.
+`Check` is now an interface instead of a struct, holding a pointer to one of the twelve check and
+monitor types, so read it with a type switch. `Check` exposes no fields, so even shared fields such
+as `Name` need a case per type, and a `default` case covers types added in later versions. A check
+of a type the SDK has no type for, such as
+`AGENTIC`, is an error matching `ErrUnsupportedCheckType`; `errors.As` with
+`*UnsupportedCheckTypeError` gives its `ID` and `Type`.
+
+```go
+// v1
+check, err := client.GetCheck(ctx, id)
+if err != nil {
+	return err
+}
+if check.Type == checkly.TypeAPI {
+	log.Println(check.Request.URL)
+}
+```
+
+```go
+// v2
+check, err := client.GetCheck(ctx, id)
+if err != nil {
+	return err
+}
+switch c := check.(type) {
+case *checkly.APICheck:
+	log.Println(c.Request.URL)
+case *checkly.URLMonitor:
+	log.Println(c.Request.URL)
+default:
+	log.Printf("unhandled check type %T", check)
+}
+```
 
 ## Removed APIs
 
@@ -290,7 +327,6 @@ Constants for a fixed set of API values are typed, and named after their type, l
 | `Assertion.Comparison` | `string` | `AssertionComparison` |
 | `AlertSettings.EscalationType` | `string` | `EscalationType` |
 | `AlertChannel.Type` | `string` | `AlertChannelType` |
-| `Check.Type` | `string` | `CheckType` |
 | `Request.BodyType` | `string` | `BodyType` |
 | `IPFamily` of `Request`, `URLRequest`, `TCPRequest`, `ICMPRequest`, `TracerouteRequest`, `GRPCRequest` and `SSLConfig` | `string` | `IPFamily` |
 | `DNSRequest.RecordType` | `string` | `DNSRecordType` |
@@ -397,7 +433,7 @@ when the check is not of the given type.
 
 ## Decoding fixes
 
-- `CreatedAt` and `UpdatedAt` on `Check`, `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
+- `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
   `MultiStepCheck` are now populated: they decode from the `created_at` and `updated_at` keys the API
   returns. If you marshal these structs yourself, their JSON keys change accordingly.
 - Alert channels returned by `CreateAlertChannel`, `GetAlertChannel` and `UpdateAlertChannel` have

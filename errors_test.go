@@ -309,7 +309,7 @@ func TestAPIErrorLiteral(t *testing.T) {
 
 func TestDecodeErrorOmitsBody(t *testing.T) {
 	t.Parallel()
-	c := newErrorServer(t, errorReply{status: 200, body: `{"frequency":"SECRET-RESPONSE-MARKER"}`})
+	c := newErrorServer(t, errorReply{status: 200, body: `{"checkType":"API","frequency":"SECRET-RESPONSE-MARKER"}`})
 	_, err := c.GetCheck(context.Background(), "abc")
 	if err == nil {
 		t.Fatal("want decode error, got nil")
@@ -318,7 +318,7 @@ func TestDecodeErrorOmitsBody(t *testing.T) {
 	if strings.Contains(msg, "SECRET-RESPONSE-MARKER") {
 		t.Errorf("want the response body left out of the error, got %q", msg)
 	}
-	if want := "GET /v1/checks/abc: decoding 200 response (38 bytes): "; !strings.HasPrefix(msg, want) {
+	if want := "GET /v1/checks/abc: decoding 200 response (56 bytes): "; !strings.HasPrefix(msg, want) {
 		t.Errorf("want error starting with %q, got %q", want, msg)
 	}
 	var apiErr *checkly.APIError

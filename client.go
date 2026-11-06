@@ -22,14 +22,13 @@ const defaultSource = "go-sdk"
 // behaviour that all methods share.
 type Client interface {
 	// GetCheck returns the check with the given ID, whatever its type, as a
-	// [Check].
-	//
-	// Deprecated: use GetAPICheck, GetBrowserCheck, GetMultiStepCheck or the
-	// get method of the monitor type.
+	// [Check] holding a pointer to its check or monitor type, such as
+	// [*APICheck]. It fails with an [*UnsupportedCheckTypeError], which matches
+	// [ErrUnsupportedCheckType], for a type the SDK has no resource type for.
 	GetCheck(
 		ctx context.Context,
 		ID string,
-	) (*Check, error)
+	) (Check, error)
 
 	// DeleteCheck deletes the check with the given ID, whatever its type.
 	//

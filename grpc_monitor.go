@@ -76,6 +76,8 @@ type GRPCMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*GRPCMonitor) isCheck() {}
+
 // GRPCRequest is the connection of a [GRPCMonitor]. The API requires
 // GRPCConfig, so it is a value rather than a pointer.
 type GRPCRequest struct {

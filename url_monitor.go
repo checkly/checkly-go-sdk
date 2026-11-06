@@ -71,6 +71,8 @@ type URLMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*URLMonitor) isCheck() {}
+
 // URLRequest is the request of a [URLMonitor]. The SDK always sends it with
 // the method GET.
 type URLRequest struct {

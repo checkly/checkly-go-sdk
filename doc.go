@@ -14,6 +14,7 @@
 //
 // Each check and monitor type has its own type and methods, such as [APICheck]
 // with CreateAPICheck, GetAPICheck, UpdateAPICheck and DeleteAPICheck.
+// [Client.GetCheck] returns a [Check] for an ID whose check type is not known.
 //
 // # Errors, cancellation and retries
 //

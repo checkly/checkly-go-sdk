@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -60,15 +61,16 @@ func TestGetCheckIntegration(t *testing.T) {
 		_ = client.DeleteAPICheck(context.Background(), created.ID)
 	})
 
-	got, err := client.GetCheck(ctx, created.ID)
+	check, err := client.GetCheck(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("failed to get check: %v", err)
 	}
+	got, ok := check.(*checkly.APICheck)
+	if !ok {
+		t.Fatalf("got %T, want *checkly.APICheck", check)
+	}
 	if got.ID != created.ID {
 		t.Errorf("ID = %q, want %q", got.ID, created.ID)
-	}
-	if got.Type != checkly.CheckTypeAPI {
-		t.Errorf("Type = %q, want %q", got.Type, checkly.CheckTypeAPI)
 	}
 	if got.Name != created.Name {
 		t.Errorf("Name = %q, want %q", got.Name, created.Name)
@@ -85,6 +87,140 @@ func TestGetCheckIntegration(t *testing.T) {
 	if got.Request.URL != created.Request.URL {
 		t.Errorf("Request.URL = %q, want %q", got.Request.URL, created.Request.URL)
 	}
+}
+
+// assertGetCheckReturns creates a check in a subtest and verifies that
+// GetCheck, whose request sets includeDependencies whatever the type, returns
+// that check as a *T.
+func assertGetCheckReturns[T any](t *testing.T, client checkly.Client, name string, create func() (*T, error)) {
+	t.Run(name, func(t *testing.T) {
+		ctx := context.TODO()
+		created, err := create()
+		if err != nil {
+			t.Fatalf("failed to create %s check: %v", name, err)
+		}
+		id := reflect.ValueOf(created).Elem().FieldByName("ID").String()
+		t.Cleanup(func() {
+			_ = client.DeleteCheck(context.Background(), id)
+		})
+
+		check, err := client.GetCheck(ctx, id)
+		if err != nil {
+			t.Fatalf("failed to get %s check: %v", name, err)
+		}
+		got, ok := any(check).(*T)
+		if !ok {
+			t.Fatalf("got %T, want %T", check, created)
+		}
+		if gotID := reflect.ValueOf(got).Elem().FieldByName("ID").String(); gotID != id {
+			t.Errorf("ID = %q, want %q", gotID, id)
+		}
+	})
+}
+
+// TestGetCheckConcreteTypesIntegration verifies that GetCheck returns the
+// concrete type of every check type the SDK can create, apart from API checks,
+// which TestGetCheckIntegration covers. Playwright checks need an uploaded code
+// bundle, so only a unit test covers them.
+func TestGetCheckConcreteTypesIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+	locations := []string{"us-east-1"}
+
+	assertGetCheckReturns(t, client, "browser", func() (*checkly.BrowserCheck, error) {
+		return client.CreateBrowserCheck(ctx, checkly.BrowserCheck{
+			Name:      "GetCheck browser check",
+			Frequency: 10,
+			Locations: locations,
+			Script:    "console.log('browser')",
+		})
+	})
+	assertGetCheckReturns(t, client, "multi-step", func() (*checkly.MultiStepCheck, error) {
+		return client.CreateMultiStepCheck(ctx, checkly.MultiStepCheck{
+			Name:      "GetCheck multi-step check",
+			Frequency: 10,
+			Locations: locations,
+			Script:    "console.log('multi-step')",
+		})
+	})
+	assertGetCheckReturns(t, client, "heartbeat", func() (*checkly.HeartbeatMonitor, error) {
+		return client.CreateHeartbeatMonitor(ctx, checkly.HeartbeatMonitor{
+			Name: "GetCheck heartbeat monitor",
+			AlertSettings: checkly.AlertSettings{
+				EscalationType:     checkly.EscalationTypeRunBased,
+				RunBasedEscalation: checkly.RunBasedEscalation{FailedRunThreshold: 1},
+			},
+			Heartbeat: checkly.Heartbeat{
+				Period:     1,
+				PeriodUnit: checkly.HeartbeatUnitDays,
+				Grace:      1,
+				GraceUnit:  checkly.HeartbeatUnitHours,
+			},
+		})
+	})
+	assertGetCheckReturns(t, client, "URL", func() (*checkly.URLMonitor, error) {
+		return client.CreateURLMonitor(ctx, checkly.URLMonitor{
+			Name:      "GetCheck URL monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.URLRequest{URL: "https://api.checklyhq.com"},
+		})
+	})
+	assertGetCheckReturns(t, client, "TCP", func() (*checkly.TCPMonitor, error) {
+		return client.CreateTCPMonitor(ctx, checkly.TCPMonitor{
+			Name:      "GetCheck TCP monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.TCPRequest{Hostname: "api.checklyhq.com", Port: 443},
+		})
+	})
+	assertGetCheckReturns(t, client, "DNS", func() (*checkly.DNSMonitor, error) {
+		return client.CreateDNSMonitor(ctx, checkly.DNSMonitor{
+			Name:      "GetCheck DNS monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.DNSRequest{RecordType: "A", Query: "api.checklyhq.com"},
+		})
+	})
+	assertGetCheckReturns(t, client, "ICMP", func() (*checkly.ICMPMonitor, error) {
+		return client.CreateICMPMonitor(ctx, checkly.ICMPMonitor{
+			Name:                        "GetCheck ICMP monitor",
+			Frequency:                   10,
+			Locations:                   locations,
+			DegradedPacketLossThreshold: 10,
+			MaxPacketLossThreshold:      20,
+			Request:                     checkly.ICMPRequest{Hostname: "api.checklyhq.com", PingCount: 5},
+		})
+	})
+	assertGetCheckReturns(t, client, "gRPC", func() (*checkly.GRPCMonitor, error) {
+		return client.CreateGRPCMonitor(ctx, checkly.GRPCMonitor{
+			Name:      "GetCheck gRPC monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request: checkly.GRPCRequest{
+				URL:        "grpc.example.com",
+				Port:       443,
+				Timeout:    30,
+				GRPCConfig: checkly.GRPCConfig{Mode: "BEHAVIOR", Method: "example.Service/Method"},
+			},
+		})
+	})
+	assertGetCheckReturns(t, client, "SSL", func() (*checkly.SSLMonitor, error) {
+		return client.CreateSSLMonitor(ctx, checkly.SSLMonitor{
+			Name:      "GetCheck SSL monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.SSLRequest{SSLConfig: checkly.SSLConfig{Hostname: "api.checklyhq.com"}},
+		})
+	})
+	assertGetCheckReturns(t, client, "traceroute", func() (*checkly.TracerouteMonitor, error) {
+		return client.CreateTracerouteMonitor(ctx, checkly.TracerouteMonitor{
+			Name:      "GetCheck traceroute monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.TracerouteRequest{URL: "api.checklyhq.com"},
+		})
+	})
 }
 
 // TestAPICheckRoundTripIntegration verifies that every field of a fully

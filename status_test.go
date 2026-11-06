@@ -260,7 +260,6 @@ var statusCases = map[string]statusCase{
 	"DeleteAPICheck":          deleteCheckCase(checkly.Client.DeleteAPICheck),
 	"DeleteBrowserCheck":      deleteCheckCase(checkly.Client.DeleteBrowserCheck),
 	"DeleteMultiStepCheck":    deleteCheckCase(checkly.Client.DeleteMultiStepCheck),
-	"GetCheck":                getCheckCase(checkly.Client.GetCheck),
 	"GetTCPMonitor":           getCheckOfTypeCase(checkly.Client.GetTCPMonitor, "TCP"),
 	"GetGRPCMonitor":          getCheckOfTypeCase(checkly.Client.GetGRPCMonitor, "GRPC"),
 	"GetTracerouteMonitor":    getCheckOfTypeCase(checkly.Client.GetTracerouteMonitor, "TRACEROUTE"),
@@ -272,6 +271,14 @@ var statusCases = map[string]statusCase{
 	"GetAPICheck":             getCheckOfTypeCase(checkly.Client.GetAPICheck, "API"),
 	// Like getCheckOfTypeCase, but these getters add includeDependencies=true
 	// to the request; the canned body still has to name the right type.
+	"GetCheck": {
+		requests: []string{"GET /v1/checks/id1?includeDependencies=true"},
+		accept:   statusOK,
+		body:     `{"checkType":"API"}`,
+		call: func(ctx context.Context, c checkly.Client) error {
+			return ignoreResult(c.GetCheck(ctx, testID))
+		},
+	},
 	"GetBrowserCheck": {
 		requests: []string{"GET /v1/checks/id1?includeDependencies=true"},
 		accept:   statusOK,
@@ -760,18 +767,6 @@ func deleteCheckCase(del func(checkly.Client, context.Context, string) error) st
 		requests: []string{"DELETE /v1/checks/id1"},
 		accept:   statusNoContent,
 		call:     func(ctx context.Context, c checkly.Client) error { return del(c, ctx, testID) },
-	}
-}
-
-// getCheckCase covers GetCheck, which reads the generic check endpoint
-// without checking the type of the returned check.
-func getCheckCase[T any](get func(checkly.Client, context.Context, string) (T, error)) statusCase {
-	return statusCase{
-		requests: []string{"GET /v1/checks/id1"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(get(c, ctx, testID))
-		},
 	}
 }
 

@@ -74,6 +74,8 @@ type TCPMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*TCPMonitor) isCheck() {}
+
 // TCPRequest is the connection of a [TCPMonitor].
 type TCPRequest struct {
 	Hostname string `json:"hostname"`

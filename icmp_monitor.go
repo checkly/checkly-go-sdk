@@ -73,6 +73,8 @@ type ICMPMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*ICMPMonitor) isCheck() {}
+
 // ICMPRequest is the ping of an [ICMPMonitor].
 type ICMPRequest struct {
 	Hostname string `json:"hostname"`
