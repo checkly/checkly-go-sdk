@@ -48,7 +48,7 @@ func newRateLimitServer(t *testing.T, responses ...cannedReply) *rateLimitServer
 			w.Header().Set(k, v)
 		}
 		w.WriteHeader(reply.status)
-		io.WriteString(w, reply.body)
+		_, _ = io.WriteString(w, reply.body)
 	}))
 	t.Cleanup(s.Close)
 	return s

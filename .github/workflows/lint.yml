@@ -1,0 +1,52 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so that newly published vulnerabilities surface without a code
+    # change. GitHub sends failure notifications for scheduled runs only to the
+    # user who last modified this cron line, and disables scheduled workflows
+    # in public repositories after 60 days without repository activity.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.26.x
+          check-latest: true
+
+      - name: Vet
+        run: |
+          go vet ./...
+          go vet -tags integration .
+
+      # Also checks formatting, through the formatters in .golangci.yml.
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
+  vulnerabilities:
+    name: Vulnerabilities
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: 1.26.x
+          check-latest: true

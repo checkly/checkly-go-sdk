@@ -212,7 +212,7 @@ func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) 
 		return rawResponse{}, fmt.Errorf("%s %s: request to %s failed: %w", method, path, req.URL.Host, err)
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	res := rawResponse{method: method, path: path, status: resp.StatusCode, header: resp.Header}
 	res.body, err = io.ReadAll(resp.Body)

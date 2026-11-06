@@ -1,0 +1,13 @@
+version: "2"
+
+run:
+  # Lint the integration tests too; they only build with this tag.
+  build-tags:
+    - integration
+
+linters:
+  default: standard
+
+formatters:
+  enable:
+    - gofmt

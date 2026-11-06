@@ -139,7 +139,9 @@ func TestWithAuth(t *testing.T) {
 func setEnv(t *testing.T, key, value string) {
 	t.Setenv(key, value)
 	if value == "" {
-		os.Unsetenv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -330,11 +332,11 @@ func headerServer(t *testing.T, body string) (*httptest.Server, func() []sentReq
 		requests []sentRequest
 	)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		mu.Lock()
 		requests = append(requests, sentRequest{path: r.URL.Path, header: r.Header.Clone()})
 		mu.Unlock()
-		io.WriteString(w, body)
+		_, _ = io.WriteString(w, body)
 	}))
 	t.Cleanup(srv.Close)
 	return srv, func() []sentRequest {

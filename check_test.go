@@ -304,7 +304,7 @@ func checkBodyServer(t *testing.T, id, query, checkType string) *httptest.Server
 		if want := "/v1/checks/" + id + query; r.Method != http.MethodGet || r.URL.String() != want {
 			t.Errorf("want GET %q, got %s %q", want, r.Method, r.URL.String())
 		}
-		fmt.Fprintf(w, `{"id":%q,"checkType":%q}`, id, checkType)
+		_, _ = fmt.Fprintf(w, `{"id":%q,"checkType":%q}`, id, checkType)
 	}))
 	t.Cleanup(ts.Close)
 	return ts

@@ -42,7 +42,7 @@ func TestCreateIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteCheck(context.Background(), gotCheck.ID)
+	defer func() { _ = client.DeleteCheck(context.Background(), gotCheck.ID) }()
 	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
 		t.Fatal(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
 	}
@@ -124,7 +124,7 @@ func TestGetIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteCheck(context.Background(), check.ID)
+	defer func() { _ = client.DeleteCheck(context.Background(), check.ID) }()
 	gotCheck, err := client.GetCheck(context.Background(), check.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -141,7 +141,7 @@ func TestUpdateIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteCheck(context.Background(), check.ID)
+	defer func() { _ = client.DeleteCheck(context.Background(), check.ID) }()
 	updatedCheck := wantCheck
 	updatedCheck.Name = "integrationTestUpdate"
 	gotCheck, err := client.UpdateCheck(context.Background(), check.ID, updatedCheck)
@@ -198,7 +198,7 @@ func TestCreateGroupIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteGroup(context.Background(), gotGroup.ID)
+	defer func() { _ = client.DeleteGroup(context.Background(), gotGroup.ID) }()
 	// These are set by the APIs
 	ignored := cmpopts.IgnoreFields(checkly.Group{}, "ID", "AlertChannelSubscriptions", "PrivateLocations", "CreatedAt", "UpdatedAt")
 	if !cmp.Equal(wantGroupCopy, *gotGroup, ignored) {
@@ -215,7 +215,7 @@ func TestGetGroupIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteGroup(context.Background(), group.ID)
+	defer func() { _ = client.DeleteGroup(context.Background(), group.ID) }()
 	gotGroup, err := client.GetGroup(context.Background(), group.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -236,7 +236,7 @@ func TestCreateDashboardIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteDashboard(context.Background(), gotDashboard.DashboardID)
+	defer func() { _ = client.DeleteDashboard(context.Background(), gotDashboard.DashboardID) }()
 	if !cmp.Equal(testDashboard, *gotDashboard, ignoreDashboardFields) {
 		t.Fatal(cmp.Diff(testDashboard, *gotDashboard, ignoreDashboardFields))
 	}
@@ -248,7 +248,7 @@ func TestGetDashboardIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteDashboard(context.Background(), dash.DashboardID)
+	defer func() { _ = client.DeleteDashboard(context.Background(), dash.DashboardID) }()
 	gotDashboard, err := client.GetDashboard(context.Background(), dash.DashboardID)
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +288,7 @@ func TestDashboardDefaultsIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteDashboard(ctx, created.DashboardID)
+	defer func() { _ = client.DeleteDashboard(ctx, created.DashboardID) }()
 	wantDashboardDefaults(t, created)
 
 	falseVal := false
@@ -334,7 +334,7 @@ func TestDashboardClearTextsIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteDashboard(ctx, created.DashboardID)
+	defer func() { _ = client.DeleteDashboard(ctx, created.DashboardID) }()
 
 	if _, err := client.UpdateDashboard(ctx, created.DashboardID, checkly.Dashboard{CustomURL: dashboard.CustomURL}); err != nil {
 		t.Fatal(err)
@@ -358,7 +358,7 @@ func TestCreateMaintenanceWindowIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteMaintenanceWindow(context.Background(), gotMaintenanceWindow.ID)
+	defer func() { _ = client.DeleteMaintenanceWindow(context.Background(), gotMaintenanceWindow.ID) }()
 	if !cmp.Equal(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields) {
 		t.Fatal(cmp.Diff(testMaintenanceWindow, *gotMaintenanceWindow, ignoreMaintenanceWindowFields))
 	}
@@ -370,7 +370,7 @@ func TestGetMaintenanceWindowIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteMaintenanceWindow(context.Background(), dash.ID)
+	defer func() { _ = client.DeleteMaintenanceWindow(context.Background(), dash.ID) }()
 	gotMaintenanceWindow, err := client.GetMaintenanceWindow(context.Background(), dash.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -389,7 +389,7 @@ func TestCreatePrivateLocationIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeletePrivateLocation(context.Background(), gotPrivateLocation.ID)
+	defer func() { _ = client.DeletePrivateLocation(context.Background(), gotPrivateLocation.ID) }()
 	if !cmp.Equal(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields) {
 		t.Fatal(cmp.Diff(testPrivateLocation, *gotPrivateLocation, ignorePrivateLocationFields))
 	}
@@ -400,7 +400,7 @@ func TestGetPrivateLocationIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeletePrivateLocation(context.Background(), pl.ID)
+	defer func() { _ = client.DeletePrivateLocation(context.Background(), pl.ID) }()
 	gotPrivateLocation, err := client.GetPrivateLocation(context.Background(), pl.ID)
 	if err != nil {
 		t.Fatal(err)

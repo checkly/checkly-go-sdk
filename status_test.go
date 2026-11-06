@@ -897,7 +897,7 @@ func TestMissingCredentialsPerMethod(t *testing.T) {
 				creds    []string
 			)
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				io.Copy(io.Discard, r.Body)
+				_, _ = io.Copy(io.Discard, r.Body)
 				mu.Lock()
 				requests++
 				for _, h := range []string{"Authorization", "X-Checkly-Account"} {
@@ -908,7 +908,7 @@ func TestMissingCredentialsPerMethod(t *testing.T) {
 				mu.Unlock()
 				w.WriteHeader(tc.accept[0])
 				if tc.accept[0] != http.StatusNoContent {
-					io.WriteString(w, body)
+					_, _ = io.WriteString(w, body)
 				}
 			}))
 			t.Cleanup(srv.Close)
@@ -1016,7 +1016,7 @@ func newStatusServer(t *testing.T, statuses []int, headers map[int]http.Header, 
 		requests []string
 	)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		mu.Lock()
 		requests = append(requests, r.Method+" "+r.URL.RequestURI())
 		status := statuses[min(len(requests), len(statuses))-1]
@@ -1026,7 +1026,7 @@ func newStatusServer(t *testing.T, statuses []int, headers map[int]http.Header, 
 		}
 		w.WriteHeader(status)
 		if status != http.StatusNoContent {
-			io.WriteString(w, body)
+			_, _ = io.WriteString(w, body)
 		}
 	}))
 	t.Cleanup(srv.Close)

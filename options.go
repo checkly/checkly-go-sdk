@@ -35,7 +35,7 @@ func isUUID(s string) bool {
 				return false
 			}
 		default:
-			if !('0' <= r && r <= '9' || 'a' <= r && r <= 'f' || 'A' <= r && r <= 'F') {
+			if (r < '0' || r > '9') && (r < 'a' || r > 'f') && (r < 'A' || r > 'F') {
 				return false
 			}
 		}

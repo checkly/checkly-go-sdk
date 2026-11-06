@@ -2,10 +2,10 @@ package checkly_test
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -30,12 +30,12 @@ func TestGetStaticIPs(t *testing.T) {
 		}
 
 		filePath := filepath.Join("fixtures", fileName)
-		fileData, err := ioutil.ReadFile(filePath)
+		fileData, err := os.ReadFile(filePath)
 		if err != nil {
 			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
-		w.Write(fileData)
+		_, _ = w.Write(fileData)
 	}))
 	defer ts.Close()
 
