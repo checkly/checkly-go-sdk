@@ -144,7 +144,7 @@ log.Println(monitor.Name)
 
 v2 adds `APICheck` and `BrowserCheck`, redefines `MultiStepCheck`, and gives each its own methods
 backed by the per-type endpoints, which are now the only way to create and update a check.
-`DeleteCheck` still works but is deprecated.
+`GetCheck` and `DeleteCheck` remain for an ID whose check type is not known.
 
 | Check type | Type | Methods | Create and update endpoint |
 |---|---|---|---|

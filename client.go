@@ -31,9 +31,6 @@ type Client interface {
 	) (Check, error)
 
 	// DeleteCheck deletes the check with the given ID, whatever its type.
-	//
-	// Deprecated: use DeleteAPICheck, DeleteBrowserCheck, DeleteMultiStepCheck
-	// or the delete method of the monitor type.
 	DeleteCheck(
 		ctx context.Context,
 		ID string,

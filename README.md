@@ -86,7 +86,7 @@ if err != nil {
 fmt.Printf("created API check %q with ID %s\n", check.Name, check.ID)
 ```
 
-Each check and monitor type has its own type and methods, such as `GetAPICheck`, `UpdateAPICheck` and `DeleteAPICheck` for API checks. `GetCheck` reads a check whose type is not known and returns a pointer to its type.
+Each check and monitor type has its own type and methods, such as `GetAPICheck`, `UpdateAPICheck` and `DeleteAPICheck` for API checks. `GetCheck` reads a check whose type is not known and returns a pointer to its type, and `DeleteCheck` deletes one.
 
 ### Creating a URL monitor
 
