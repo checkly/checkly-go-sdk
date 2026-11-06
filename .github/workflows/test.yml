@@ -6,9 +6,13 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Test
+  unit:
+    name: Unit tests (Go ${{ matrix.go }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26.x", "1.27.x"]
 
     steps:
       - name: Checkout
@@ -17,10 +21,55 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: "go.mod"
+          go-version: ${{ matrix.go }}
+          check-latest: true
 
-      - name: Test
-        run: make test
+      - name: Unit tests
+        run: make test-unit
+
+  # The "Test" check gates merging, so this job always runs and fails unless
+  # every unit test job succeeded: a skipped required check counts as passing.
+  build:
+    name: Test
+    needs: unit
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    env:
+      # Secrets are not passed to workflows triggered from forks or by
+      # Dependabot, so those runs skip the integration tests.
+      HAS_SECRETS: ${{ secrets.CHECKLY_API_KEY != '' }}
+
+    steps:
+      - name: Check unit test results
+        if: needs.unit.result != 'success'
+        run: |
+          echo "Unit tests finished with result: ${{ needs.unit.result }}"
+          exit 1
+
+      # Pushes to main always have the secrets, so a missing secret there is a
+      # misconfiguration rather than an expected skip.
+      - name: Report skipped integration tests
+        if: env.HAS_SECRETS != 'true'
+        run: |
+          echo "::notice::Integration tests skipped: the Checkly API secrets are not available to this run."
+          if [ "${{ github.event_name }}" = "push" ]; then exit 1; fi
+
+      - name: Checkout
+        if: env.HAS_SECRETS == 'true'
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        if: env.HAS_SECRETS == 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.27.x
+          check-latest: true
+
+      # The integration tests run on one Go version only, as they share a
+      # Checkly account whose resources can collide between concurrent runs.
+      - name: Integration tests
+        if: env.HAS_SECRETS == 'true'
+        run: make test-integration
         env:
           CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
           CHECKLY_API_URL: ${{ secrets.CHECKLY_API_URL }}

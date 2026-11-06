@@ -1,8 +1,10 @@
-test:
-	go clean -testcache
-	go clean ./...
-	go test -v ./...
-	go test -v ./... -tags=integration
+test: test-unit test-integration
+
+test-unit:
+	go test -count=1 -v ./...
+
+test-integration:
+	go test -count=1 -v -tags=integration ./...
 
 demo:
 	go run ./demo/main.go
