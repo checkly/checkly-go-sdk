@@ -58,7 +58,7 @@ func TestCheckGroupUnset(t *testing.T) {
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -76,14 +76,14 @@ func TestCheckGroupUnset(t *testing.T) {
 
 	pendingCheck := checkly.Check{
 		Name:      "Foo check",
-		Type:      checkly.TypeAPI,
+		Type:      checkly.CheckTypeAPI,
 		Frequency: 10,
 		Request: checkly.Request{
 			Method: "GET",
 			URL:    "https://api.checklyhq.com",
 		},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -172,7 +172,7 @@ func makeTestAlertChannel(t *testing.T, client checkly.Client) *checkly.AlertCha
 	ac, err := client.CreateAlertChannel(
 		context.Background(),
 		checkly.AlertChannel{
-			Type: checkly.AlertTypeEmail,
+			Type: checkly.AlertChannelTypeEmail,
 			Email: &checkly.AlertChannelEmail{
 				Address: "test@example.com",
 			},
@@ -475,7 +475,7 @@ func TestTCPMonitorGroupUnset(t *testing.T) {
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -980,7 +980,7 @@ func TestURLMonitorGroupUnset(t *testing.T) {
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -1305,7 +1305,7 @@ func TestICMPMonitorGroupUnset(t *testing.T) {
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -1370,7 +1370,7 @@ func TestDNSMonitorGroupUnset(t *testing.T) {
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -1431,7 +1431,7 @@ func TestAlertChannelAutoSubscribeIntegration(t *testing.T) {
 
 	on := true
 	pending := checkly.AlertChannel{
-		Type:          checkly.AlertTypeEmail,
+		Type:          checkly.AlertChannelTypeEmail,
 		Email:         &checkly.AlertChannelEmail{Address: "test@example.com"},
 		AutoSubscribe: &on,
 	}
@@ -1485,8 +1485,8 @@ func TestAPICheckSelfHealingFieldsIntegration(t *testing.T) {
 			Headers:         []checkly.KeyValue{},
 			QueryParameters: []checkly.KeyValue{},
 			Assertions: []checkly.Assertion{
-				{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
-				{Source: checkly.Headers, Property: "content-type", Comparison: checkly.Contains, Target: "json", Regex: `^(\w+/\w+)`},
+				{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
+				{Source: checkly.AssertionSourceHeaders, Property: "content-type", Comparison: checkly.AssertionComparisonContains, Target: "json", Regex: `^(\w+/\w+)`},
 			},
 		},
 		Intent:              intent,
@@ -1656,7 +1656,7 @@ func createResetTestGroup(ctx context.Context, t *testing.T, client checkly.Clie
 		Concurrency: 3,
 		Tags:        []string{},
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -1913,7 +1913,7 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 
 	pending := checkly.Check{
 		Name:      "Update reset check",
-		Type:      checkly.TypeAPI,
+		Type:      checkly.CheckTypeAPI,
 		Frequency: 10,
 		Locations: []string{"us-east-1"},
 		Request: checkly.Request{
@@ -1923,7 +1923,7 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 		// A zero AlertSettings still sends runBasedEscalation, which the
 		// API rejects without a threshold.
 		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.RunBased,
+			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
 			},
@@ -1969,7 +1969,7 @@ func TestUnsetListsAreAccepted(t *testing.T) {
 	client := setupClient(t)
 
 	alertSettings := checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
@@ -2003,7 +2003,7 @@ func TestUnsetListsAreAccepted(t *testing.T) {
 	t.Run("Check", func(t *testing.T) {
 		check := checkly.Check{
 			Name:          "Unset lists check",
-			Type:          checkly.TypeAPI,
+			Type:          checkly.CheckTypeAPI,
 			Frequency:     10,
 			Locations:     []string{"us-east-1"},
 			AlertSettings: alertSettings,

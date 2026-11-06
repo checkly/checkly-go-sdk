@@ -42,7 +42,7 @@ type TCPRequest struct {
 	Port       uint16      `json:"port"`
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
-	IPFamily   string      `json:"ipFamily,omitempty"`
+	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
 }
 
 // tcpRequestPayload wraps TCPRequest for create and update payloads. The
@@ -62,9 +62,9 @@ type tcpRequestPayload struct {
 
 type tcpMonitorPayload struct {
 	TCPMonitor
-	Type        string `json:"checkType"`
-	DoubleCheck bool   `json:"doubleCheck"`
-	GroupID     *int64 `json:"groupId"`
+	Type        CheckType `json:"checkType"`
+	DoubleCheck bool      `json:"doubleCheck"`
+	GroupID     *int64    `json:"groupId"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
 	// zero value would be omitted so that they are always sent and can
@@ -81,7 +81,7 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 	payload := tcpMonitorPayload{
 		TCPMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "TCP",
+		Type: CheckTypeTCP,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 	}
@@ -144,7 +144,7 @@ func (c *client) GetTCPMonitor(
 	ID string,
 ) (*TCPMonitor, error) {
 	var result TCPMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "TCP", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeTCP, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

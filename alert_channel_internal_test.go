@@ -9,19 +9,19 @@ func TestAlertChannelPayloadOmitsUnsetSettings(t *testing.T) {
 	t.Parallel()
 	unset := marshalToMap(t, createAlertChannelPayload(AlertChannel{
 		ID:        7,
-		Type:      AlertTypeEmail,
+		Type:      AlertChannelTypeEmail,
 		Email:     &AlertChannelEmail{Address: "a@example.com"},
 		CreatedAt: "2026-01-02T03:04:05Z",
 		UpdatedAt: "2026-01-02T03:04:05Z",
 	}))
-	if len(unset) != 2 || unset["type"] != AlertTypeEmail || unset["config"] == nil {
+	if len(unset) != 2 || unset["type"] != string(AlertChannelTypeEmail) || unset["config"] == nil {
 		t.Errorf("want only type and config, got %v", unset)
 	}
 
 	f, threshold := false, 30
 	set := marshalToMap(t, createAlertChannelPayload(AlertChannel{
 		ID:                 7,
-		Type:               AlertTypeEmail,
+		Type:               AlertChannelTypeEmail,
 		SendRecovery:       &f,
 		SendFailure:        &f,
 		SendDegraded:       &f,

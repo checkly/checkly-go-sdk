@@ -96,8 +96,8 @@ func ExampleClient_CreateAPICheck() {
 				{Key: "Accept", Value: "application/json"},
 			},
 			Assertions: []checkly.Assertion{
-				{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
-				{Source: checkly.ResponseTime, Comparison: checkly.LessThan, Target: "2000"},
+				{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
+				{Source: checkly.AssertionSourceResponseTime, Comparison: checkly.AssertionComparisonLessThan, Target: "2000"},
 			},
 		},
 	})
@@ -139,7 +139,7 @@ func ExampleClient_CreateURLMonitor() {
 			URL:             "https://example.com/",
 			FollowRedirects: true,
 			Assertions: []checkly.Assertion{
-				{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+				{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
 			},
 		},
 	})

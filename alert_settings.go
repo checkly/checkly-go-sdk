@@ -1,16 +1,22 @@
 package checkly
 
-// Escalation type constants
+// EscalationType is when an alert escalates, in
+// [AlertSettings].EscalationType.
+type EscalationType string
 
-// RunBased identifies a run-based escalation type, for use with an AlertSettings.
-const RunBased = "RUN_BASED"
-
-// TimeBased identifies a time-based escalation type, for use with an AlertSettings.
-const TimeBased = "TIME_BASED"
+// Escalation types, the values of [AlertSettings].EscalationType.
+const (
+	// EscalationTypeRunBased alerts after a number of consecutive failed
+	// runs, set in RunBasedEscalation. It is the API default.
+	EscalationTypeRunBased EscalationType = "RUN_BASED"
+	// EscalationTypeTimeBased alerts once a check has been failing for a
+	// number of minutes, set in TimeBasedEscalation.
+	EscalationTypeTimeBased EscalationType = "TIME_BASED"
+)
 
 // AlertSettings represents an alert configuration.
 type AlertSettings struct {
-	EscalationType              string                      `json:"escalationType,omitempty"`
+	EscalationType              EscalationType              `json:"escalationType,omitempty"`
 	RunBasedEscalation          RunBasedEscalation          `json:"runBasedEscalation,omitempty"`
 	TimeBasedEscalation         TimeBasedEscalation         `json:"timeBasedEscalation,omitempty"`
 	Reminders                   Reminders                   `json:"reminders,omitempty"`

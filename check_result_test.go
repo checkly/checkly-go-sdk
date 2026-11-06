@@ -237,7 +237,7 @@ func TestGetCheckResultsWithFilters(t *testing.T) {
 		Page:        1,
 		From:        1,
 		To:          1000,
-		CheckType:   checkly.TypeAPI,
+		CheckType:   checkly.CheckTypeAPI,
 		HasFailures: true,
 		Location:    "us-east-1",
 	})
@@ -293,9 +293,9 @@ func TestGetCheckResultsQuery(t *testing.T) {
 		"to":               {&checkly.CheckResultsFilter{To: 1000}, path + "?to=1000"},
 		"has failures":     {&checkly.CheckResultsFilter{HasFailures: true}, path + "?hasFailures=1"},
 		"location":         {&checkly.CheckResultsFilter{Location: "us-east-1"}, path + "?location=us-east-1"},
-		"API check type":   {&checkly.CheckResultsFilter{CheckType: checkly.TypeAPI}, path + "?checkType=API"},
-		"browser type":     {&checkly.CheckResultsFilter{CheckType: checkly.TypeBrowser}, path + "?checkType=BROWSER"},
-		"heartbeat type":   {&checkly.CheckResultsFilter{CheckType: checkly.TypeHeartbeat}, path + "?checkType=HEARTBEAT"},
+		"API check type":   {&checkly.CheckResultsFilter{CheckType: checkly.CheckTypeAPI}, path + "?checkType=API"},
+		"browser type":     {&checkly.CheckResultsFilter{CheckType: checkly.CheckTypeBrowser}, path + "?checkType=BROWSER"},
+		"heartbeat type":   {&checkly.CheckResultsFilter{CheckType: checkly.CheckTypeHeartbeat}, path + "?checkType=HEARTBEAT"},
 		"multi-step type":  {&checkly.CheckResultsFilter{CheckType: "MULTI_STEP"}, path + "?checkType=MULTI_STEP"},
 		"URL monitor type": {&checkly.CheckResultsFilter{CheckType: "URL"}, path + "?checkType=URL"},
 		"type and paging": {

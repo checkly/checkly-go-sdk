@@ -14,6 +14,16 @@ type DashboardKey struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+// DashboardWidth is the page width of a dashboard, in [Dashboard].Width.
+type DashboardWidth string
+
+// Dashboard widths, the values of [Dashboard].Width. The API default is
+// DashboardWidthFull.
+const (
+	DashboardWidthFull  DashboardWidth = "FULL"
+	DashboardWidth960PX DashboardWidth = "960PX"
+)
+
 // Dashboard defines a type for a dashboard.
 type Dashboard struct {
 	ID                 int64          `json:"id,omitempty"`
@@ -27,7 +37,7 @@ type Dashboard struct {
 	Favicon            string         `json:"favicon,omitempty"`
 	Header             string         `json:"header,omitempty"`
 	ShowHeader         *bool          `json:"showHeader,omitempty"` // If nil, defaults to true.
-	Width              string         `json:"width,omitempty"`
+	Width              DashboardWidth `json:"width,omitempty"`
 	RefreshRate        int            `json:"refreshRate,omitempty"` // One of 60, 300 or 600 seconds. If 0, defaults to 60.
 	ChecksPerPage      int            `json:"checksPerPage,omitempty"`
 	PaginationRate     int            `json:"paginationRate,omitempty"` // One of 30, 60 or 300 seconds. If 0, defaults to 60.

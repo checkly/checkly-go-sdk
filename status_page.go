@@ -6,8 +6,12 @@ import (
 	"net/http"
 )
 
+// StatusPageTheme is the default color theme of a status page, in
+// [StatusPage].DefaultTheme and [StatusPageV3].DefaultTheme.
 type StatusPageTheme string
 
+// Status page themes, the values of [StatusPage].DefaultTheme and
+// [StatusPageV3].DefaultTheme.
 const (
 	StatusPageThemeAuto  StatusPageTheme = "AUTO"
 	StatusPageThemeDark  StatusPageTheme = "DARK"

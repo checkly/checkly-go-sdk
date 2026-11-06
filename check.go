@@ -8,17 +8,29 @@ import (
 	"time"
 )
 
-// Check type constants
+// CheckType is the type of a check or monitor, in [Check].Type and
+// [CheckResultsFilter].CheckType.
 type CheckType string
 
-// TypeBrowser is used to identify a browser check.
-const TypeBrowser = "BROWSER"
-
-// TypeAPI is used to identify an API check.
-const TypeAPI = "API"
-
-// TypeHeartbeat is used to identify a browser check.
-const TypeHeartbeat = "HEARTBEAT"
+// Check types, the values of [Check].Type and [CheckResultsFilter].CheckType.
+const (
+	// CheckTypeAgentic is the type of agentic checks, which the SDK has no
+	// resource type for. It can be used as CheckResultsFilter.CheckType and
+	// appears in Check.Type of checks read with GetCheck.
+	CheckTypeAgentic    CheckType = "AGENTIC"
+	CheckTypeAPI        CheckType = "API"
+	CheckTypeBrowser    CheckType = "BROWSER"
+	CheckTypeHeartbeat  CheckType = "HEARTBEAT"
+	CheckTypeICMP       CheckType = "ICMP"
+	CheckTypeMultiStep  CheckType = "MULTI_STEP"
+	CheckTypeTCP        CheckType = "TCP"
+	CheckTypePlaywright CheckType = "PLAYWRIGHT"
+	CheckTypeTraceroute CheckType = "TRACEROUTE"
+	CheckTypeURL        CheckType = "URL"
+	CheckTypeDNS        CheckType = "DNS"
+	CheckTypeSSL        CheckType = "SSL"
+	CheckTypeGRPC       CheckType = "GRPC"
+)
 
 // Check represents the parameters for an existing check.
 //
@@ -28,7 +40,7 @@ type Check struct {
 	ID                        string                     `json:"id"`
 	Name                      string                     `json:"name"`
 	Description               *string                    `json:"description"`
-	Type                      string                     `json:"checkType"`
+	Type                      CheckType                  `json:"checkType"`
 	Frequency                 int                        `json:"frequency"`
 	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
 	Activated                 bool                       `json:"activated"`
@@ -74,28 +86,32 @@ func (c *client) CreateCheck(
 ) (*Check, error) {
 	var endpoint string
 	switch check.Type {
-	case "BROWSER":
+	case CheckTypeBrowser:
 		endpoint = "/v1/checks/browser"
-	case "API":
+	case CheckTypeAPI:
 		endpoint = "/v1/checks/api"
-	case "HEARTBEAT":
+	case CheckTypeHeartbeat:
 		endpoint = "/v1/checks/heartbeat"
-	case "MULTI_STEP":
+	case CheckTypeMultiStep:
 		endpoint = "/v1/checks/multistep"
-	case "TCP":
+	case CheckTypeTCP:
 		return nil, fmt.Errorf("user error: use CreateTCPMonitor to create TCP monitors")
-	case "URL":
+	case CheckTypeURL:
 		return nil, fmt.Errorf("user error: use CreateURLMonitor to create URL monitors")
-	case "DNS":
+	case CheckTypeDNS:
 		return nil, fmt.Errorf("user error: use CreateDNSMonitor to create DNS monitors")
-	case "ICMP":
+	case CheckTypeICMP:
 		return nil, fmt.Errorf("user error: use CreateICMPMonitor to create ICMP monitors")
-	case "GRPC":
+	case CheckTypeGRPC:
 		return nil, fmt.Errorf("user error: use CreateGRPCMonitor to create GRPC monitors")
-	case "TRACEROUTE":
+	case CheckTypeTraceroute:
 		return nil, fmt.Errorf("user error: use CreateTracerouteMonitor to create TRACEROUTE monitors")
-	case "SSL":
+	case CheckTypeSSL:
 		return nil, fmt.Errorf("user error: use CreateSSLMonitor to create SSL monitors")
+	case CheckTypePlaywright:
+		return nil, fmt.Errorf("user error: use CreatePlaywrightCheck to create PLAYWRIGHT checks")
+	case CheckTypeAgentic:
+		return nil, fmt.Errorf("user error: the SDK cannot create AGENTIC checks")
 	default:
 		return nil, fmt.Errorf("unknown check type: %s", check.Type)
 	}
@@ -199,7 +215,7 @@ func (c *client) DeleteCheck(
 func (c *client) getCheckOfType(
 	ctx context.Context,
 	path string,
-	checkType string,
+	checkType CheckType,
 	result any,
 ) error {
 	res, err := c.call(ctx, http.MethodGet, path, nil, http.StatusOK)
@@ -207,7 +223,7 @@ func (c *client) getCheckOfType(
 		return err
 	}
 	var header struct {
-		CheckType string `json:"checkType"`
+		CheckType CheckType `json:"checkType"`
 	}
 	if err := decode(res, &header); err != nil {
 		return err

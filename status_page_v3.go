@@ -139,8 +139,12 @@ type StatusPageV3ThemeColorGroup struct {
 	PrimaryButtonFontColor string `json:"primaryButtonFontColor"`
 }
 
+// StatusPageComponentV3Type is the type of a v3 status page component, in
+// [StatusPageComponentV3].Type.
 type StatusPageComponentV3Type string
 
+// Component types, the values of [StatusPageComponentV3].Type: a SERVICE has
+// a status of its own, a GROUP contains other components.
 const (
 	StatusPageComponentV3TypeService StatusPageComponentV3Type = "SERVICE"
 	StatusPageComponentV3TypeGroup   StatusPageComponentV3Type = "GROUP"
@@ -202,10 +206,25 @@ type StatusPageComponentV3 struct {
 	ParentID string `json:"parentId,omitempty"`
 }
 
+// StatusPageComponentStatusV3 is the status a v3 status page component
+// shows, in [MaintenanceWindowComponentImpact].Status.
+type StatusPageComponentStatusV3 string
+
+// Component statuses, the values of [MaintenanceWindowComponentImpact].Status.
+const (
+	StatusPageComponentStatusV3Operational         StatusPageComponentStatusV3 = "OPERATIONAL"
+	StatusPageComponentStatusV3UnderMaintenance    StatusPageComponentStatusV3 = "UNDER_MAINTENANCE"
+	StatusPageComponentStatusV3DegradedPerformance StatusPageComponentStatusV3 = "DEGRADED_PERFORMANCE"
+	StatusPageComponentStatusV3PartialOutage       StatusPageComponentStatusV3 = "PARTIAL_OUTAGE"
+	StatusPageComponentStatusV3MajorOutage         StatusPageComponentStatusV3 = "MAJOR_OUTAGE"
+)
+
 // StatusPageTargetImpactV3 is the impact an automated incident sets on a
 // component: every component status except OPERATIONAL.
 type StatusPageTargetImpactV3 string
 
+// Target impacts, the values of
+// [StatusPageAutomationRuleComponentV3].TargetImpact.
 const (
 	StatusPageTargetImpactV3UnderMaintenance    StatusPageTargetImpactV3 = "UNDER_MAINTENANCE"
 	StatusPageTargetImpactV3DegradedPerformance StatusPageTargetImpactV3 = "DEGRADED_PERFORMANCE"

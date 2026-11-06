@@ -46,11 +46,46 @@ type SSLMonitor struct {
 type SSLRequest struct {
 	SSLConfig SSLConfig `json:"sslConfig"`
 	// SSLClientCertificateID is the FK to a stored client certificate. It is
-	// required when SSLConfig.ClientCertificateMode is "explicit". Nil is sent
+	// required when SSLConfig.ClientCertificateMode is explicit. Nil is sent
 	// as null, which removes a stored certificate.
 	SSLClientCertificateID *string     `json:"sslClientCertificateId"`
 	Assertions             []Assertion `json:"assertions,omitempty"`
 }
+
+// SSLClientCertificateMode is how an SSL monitor picks the client
+// certificate it presents, in [SSLConfig].ClientCertificateMode.
+type SSLClientCertificateMode string
+
+// SSL client certificate modes, the values of
+// [SSLConfig].ClientCertificateMode.
+const (
+	SSLClientCertificateModeAuto SSLClientCertificateMode = "auto"
+	// SSLClientCertificateModeExplicit presents the certificate in
+	// SSLRequest.SSLClientCertificateID.
+	SSLClientCertificateModeExplicit SSLClientCertificateMode = "explicit"
+)
+
+// TLSVersion is a TLS protocol version, in the Value of [SSLBaselineTLSRule].
+type TLSVersion string
+
+// TLS versions, the values of [SSLBaselineTLSRule].Value.
+const (
+	TLSVersion12 TLSVersion = "TLS1.2"
+	TLSVersion13 TLSVersion = "TLS1.3"
+)
+
+// SSLBaselineSeverity is what an SSL monitor does when a security baseline
+// rule is violated, in the Severity of [SSLBaselineTLSRule],
+// [SSLBaselineKeySizeRule] and [SSLBaselineSeverityRule].
+type SSLBaselineSeverity string
+
+// SSL baseline severities, the values of the Severity fields of the security
+// baseline rules.
+const (
+	SSLBaselineSeverityFail    SSLBaselineSeverity = "fail"
+	SSLBaselineSeverityDegrade SSLBaselineSeverity = "degrade"
+	SSLBaselineSeverityIgnore  SSLBaselineSeverity = "ignore"
+)
 
 // SSLConfig represents the SSL-specific configuration nested inside an SSL
 // monitor's request. SecurityBaseline is an optional pointer:
@@ -61,13 +96,13 @@ type SSLConfig struct {
 	// ServerName is an optional SNI override. Nil is sent as null, which
 	// removes a stored override.
 	ServerName            *string           `json:"serverName"`
-	IPFamily              string            `json:"ipFamily,omitempty"`
+	IPFamily              IPFamily          `json:"ipFamily,omitempty"`
 	SkipChainValidation   bool              `json:"skipChainValidation"`
 	HandshakeTimeoutMs    int               `json:"handshakeTimeoutMs,omitempty"`
 	AlertDaysBeforeExpiry int               `json:"alertDaysBeforeExpiry,omitempty"`
 	SecurityBaseline      *SecurityBaseline `json:"securityBaseline,omitempty"`
-	// ClientCertificateMode is "auto" or "explicit" (optional).
-	ClientCertificateMode string `json:"clientCertificateMode,omitempty"`
+	// ClientCertificateMode is optional.
+	ClientCertificateMode SSLClientCertificateMode `json:"clientCertificateMode,omitempty"`
 }
 
 // SecurityBaseline represents the SSL security baseline — a set of enforceable
@@ -77,42 +112,41 @@ type SSLConfig struct {
 // an unset value is omitted (the server defaults it to true).
 type SecurityBaseline struct {
 	Enabled *bool `json:"enabled,omitempty"`
-	// Enforceable rules — server default severity "fail".
+	// Enforceable rules — server default severity fail.
 	MinTLSVersion          *SSLBaselineTLSRule      `json:"minTLSVersion,omitempty"`
 	MinKeySizeBits         *SSLBaselineKeySizeRule  `json:"minKeySizeBits,omitempty"`
 	WeakSignatureAlgorithm *SSLBaselineSeverityRule `json:"weakSignatureAlgorithm,omitempty"`
 	WeakCipherSuite        *SSLBaselineSeverityRule `json:"weakCipherSuite,omitempty"`
 	KnownBadCA             *SSLBaselineSeverityRule `json:"knownBadCA,omitempty"`
-	// Advisory rules — server default severity "ignore".
+	// Advisory rules — server default severity ignore.
 	RecommendedTLSVersion   *SSLBaselineTLSRule      `json:"recommendedTLSVersion,omitempty"`
 	RecommendedKeySizeBits  *SSLBaselineKeySizeRule  `json:"recommendedKeySizeBits,omitempty"`
 	OCSPMustStapleRespected *SSLBaselineSeverityRule `json:"ocspMustStapleRespected,omitempty"`
 	SCTPresent              *SSLBaselineSeverityRule `json:"sctPresent,omitempty"`
 }
 
-// SSLBaselineTLSRule is a baseline rule whose value is a TLS version string
-// (e.g. "TLS1.2"/"TLS1.3").
+// SSLBaselineTLSRule is a baseline rule whose value is a TLS version.
 type SSLBaselineTLSRule struct {
-	Value    string `json:"value,omitempty"`
-	Severity string `json:"severity,omitempty"`
+	Value    TLSVersion          `json:"value,omitempty"`
+	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
 // SSLBaselineKeySizeRule is a baseline rule whose value is a key size in bits.
 type SSLBaselineKeySizeRule struct {
-	Value    int    `json:"value,omitempty"`
-	Severity string `json:"severity,omitempty"`
+	Value    int                 `json:"value,omitempty"`
+	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
 // SSLBaselineSeverityRule is a baseline rule that only carries a severity.
 type SSLBaselineSeverityRule struct {
-	Severity string `json:"severity,omitempty"`
+	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
 type sslMonitorPayload struct {
 	SSLMonitor
-	Type        string `json:"checkType"`
-	DoubleCheck bool   `json:"doubleCheck"`
-	GroupID     *int64 `json:"groupId"`
+	Type        CheckType `json:"checkType"`
+	DoubleCheck bool      `json:"doubleCheck"`
+	GroupID     *int64    `json:"groupId"`
 	// The update endpoint keeps the stored value of an omitted key. The
 	// fields below shadow embedded fields whose zero value would be omitted,
 	// so that an update resets them: lists are sent empty, and the group
@@ -134,7 +168,7 @@ func createSSLMonitorPayload(monitor SSLMonitor) sslMonitorPayload {
 	payload := sslMonitorPayload{
 		SSLMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "SSL",
+		Type: CheckTypeSSL,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck:               false,
 		Tags:                      emptyIfNil(monitor.Tags),
@@ -184,7 +218,7 @@ func (c *client) GetSSLMonitor(
 	ID string,
 ) (*SSLMonitor, error) {
 	var result SSLMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "SSL", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeSSL, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

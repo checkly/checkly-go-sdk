@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -19,7 +20,7 @@ var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
 
 var wantCheck = checkly.Check{
 	Name:      "test",
-	Type:      checkly.TypeAPI,
+	Type:      checkly.CheckTypeAPI,
 	Frequency: 10,
 	Activated: true,
 	Muted:     false,
@@ -48,8 +49,8 @@ var wantCheck = checkly.Check{
 		},
 		Assertions: []checkly.Assertion{
 			{
-				Source:     checkly.StatusCode,
-				Comparison: checkly.Equals,
+				Source:     checkly.AssertionSourceStatusCode,
+				Comparison: checkly.AssertionComparisonEquals,
 				Target:     "200",
 			},
 		},
@@ -72,7 +73,7 @@ var wantCheck = checkly.Check{
 	LocalSetupScript:    "setitup",
 	LocalTearDownScript: "tearitdown",
 	AlertSettings: checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
@@ -128,6 +129,40 @@ func TestCreateCheck(t *testing.T) {
 	}
 	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
 		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	}
+}
+
+// TestCreateCheckRejectsTypes asserts CreateCheck rejects the check types it
+// cannot create, naming the method to use instead, without sending a request.
+func TestCreateCheckRejectsTypes(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		checkType checkly.CheckType
+		want      string
+	}{
+		{checkly.CheckTypeTCP, "CreateTCPMonitor"},
+		{checkly.CheckTypeURL, "CreateURLMonitor"},
+		{checkly.CheckTypeDNS, "CreateDNSMonitor"},
+		{checkly.CheckTypeICMP, "CreateICMPMonitor"},
+		{checkly.CheckTypeGRPC, "CreateGRPCMonitor"},
+		{checkly.CheckTypeTraceroute, "CreateTracerouteMonitor"},
+		{checkly.CheckTypeSSL, "CreateSSLMonitor"},
+		{checkly.CheckTypePlaywright, "CreatePlaywrightCheck"},
+		{checkly.CheckTypeAgentic, "cannot create AGENTIC checks"},
+		{"UNKNOWN", "unknown check type: UNKNOWN"},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.checkType), func(t *testing.T) {
+			t.Parallel()
+			c, lastBody := newRecordingServer(t, http.StatusCreated, `{}`)
+			_, err := c.CreateCheck(context.Background(), checkly.Check{Name: "n", Type: tt.checkType})
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Errorf("want error containing %q, got %v", tt.want, err)
+			}
+			if body := lastBody(); body != nil {
+				t.Errorf("want no request, got one with body %s", body)
+			}
+		})
 	}
 }
 
@@ -196,7 +231,7 @@ func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
 	t.Parallel()
 	check := checkly.Check{
 		Name:      "browser",
-		Type:      checkly.TypeBrowser,
+		Type:      checkly.CheckTypeBrowser,
 		Frequency: 10,
 		Locations: []string{"eu-west-1"},
 		Script:    "await page.goto('https://example.com')",
@@ -379,7 +414,7 @@ func validateCheckEmptyPayload(t *testing.T, body []byte) {
 
 func TestCheckSerializesEmptyValues(t *testing.T) {
 	t.Parallel()
-	check := checkly.Check{Name: "test", Type: checkly.TypeAPI}
+	check := checkly.Check{Name: "test", Type: checkly.CheckTypeAPI}
 	runPayloadCases(t, []payloadCase{
 		{
 			name:     "CreateCheck",

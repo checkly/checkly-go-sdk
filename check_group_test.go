@@ -38,8 +38,8 @@ var wantGroup = checkly.Group{
 		},
 		Assertions: []checkly.Assertion{
 			{
-				Source:     checkly.StatusCode,
-				Comparison: checkly.Equals,
+				Source:     checkly.AssertionSourceStatusCode,
+				Comparison: checkly.AssertionComparisonEquals,
 				Target:     "200",
 			},
 		},
@@ -61,7 +61,7 @@ var wantGroup = checkly.Group{
 	},
 	UseGlobalAlertSettings: false,
 	AlertSettings: checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},

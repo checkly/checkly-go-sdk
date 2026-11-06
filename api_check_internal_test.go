@@ -14,7 +14,7 @@ func TestRequestMarshalsUnsetListsAsEmpty(t *testing.T) {
 		payload any
 	}{
 		{"APICheck", createAPICheckPayload(APICheck{Name: "api"})},
-		{"Check", createCheckPayload(Check{Name: "check", Type: TypeAPI})},
+		{"Check", createCheckPayload(Check{Name: "check", Type: CheckTypeAPI})},
 		{"URLMonitor", createURLMonitorPayload(URLMonitor{Name: "url", Request: URLRequest{URL: "https://example.com"}})},
 	}
 	for _, tt := range cases {
@@ -46,7 +46,7 @@ func TestRequestMarshalsSetValuesUnchanged(t *testing.T) {
 		BodyType:        "JSON",
 		Headers:         []KeyValue{{Key: "X-Test", Value: "1"}},
 		QueryParameters: []KeyValue{{Key: "q", Value: "2"}},
-		Assertions:      []Assertion{{Source: StatusCode, Comparison: Equals, Target: "200"}},
+		Assertions:      []Assertion{{Source: AssertionSourceStatusCode, Comparison: AssertionComparisonEquals, Target: "200"}},
 		BasicAuth:       &BasicAuth{Username: "u", Password: "p"},
 		IPFamily:        "IPv6",
 	})
@@ -55,7 +55,7 @@ func TestRequestMarshalsSetValuesUnchanged(t *testing.T) {
 	}
 	want := `{"method":"POST","url":"https://example.com","followRedirects":true,"skipSSL":true,"body":"{}","bodyType":"JSON",` +
 		`"headers":[{"key":"X-Test","value":"1","locked":false}],"queryParameters":[{"key":"q","value":"2","locked":false}],` +
-		`"assertions":[{"edit":false,"order":0,"arrayIndex":0,"arraySelector":0,"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200","regex":""}],` +
+		`"assertions":[{"source":"STATUS_CODE","property":"","comparison":"EQUALS","target":"200","regex":""}],` +
 		`"basicAuth":{"username":"u","password":"p"},"ipFamily":"IPv6"}`
 	if string(data) != want {
 		t.Errorf("want %s, got %s", want, data)

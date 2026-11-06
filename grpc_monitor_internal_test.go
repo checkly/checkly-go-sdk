@@ -10,7 +10,7 @@ import "testing"
 func TestGRPCPayloadSendsEmptyValues(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		mode    string
+		mode    GRPCMode
 		send    string
 		omitted string
 	}{
@@ -19,7 +19,7 @@ func TestGRPCPayloadSendsEmptyValues(t *testing.T) {
 		{mode: "HEALTH", send: "service", omitted: "message"},
 	}
 	for _, test := range tests {
-		t.Run("mode "+test.mode, func(t *testing.T) {
+		t.Run("mode "+string(test.mode), func(t *testing.T) {
 			request := marshalToMap(t, createGRPCMonitorPayload(GRPCMonitor{
 				Request: GRPCRequest{GRPCConfig: GRPCConfig{Mode: test.mode}},
 			}))["request"].(map[string]any)

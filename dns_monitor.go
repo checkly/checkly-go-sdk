@@ -36,19 +36,46 @@ type DNSMonitor struct {
 	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
+// DNSRecordType is the DNS record type a DNS monitor queries, in
+// [DNSRequest].RecordType.
+type DNSRecordType string
+
+// DNS record types, the values of [DNSRequest].RecordType.
+const (
+	DNSRecordTypeA     DNSRecordType = "A"
+	DNSRecordTypeAAAA  DNSRecordType = "AAAA"
+	DNSRecordTypeCNAME DNSRecordType = "CNAME"
+	DNSRecordTypeMX    DNSRecordType = "MX"
+	DNSRecordTypeTXT   DNSRecordType = "TXT"
+	DNSRecordTypeSOA   DNSRecordType = "SOA"
+	DNSRecordTypeNS    DNSRecordType = "NS"
+	DNSRecordTypeHTTPS DNSRecordType = "HTTPS"
+)
+
+// DNSProtocol is the transport protocol of a DNS monitor's query, in
+// [DNSRequest].Protocol.
+type DNSProtocol string
+
+// DNS protocols, the values of [DNSRequest].Protocol. The API default is
+// DNSProtocolUDP.
+const (
+	DNSProtocolUDP DNSProtocol = "UDP"
+	DNSProtocolTCP DNSProtocol = "TCP"
+)
+
 // DNSRequest represents the parameters for the request made by a DNS monitor.
 type DNSRequest struct {
-	RecordType string      `json:"recordType"`
-	Query      string      `json:"query"`
-	NameServer string      `json:"nameServer,omitempty"`
-	Port       int         `json:"port,omitempty"`
-	Protocol   string      `json:"protocol,omitempty"`
-	Assertions []Assertion `json:"assertions"`
+	RecordType DNSRecordType `json:"recordType"`
+	Query      string        `json:"query"`
+	NameServer string        `json:"nameServer,omitempty"`
+	Port       int           `json:"port,omitempty"`
+	Protocol   DNSProtocol   `json:"protocol,omitempty"`
+	Assertions []Assertion   `json:"assertions"`
 }
 
 type dnsMonitorPayload struct {
 	DNSMonitor
-	Type        string     `json:"checkType"`
+	Type        CheckType  `json:"checkType"`
 	DoubleCheck bool       `json:"doubleCheck"`
 	ShouldFail  bool       `json:"shouldFail"`
 	GroupID     *int64     `json:"groupId"`
@@ -70,7 +97,7 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 	payload := dnsMonitorPayload{
 		DNSMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
-		Type: "DNS",
+		Type: CheckTypeDNS,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 		// Unfortunately, this will default to true if not set.
@@ -133,7 +160,7 @@ func (c *client) GetDNSMonitor(
 	ID string,
 ) (*DNSMonitor, error) {
 	var result DNSMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "DNS", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeDNS, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

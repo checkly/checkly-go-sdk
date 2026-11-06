@@ -18,8 +18,8 @@ func TestAssertionRegexPayload(t *testing.T) {
 	_, err := c.UpdateAPICheck(context.Background(), "id", checkly.APICheck{
 		Name: "n",
 		Request: checkly.Request{Assertions: []checkly.Assertion{
-			{Source: checkly.Headers, Property: "Cache-Control", Comparison: checkly.Equals, Target: "60", Regex: `max-age=(\d+)`},
-			{Source: checkly.StatusCode, Comparison: checkly.Equals, Target: "200"},
+			{Source: checkly.AssertionSourceHeaders, Property: "Cache-Control", Comparison: checkly.AssertionComparisonEquals, Target: "60", Regex: `max-age=(\d+)`},
+			{Source: checkly.AssertionSourceStatusCode, Comparison: checkly.AssertionComparisonEquals, Target: "200"},
 		}},
 	})
 	if err != nil {

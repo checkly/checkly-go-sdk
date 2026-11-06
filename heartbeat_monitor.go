@@ -23,13 +23,26 @@ type HeartbeatMonitor struct {
 	UpdatedAt                 time.Time                  `json:"updated_at"`
 }
 
+// HeartbeatUnit is the time unit of a heartbeat monitor's period and grace,
+// in [Heartbeat].PeriodUnit and [Heartbeat].GraceUnit.
+type HeartbeatUnit string
+
+// Heartbeat units, the values of [Heartbeat].PeriodUnit and
+// [Heartbeat].GraceUnit.
+const (
+	HeartbeatUnitSeconds HeartbeatUnit = "seconds"
+	HeartbeatUnitMinutes HeartbeatUnit = "minutes"
+	HeartbeatUnitHours   HeartbeatUnit = "hours"
+	HeartbeatUnitDays    HeartbeatUnit = "days"
+)
+
 // Heartbeat represents the parameter for the heartbeat check.
 type Heartbeat struct {
-	Period     int    `json:"period"`
-	PeriodUnit string `json:"periodUnit"`
-	Grace      int    `json:"grace"`
-	GraceUnit  string `json:"graceUnit"`
-	PingToken  string `json:"pingToken"`
+	Period     int           `json:"period"`
+	PeriodUnit HeartbeatUnit `json:"periodUnit"`
+	Grace      int           `json:"grace"`
+	GraceUnit  HeartbeatUnit `json:"graceUnit"`
+	PingToken  string        `json:"pingToken"`
 }
 
 type heartbeatMonitorPayload struct {
@@ -73,7 +86,7 @@ func (c *client) GetHeartbeatMonitor(
 	ID string,
 ) (*HeartbeatMonitor, error) {
 	var result HeartbeatMonitor
-	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), "HEARTBEAT", &result); err != nil {
+	if err := c.getCheckOfType(ctx, fmt.Sprintf("/v1/checks/%s", ID), CheckTypeHeartbeat, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

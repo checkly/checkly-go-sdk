@@ -8,20 +8,26 @@ import (
 	"net/http"
 )
 
+// AlertChannelType is the type of an alert channel, in [AlertChannel].Type.
+type AlertChannelType string
+
+// Alert channel types, the values of [AlertChannel].Type. Each selects the
+// config field of AlertChannel that is sent and decoded, such as Email for
+// AlertChannelTypeEmail.
 const (
-	AlertTypeEmail = "EMAIL"
+	AlertChannelTypeEmail AlertChannelType = "EMAIL"
 
-	// AlertTypeSlack identifies legacy Slack webhook alert channels.
+	// AlertChannelTypeSlack identifies legacy Slack webhook alert channels.
 	//
-	// Deprecated: Use [AlertTypeSlackApp] instead.
-	AlertTypeSlack = "SLACK"
+	// Deprecated: Use [AlertChannelTypeSlackApp] instead.
+	AlertChannelTypeSlack AlertChannelType = "SLACK"
 
-	AlertTypeSlackApp  = "SLACK_APP"
-	AlertTypeWebhook   = "WEBHOOK"
-	AlertTypeSMS       = "SMS"
-	AlertTypePagerduty = "PAGERDUTY"
-	AlertTypeOpsgenie  = "OPSGENIE"
-	AlertTypeCall      = "CALL"
+	AlertChannelTypeSlackApp  AlertChannelType = "SLACK_APP"
+	AlertChannelTypeWebhook   AlertChannelType = "WEBHOOK"
+	AlertChannelTypeSMS       AlertChannelType = "SMS"
+	AlertChannelTypePagerduty AlertChannelType = "PAGERDUTY"
+	AlertChannelTypeOpsgenie  AlertChannelType = "OPSGENIE"
+	AlertChannelTypeCall      AlertChannelType = "CALL"
 )
 
 // AlertChannelSubscription represents a subscription to an alert channel.
@@ -63,12 +69,35 @@ type AlertChannelCall struct {
 	Number string `json:"number"`
 }
 
+// OpsgenieRegion is the Opsgenie region of an Opsgenie alert channel, in
+// [AlertChannelOpsgenie].Region.
+type OpsgenieRegion string
+
+// Opsgenie regions, the values of [AlertChannelOpsgenie].Region.
+const (
+	OpsgenieRegionEU OpsgenieRegion = "EU"
+	OpsgenieRegionUS OpsgenieRegion = "US"
+)
+
+// OpsgeniePriority is the priority of the alerts an Opsgenie alert channel
+// creates, in [AlertChannelOpsgenie].Priority.
+type OpsgeniePriority string
+
+// Opsgenie priorities, the values of [AlertChannelOpsgenie].Priority.
+const (
+	OpsgeniePriorityP1 OpsgeniePriority = "P1"
+	OpsgeniePriorityP2 OpsgeniePriority = "P2"
+	OpsgeniePriorityP3 OpsgeniePriority = "P3"
+	OpsgeniePriorityP4 OpsgeniePriority = "P4"
+	OpsgeniePriorityP5 OpsgeniePriority = "P5"
+)
+
 // AlertChannelOpsgenie defines a type for an opsgenie alert channel
 type AlertChannelOpsgenie struct {
-	Name     string `json:"name"`
-	APIKey   string `json:"apiKey"`
-	Region   string `json:"region"`
-	Priority string `json:"priority"`
+	Name     string           `json:"name"`
+	APIKey   string           `json:"apiKey"`
+	Region   OpsgenieRegion   `json:"region"`
+	Priority OpsgeniePriority `json:"priority"`
 }
 
 // AlertChannelPagerduty defines a type for a PagerDuty alert channel
@@ -80,9 +109,12 @@ type AlertChannelPagerduty struct {
 
 // AlertChannelWebhook defines a type for a webhook alert channel
 type AlertChannelWebhook struct {
-	Name            string     `json:"name"`
-	URL             string     `json:"url"`
-	WebhookType     string     `json:"webhookType,omitempty"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	WebhookType string `json:"webhookType,omitempty"`
+	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
+	// constants such as http.MethodPost name them. Method is left out of the
+	// request when empty, and the API then uses POST.
 	Method          string     `json:"method,omitempty"`
 	Template        string     `json:"template,omitempty"`
 	WebhookSecret   string     `json:"webhookSecret,omitempty"`
@@ -95,7 +127,7 @@ type AlertChannelWebhook struct {
 // matches Type, and their result.
 type AlertChannel struct {
 	ID                 int64                  `json:"id,omitempty"`
-	Type               string                 `json:"type"`
+	Type               AlertChannelType       `json:"type"`
 	Email              *AlertChannelEmail     `json:"-"`
 	Slack              *AlertChannelSlack     `json:"-"`
 	SlackApp           *AlertChannelSlackApp  `json:"-"`
@@ -124,21 +156,21 @@ type AlertChannel struct {
 // JSON null.
 func (a *AlertChannel) configField() any {
 	switch a.Type {
-	case AlertTypeEmail:
+	case AlertChannelTypeEmail:
 		return &a.Email
-	case AlertTypeSMS:
+	case AlertChannelTypeSMS:
 		return &a.SMS
-	case AlertTypeCall:
+	case AlertChannelTypeCall:
 		return &a.CALL
-	case AlertTypeSlack:
+	case AlertChannelTypeSlack:
 		return &a.Slack
-	case AlertTypeSlackApp:
+	case AlertChannelTypeSlackApp:
 		return &a.SlackApp
-	case AlertTypeOpsgenie:
+	case AlertChannelTypeOpsgenie:
 		return &a.Opsgenie
-	case AlertTypePagerduty:
+	case AlertChannelTypePagerduty:
 		return &a.Pagerduty
-	case AlertTypeWebhook:
+	case AlertChannelTypeWebhook:
 		return &a.Webhook
 	}
 	return nil
@@ -198,14 +230,14 @@ func (c *client) DeleteAlertChannel(
 // UpdateAlertChannel. Unset settings are omitted, because the API rejects JSON
 // null for them. The ID is not sent, because the API strips it from the body.
 type alertChannelPayload struct {
-	Type               string `json:"type"`
-	Config             any    `json:"config"`
-	SendRecovery       *bool  `json:"sendRecovery,omitempty"`
-	SendFailure        *bool  `json:"sendFailure,omitempty"`
-	SendDegraded       *bool  `json:"sendDegraded,omitempty"`
-	SSLExpiry          *bool  `json:"sslExpiry,omitempty"`
-	SSLExpiryThreshold *int   `json:"sslExpiryThreshold,omitempty"`
-	AutoSubscribe      *bool  `json:"autoSubscribe,omitempty"`
+	Type               AlertChannelType `json:"type"`
+	Config             any              `json:"config"`
+	SendRecovery       *bool            `json:"sendRecovery,omitempty"`
+	SendFailure        *bool            `json:"sendFailure,omitempty"`
+	SendDegraded       *bool            `json:"sendDegraded,omitempty"`
+	SSLExpiry          *bool            `json:"sslExpiry,omitempty"`
+	SSLExpiryThreshold *int             `json:"sslExpiryThreshold,omitempty"`
+	AutoSubscribe      *bool            `json:"autoSubscribe,omitempty"`
 }
 
 // createAlertChannelPayload returns the request body for ac. The config is the

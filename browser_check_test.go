@@ -46,7 +46,7 @@ var testBrowserCheck = checkly.BrowserCheck{
 	PrivateLocations: &[]string{},
 	Tags:             []string{"tag-1"},
 	AlertSettings: &checkly.AlertSettings{
-		EscalationType: checkly.RunBased,
+		EscalationType: checkly.EscalationTypeRunBased,
 		RunBasedEscalation: checkly.RunBasedEscalation{
 			FailedRunThreshold: 1,
 		},
