@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk/v2"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // The assertion lists are replaced on every update, so a regex must be sent

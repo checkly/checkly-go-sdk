@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	checkly "github.com/checkly/checkly-go-sdk/v2"
+	"github.com/checkly/checkly-go-sdk/v2"
 )
 
 // TestRetryStrategyRoundTrip asserts the JSON each retry strategy type is
