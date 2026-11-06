@@ -41,7 +41,7 @@ type URLRequest struct {
 	FollowRedirects bool        `json:"followRedirects"`
 	SkipSSL         bool        `json:"skipSSL"`
 	Assertions      []Assertion `json:"assertions"`
-	IPFamily        string      `json:"ipFamily,omitempty"`
+	IPFamily        IPFamily    `json:"ipFamily,omitempty"`
 }
 
 func (r *URLRequest) toRequest() Request {

@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+// PlaywrightEngine is the JavaScript runtime a Playwright check suite runs
+// in, in [PlaywrightCheck].Engine.
+type PlaywrightEngine string
+
+// Playwright engines, the values of [PlaywrightCheck].Engine.
+const (
+	PlaywrightEngineNode PlaywrightEngine = "node"
+	PlaywrightEngineBun  PlaywrightEngine = "bun"
+)
+
 // PlaywrightCheck represents a Playwright check.
 type PlaywrightCheck struct {
 	ID                        string                     `json:"id,omitempty"`
@@ -43,11 +53,11 @@ type PlaywrightCheck struct {
 	// one, so a nil or empty list is left out of create and update requests
 	// and the API's default applies (on update too, because the update
 	// endpoint applies create defaults to omitted keys).
-	Browsers       []string `json:"browsers,omitempty"`
-	CodeBundlePath string   `json:"codeBundlePath"`
-	WorkingDir     *string  `json:"workingDir"`
-	Engine         *string  `json:"engine"`
-	EngineVersion  *string  `json:"engineVersion"`
+	Browsers       []string          `json:"browsers,omitempty"`
+	CodeBundlePath string            `json:"codeBundlePath"`
+	WorkingDir     *string           `json:"workingDir"`
+	Engine         *PlaywrightEngine `json:"engine"`
+	EngineVersion  *string           `json:"engineVersion"`
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`

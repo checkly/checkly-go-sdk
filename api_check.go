@@ -63,14 +63,41 @@ type APICheck struct {
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
+// BodyType is the format of a request body, in [Request].BodyType.
+type BodyType string
+
+// Body types, the values of [Request].BodyType. The API default is
+// BodyTypeNone.
+const (
+	BodyTypeJSON    BodyType = "JSON"
+	BodyTypeForm    BodyType = "FORM"
+	BodyTypeRaw     BodyType = "RAW"
+	BodyTypeGraphQL BodyType = "GRAPHQL"
+	BodyTypeNone    BodyType = "NONE"
+)
+
+// IPFamily is the IP version a check or monitor connects with, in the
+// IPFamily field of [Request], [URLRequest], [TCPRequest], [ICMPRequest],
+// [TracerouteRequest], [GRPCRequest] and [SSLConfig].
+type IPFamily string
+
+// IP families, the values of the IPFamily fields. The API default is
+// IPFamilyIPv4.
+const (
+	IPFamilyIPv4 IPFamily = "IPv4"
+	IPFamilyIPv6 IPFamily = "IPv6"
+)
+
 // Request represents the parameters for the request made by the check.
 type Request struct {
+	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
+	// constants such as http.MethodGet name them.
 	Method          string      `json:"method"`
 	URL             string      `json:"url"`
 	FollowRedirects bool        `json:"followRedirects"`
 	SkipSSL         bool        `json:"skipSSL"`
 	Body            string      `json:"body"`
-	BodyType        string      `json:"bodyType,omitempty"`
+	BodyType        BodyType    `json:"bodyType,omitempty"`
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
@@ -79,7 +106,7 @@ type Request struct {
 	// when the key is omitted, so omitting it would make it impossible to
 	// remove previously configured credentials.
 	BasicAuth *BasicAuth `json:"basicAuth"`
-	IPFamily  string     `json:"ipFamily,omitempty"`
+	IPFamily  IPFamily   `json:"ipFamily,omitempty"`
 }
 
 // MarshalJSON sends unset headers, query parameters and assertions as [],

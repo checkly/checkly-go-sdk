@@ -40,7 +40,7 @@ type ICMPMonitor struct {
 // ICMPRequest represents the parameters for the request made by an ICMP monitor.
 type ICMPRequest struct {
 	Hostname   string      `json:"hostname"`
-	IPFamily   string      `json:"ipFamily,omitempty"`
+	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
 	PingCount  int         `json:"pingCount,omitempty"`
 	Assertions []Assertion `json:"assertions"`
 }

@@ -8,51 +8,62 @@ import (
 	checkly "github.com/checkly/checkly-go-sdk"
 )
 
+// TestRetryStrategyRoundTrip asserts the JSON each retry strategy type is
+// sent as, and that it decodes back to the same value.
 func TestRetryStrategyRoundTrip(t *testing.T) {
+	networkError := []checkly.RetryOnlyOn{checkly.RetryOnlyOnNetworkError}
 	tests := []struct {
-		name  string
-		input checkly.RetryStrategy
-		want  checkly.RetryStrategy
+		name     string
+		strategy checkly.RetryStrategy
+		wantJSON string
 	}{
 		{
-			name:  "FIXED strategy round-trips",
-			input: checkly.RetryStrategy{Type: "FIXED", MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true},
-			want:  checkly.RetryStrategy{Type: "FIXED", MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true},
+			name:     "FIXED sends every field",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeFixed, MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true},
+			wantJSON: `{"type":"FIXED","baseBackoffSeconds":60,"maxRetries":2,"maxDurationSeconds":600,"sameRegion":true}`,
 		},
 		{
-			name:  "LINEAR strategy round-trips",
-			input: checkly.RetryStrategy{Type: "LINEAR", MaxRetries: 3, MaxDurationSeconds: 300, BaseBackoffSeconds: 30, SameRegion: false},
-			want:  checkly.RetryStrategy{Type: "LINEAR", MaxRetries: 3, MaxDurationSeconds: 300, BaseBackoffSeconds: 30, SameRegion: false},
+			name:     "FIXED with OnlyOn",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeFixed, MaxRetries: 2, MaxDurationSeconds: 600, BaseBackoffSeconds: 60, SameRegion: true, OnlyOn: networkError},
+			wantJSON: `{"type":"FIXED","baseBackoffSeconds":60,"maxRetries":2,"maxDurationSeconds":600,"sameRegion":true,"onlyOn":["NETWORK_ERROR"]}`,
 		},
 		{
-			name:  "SINGLE_RETRY omits MaxRetries and MaxDurationSeconds",
-			input: checkly.RetryStrategy{Type: "SINGLE_RETRY", BaseBackoffSeconds: 10, SameRegion: true},
-			want:  checkly.RetryStrategy{Type: "SINGLE_RETRY", BaseBackoffSeconds: 10, SameRegion: true},
+			name:     "LINEAR sends every field",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeLinear, MaxRetries: 3, MaxDurationSeconds: 300, BaseBackoffSeconds: 30},
+			wantJSON: `{"type":"LINEAR","baseBackoffSeconds":30,"maxRetries":3,"maxDurationSeconds":300,"sameRegion":false}`,
 		},
 		{
-			name:  "NO_RETRIES marshals as null and back",
-			input: checkly.RetryStrategy{Type: "NO_RETRIES"},
-			want:  checkly.RetryStrategy{Type: "NO_RETRIES"},
+			name:     "SINGLE_RETRY omits MaxRetries and MaxDurationSeconds",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeSingleRetry, BaseBackoffSeconds: 10, SameRegion: true, OnlyOn: networkError},
+			wantJSON: `{"type":"SINGLE_RETRY","baseBackoffSeconds":10,"sameRegion":true,"onlyOn":["NETWORK_ERROR"]}`,
 		},
 		{
-			name:  "FALLBACK marshals as string and back",
-			input: checkly.RetryStrategy{Type: "FALLBACK"},
-			want:  checkly.RetryStrategy{Type: "FALLBACK"},
+			name:     "NO_RETRIES marshals as null",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeNoRetries},
+			wantJSON: `null`,
+		},
+		{
+			name:     "FALLBACK marshals as a string",
+			strategy: checkly.RetryStrategy{Type: checkly.RetryStrategyTypeFallback},
+			wantJSON: `"FALLBACK"`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := json.Marshal(tt.input)
+			data, err := json.Marshal(tt.strategy)
 			if err != nil {
 				t.Fatalf("Marshal error: %v", err)
+			}
+			if string(data) != tt.wantJSON {
+				t.Errorf("got JSON %s, want %s", data, tt.wantJSON)
 			}
 			var got checkly.RetryStrategy
 			if err := json.Unmarshal(data, &got); err != nil {
 				t.Fatalf("Unmarshal error: %v", err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("got %+v, want %+v (JSON was: %s)", got, tt.want, data)
+			if !reflect.DeepEqual(got, tt.strategy) {
+				t.Errorf("got %+v, want %+v (JSON was: %s)", got, tt.strategy, data)
 			}
 		})
 	}
@@ -61,7 +72,7 @@ func TestRetryStrategyRoundTrip(t *testing.T) {
 func TestRetryStrategyUnmarshalClearsFields(t *testing.T) {
 	// Unmarshal into a struct that already has values to verify fields are cleared.
 	s := checkly.RetryStrategy{
-		Type:               "FIXED",
+		Type:               checkly.RetryStrategyTypeFixed,
 		MaxRetries:         5,
 		MaxDurationSeconds: 600,
 		BaseBackoffSeconds: 60,
@@ -70,7 +81,7 @@ func TestRetryStrategyUnmarshalClearsFields(t *testing.T) {
 	if err := json.Unmarshal([]byte("null"), &s); err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
 	}
-	want := checkly.RetryStrategy{Type: "NO_RETRIES"}
+	want := checkly.RetryStrategy{Type: checkly.RetryStrategyTypeNoRetries}
 	if !reflect.DeepEqual(s, want) {
 		t.Errorf("got %+v, want %+v", s, want)
 	}
@@ -81,27 +92,5 @@ func TestRetryStrategyUnmarshalRejectsUnknownString(t *testing.T) {
 	err := json.Unmarshal([]byte(`"UNKNOWN"`), &s)
 	if err == nil {
 		t.Fatal("expected error for unknown string value, got nil")
-	}
-}
-
-func TestRetryStrategyMarshalNoRetries(t *testing.T) {
-	s := checkly.RetryStrategy{Type: "NO_RETRIES"}
-	data, err := json.Marshal(s)
-	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
-	}
-	if string(data) != "null" {
-		t.Errorf("got %s, want null", data)
-	}
-}
-
-func TestRetryStrategyMarshalFallback(t *testing.T) {
-	s := checkly.RetryStrategy{Type: "FALLBACK"}
-	data, err := json.Marshal(s)
-	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
-	}
-	if string(data) != `"FALLBACK"` {
-		t.Errorf("got %s, want %q", data, "FALLBACK")
 	}
 }

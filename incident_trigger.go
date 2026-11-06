@@ -1,7 +1,11 @@
 package checkly
 
+// IncidentSeverity is the severity of an incident, in
+// [IncidentTrigger].Severity and [MaintenanceWindowStatusPageVisibility].Severity.
 type IncidentSeverity string
 
+// Incident severities, the values of [IncidentTrigger].Severity and
+// [MaintenanceWindowStatusPageVisibility].Severity.
 const (
 	IncidentSeverityMinor    IncidentSeverity = "MINOR"
 	IncidentSeverityMedium   IncidentSeverity = "MEDIUM"

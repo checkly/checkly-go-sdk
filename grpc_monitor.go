@@ -45,31 +45,68 @@ type GRPCRequest struct {
 	// Port accepts a number or a `{{template}}` string, mirroring the public
 	// API's `Joi.alternatives`, so its type is intentionally open.
 	Port       interface{} `json:"port"`
-	IPFamily   string      `json:"ipFamily,omitempty"`
+	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
 	SkipSSL    bool        `json:"skipSSL"`
 	Timeout    int         `json:"timeout,omitempty"`
 	GRPCConfig GRPCConfig  `json:"grpcConfig"`
 	Assertions []Assertion `json:"assertions,omitempty"`
 }
 
+// GRPCMode is what a gRPC monitor checks, in [GRPCConfig].Mode.
+type GRPCMode string
+
+// gRPC modes, the values of [GRPCConfig].Mode. An empty mode is sent as
+// GRPCModeBehavior, the API default.
+const (
+	// GRPCModeBehavior calls the method in GRPCConfig.Method.
+	GRPCModeBehavior GRPCMode = "BEHAVIOR"
+	// GRPCModeHealth calls the standard gRPC health check of
+	// GRPCConfig.Service.
+	GRPCModeHealth GRPCMode = "HEALTH"
+)
+
+// GRPCEncoding is the message encoding of a gRPC monitor, in
+// [GRPCConfig].Encoding.
+type GRPCEncoding string
+
+// gRPC encodings, the values of [GRPCConfig].Encoding. The API default is
+// GRPCEncodingProtobuf.
+const (
+	GRPCEncodingProtobuf    GRPCEncoding = "PROTOBUF"
+	GRPCEncodingFlatbuffers GRPCEncoding = "FLATBUFFERS"
+)
+
+// GRPCServiceDefinition is where a gRPC monitor gets the service definition
+// from, in [GRPCConfig].ServiceDefinition.
+type GRPCServiceDefinition string
+
+// gRPC service definitions, the values of [GRPCConfig].ServiceDefinition.
+// The API default is GRPCServiceDefinitionReflection.
+const (
+	// GRPCServiceDefinitionReflection uses server reflection.
+	GRPCServiceDefinitionReflection GRPCServiceDefinition = "REFLECTION"
+	// GRPCServiceDefinitionProtoFile uses GRPCConfig.ProtoContent.
+	GRPCServiceDefinitionProtoFile GRPCServiceDefinition = "PROTO_FILE"
+)
+
 // GRPCConfig represents the gRPC-specific configuration nested inside a gRPC
-// monitor's request. `Mode` defaults to "BEHAVIOR" (which requires `Method`);
-// the "HEALTH" mode forbids the BEHAVIOR-only fields, so they are tagged
+// monitor's request. `Mode` defaults to BEHAVIOR (which requires `Method`);
+// the HEALTH mode forbids the BEHAVIOR-only fields, so they are tagged
 // omitempty to drop them from the marshaled body when unset.
 type GRPCConfig struct {
-	Mode     string         `json:"mode,omitempty"`
+	Mode     GRPCMode       `json:"mode,omitempty"`
 	TLS      bool           `json:"tls"`
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// BEHAVIOR-mode only (forbidden in HEALTH mode).
 	// Encoding is PROTOBUF or FLATBUFFERS. An update that omits it keeps the
 	// stored encoding, so send PROTOBUF explicitly to switch a FLATBUFFERS
 	// monitor back; that also clears the stored BfbsContent.
-	Encoding          string `json:"encoding,omitempty"`
-	ServiceDefinition string `json:"serviceDefinition,omitempty"`
-	Method            string `json:"method,omitempty"`
-	ProtoContent      string `json:"protoContent,omitempty"`
-	BfbsContent       string `json:"bfbsContent,omitempty"`
-	Message           string `json:"message,omitempty"`
+	Encoding          GRPCEncoding          `json:"encoding,omitempty"`
+	ServiceDefinition GRPCServiceDefinition `json:"serviceDefinition,omitempty"`
+	Method            string                `json:"method,omitempty"`
+	ProtoContent      string                `json:"protoContent,omitempty"`
+	BfbsContent       string                `json:"bfbsContent,omitempty"`
+	Message           string                `json:"message,omitempty"`
 	// HEALTH-mode only (forbidden in BEHAVIOR mode).
 	Service string `json:"service,omitempty"`
 }
@@ -141,9 +178,9 @@ func createGRPCConfigPayload(config GRPCConfig) grpcConfigPayload {
 	// sent: an update without it makes the API discard every BEHAVIOR-mode
 	// field of the request.
 	if config.Mode == "" {
-		payload.Mode = "BEHAVIOR"
+		payload.Mode = GRPCModeBehavior
 	}
-	if payload.Mode == "HEALTH" {
+	if payload.Mode == GRPCModeHealth {
 		payload.Service = &config.Service
 	} else {
 		payload.Message = &config.Message
@@ -152,7 +189,7 @@ func createGRPCConfigPayload(config GRPCConfig) grpcConfigPayload {
 		// definition in the request alone, treating an omitted one as
 		// REFLECTION, so an empty content without it would leave a stored
 		// PROTO_FILE definition with an empty proto file.
-		if config.ServiceDefinition == "REFLECTION" {
+		if config.ServiceDefinition == GRPCServiceDefinitionReflection {
 			payload.ProtoContent = &config.ProtoContent
 		}
 	}

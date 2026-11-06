@@ -7,6 +7,18 @@ import (
 	"net/http"
 )
 
+// MaintenanceWindowRepeatUnit is the unit of a maintenance window's repeat
+// interval, in [MaintenanceWindow].RepeatUnit.
+type MaintenanceWindowRepeatUnit string
+
+// Maintenance window repeat units, the values of
+// [MaintenanceWindow].RepeatUnit.
+const (
+	MaintenanceWindowRepeatUnitDay   MaintenanceWindowRepeatUnit = "DAY"
+	MaintenanceWindowRepeatUnitWeek  MaintenanceWindowRepeatUnit = "WEEK"
+	MaintenanceWindowRepeatUnitMonth MaintenanceWindowRepeatUnit = "MONTH"
+)
+
 // MaintenanceWindow defines a type for a maintenance window.
 //
 // Create and update requests always send every field, so an update replaces
@@ -16,14 +28,14 @@ import (
 // default: no repeat, UTC, no description, empty tag lists, nothing paused or
 // silenced, and a StatusPageVisibility that is hidden and unlinked.
 type MaintenanceWindow struct {
-	ID             int64    `json:"id"`
-	Name           string   `json:"name"`
-	StartsAt       string   `json:"startsAt"`
-	EndsAt         string   `json:"endsAt"`
-	RepeatInterval int      `json:"repeatInterval"`
-	RepeatUnit     string   `json:"repeatUnit"`
-	RepeatEndsAt   string   `json:"repeatEndsAt"`
-	Tags           []string `json:"tags"`
+	ID             int64                       `json:"id"`
+	Name           string                      `json:"name"`
+	StartsAt       string                      `json:"startsAt"`
+	EndsAt         string                      `json:"endsAt"`
+	RepeatInterval int                         `json:"repeatInterval"`
+	RepeatUnit     MaintenanceWindowRepeatUnit `json:"repeatUnit"`
+	RepeatEndsAt   string                      `json:"repeatEndsAt"`
+	Tags           []string                    `json:"tags"`
 
 	// Timezone is the named IANA time zone used for recurring maintenance
 	// scheduling, e.g. "America/New_York". UTC offset identifiers such as
@@ -63,13 +75,13 @@ func (mw MaintenanceWindow) MarshalJSON() ([]byte, error) {
 	type alias MaintenanceWindow
 	return json.Marshal(struct {
 		alias
-		RepeatInterval    *int     `json:"repeatInterval"`
-		RepeatUnit        *string  `json:"repeatUnit"`
-		RepeatEndsAt      *string  `json:"repeatEndsAt"`
-		Tags              []string `json:"tags"`
-		Timezone          *string  `json:"timezone"`
-		SilenceAlertsTags []string `json:"silenceAlertsTags"`
-		Description       *string  `json:"description"`
+		RepeatInterval    *int                         `json:"repeatInterval"`
+		RepeatUnit        *MaintenanceWindowRepeatUnit `json:"repeatUnit"`
+		RepeatEndsAt      *string                      `json:"repeatEndsAt"`
+		Tags              []string                     `json:"tags"`
+		Timezone          *string                      `json:"timezone"`
+		SilenceAlertsTags []string                     `json:"silenceAlertsTags"`
+		Description       *string                      `json:"description"`
 	}{
 		alias:             alias(mw),
 		RepeatInterval:    nullIfZero(mw.RepeatInterval),
@@ -97,13 +109,13 @@ func (mw MaintenanceWindow) MarshalJSON() ([]byte, error) {
 type MaintenanceWindowStatusPageVisibility struct {
 	Enabled bool `json:"enabled"`
 
-	// Severity is one of MINOR, MEDIUM, MAJOR or CRITICAL. Empty means none.
-	Severity              string `json:"severity"`
-	AffectAllServices     bool   `json:"affectAllServices"`
-	NotifyOnStart         bool   `json:"notifyOnStart"`
-	NotifyOnEnd           bool   `json:"notifyOnEnd"`
-	SuppressAutoIncidents bool   `json:"suppressAutoIncidents"`
-	ReminderMinutesBefore []int  `json:"reminderMinutesBefore"`
+	// Severity is the severity shown on status pages. Empty means none.
+	Severity              IncidentSeverity `json:"severity"`
+	AffectAllServices     bool             `json:"affectAllServices"`
+	NotifyOnStart         bool             `json:"notifyOnStart"`
+	NotifyOnEnd           bool             `json:"notifyOnEnd"`
+	SuppressAutoIncidents bool             `json:"suppressAutoIncidents"`
+	ReminderMinutesBefore []int            `json:"reminderMinutesBefore"`
 
 	// AutoStart, AutoEnd and ShowAffectedServices default to true when nil.
 	AutoStart            *bool `json:"autoStart"`
@@ -142,9 +154,9 @@ type MaintenanceWindowComponentConfig struct {
 // progress.
 type MaintenanceWindowComponentImpact struct {
 	ComponentID string `json:"componentId"`
-	// Status is one of OPERATIONAL, UNDER_MAINTENANCE, DEGRADED_PERFORMANCE,
-	// PARTIAL_OUTAGE or MAJOR_OUTAGE. Empty means UNDER_MAINTENANCE.
-	Status string `json:"status,omitempty"`
+	// Status is the status the component shows. Empty means
+	// UNDER_MAINTENANCE.
+	Status StatusPageComponentStatusV3 `json:"status,omitempty"`
 }
 
 // MarshalJSON sends every setting other than a nil ComponentConfigs, using
@@ -160,7 +172,7 @@ func (v MaintenanceWindowStatusPageVisibility) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(struct {
 		alias
-		Severity              *string                             `json:"severity"`
+		Severity              *IncidentSeverity                   `json:"severity"`
 		ReminderMinutesBefore []int                               `json:"reminderMinutesBefore"`
 		AutoStart             bool                                `json:"autoStart"`
 		AutoEnd               bool                                `json:"autoEnd"`

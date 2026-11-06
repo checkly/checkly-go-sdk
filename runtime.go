@@ -6,12 +6,25 @@ import (
 	"net/http"
 )
 
+// RuntimeStage is the release stage of a runtime, in [Runtime].Stage.
+type RuntimeStage string
+
+// Runtime stages, the values of [Runtime].Stage.
+const (
+	RuntimeStageAlpha      RuntimeStage = "ALPHA"
+	RuntimeStageBeta       RuntimeStage = "BETA"
+	RuntimeStageCurrent    RuntimeStage = "CURRENT"
+	RuntimeStageStable     RuntimeStage = "STABLE"
+	RuntimeStageDeprecated RuntimeStage = "DEPRECATED"
+	RuntimeStageRemoved    RuntimeStage = "REMOVED"
+)
+
 type Runtime struct {
-	Name             string `json:"name"`
-	MultiStepSupport bool   `json:"multiStepSupport"`
-	Stage            string `json:"stage"`
-	RuntimeEndOfLife string `json:"runtimeEndOfLife"`
-	Description      string `json:"description"`
+	Name             string       `json:"name"`
+	MultiStepSupport bool         `json:"multiStepSupport"`
+	Stage            RuntimeStage `json:"stage"`
+	RuntimeEndOfLife string       `json:"runtimeEndOfLife"`
+	Description      string       `json:"description"`
 }
 
 // GetRuntime returns the specs of a runtime. The endpoint is public, so the

@@ -69,12 +69,35 @@ type AlertChannelCall struct {
 	Number string `json:"number"`
 }
 
+// OpsgenieRegion is the Opsgenie region of an Opsgenie alert channel, in
+// [AlertChannelOpsgenie].Region.
+type OpsgenieRegion string
+
+// Opsgenie regions, the values of [AlertChannelOpsgenie].Region.
+const (
+	OpsgenieRegionEU OpsgenieRegion = "EU"
+	OpsgenieRegionUS OpsgenieRegion = "US"
+)
+
+// OpsgeniePriority is the priority of the alerts an Opsgenie alert channel
+// creates, in [AlertChannelOpsgenie].Priority.
+type OpsgeniePriority string
+
+// Opsgenie priorities, the values of [AlertChannelOpsgenie].Priority.
+const (
+	OpsgeniePriorityP1 OpsgeniePriority = "P1"
+	OpsgeniePriorityP2 OpsgeniePriority = "P2"
+	OpsgeniePriorityP3 OpsgeniePriority = "P3"
+	OpsgeniePriorityP4 OpsgeniePriority = "P4"
+	OpsgeniePriorityP5 OpsgeniePriority = "P5"
+)
+
 // AlertChannelOpsgenie defines a type for an opsgenie alert channel
 type AlertChannelOpsgenie struct {
-	Name     string `json:"name"`
-	APIKey   string `json:"apiKey"`
-	Region   string `json:"region"`
-	Priority string `json:"priority"`
+	Name     string           `json:"name"`
+	APIKey   string           `json:"apiKey"`
+	Region   OpsgenieRegion   `json:"region"`
+	Priority OpsgeniePriority `json:"priority"`
 }
 
 // AlertChannelPagerduty defines a type for a PagerDuty alert channel
@@ -86,9 +109,12 @@ type AlertChannelPagerduty struct {
 
 // AlertChannelWebhook defines a type for a webhook alert channel
 type AlertChannelWebhook struct {
-	Name            string     `json:"name"`
-	URL             string     `json:"url"`
-	WebhookType     string     `json:"webhookType,omitempty"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	WebhookType string `json:"webhookType,omitempty"`
+	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
+	// constants such as http.MethodPost name them. Method is left out of the
+	// request when empty, and the API then uses POST.
 	Method          string     `json:"method,omitempty"`
 	Template        string     `json:"template,omitempty"`
 	WebhookSecret   string     `json:"webhookSecret,omitempty"`

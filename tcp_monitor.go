@@ -42,7 +42,7 @@ type TCPRequest struct {
 	Port       uint16      `json:"port"`
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
-	IPFamily   string      `json:"ipFamily,omitempty"`
+	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
 }
 
 // tcpRequestPayload wraps TCPRequest for create and update payloads. The

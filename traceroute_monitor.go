@@ -40,17 +40,30 @@ type TracerouteMonitor struct {
 	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
 }
 
+// TracerouteProtocol is the protocol of a traceroute monitor's probes, in
+// [TracerouteRequest].Protocol.
+type TracerouteProtocol string
+
+// Traceroute protocols, the values of [TracerouteRequest].Protocol. The API
+// default is TracerouteProtocolTCP.
+const (
+	TracerouteProtocolTCP  TracerouteProtocol = "TCP"
+	TracerouteProtocolICMP TracerouteProtocol = "ICMP"
+	TracerouteProtocolUDP  TracerouteProtocol = "UDP"
+	TracerouteProtocolSCTP TracerouteProtocol = "SCTP"
+)
+
 // TracerouteRequest represents the parameters for a traceroute monitor's probe.
 //
-// Port is stripped from the marshaled body when Protocol is "ICMP", mirroring
+// Port is stripped from the marshaled body when Protocol is ICMP, mirroring
 // the public API's `Joi.any().strip()` for that case (see MarshalJSON).
 type TracerouteRequest struct {
-	URL            string `json:"url"`
-	Protocol       string `json:"protocol,omitempty"`
-	Port           int    `json:"port,omitempty"`
-	IPFamily       string `json:"ipFamily,omitempty"`
-	MaxHops        int    `json:"maxHops,omitempty"`
-	MaxUnknownHops int    `json:"maxUnknownHops,omitempty"`
+	URL            string             `json:"url"`
+	Protocol       TracerouteProtocol `json:"protocol,omitempty"`
+	Port           int                `json:"port,omitempty"`
+	IPFamily       IPFamily           `json:"ipFamily,omitempty"`
+	MaxHops        int                `json:"maxHops,omitempty"`
+	MaxUnknownHops int                `json:"maxUnknownHops,omitempty"`
 	// PtrLookup is a pointer so that an explicit `false` can be sent; the API
 	// defaults it to true when the field is omitted.
 	PtrLookup  *bool       `json:"ptrLookup,omitempty"`
@@ -58,11 +71,11 @@ type TracerouteRequest struct {
 	Assertions []Assertion `json:"assertions,omitempty"`
 }
 
-// MarshalJSON drops the `port` field when the probe protocol is "ICMP",
+// MarshalJSON drops the `port` field when the probe protocol is ICMP,
 // mirroring the public API schema which strips `port` for ICMP traceroutes.
 func (r TracerouteRequest) MarshalJSON() ([]byte, error) {
 	type alias TracerouteRequest
-	if r.Protocol == "ICMP" {
+	if r.Protocol == TracerouteProtocolICMP {
 		// Zero value combined with the `omitempty` tag drops `port` from the
 		// marshaled body, matching the Joi `.strip()` behavior.
 		r.Port = 0
@@ -101,15 +114,15 @@ type tracerouteMonitorUpdatePayload struct {
 // PTR lookup would run as false rather than the default true. The port of an
 // ICMP probe is sent as null, as the API discards it anyway.
 type tracerouteUpdateRequestPayload struct {
-	URL            string      `json:"url"`
-	Protocol       *string     `json:"protocol"`
-	Port           *int        `json:"port"`
-	IPFamily       string      `json:"ipFamily,omitempty"`
-	MaxHops        *int        `json:"maxHops"`
-	MaxUnknownHops *int        `json:"maxUnknownHops"`
-	PtrLookup      *bool       `json:"ptrLookup,omitempty"`
-	Timeout        *int        `json:"timeout"`
-	Assertions     []Assertion `json:"assertions"`
+	URL            string              `json:"url"`
+	Protocol       *TracerouteProtocol `json:"protocol"`
+	Port           *int                `json:"port"`
+	IPFamily       IPFamily            `json:"ipFamily,omitempty"`
+	MaxHops        *int                `json:"maxHops"`
+	MaxUnknownHops *int                `json:"maxUnknownHops"`
+	PtrLookup      *bool               `json:"ptrLookup,omitempty"`
+	Timeout        *int                `json:"timeout"`
+	Assertions     []Assertion         `json:"assertions"`
 }
 
 func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitorPayload {
@@ -157,7 +170,7 @@ func updateTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 			Assertions:     emptyIfNil(request.Assertions),
 		},
 	}
-	if request.Protocol != "ICMP" {
+	if request.Protocol != TracerouteProtocolICMP {
 		payload.Request.Port = nullIfZero(request.Port)
 	}
 	return payload
