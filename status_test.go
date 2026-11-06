@@ -79,13 +79,6 @@ func ignoreResult[T any](_ T, err error) error { return err }
 var statusCases = map[string]statusCase{
 	// Checks
 	"GetHeartbeatMonitor": getCheckOfTypeCase(checkly.Client.GetHeartbeatMonitor, "HEARTBEAT"),
-	"CreateCheck": {
-		requests: []string{"POST /v1/checks/api?autoAssignAlerts=false"},
-		accept:   statusCreated,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.CreateCheck(ctx, checkly.Check{Type: checkly.CheckTypeAPI}))
-		},
-	},
 	"CreateHeartbeatMonitor": {
 		requests: []string{"POST /v1/checks/heartbeat?autoAssignAlerts=false"},
 		accept:   statusCreated,
@@ -168,13 +161,6 @@ var statusCases = map[string]statusCase{
 		accept:   statusCreated,
 		call: func(ctx context.Context, c checkly.Client) error {
 			return ignoreResult(c.CreateMultiStepCheck(ctx, checkly.MultiStepCheck{}))
-		},
-	},
-	"UpdateCheck": {
-		requests: []string{"PUT /v1/checks/id1?autoAssignAlerts=false"},
-		accept:   statusOK,
-		call: func(ctx context.Context, c checkly.Client) error {
-			return ignoreResult(c.UpdateCheck(ctx, testID, checkly.Check{Type: checkly.CheckTypeAPI}))
 		},
 	},
 	"UpdateHeartbeatMonitor": {

@@ -142,9 +142,8 @@ log.Println(monitor.Name)
 ## Checks
 
 v2 adds `APICheck` and `BrowserCheck`, redefines `MultiStepCheck`, and gives each its own methods
-backed by the per-type endpoints. The generic `Check` type and `CreateCheck`, `GetCheck`,
-`UpdateCheck` and `DeleteCheck` still work but are deprecated: `UpdateCheck` uses the generic
-`PUT /v1/checks/{id}` endpoint, which the API has deprecated.
+backed by the per-type endpoints, which are now the only way to create and update a check. The
+generic `Check` type, `GetCheck` and `DeleteCheck` still work but are deprecated.
 
 | Check type | Type | Methods | Create and update endpoint |
 |---|---|---|---|
@@ -209,6 +208,10 @@ Moving from `Check` to a per-type struct:
   `BrowserCheck` and `MultiStepCheck` have `Script`, `ScriptPath`, `Dependencies` and
   `EnvironmentVariables`; `BrowserCheck` has no `Request` or response-time limits.
 - There is no `DoubleCheck`: the per-type payloads always send `false`. Use `RetryStrategy`.
+- Per-type updates send what the struct holds. `Tags`, `AlertChannelSubscriptions`, the snippet IDs
+  and the local scripts, which v1's generic update left out when empty so the API kept them, are
+  now cleared. Read the check, change it and send it back: a sparse struct can drop the alert
+  channel subscriptions and stop the check's alerts with no error.
 - `MultiStepCheck` no longer has `Type` or `FrequencyOffset`.
 - New on `APICheck`, `BrowserCheck`, `MultiStepCheck` and `PlaywrightCheck`: `Intent`
   (`*CheckIntent`) and `AIAutoRepairEnabled` (`*bool`), for automatic AI repair.
@@ -230,11 +233,13 @@ dropped its type-specific fields.
 | `CreateTriggerCheck`, `GetTriggerCheck`, `DeleteTriggerCheck`, `CreateTriggerGroup`, `GetTriggerGroup`, `DeleteTriggerGroup`, types `TriggerCheck`, `TriggerGroup` | To run checks on demand, the Checkly CLI (`checkly trigger`) or `POST /v1/check-sessions/trigger` |
 | `SetAccountId`, `SetChecklySource`, `NewClient`'s `debug` argument | See [Creating the client](#creating-the-client) |
 | `AlertChannel.GetConfig`, `AlertChannel.SetConfig`, `AlertChannelConfigFromJSON` | The config field that matches `Type`, such as `Email` for `AlertChannelTypeEmail` |
+| `CreateCheck`, `UpdateCheck` | The per-type methods, such as `CreateAPICheck` and `UpdateAPICheck` |
+| `Check.DoubleCheck` | `RetryStrategy` |
 | `Check.SSLCheck`, `AlertSettings.SSLCertificates`, type `SSLCertificates` | Nothing: the public API no longer has them |
 | `Assertion.Edit`, `Assertion.Order`, `Assertion.ArrayIndex`, `Assertion.ArraySelector` | Nothing: the API discarded them, and requests no longer send them |
 
 `Create` posted every check to `/v1/checks`. Its replacements post to the endpoint of the check's
-type, and the deprecated `CreateCheck` rejects monitor types, which have their own create methods.
+type.
 
 ```go
 // v1
@@ -331,7 +336,7 @@ elsewhere, such as in the web app, read the resource, change it and send it back
 
 Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
 
-- **Heartbeat, TCP, URL, DNS, ICMP, gRPC, traceroute and SSL monitors and `Check`:** `tags` and
+- **Heartbeat, TCP, URL, DNS, ICMP, gRPC, traceroute and SSL monitors:** `tags` and
   `alertChannelSubscriptions` as `[]`; an unset `groupOrder` as `null` (as `0` for TCP monitors;
   heartbeat monitors have no group order).
 - **TCP, URL and DNS monitors:** `degradedResponseTime` and `maxResponseTime`. **ICMP monitors:**
@@ -347,12 +352,10 @@ Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
   max hops, max unknown hops and timeout as `null` when zero.
 - **SSL monitors:** the request assertions as `[]`, and `SSLClientCertificateID` and
   `SSLConfig.ServerName` as `null` when nil.
-- **`Check`:** `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and `localTearDownScript`
-  as `null` when unset.
 - **Check groups (`Group`):** `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and
   `localTearDownScript` as `null`; `tags` and `alertChannelSubscriptions` as `[]` (also on
   `GroupV2`).
-- **`Request` (API checks, `Check`, URL monitors):** `BasicAuth` as `null` when nil, so removing
+- **`Request` (API checks, URL monitors):** `BasicAuth` as `null` when nil, so removing
   credentials clears them.
 - **`AlertSettings`:** `reminders.amount` and `parallelRunFailureThreshold.enabled`, on create too.
 - **Status pages (v1):** `customDomain` as `null`, and `logo`, `redirectTo` and `favicon` as `""`.

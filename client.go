@@ -21,19 +21,6 @@ const defaultSource = "go-sdk"
 // documentation describes the errors, cancellation, retries and update
 // behaviour that all methods share.
 type Client interface {
-	// CreateCheck creates a check from the generic [Check] fields and returns
-	// it with its ID. Type must be [CheckTypeAPI], [CheckTypeBrowser],
-	// [CheckTypeHeartbeat] or [CheckTypeMultiStep]; for any other type it
-	// returns an error without sending a request.
-	//
-	// Deprecated: use CreateAPICheck, CreateBrowserCheck,
-	// CreateMultiStepCheck or the create method of the monitor type, which
-	// take the fields of their check type.
-	CreateCheck(
-		ctx context.Context,
-		check Check,
-	) (*Check, error)
-
 	// GetCheck returns the check with the given ID, whatever its type, as a
 	// [Check].
 	//
@@ -42,18 +29,6 @@ type Client interface {
 	GetCheck(
 		ctx context.Context,
 		ID string,
-	) (*Check, error)
-
-	// UpdateCheck updates the check with the given ID and returns it.
-	//
-	// Deprecated: use UpdateAPICheck, UpdateBrowserCheck,
-	// UpdateMultiStepCheck or the update method of the monitor type.
-	// UpdateCheck uses the generic check update
-	// endpoint, which the API has deprecated.
-	UpdateCheck(
-		ctx context.Context,
-		ID string,
-		check Check,
 	) (*Check, error)
 
 	// DeleteCheck deletes the check with the given ID, whatever its type.

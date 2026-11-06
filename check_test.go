@@ -2,13 +2,11 @@ package checkly_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
@@ -96,75 +94,9 @@ var wantCheck = checkly.Check{
 	AlertChannelSubscriptions: nil,
 }
 
-func validateCheck(t *testing.T, body []byte) {
-	var gotCheck checkly.Check
-	err := json.Unmarshal(body, &gotCheck)
-	if err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
-	}
-	// The payload sends unset lists as [], which decodes to an empty slice.
-	if !cmp.Equal(wantCheck, gotCheck, cmpopts.EquateEmpty()) {
-		t.Error(cmp.Diff(wantCheck, gotCheck, cmpopts.EquateEmpty()))
-	}
-}
-
 // TODO: adjust wantCheck to test multiple SSLCheckDomain value and remove it from this list
 var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset",
 	"PrivateLocations", "SSLCheckDomain", "CreatedAt", "UpdatedAt")
-
-func TestCreateCheck(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPost,
-		"/v1/checks/api?autoAssignAlerts=false",
-		validateCheck,
-		http.StatusCreated,
-		"CreateCheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-// TestCreateCheckRejectsTypes asserts CreateCheck rejects the check types it
-// cannot create, naming the method to use instead, without sending a request.
-func TestCreateCheckRejectsTypes(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		checkType checkly.CheckType
-		want      string
-	}{
-		{checkly.CheckTypeTCP, "CreateTCPMonitor"},
-		{checkly.CheckTypeURL, "CreateURLMonitor"},
-		{checkly.CheckTypeDNS, "CreateDNSMonitor"},
-		{checkly.CheckTypeICMP, "CreateICMPMonitor"},
-		{checkly.CheckTypeGRPC, "CreateGRPCMonitor"},
-		{checkly.CheckTypeTraceroute, "CreateTracerouteMonitor"},
-		{checkly.CheckTypeSSL, "CreateSSLMonitor"},
-		{checkly.CheckTypePlaywright, "CreatePlaywrightCheck"},
-		{checkly.CheckTypeAgentic, "cannot create AGENTIC checks"},
-		{"UNKNOWN", "unknown check type: UNKNOWN"},
-	}
-	for _, tt := range tests {
-		t.Run(string(tt.checkType), func(t *testing.T) {
-			t.Parallel()
-			c, lastBody := newRecordingServer(t, http.StatusCreated, `{}`)
-			_, err := c.CreateCheck(context.Background(), checkly.Check{Name: "n", Type: tt.checkType})
-			if err == nil || !strings.Contains(err.Error(), tt.want) {
-				t.Errorf("want error containing %q, got %v", tt.want, err)
-			}
-			if body := lastBody(); body != nil {
-				t.Errorf("want no request, got one with body %s", body)
-			}
-		})
-	}
-}
 
 func TestGetCheck(t *testing.T) {
 	t.Parallel()
@@ -178,26 +110,6 @@ func TestGetCheck(t *testing.T) {
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
 	gotCheck, err := client.GetCheck(context.Background(), wantCheckID)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestUpdateCheck(t *testing.T) {
-	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPut,
-		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-		validateCheck,
-		http.StatusOK,
-		"UpdateCheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotCheck, err := client.UpdateCheck(context.Background(), wantCheckID, wantCheck)
 	if err != nil {
 		t.Error(err)
 	}
@@ -220,80 +132,6 @@ func TestDeleteCheck(t *testing.T) {
 	err := client.DeleteCheck(context.Background(), wantCheckID)
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-// TestCheckScriptAndEnvironmentVariablesPayload verifies that CreateCheck and
-// UpdateCheck send a Check's Script and EnvironmentVariables. wantCheck is an
-// API check, whose endpoint does not store these fields, so it leaves them
-// unset and a browser check covers them here instead.
-func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
-	t.Parallel()
-	check := checkly.Check{
-		Name:      "browser",
-		Type:      checkly.CheckTypeBrowser,
-		Frequency: 10,
-		Locations: []string{"eu-west-1"},
-		Script:    "await page.goto('https://example.com')",
-		EnvironmentVariables: []checkly.EnvironmentVariable{
-			{Key: "ENVTEST", Value: "Hello world"},
-		},
-	}
-	validate := func(t *testing.T, body []byte) {
-		var got struct {
-			Script               *string                       `json:"script"`
-			EnvironmentVariables []checkly.EnvironmentVariable `json:"environmentVariables"`
-		}
-		if err := json.Unmarshal(body, &got); err != nil {
-			t.Fatalf("decoding error for data %q: %v", body, err)
-		}
-		if got.Script == nil || *got.Script != check.Script {
-			t.Errorf("want script %q in the payload, got %s", check.Script, body)
-		}
-		if !cmp.Equal(check.EnvironmentVariables, got.EnvironmentVariables) {
-			t.Error(cmp.Diff(check.EnvironmentVariables, got.EnvironmentVariables))
-		}
-	}
-	cases := []struct {
-		name    string
-		method  string
-		url     string
-		status  int
-		fixture string
-		call    func(checkly.Client) (*checkly.Check, error)
-	}{
-		{
-			name:    "CreateCheck",
-			method:  http.MethodPost,
-			url:     "/v1/checks/browser?autoAssignAlerts=false",
-			status:  http.StatusCreated,
-			fixture: "CreateBrowserCheck.json",
-			call: func(c checkly.Client) (*checkly.Check, error) {
-				return c.CreateCheck(context.Background(), check)
-			},
-		},
-		{
-			name:    "UpdateCheck",
-			method:  http.MethodPut,
-			url:     fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-			status:  http.StatusOK,
-			fixture: "UpdateBrowserCheck.json",
-			call: func(c checkly.Client) (*checkly.Check, error) {
-				return c.UpdateCheck(context.Background(), wantCheckID, check)
-			},
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			ts := cannedResponseServer(t, tc.method, tc.url, validate, tc.status, tc.fixture)
-			defer ts.Close()
-			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-			if _, err := tc.call(client); err != nil {
-				t.Error(err)
-			}
-		})
 	}
 }
 
@@ -394,51 +232,4 @@ func TestGetPerTypeCheckAcceptsOwnCheckType(t *testing.T) {
 			}
 		})
 	}
-}
-
-// validateCheckEmptyPayload asserts that the keys the update endpoint would
-// otherwise keep at their stored value are sent for an empty check: lists as
-// [], the snippet IDs, local scripts and group order as null, and the alert
-// settings' zero values.
-func validateCheckEmptyPayload(t *testing.T, body []byte) {
-	assertRawBodyField(t, body, "tags", `[]`)
-	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
-	assertRawBodyField(t, body, "setupSnippetId", `null`)
-	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
-	assertRawBodyField(t, body, "localSetupScript", `null`)
-	assertRawBodyField(t, body, "localTearDownScript", `null`)
-	assertRawBodyField(t, body, "groupOrder", `null`)
-	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
-	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
-}
-
-func TestCheckSerializesEmptyValues(t *testing.T) {
-	t.Parallel()
-	check := checkly.Check{Name: "test", Type: checkly.CheckTypeAPI}
-	runPayloadCases(t, []payloadCase{
-		{
-			name:     "CreateCheck",
-			method:   http.MethodPost,
-			url:      "/v1/checks/api?autoAssignAlerts=false",
-			status:   http.StatusCreated,
-			fixture:  "CreateCheck.json",
-			validate: validateCheckEmptyPayload,
-			call: func(ctx context.Context, c checkly.Client) error {
-				_, err := c.CreateCheck(ctx, check)
-				return err
-			},
-		},
-		{
-			name:     "UpdateCheck",
-			method:   http.MethodPut,
-			url:      fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-			status:   http.StatusOK,
-			fixture:  "UpdateCheck.json",
-			validate: validateCheckEmptyPayload,
-			call: func(ctx context.Context, c checkly.Client) error {
-				_, err := c.UpdateCheck(ctx, wantCheckID, check)
-				return err
-			},
-		},
-	})
 }
