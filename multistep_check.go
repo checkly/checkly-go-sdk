@@ -78,6 +78,8 @@ type MultiStepCheck struct {
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
+func (*MultiStepCheck) isCheck() {}
+
 type multiStepCheckPayload struct {
 	MultiStepCheck
 	Type CheckType `json:"checkType"`

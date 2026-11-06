@@ -157,6 +157,36 @@ func ExampleClient_CreateURLMonitor() {
 	fmt.Printf("created URL monitor %q with ID %s\n", monitor.Name, monitor.ID)
 }
 
+// GetCheck reads a check whose type is not known. A type switch on the result
+// reaches the fields of its type.
+func ExampleClient_GetCheck() {
+	client, err := checkly.NewClient(checkly.WithAuthFromEnv())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	check, err := client.GetCheck(ctx, "00000000-0000-4000-8000-000000000000")
+	if errors.Is(err, checkly.ErrUnsupportedCheckType) {
+		fmt.Println("the SDK has no type for this check:", err)
+		return
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	switch c := check.(type) {
+	case *checkly.APICheck:
+		fmt.Printf("API check %q requests %s\n", c.Name, c.Request.URL)
+	case *checkly.HeartbeatMonitor:
+		fmt.Printf("heartbeat monitor %q expects a ping every %d %s\n", c.Name, c.Heartbeat.Period, c.Heartbeat.PeriodUnit)
+	default:
+		fmt.Printf("another check type: %T\n", check)
+	}
+}
+
 // Match an error with errors.Is and the sentinel errors to branch on the
 // kind of failure, and use errors.As to read the details of an *APIError.
 func ExampleAPIError() {

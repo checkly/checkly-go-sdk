@@ -474,7 +474,7 @@ func TestRequestHeaders(t *testing.T) {
 			tt, call := tt, call
 			t.Run(tt.name+"/"+callName, func(t *testing.T) {
 				t.Parallel()
-				srv, sent := headerServer(t, "{}")
+				srv, sent := headerServer(t, `{"checkType":"API"}`)
 				// The trailing slash checks that the base URL is joined
 				// without a double slash.
 				opts := append([]checkly.ClientOption{checkly.WithBaseURL(srv.URL + "/"), checkly.WithHTTPClient(srv.Client())}, tt.opts...)

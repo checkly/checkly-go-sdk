@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -35,17 +36,293 @@ func setupClient(t *testing.T) checkly.Client {
 	return client
 }
 
-func TestCreateIntegration(t *testing.T) {
+// TestGetCheckIntegration verifies that GetCheck reads a check created with a
+// per-type method.
+func TestGetCheckIntegration(t *testing.T) {
+	ctx := context.TODO()
 	client := setupClient(t)
 
-	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
+	created, err := client.CreateAPICheck(ctx, checkly.APICheck{
+		Name:                 "GetCheck integration check",
+		Frequency:            10,
+		Locations:            []string{"us-east-1"},
+		Tags:                 []string{"integration"},
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
+		Request: checkly.Request{
+			Method: "GET",
+			URL:    "https://api.checklyhq.com",
+		},
+	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to create check: %v", err)
 	}
-	defer func() { _ = client.DeleteCheck(context.Background(), gotCheck.ID) }()
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Fatal(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	t.Cleanup(func() {
+		_ = client.DeleteAPICheck(context.Background(), created.ID)
+	})
+
+	check, err := client.GetCheck(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get check: %v", err)
 	}
+	got, ok := check.(*checkly.APICheck)
+	if !ok {
+		t.Fatalf("got %T, want *checkly.APICheck", check)
+	}
+	if got.ID != created.ID {
+		t.Errorf("ID = %q, want %q", got.ID, created.ID)
+	}
+	if got.Name != created.Name {
+		t.Errorf("Name = %q, want %q", got.Name, created.Name)
+	}
+	if got.Frequency != created.Frequency {
+		t.Errorf("Frequency = %d, want %d", got.Frequency, created.Frequency)
+	}
+	if !cmp.Equal(created.Locations, got.Locations) {
+		t.Error(cmp.Diff(created.Locations, got.Locations))
+	}
+	if !cmp.Equal(created.Tags, got.Tags) {
+		t.Error(cmp.Diff(created.Tags, got.Tags))
+	}
+	if got.Request.URL != created.Request.URL {
+		t.Errorf("Request.URL = %q, want %q", got.Request.URL, created.Request.URL)
+	}
+}
+
+// assertGetCheckReturns creates a check in a subtest and verifies that
+// GetCheck, whose request sets includeDependencies whatever the type, returns
+// that check as a *T.
+func assertGetCheckReturns[T any](t *testing.T, client checkly.Client, name string, create func() (*T, error)) {
+	t.Run(name, func(t *testing.T) {
+		ctx := context.TODO()
+		created, err := create()
+		if err != nil {
+			t.Fatalf("failed to create %s check: %v", name, err)
+		}
+		id := reflect.ValueOf(created).Elem().FieldByName("ID").String()
+		t.Cleanup(func() {
+			_ = client.DeleteCheck(context.Background(), id)
+		})
+
+		check, err := client.GetCheck(ctx, id)
+		if err != nil {
+			t.Fatalf("failed to get %s check: %v", name, err)
+		}
+		got, ok := any(check).(*T)
+		if !ok {
+			t.Fatalf("got %T, want %T", check, created)
+		}
+		if gotID := reflect.ValueOf(got).Elem().FieldByName("ID").String(); gotID != id {
+			t.Errorf("ID = %q, want %q", gotID, id)
+		}
+	})
+}
+
+// TestGetCheckConcreteTypesIntegration verifies that GetCheck returns the
+// concrete type of every check type the SDK can create, apart from API checks,
+// which TestGetCheckIntegration covers. Playwright checks need an uploaded code
+// bundle, so only a unit test covers them.
+func TestGetCheckConcreteTypesIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+	locations := []string{"us-east-1"}
+
+	assertGetCheckReturns(t, client, "browser", func() (*checkly.BrowserCheck, error) {
+		return client.CreateBrowserCheck(ctx, checkly.BrowserCheck{
+			Name:      "GetCheck browser check",
+			Frequency: 10,
+			Locations: locations,
+			Script:    "console.log('browser')",
+		})
+	})
+	assertGetCheckReturns(t, client, "multi-step", func() (*checkly.MultiStepCheck, error) {
+		return client.CreateMultiStepCheck(ctx, checkly.MultiStepCheck{
+			Name:      "GetCheck multi-step check",
+			Frequency: 10,
+			Locations: locations,
+			Script:    "console.log('multi-step')",
+		})
+	})
+	assertGetCheckReturns(t, client, "heartbeat", func() (*checkly.HeartbeatMonitor, error) {
+		return client.CreateHeartbeatMonitor(ctx, checkly.HeartbeatMonitor{
+			Name: "GetCheck heartbeat monitor",
+			AlertSettings: checkly.AlertSettings{
+				EscalationType:     checkly.EscalationTypeRunBased,
+				RunBasedEscalation: checkly.RunBasedEscalation{FailedRunThreshold: 1},
+			},
+			Heartbeat: checkly.Heartbeat{
+				Period:     1,
+				PeriodUnit: checkly.HeartbeatUnitDays,
+				Grace:      1,
+				GraceUnit:  checkly.HeartbeatUnitHours,
+			},
+		})
+	})
+	assertGetCheckReturns(t, client, "URL", func() (*checkly.URLMonitor, error) {
+		return client.CreateURLMonitor(ctx, checkly.URLMonitor{
+			Name:      "GetCheck URL monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.URLRequest{URL: "https://api.checklyhq.com"},
+		})
+	})
+	assertGetCheckReturns(t, client, "TCP", func() (*checkly.TCPMonitor, error) {
+		return client.CreateTCPMonitor(ctx, checkly.TCPMonitor{
+			Name:      "GetCheck TCP monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.TCPRequest{Hostname: "api.checklyhq.com", Port: 443},
+		})
+	})
+	assertGetCheckReturns(t, client, "DNS", func() (*checkly.DNSMonitor, error) {
+		return client.CreateDNSMonitor(ctx, checkly.DNSMonitor{
+			Name:      "GetCheck DNS monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.DNSRequest{RecordType: "A", Query: "api.checklyhq.com"},
+		})
+	})
+	assertGetCheckReturns(t, client, "ICMP", func() (*checkly.ICMPMonitor, error) {
+		return client.CreateICMPMonitor(ctx, checkly.ICMPMonitor{
+			Name:                        "GetCheck ICMP monitor",
+			Frequency:                   10,
+			Locations:                   locations,
+			DegradedPacketLossThreshold: 10,
+			MaxPacketLossThreshold:      20,
+			Request:                     checkly.ICMPRequest{Hostname: "api.checklyhq.com", PingCount: 5},
+		})
+	})
+	assertGetCheckReturns(t, client, "gRPC", func() (*checkly.GRPCMonitor, error) {
+		return client.CreateGRPCMonitor(ctx, checkly.GRPCMonitor{
+			Name:      "GetCheck gRPC monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request: checkly.GRPCRequest{
+				URL:        "grpc.example.com",
+				Port:       443,
+				Timeout:    30,
+				GRPCConfig: checkly.GRPCConfig{Mode: "BEHAVIOR", Method: "example.Service/Method"},
+			},
+		})
+	})
+	assertGetCheckReturns(t, client, "SSL", func() (*checkly.SSLMonitor, error) {
+		return client.CreateSSLMonitor(ctx, checkly.SSLMonitor{
+			Name:      "GetCheck SSL monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.SSLRequest{SSLConfig: checkly.SSLConfig{Hostname: "api.checklyhq.com"}},
+		})
+	})
+	assertGetCheckReturns(t, client, "traceroute", func() (*checkly.TracerouteMonitor, error) {
+		return client.CreateTracerouteMonitor(ctx, checkly.TracerouteMonitor{
+			Name:      "GetCheck traceroute monitor",
+			Frequency: 10,
+			Locations: locations,
+			Request:   checkly.TracerouteRequest{URL: "api.checklyhq.com"},
+		})
+	})
+}
+
+// TestAPICheckRoundTripIntegration verifies that every field of a fully
+// populated API check survives create, update and read: the API stores what
+// the SDK sends and the SDK decodes what the API returns.
+func TestAPICheckRoundTripIntegration(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	description := "Round trip description"
+	localSetup := "console.log('local setup')"
+	localTearDown := "console.log('local teardown')"
+	check := checkly.APICheck{
+		Name:                 "Round trip check",
+		Description:          &description,
+		Frequency:            10,
+		Activated:            true,
+		Muted:                true,
+		Locations:            []string{"us-east-1", "eu-west-1"},
+		PrivateLocations:     &[]string{},
+		Tags:                 []string{"integration", "round-trip"},
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
+		AlertSettings: &checkly.AlertSettings{
+			EscalationType: checkly.EscalationTypeRunBased,
+			RunBasedEscalation: checkly.RunBasedEscalation{
+				FailedRunThreshold: 2,
+			},
+			TimeBasedEscalation: checkly.TimeBasedEscalation{
+				MinutesFailingThreshold: 5,
+			},
+			Reminders: checkly.Reminders{
+				Amount:   1,
+				Interval: 5,
+			},
+			ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
+				Percentage: 10,
+			},
+		},
+		RetryStrategy: &checkly.RetryStrategy{
+			Type:               "LINEAR",
+			MaxRetries:         2,
+			BaseBackoffSeconds: 60,
+			MaxDurationSeconds: 600,
+			SameRegion:         true,
+		},
+		LocalSetupScript:    &localSetup,
+		LocalTearDownScript: &localTearDown,
+		Request: checkly.Request{
+			Method:          "GET",
+			URL:             "https://api.checklyhq.com",
+			FollowRedirects: true,
+			BodyType:        checkly.BodyTypeNone,
+			IPFamily:        checkly.IPFamilyIPv4,
+			Headers: []checkly.KeyValue{
+				{Key: "X-Test", Value: "foo"},
+			},
+			QueryParameters: []checkly.KeyValue{
+				{Key: "query", Value: "param"},
+			},
+			Assertions: []checkly.Assertion{
+				{
+					Source:     checkly.AssertionSourceStatusCode,
+					Comparison: checkly.AssertionComparisonEquals,
+					Target:     "200",
+				},
+			},
+		},
+	}
+	// The API assigns FrequencyOffset for a Frequency above 0.
+	ignored := cmp.Options{ignoreAPICheckFields, cmpopts.IgnoreFields(checkly.APICheck{}, "FrequencyOffset"), cmpopts.EquateEmpty()}
+	assertEqual := func(step string, got checkly.APICheck) {
+		t.Helper()
+		if diff := cmp.Diff(check, got, ignored); diff != "" {
+			t.Errorf("%s: mismatch (-want +got):\n%s", step, diff)
+		}
+	}
+
+	created, err := client.CreateAPICheck(ctx, check)
+	if err != nil {
+		t.Fatalf("failed to create check: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = client.DeleteAPICheck(context.Background(), created.ID)
+	})
+	assertEqual("create", *created)
+
+	check.Name = "Round trip check updated"
+	check.Tags = []string{"integration", "round-trip", "updated"}
+	check.RetryStrategy.MaxRetries = 1
+	check.Request.Headers = []checkly.KeyValue{{Key: "X-Test", Value: "bar"}}
+	updated, err := client.UpdateAPICheck(ctx, created.ID, check)
+	if err != nil {
+		t.Fatalf("failed to update check: %v", err)
+	}
+	assertEqual("update", *updated)
+
+	got, err := client.GetAPICheck(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get check: %v", err)
+	}
+	assertEqual("get", *got)
 }
 
 func TestCheckGroupUnset(t *testing.T) {
@@ -74,15 +351,16 @@ func TestCheckGroupUnset(t *testing.T) {
 		_ = client.DeleteGroup(ctx, group.ID)
 	}()
 
-	pendingCheck := checkly.Check{
-		Name:      "Foo check",
-		Type:      checkly.CheckTypeAPI,
-		Frequency: 10,
+	pendingCheck := checkly.APICheck{
+		Name:                 "Foo check",
+		Frequency:            10,
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
 		Request: checkly.Request{
 			Method: "GET",
 			URL:    "https://api.checklyhq.com",
 		},
-		AlertSettings: checkly.AlertSettings{
+		AlertSettings: &checkly.AlertSettings{
 			EscalationType: checkly.EscalationTypeRunBased,
 			RunBasedEscalation: checkly.RunBasedEscalation{
 				FailedRunThreshold: 1,
@@ -92,13 +370,13 @@ func TestCheckGroupUnset(t *testing.T) {
 		GroupID:   group.ID,
 	}
 
-	createdCheck, err := client.CreateCheck(ctx, pendingCheck)
+	createdCheck, err := client.CreateAPICheck(ctx, pendingCheck)
 	if err != nil {
 		t.Fatalf("failed to create check: %v", err)
 	}
 
 	defer func() {
-		_ = client.DeleteTCPMonitor(ctx, createdCheck.ID)
+		_ = client.DeleteAPICheck(ctx, createdCheck.ID)
 	}()
 
 	if createdCheck.GroupID != group.ID {
@@ -108,60 +386,17 @@ func TestCheckGroupUnset(t *testing.T) {
 	updateCheck := pendingCheck
 	updateCheck.GroupID = 0
 
-	updatedCheck, err := client.UpdateCheck(ctx, createdCheck.ID, updateCheck)
-	if err != nil {
+	if _, err := client.UpdateAPICheck(ctx, createdCheck.ID, updateCheck); err != nil {
 		t.Fatalf("failed to update check: %v", err)
 	}
 
-	if updatedCheck.GroupID != 0 {
+	got, err := client.GetAPICheck(ctx, createdCheck.ID)
+	if err != nil {
+		t.Fatalf("failed to get check: %v", err)
+	}
+
+	if got.GroupID != 0 {
 		t.Fatalf("wrong GroupID after update")
-	}
-}
-
-func TestGetIntegration(t *testing.T) {
-	client := setupClient(t)
-	check, err := client.CreateCheck(context.Background(), wantCheck)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = client.DeleteCheck(context.Background(), check.ID) }()
-	gotCheck, err := client.GetCheck(context.Background(), check.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Fatal(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestUpdateIntegration(t *testing.T) {
-	t.Parallel()
-	client := setupClient(t)
-	check, err := client.CreateCheck(context.Background(), wantCheck)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = client.DeleteCheck(context.Background(), check.ID) }()
-	updatedCheck := wantCheck
-	updatedCheck.Name = "integrationTestUpdate"
-	gotCheck, err := client.UpdateCheck(context.Background(), check.ID, updatedCheck)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cmp.Equal(updatedCheck, *gotCheck, ignoreCheckFields) {
-		t.Fatal(cmp.Diff(updatedCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-func TestDeleteIntegration(t *testing.T) {
-	t.Parallel()
-	client := setupClient(t)
-	check, err := client.CreateCheck(context.Background(), wantCheck)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := client.DeleteCheck(context.Background(), check.ID); err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -1894,7 +2129,7 @@ func TestStatusPageUpdateResetsFields(t *testing.T) {
 	}
 }
 
-// TestCheckUpdateResetsScripts verifies that UpdateCheck with unset snippet
+// TestCheckUpdateResetsScripts verifies that UpdateAPICheck with unset snippet
 // IDs and local scripts removes the stored values.
 func TestCheckUpdateResetsScripts(t *testing.T) {
 	ctx := context.TODO()
@@ -1911,54 +2146,52 @@ func TestCheckUpdateResetsScripts(t *testing.T) {
 		_ = client.DeleteSnippet(ctx, snippet.ID)
 	}()
 
-	pending := checkly.Check{
-		Name:      "Update reset check",
-		Type:      checkly.CheckTypeAPI,
-		Frequency: 10,
-		Locations: []string{"us-east-1"},
+	localSetup := "console.log('local setup')"
+	localTearDown := "console.log('local teardown')"
+	pending := checkly.APICheck{
+		Name:                 "Update reset check",
+		Frequency:            10,
+		Locations:            []string{"us-east-1"},
+		DegradedResponseTime: 5000,
+		MaxResponseTime:      20000,
 		Request: checkly.Request{
 			Method: "GET",
 			URL:    "https://api.checklyhq.com",
 		},
-		// A zero AlertSettings still sends runBasedEscalation, which the
-		// API rejects without a threshold.
-		AlertSettings: checkly.AlertSettings{
-			EscalationType: checkly.EscalationTypeRunBased,
-			RunBasedEscalation: checkly.RunBasedEscalation{
-				FailedRunThreshold: 1,
-			},
-		},
 		SetupSnippetID:      snippet.ID,
 		TearDownSnippetID:   snippet.ID,
-		LocalSetupScript:    "console.log('local setup')",
-		LocalTearDownScript: "console.log('local teardown')",
+		LocalSetupScript:    &localSetup,
+		LocalTearDownScript: &localTearDown,
 	}
-	created, err := client.CreateCheck(ctx, pending)
+	created, err := client.CreateAPICheck(ctx, pending)
 	if err != nil {
 		t.Fatalf("failed to create check: %v", err)
 	}
 	defer func() {
-		_ = client.DeleteCheck(ctx, created.ID)
+		_ = client.DeleteAPICheck(ctx, created.ID)
 	}()
 
 	update := pending
 	update.SetupSnippetID = 0
 	update.TearDownSnippetID = 0
-	update.LocalSetupScript = ""
-	update.LocalTearDownScript = ""
-	if _, err := client.UpdateCheck(ctx, created.ID, update); err != nil {
+	update.LocalSetupScript = nil
+	update.LocalTearDownScript = nil
+	if _, err := client.UpdateAPICheck(ctx, created.ID, update); err != nil {
 		t.Fatalf("failed to update check: %v", err)
 	}
 
-	got, err := client.GetCheck(ctx, created.ID)
+	got, err := client.GetAPICheck(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("failed to get check: %v", err)
 	}
 	if got.SetupSnippetID != 0 || got.TearDownSnippetID != 0 {
 		t.Errorf("snippet IDs = %d, %d, want none", got.SetupSnippetID, got.TearDownSnippetID)
 	}
-	if got.LocalSetupScript != "" || got.LocalTearDownScript != "" {
-		t.Errorf("local scripts = %q, %q, want none", got.LocalSetupScript, got.LocalTearDownScript)
+	if got.LocalSetupScript != nil {
+		t.Errorf("local setup script = %q, want none", *got.LocalSetupScript)
+	}
+	if got.LocalTearDownScript != nil {
+		t.Errorf("local teardown script = %q, want none", *got.LocalTearDownScript)
 	}
 }
 
@@ -1997,30 +2230,6 @@ func TestUnsetListsAreAccepted(t *testing.T) {
 		}()
 		if _, err := client.UpdateAPICheck(ctx, created.ID, check); err != nil {
 			t.Fatalf("failed to update API check: %v", err)
-		}
-	})
-
-	t.Run("Check", func(t *testing.T) {
-		check := checkly.Check{
-			Name:          "Unset lists check",
-			Type:          checkly.CheckTypeAPI,
-			Frequency:     10,
-			Locations:     []string{"us-east-1"},
-			AlertSettings: alertSettings,
-			Request: checkly.Request{
-				Method: "GET",
-				URL:    "https://api.checklyhq.com",
-			},
-		}
-		created, err := client.CreateCheck(ctx, check)
-		if err != nil {
-			t.Fatalf("failed to create check: %v", err)
-		}
-		defer func() {
-			_ = client.DeleteCheck(ctx, created.ID)
-		}()
-		if _, err := client.UpdateCheck(ctx, created.ID, check); err != nil {
-			t.Fatalf("failed to update check: %v", err)
 		}
 	})
 

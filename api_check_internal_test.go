@@ -14,7 +14,6 @@ func TestRequestMarshalsUnsetListsAsEmpty(t *testing.T) {
 		payload any
 	}{
 		{"APICheck", createAPICheckPayload(APICheck{Name: "api"})},
-		{"Check", createCheckPayload(Check{Name: "check", Type: CheckTypeAPI})},
 		{"URLMonitor", createURLMonitorPayload(URLMonitor{Name: "url", Request: URLRequest{URL: "https://example.com"}})},
 	}
 	for _, tt := range cases {

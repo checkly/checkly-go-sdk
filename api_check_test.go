@@ -223,21 +223,33 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	assertRawNestedBodyField(t, body, "request", "assertions", `[]`)
 }
 
-func TestCreateAPICheckSerializesEmptyValues(t *testing.T) {
+func TestAPICheckSerializesEmptyValues(t *testing.T) {
 	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPost,
-		"/v1/checks/api?autoAssignAlerts=false",
-		validateAPICheckEmptyPayload,
-		http.StatusCreated,
-		"CreateAPICheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.CreateAPICheck(context.Background(), checkly.APICheck{
-		Name: "API Check #1",
+	check := checkly.APICheck{Name: "API Check #1"}
+	runPayloadCases(t, []payloadCase{
+		{
+			name:     "CreateAPICheck",
+			method:   http.MethodPost,
+			url:      "/v1/checks/api?autoAssignAlerts=false",
+			status:   http.StatusCreated,
+			fixture:  "CreateAPICheck.json",
+			validate: validateAPICheckEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.CreateAPICheck(ctx, check)
+				return err
+			},
+		},
+		{
+			name:     "UpdateAPICheck",
+			method:   http.MethodPut,
+			url:      fmt.Sprintf("/v1/checks/api/%s?autoAssignAlerts=false", testAPICheck.ID),
+			status:   http.StatusOK,
+			fixture:  "UpdateAPICheck.json",
+			validate: validateAPICheckEmptyPayload,
+			call: func(ctx context.Context, c checkly.Client) error {
+				_, err := c.UpdateAPICheck(ctx, testAPICheck.ID, check)
+				return err
+			},
+		},
 	})
-	if err != nil {
-		t.Error(err)
-	}
 }

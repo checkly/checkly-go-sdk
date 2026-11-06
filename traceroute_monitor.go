@@ -79,6 +79,8 @@ type TracerouteMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*TracerouteMonitor) isCheck() {}
+
 // TracerouteProtocol is the protocol of a traceroute monitor's probes, in
 // [TracerouteRequest].Protocol.
 type TracerouteProtocol string

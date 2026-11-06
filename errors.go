@@ -70,6 +70,28 @@ var (
 // an *APIError: the API answered successfully.
 var ErrCheckTypeMismatch = errors.New("check type mismatch")
 
+// ErrUnsupportedCheckType is matched by the [*UnsupportedCheckTypeError] that
+// GetCheck returns for a check of a type the SDK has no resource type for.
+var ErrUnsupportedCheckType = errors.New("unsupported check type")
+
+// UnsupportedCheckTypeError is returned by GetCheck for a check of a type the
+// SDK has no resource type for, such as [CheckTypeAgentic]. It matches
+// [ErrUnsupportedCheckType]. It is not an *APIError: the API answered
+// successfully.
+type UnsupportedCheckTypeError struct {
+	// ID is the check's UUID.
+	ID string
+	// Type is the check type the API returned.
+	Type CheckType
+}
+
+func (e *UnsupportedCheckTypeError) Error() string {
+	return fmt.Sprintf("GET %s: check is of unsupported type %q", errorPath("/v1/checks/"+e.ID), e.Type)
+}
+
+// Unwrap returns [ErrUnsupportedCheckType].
+func (e *UnsupportedCheckTypeError) Unwrap() error { return ErrUnsupportedCheckType }
+
 // IsNotFound reports whether err is, or wraps, an API error for a 404
 // response. It is equivalent to errors.Is(err, ErrNotFound).
 func IsNotFound(err error) bool {

@@ -69,6 +69,8 @@ type DNSMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*DNSMonitor) isCheck() {}
+
 // DNSRecordType is the DNS record type a DNS monitor queries, in
 // [DNSRequest].RecordType.
 type DNSRecordType string

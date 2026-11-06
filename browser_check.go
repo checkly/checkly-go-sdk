@@ -86,6 +86,8 @@ type BrowserCheck struct {
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
+func (*BrowserCheck) isCheck() {}
+
 type browserCheckPayload struct {
 	BrowserCheck
 	Type CheckType `json:"checkType"`

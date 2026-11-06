@@ -76,6 +76,8 @@ type SSLMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
+func (*SSLMonitor) isCheck() {}
+
 // SSLRequest is the connection of an [SSLMonitor]. The API requires
 // SSLConfig, so it is a value rather than a pointer.
 type SSLRequest struct {

@@ -2,6 +2,7 @@ package checkly_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -32,9 +33,13 @@ func TestTimestampsDecode(t *testing.T) {
 			name: "check",
 			body: readFixture(t, "GetCheck.json"),
 			get: func(ctx context.Context, c checkly.Client) (time.Time, time.Time, error) {
-				v, err := c.GetCheck(ctx, "73d29ea2-6540-4bb5-967e-e07fa2c9465e")
+				check, err := c.GetCheck(ctx, "73d29ea2-6540-4bb5-967e-e07fa2c9465e")
 				if err != nil {
 					return time.Time{}, time.Time{}, err
+				}
+				v, ok := check.(*checkly.APICheck)
+				if !ok {
+					return time.Time{}, time.Time{}, fmt.Errorf("want *APICheck, got %T", check)
 				}
 				return v.CreatedAt, v.UpdatedAt, nil
 			},

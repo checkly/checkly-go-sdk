@@ -94,6 +94,8 @@ type APICheck struct {
 	AIAutoRepairEnabled *bool `json:"aiAutoRepairEnabled"`
 }
 
+func (*APICheck) isCheck() {}
+
 // BodyType is the format of a request body, in [Request].BodyType.
 type BodyType string
 

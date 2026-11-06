@@ -2,207 +2,150 @@ package checkly_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	checkly "github.com/checkly/checkly-go-sdk"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 var wantCheckID = "73d29e72-6540-4bb5-967e-e07fa2c9465e"
 
-var wantCheck = checkly.Check{
-	Name:      "test",
-	Type:      checkly.CheckTypeAPI,
-	Frequency: 10,
-	Activated: true,
-	Muted:     false,
-	RetryStrategy: &checkly.RetryStrategy{
-		Type:               "FIXED",
-		MaxRetries:         1,
-		MaxDurationSeconds: 600,
-	},
-	ShouldFail:       false,
-	Locations:        []string{"eu-west-1"},
-	PrivateLocations: &[]string{},
-	Request: checkly.Request{
-		Method: http.MethodGet,
-		URL:    "https://example.com",
-		Headers: []checkly.KeyValue{
-			{
-				Key:   "X-Test",
-				Value: "foo",
-			},
-		},
-		QueryParameters: []checkly.KeyValue{
-			{
-				Key:   "query",
-				Value: "foo",
-			},
-		},
-		Assertions: []checkly.Assertion{
-			{
-				Source:     checkly.AssertionSourceStatusCode,
-				Comparison: checkly.AssertionComparisonEquals,
-				Target:     "200",
-			},
-		},
-		Body:     "",
-		BodyType: "NONE",
-		BasicAuth: &checkly.BasicAuth{
-			Username: "",
-			Password: "",
-		},
-		IPFamily: "IPv4",
-	},
-	// Script and EnvironmentVariables are left unset: the API check endpoint
-	// (/v1/checks/api) does not accept them and drops them from the payload,
-	// so an API check never stores them.
-	Tags: []string{
-		"foo",
-		"bar",
-	},
-	SSLCheckDomain:      "example.com",
-	LocalSetupScript:    "setitup",
-	LocalTearDownScript: "tearitdown",
-	AlertSettings: checkly.AlertSettings{
-		EscalationType: checkly.EscalationTypeRunBased,
-		RunBasedEscalation: checkly.RunBasedEscalation{
-			FailedRunThreshold: 1,
-		},
-		TimeBasedEscalation: checkly.TimeBasedEscalation{
-			MinutesFailingThreshold: 5,
-		},
-		Reminders: checkly.Reminders{
-			Interval: 5,
-		},
-		ParallelRunFailureThreshold: checkly.ParallelRunFailureThreshold{
-			Enabled:    false,
-			Percentage: 10,
-		},
-	},
-	UseGlobalAlertSettings:    false,
-	DegradedResponseTime:      15000,
-	MaxResponseTime:           30000,
-	GroupID:                   0,
-	GroupOrder:                0,
-	AlertChannelSubscriptions: nil,
-}
-
-func validateCheck(t *testing.T, body []byte) {
-	var gotCheck checkly.Check
-	err := json.Unmarshal(body, &gotCheck)
-	if err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
-	}
-	// The payload sends unset lists as [], which decodes to an empty slice.
-	if !cmp.Equal(wantCheck, gotCheck, cmpopts.EquateEmpty()) {
-		t.Error(cmp.Diff(wantCheck, gotCheck, cmpopts.EquateEmpty()))
-	}
-}
-
-// TODO: adjust wantCheck to test multiple SSLCheckDomain value and remove it from this list
-var ignoreCheckFields = cmpopts.IgnoreFields(checkly.Check{}, "ID", "AlertChannelSubscriptions", "FrequencyOffset",
-	"PrivateLocations", "SSLCheckDomain", "CreatedAt", "UpdatedAt")
-
-func TestCreateCheck(t *testing.T) {
+func TestGetCheck(t *testing.T) {
 	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPost,
-		"/v1/checks/api?autoAssignAlerts=false",
-		validateCheck,
-		http.StatusCreated,
-		"CreateCheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotCheck, err := client.CreateCheck(context.Background(), wantCheck)
-	if err != nil {
-		t.Error(err)
-	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
-	}
-}
-
-// TestCreateCheckRejectsTypes asserts CreateCheck rejects the check types it
-// cannot create, naming the method to use instead, without sending a request.
-func TestCreateCheckRejectsTypes(t *testing.T) {
-	t.Parallel()
+	const id = "check-id"
 	tests := []struct {
-		checkType checkly.CheckType
-		want      string
+		checkType string
+		// field is a JSON field specific to the type, which proves the
+		// response was decoded into it.
+		field string
+		want  checkly.Check
 	}{
-		{checkly.CheckTypeTCP, "CreateTCPMonitor"},
-		{checkly.CheckTypeURL, "CreateURLMonitor"},
-		{checkly.CheckTypeDNS, "CreateDNSMonitor"},
-		{checkly.CheckTypeICMP, "CreateICMPMonitor"},
-		{checkly.CheckTypeGRPC, "CreateGRPCMonitor"},
-		{checkly.CheckTypeTraceroute, "CreateTracerouteMonitor"},
-		{checkly.CheckTypeSSL, "CreateSSLMonitor"},
-		{checkly.CheckTypePlaywright, "CreatePlaywrightCheck"},
-		{checkly.CheckTypeAgentic, "cannot create AGENTIC checks"},
-		{"UNKNOWN", "unknown check type: UNKNOWN"},
+		{"API", `"request":{"url":"https://example.com"}`, &checkly.APICheck{ID: id, Request: checkly.Request{URL: "https://example.com"}}},
+		{"BROWSER", `"script":"browser"`, &checkly.BrowserCheck{ID: id, Script: "browser"}},
+		{"MULTI_STEP", `"script":"multi-step"`, &checkly.MultiStepCheck{ID: id, Script: "multi-step"}},
+		{"PLAYWRIGHT", `"codeBundlePath":"bundle.tar.gz"`, &checkly.PlaywrightCheck{ID: id, CodeBundlePath: "bundle.tar.gz"}},
+		{"HEARTBEAT", `"heartbeat":{"period":5}`, &checkly.HeartbeatMonitor{ID: id, Heartbeat: checkly.Heartbeat{Period: 5}}},
+		{"URL", `"request":{"url":"https://example.com"}`, &checkly.URLMonitor{ID: id, Request: checkly.URLRequest{URL: "https://example.com"}}},
+		{"TCP", `"request":{"hostname":"example.com"}`, &checkly.TCPMonitor{ID: id, Request: checkly.TCPRequest{Hostname: "example.com"}}},
+		{"DNS", `"request":{"query":"example.com"}`, &checkly.DNSMonitor{ID: id, Request: checkly.DNSRequest{Query: "example.com"}}},
+		{"ICMP", `"request":{"hostname":"example.com"}`, &checkly.ICMPMonitor{ID: id, Request: checkly.ICMPRequest{Hostname: "example.com"}}},
+		{"GRPC", `"request":{"url":"example.com"}`, &checkly.GRPCMonitor{ID: id, Request: checkly.GRPCRequest{URL: "example.com"}}},
+		{"SSL", `"request":{"sslConfig":{"hostname":"example.com"}}`, &checkly.SSLMonitor{ID: id, Request: checkly.SSLRequest{SSLConfig: checkly.SSLConfig{Hostname: "example.com"}}}},
+		{"TRACEROUTE", `"request":{"url":"example.com"}`, &checkly.TracerouteMonitor{ID: id, Request: checkly.TracerouteRequest{URL: "example.com"}}},
 	}
 	for _, tt := range tests {
-		t.Run(string(tt.checkType), func(t *testing.T) {
+		tt := tt
+		t.Run(tt.checkType, func(t *testing.T) {
 			t.Parallel()
-			c, lastBody := newRecordingServer(t, http.StatusCreated, `{}`)
-			_, err := c.CreateCheck(context.Background(), checkly.Check{Name: "n", Type: tt.checkType})
-			if err == nil || !strings.Contains(err.Error(), tt.want) {
-				t.Errorf("want error containing %q, got %v", tt.want, err)
+			body := fmt.Sprintf(`{"id":%q,"checkType":%q,%s}`, id, tt.checkType, tt.field)
+			ts, requests := checkServer(t, id, "?includeDependencies=true", body)
+			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+			got, err := client.GetCheck(context.Background(), id)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if body := lastBody(); body != nil {
-				t.Errorf("want no request, got one with body %s", body)
+			if !cmp.Equal(tt.want, got) {
+				t.Error(cmp.Diff(tt.want, got))
+			}
+			if n := requests.Load(); n != 1 {
+				t.Errorf("want 1 request, got %d", n)
 			}
 		})
 	}
 }
 
-func TestGetCheck(t *testing.T) {
+// TestUnsupportedCheckTypeErrorOmitsQuery checks that the error text shows the
+// path without its query string, as other errors do, while ID stays as given.
+func TestUnsupportedCheckTypeErrorOmitsQuery(t *testing.T) {
 	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodGet,
-		fmt.Sprintf("/v1/checks/%s", wantCheckID),
-		validateEmptyBody,
-		http.StatusOK,
-		"GetCheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotCheck, err := client.GetCheck(context.Background(), wantCheckID)
-	if err != nil {
-		t.Error(err)
+	c := newErrorServer(t, errorReply{status: 200, body: `{"checkType":"AGENTIC"}`})
+	_, err := c.GetCheck(context.Background(), "abc?x=1")
+	var typeErr *checkly.UnsupportedCheckTypeError
+	if !errors.As(err, &typeErr) {
+		t.Fatalf("want *UnsupportedCheckTypeError, got %v", err)
 	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+	if typeErr.ID != "abc?x=1" {
+		t.Errorf("want ID %q, got %q", "abc?x=1", typeErr.ID)
+	}
+	want := `GET /v1/checks/abc: check is of unsupported type "AGENTIC"`
+	if err.Error() != want {
+		t.Errorf("want error %q, got %q", want, err.Error())
 	}
 }
 
-func TestUpdateCheck(t *testing.T) {
+// TestGetCheckHeaderDecodeError checks that a response whose checkType cannot
+// be decoded is a decode error, not an unsupported check type, and that the
+// error leaves the response body out.
+func TestGetCheckHeaderDecodeError(t *testing.T) {
 	t.Parallel()
-	ts := cannedResponseServer(t,
-		http.MethodPut,
-		fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-		validateCheck,
-		http.StatusOK,
-		"UpdateCheck.json",
-	)
-	defer ts.Close()
-	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	gotCheck, err := client.UpdateCheck(context.Background(), wantCheckID, wantCheck)
-	if err != nil {
-		t.Error(err)
+	for name, body := range map[string]string{
+		"wrongly typed checkType": `{"checkType":5,"name":"SECRET-RESPONSE-MARKER"}`,
+		"not JSON":                `SECRET-RESPONSE-MARKER`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			c := newErrorServer(t, errorReply{status: 200, body: body})
+			got, err := c.GetCheck(context.Background(), "abc")
+			if err == nil {
+				t.Fatal("want decode error, got nil")
+			}
+			if got != nil {
+				t.Errorf("want no check, got %#v", got)
+			}
+			if errors.Is(err, checkly.ErrUnsupportedCheckType) {
+				t.Errorf("want no match with ErrUnsupportedCheckType, got %v", err)
+			}
+			want := fmt.Sprintf("GET /v1/checks/abc: decoding 200 response (%d bytes): ", len(body))
+			if !strings.HasPrefix(err.Error(), want) {
+				t.Errorf("want error starting with %q, got %q", want, err)
+			}
+			if strings.Contains(err.Error(), "SECRET-RESPONSE-MARKER") {
+				t.Errorf("want the response body left out of the error, got %q", err)
+			}
+		})
 	}
-	if !cmp.Equal(wantCheck, *gotCheck, ignoreCheckFields) {
-		t.Error(cmp.Diff(wantCheck, *gotCheck, ignoreCheckFields))
+}
+
+func TestGetCheckRejectsUnsupportedTypes(t *testing.T) {
+	t.Parallel()
+	const id = "check-id"
+	for _, checkType := range []checkly.CheckType{checkly.CheckTypeAgentic, "NEW_TYPE", ""} {
+		checkType := checkType
+		t.Run(string(checkType), func(t *testing.T) {
+			t.Parallel()
+			ts := checkBodyServer(t, id, "?includeDependencies=true", string(checkType))
+			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+			got, err := client.GetCheck(context.Background(), id)
+			if got != nil {
+				t.Errorf("want no check, got %#v", got)
+			}
+			if !errors.Is(err, checkly.ErrUnsupportedCheckType) {
+				t.Fatalf("want an error matching ErrUnsupportedCheckType, got %v", err)
+			}
+			var typeErr *checkly.UnsupportedCheckTypeError
+			if !errors.As(err, &typeErr) {
+				t.Fatalf("want *UnsupportedCheckTypeError, got %v", err)
+			}
+			if typeErr.ID != id || typeErr.Type != checkType {
+				t.Errorf("want ID %q and type %q, got %#v", id, checkType, typeErr)
+			}
+			var apiErr *checkly.APIError
+			if errors.As(err, &apiErr) {
+				t.Errorf("want no *APIError, got %v", apiErr)
+			}
+			want := fmt.Sprintf("GET /v1/checks/%s: check is of unsupported type %q", id, checkType)
+			if err.Error() != want {
+				t.Errorf("want error %q, got %q", want, err.Error())
+			}
+		})
 	}
 }
 
@@ -220,80 +163,6 @@ func TestDeleteCheck(t *testing.T) {
 	err := client.DeleteCheck(context.Background(), wantCheckID)
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-// TestCheckScriptAndEnvironmentVariablesPayload verifies that CreateCheck and
-// UpdateCheck send a Check's Script and EnvironmentVariables. wantCheck is an
-// API check, whose endpoint does not store these fields, so it leaves them
-// unset and a browser check covers them here instead.
-func TestCheckScriptAndEnvironmentVariablesPayload(t *testing.T) {
-	t.Parallel()
-	check := checkly.Check{
-		Name:      "browser",
-		Type:      checkly.CheckTypeBrowser,
-		Frequency: 10,
-		Locations: []string{"eu-west-1"},
-		Script:    "await page.goto('https://example.com')",
-		EnvironmentVariables: []checkly.EnvironmentVariable{
-			{Key: "ENVTEST", Value: "Hello world"},
-		},
-	}
-	validate := func(t *testing.T, body []byte) {
-		var got struct {
-			Script               *string                       `json:"script"`
-			EnvironmentVariables []checkly.EnvironmentVariable `json:"environmentVariables"`
-		}
-		if err := json.Unmarshal(body, &got); err != nil {
-			t.Fatalf("decoding error for data %q: %v", body, err)
-		}
-		if got.Script == nil || *got.Script != check.Script {
-			t.Errorf("want script %q in the payload, got %s", check.Script, body)
-		}
-		if !cmp.Equal(check.EnvironmentVariables, got.EnvironmentVariables) {
-			t.Error(cmp.Diff(check.EnvironmentVariables, got.EnvironmentVariables))
-		}
-	}
-	cases := []struct {
-		name    string
-		method  string
-		url     string
-		status  int
-		fixture string
-		call    func(checkly.Client) (*checkly.Check, error)
-	}{
-		{
-			name:    "CreateCheck",
-			method:  http.MethodPost,
-			url:     "/v1/checks/browser?autoAssignAlerts=false",
-			status:  http.StatusCreated,
-			fixture: "CreateBrowserCheck.json",
-			call: func(c checkly.Client) (*checkly.Check, error) {
-				return c.CreateCheck(context.Background(), check)
-			},
-		},
-		{
-			name:    "UpdateCheck",
-			method:  http.MethodPut,
-			url:     fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-			status:  http.StatusOK,
-			fixture: "UpdateBrowserCheck.json",
-			call: func(c checkly.Client) (*checkly.Check, error) {
-				return c.UpdateCheck(context.Background(), wantCheckID, check)
-			},
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			ts := cannedResponseServer(t, tc.method, tc.url, validate, tc.status, tc.fixture)
-			defer ts.Close()
-			client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-			if _, err := tc.call(client); err != nil {
-				t.Error(err)
-			}
-		})
 	}
 }
 
@@ -331,17 +200,27 @@ func getID[T any](get func(checkly.Client, context.Context, string) (*T, error))
 	}
 }
 
+// checkServer answers a GET of /v1/checks/{id}{query} with body, and counts
+// the requests it receives.
+func checkServer(t *testing.T, id, query, body string) (*httptest.Server, *atomic.Int32) {
+	t.Helper()
+	requests := &atomic.Int32{}
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		if want := "/v1/checks/" + id + query; r.Method != http.MethodGet || r.URL.String() != want {
+			t.Errorf("want GET %q, got %s %q", want, r.Method, r.URL.String())
+		}
+		_, _ = io.WriteString(w, body)
+	}))
+	t.Cleanup(ts.Close)
+	return ts, requests
+}
+
 // checkBodyServer answers a GET of /v1/checks/{id}{query} with a check of
 // the given checkType.
 func checkBodyServer(t *testing.T, id, query, checkType string) *httptest.Server {
 	t.Helper()
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if want := "/v1/checks/" + id + query; r.Method != http.MethodGet || r.URL.String() != want {
-			t.Errorf("want GET %q, got %s %q", want, r.Method, r.URL.String())
-		}
-		_, _ = fmt.Fprintf(w, `{"id":%q,"checkType":%q}`, id, checkType)
-	}))
-	t.Cleanup(ts.Close)
+	ts, _ := checkServer(t, id, query, fmt.Sprintf(`{"id":%q,"checkType":%q}`, id, checkType))
 	return ts
 }
 
@@ -394,51 +273,4 @@ func TestGetPerTypeCheckAcceptsOwnCheckType(t *testing.T) {
 			}
 		})
 	}
-}
-
-// validateCheckEmptyPayload asserts that the keys the update endpoint would
-// otherwise keep at their stored value are sent for an empty check: lists as
-// [], the snippet IDs, local scripts and group order as null, and the alert
-// settings' zero values.
-func validateCheckEmptyPayload(t *testing.T, body []byte) {
-	assertRawBodyField(t, body, "tags", `[]`)
-	assertRawBodyField(t, body, "alertChannelSubscriptions", `[]`)
-	assertRawBodyField(t, body, "setupSnippetId", `null`)
-	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
-	assertRawBodyField(t, body, "localSetupScript", `null`)
-	assertRawBodyField(t, body, "localTearDownScript", `null`)
-	assertRawBodyField(t, body, "groupOrder", `null`)
-	assertRawBodyPath(t, body, `0`, "alertSettings", "reminders", "amount")
-	assertRawBodyPath(t, body, `false`, "alertSettings", "parallelRunFailureThreshold", "enabled")
-}
-
-func TestCheckSerializesEmptyValues(t *testing.T) {
-	t.Parallel()
-	check := checkly.Check{Name: "test", Type: checkly.CheckTypeAPI}
-	runPayloadCases(t, []payloadCase{
-		{
-			name:     "CreateCheck",
-			method:   http.MethodPost,
-			url:      "/v1/checks/api?autoAssignAlerts=false",
-			status:   http.StatusCreated,
-			fixture:  "CreateCheck.json",
-			validate: validateCheckEmptyPayload,
-			call: func(ctx context.Context, c checkly.Client) error {
-				_, err := c.CreateCheck(ctx, check)
-				return err
-			},
-		},
-		{
-			name:     "UpdateCheck",
-			method:   http.MethodPut,
-			url:      fmt.Sprintf("/v1/checks/%s?autoAssignAlerts=false", wantCheckID),
-			status:   http.StatusOK,
-			fixture:  "UpdateCheck.json",
-			validate: validateCheckEmptyPayload,
-			call: func(ctx context.Context, c checkly.Client) error {
-				_, err := c.UpdateCheck(ctx, wantCheckID, check)
-				return err
-			},
-		},
-	})
 }

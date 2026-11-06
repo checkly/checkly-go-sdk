@@ -39,6 +39,8 @@ type HeartbeatMonitor struct {
 	UpdatedAt       time.Time        `json:"updated_at"`
 }
 
+func (*HeartbeatMonitor) isCheck() {}
+
 // HeartbeatUnit is the time unit of a heartbeat monitor's period and grace,
 // in [Heartbeat].PeriodUnit and [Heartbeat].GraceUnit.
 type HeartbeatUnit string

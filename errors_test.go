@@ -30,9 +30,7 @@ func TestAPIError(t *testing.T) {
 	)
 	defer ts.Close()
 	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
-	_, err := client.CreateCheck(context.Background(), checkly.Check{
-		Type: checkly.CheckTypeAPI,
-	})
+	_, err := client.CreateAPICheck(context.Background(), checkly.APICheck{})
 	if err == nil {
 		t.Error("want error when API returns 'bad request' status, got nil")
 	}
@@ -311,7 +309,7 @@ func TestAPIErrorLiteral(t *testing.T) {
 
 func TestDecodeErrorOmitsBody(t *testing.T) {
 	t.Parallel()
-	c := newErrorServer(t, errorReply{status: 200, body: `{"frequency":"SECRET-RESPONSE-MARKER"}`})
+	c := newErrorServer(t, errorReply{status: 200, body: `{"checkType":"API","frequency":"SECRET-RESPONSE-MARKER"}`})
 	_, err := c.GetCheck(context.Background(), "abc")
 	if err == nil {
 		t.Fatal("want decode error, got nil")
@@ -320,7 +318,7 @@ func TestDecodeErrorOmitsBody(t *testing.T) {
 	if strings.Contains(msg, "SECRET-RESPONSE-MARKER") {
 		t.Errorf("want the response body left out of the error, got %q", msg)
 	}
-	if want := "GET /v1/checks/abc: decoding 200 response (38 bytes): "; !strings.HasPrefix(msg, want) {
+	if want := "GET /v1/checks/abc: decoding 200 response (56 bytes): "; !strings.HasPrefix(msg, want) {
 		t.Errorf("want error starting with %q, got %q", want, msg)
 	}
 	var apiErr *checkly.APIError
@@ -387,10 +385,9 @@ func TestErrorOmitsSecrets(t *testing.T) {
 		call    func(context.Context, checkly.Client) error
 	}{
 		{"POST /v1/checks/api", func(ctx context.Context, c checkly.Client) error {
-			_, err := c.CreateCheck(ctx, checkly.Check{
-				Type:                 checkly.CheckTypeAPI,
-				Name:                 payload,
-				EnvironmentVariables: []checkly.EnvironmentVariable{{Key: "TOKEN", Value: payload}},
+			_, err := c.CreateAPICheck(ctx, checkly.APICheck{
+				Name:    payload,
+				Request: checkly.Request{BasicAuth: &checkly.BasicAuth{Username: "user", Password: payload}},
 			})
 			return err
 		}},

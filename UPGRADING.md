@@ -126,6 +126,7 @@ log.Println(monitor.Name)
   | `ErrConflict` | 409 |
   | `ErrRateLimited` | 429 still rate limited after the client's retries |
   | `ErrCheckTypeMismatch` | a typed getter got the ID of a check of another type (not an `*APIError`) |
+  | `ErrUnsupportedCheckType` | `GetCheck` got the ID of a check of a type the SDK has no type for (not an `*APIError`) |
   | `ErrMissingAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |
 
 - **`ErrCodeBundleNotFound`** is now returned wrapped together with the `*APIError`; replace
@@ -142,9 +143,8 @@ log.Println(monitor.Name)
 ## Checks
 
 v2 adds `APICheck` and `BrowserCheck`, redefines `MultiStepCheck`, and gives each its own methods
-backed by the per-type endpoints. The generic `Check` type and `CreateCheck`, `GetCheck`,
-`UpdateCheck` and `DeleteCheck` still work but are deprecated: `UpdateCheck` uses the generic
-`PUT /v1/checks/{id}` endpoint, which the API has deprecated.
+backed by the per-type endpoints, which are now the only way to create and update a check.
+`GetCheck` and `DeleteCheck` remain for an ID whose check type is not known.
 
 | Check type | Type | Methods | Create and update endpoint |
 |---|---|---|---|
@@ -157,7 +157,8 @@ The monitor types (`URLMonitor`, `TCPMonitor`, `DNSMonitor`, `ICMPMonitor`, `GRP
 `TracerouteMonitor`, `SSLMonitor`) and `PlaywrightCheck` keep their methods.
 
 The `Client` interface gains the twelve methods in the first three rows, so your own types that
-implement `Client`, such as mocks or wrappers, must add them.
+implement `Client`, such as mocks or wrappers, must add them. They must also change `GetCheck`,
+which now returns `(Check, error)`.
 
 ```go
 // v1
@@ -209,6 +210,10 @@ Moving from `Check` to a per-type struct:
   `BrowserCheck` and `MultiStepCheck` have `Script`, `ScriptPath`, `Dependencies` and
   `EnvironmentVariables`; `BrowserCheck` has no `Request` or response-time limits.
 - There is no `DoubleCheck`: the per-type payloads always send `false`. Use `RetryStrategy`.
+- Per-type updates send what the struct holds. `Tags`, `AlertChannelSubscriptions`, the snippet IDs
+  and the local scripts, which v1's generic update left out when empty so the API kept them, are
+  now cleared. Read the check, change it and send it back: a sparse struct can drop the alert
+  channel subscriptions and stop the check's alerts with no error.
 - `MultiStepCheck` no longer has `Type` or `FrequencyOffset`.
 - New on `APICheck`, `BrowserCheck`, `MultiStepCheck` and `PlaywrightCheck`: `Intent`
   (`*CheckIntent`) and `AIAutoRepairEnabled` (`*bool`), for automatic AI repair.
@@ -218,6 +223,41 @@ Moving from `Check` to a per-type struct:
 monitor getters return an error matching `ErrCheckTypeMismatch` when the ID belongs to a check of
 another type. In v1, the Playwright, heartbeat and monitor getters decoded the check anyway and
 dropped its type-specific fields.
+
+**`GetCheck` returns the check's own type.** Use it for an ID whose check type you don't know.
+`Check` is now an interface instead of a struct, holding a pointer to one of the twelve check and
+monitor types, so read it with a type switch. `Check` exposes no fields, so even shared fields such
+as `Name` need a case per type, and a `default` case covers types added in later versions. A check
+of a type the SDK has no type for, such as
+`AGENTIC`, is an error matching `ErrUnsupportedCheckType`; `errors.As` with
+`*UnsupportedCheckTypeError` gives its `ID` and `Type`.
+
+```go
+// v1
+check, err := client.GetCheck(ctx, id)
+if err != nil {
+	return err
+}
+if check.Type == checkly.TypeAPI {
+	log.Println(check.Request.URL)
+}
+```
+
+```go
+// v2
+check, err := client.GetCheck(ctx, id)
+if err != nil {
+	return err
+}
+switch c := check.(type) {
+case *checkly.APICheck:
+	log.Println(c.Request.URL)
+case *checkly.URLMonitor:
+	log.Println(c.Request.URL)
+default:
+	log.Printf("unhandled check type %T", check)
+}
+```
 
 ## Removed APIs
 
@@ -230,11 +270,13 @@ dropped its type-specific fields.
 | `CreateTriggerCheck`, `GetTriggerCheck`, `DeleteTriggerCheck`, `CreateTriggerGroup`, `GetTriggerGroup`, `DeleteTriggerGroup`, types `TriggerCheck`, `TriggerGroup` | To run checks on demand, the Checkly CLI (`checkly trigger`) or `POST /v1/check-sessions/trigger` |
 | `SetAccountId`, `SetChecklySource`, `NewClient`'s `debug` argument | See [Creating the client](#creating-the-client) |
 | `AlertChannel.GetConfig`, `AlertChannel.SetConfig`, `AlertChannelConfigFromJSON` | The config field that matches `Type`, such as `Email` for `AlertChannelTypeEmail` |
+| `CreateCheck`, `UpdateCheck` | The per-type methods, such as `CreateAPICheck` and `UpdateAPICheck` |
+| `Check.DoubleCheck` | `RetryStrategy` |
 | `Check.SSLCheck`, `AlertSettings.SSLCertificates`, type `SSLCertificates` | Nothing: the public API no longer has them |
 | `Assertion.Edit`, `Assertion.Order`, `Assertion.ArrayIndex`, `Assertion.ArraySelector` | Nothing: the API discarded them, and requests no longer send them |
 
 `Create` posted every check to `/v1/checks`. Its replacements post to the endpoint of the check's
-type, and the deprecated `CreateCheck` rejects monitor types, which have their own create methods.
+type.
 
 ```go
 // v1
@@ -285,7 +327,6 @@ Constants for a fixed set of API values are typed, and named after their type, l
 | `Assertion.Comparison` | `string` | `AssertionComparison` |
 | `AlertSettings.EscalationType` | `string` | `EscalationType` |
 | `AlertChannel.Type` | `string` | `AlertChannelType` |
-| `Check.Type` | `string` | `CheckType` |
 | `Request.BodyType` | `string` | `BodyType` |
 | `IPFamily` of `Request`, `URLRequest`, `TCPRequest`, `ICMPRequest`, `TracerouteRequest`, `GRPCRequest` and `SSLConfig` | `string` | `IPFamily` |
 | `DNSRequest.RecordType` | `string` | `DNSRecordType` |
@@ -331,7 +372,7 @@ elsewhere, such as in the web app, read the resource, change it and send it back
 
 Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
 
-- **Heartbeat, TCP, URL, DNS, ICMP, gRPC, traceroute and SSL monitors and `Check`:** `tags` and
+- **Heartbeat, TCP, URL, DNS, ICMP, gRPC, traceroute and SSL monitors:** `tags` and
   `alertChannelSubscriptions` as `[]`; an unset `groupOrder` as `null` (as `0` for TCP monitors;
   heartbeat monitors have no group order).
 - **TCP, URL and DNS monitors:** `degradedResponseTime` and `maxResponseTime`. **ICMP monitors:**
@@ -347,12 +388,10 @@ Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
   max hops, max unknown hops and timeout as `null` when zero.
 - **SSL monitors:** the request assertions as `[]`, and `SSLClientCertificateID` and
   `SSLConfig.ServerName` as `null` when nil.
-- **`Check`:** `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and `localTearDownScript`
-  as `null` when unset.
 - **Check groups (`Group`):** `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and
   `localTearDownScript` as `null`; `tags` and `alertChannelSubscriptions` as `[]` (also on
   `GroupV2`).
-- **`Request` (API checks, `Check`, URL monitors):** `BasicAuth` as `null` when nil, so removing
+- **`Request` (API checks, URL monitors):** `BasicAuth` as `null` when nil, so removing
   credentials clears them.
 - **`AlertSettings`:** `reminders.amount` and `parallelRunFailureThreshold.enabled`, on create too.
 - **Status pages (v1):** `customDomain` as `null`, and `logo`, `redirectTo` and `favicon` as `""`.
@@ -394,7 +433,7 @@ when the check is not of the given type.
 
 ## Decoding fixes
 
-- `CreatedAt` and `UpdatedAt` on `Check`, `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
+- `CreatedAt` and `UpdatedAt` on `HeartbeatMonitor`, `Group`, `GroupV2`, `Snippet` and
   `MultiStepCheck` are now populated: they decode from the `created_at` and `updated_at` keys the API
   returns. If you marshal these structs yourself, their JSON keys change accordingly.
 - Alert channels returned by `CreateAlertChannel`, `GetAlertChannel` and `UpdateAlertChannel` have
