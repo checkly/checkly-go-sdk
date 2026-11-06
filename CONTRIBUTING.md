@@ -84,7 +84,7 @@ The development branch is `main`. This is the branch that all pull requests shou
 > ⚠️ Before you start, is recommended to have a good understanding on how the provider works, the resources it has and its different configurations. Here are the ["getting started"](https://github.com/checkly/checkly-go-sdk#getting-started) guides.
 
 ### Pre-requirements
-- [Go](https://go.dev/doc/install) >= 1.18.2
+- [Go](https://go.dev/doc/install) 1.26 or later
 
 After you have installed  Go, you can clone the repository and start working on the `main` branch.
 
@@ -119,7 +119,9 @@ To inspect the requests the client sends and the responses it receives, route th
 
 In order to facilitate the development process, we have a `Makefile` with a few scripts that are used to build, test and run working examples.
 
-> TBA
+- `make test`: run the unit tests and then the integration tests.
+- `make test-unit`: run the unit tests, which use canned responses and need no Checkly account.
+- `make test-integration`: build with the `integration` tag and run the integration tests against the real API, along with the unit tests. They need the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` environment variables, plus `CHECKLY_API_URL` (it defaults to `http://localhost:3000`), and they create and delete resources in that account.
 
 ## Project Structure
 
