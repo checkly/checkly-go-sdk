@@ -7,33 +7,66 @@ import (
 	"time"
 )
 
-// DNSMonitor represents a DNS monitor.
+// DNSMonitor sends a DNS query and checks the answer against its assertions.
+// It is the input of [Client.CreateDNSMonitor] and [Client.UpdateDNSMonitor],
+// and is returned by [Client.GetDNSMonitor].
 type DNSMonitor struct {
-	ID                        string                     `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   DNSRequest                 `json:"request"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool `json:"muted"`
+	// RunParallel runs the monitor in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds, each at most 5000.
+	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool       `json:"useGlobalAlertSettings"`
+	Request                DNSRequest `json:"request"`
+	// GroupID is the ID of the check group the monitor belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the monitor's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	// PrivateLocations are the slugs of the private locations the monitor runs
-	// from. The Checkly agent at those locations must be version 7.0.0 or later.
-	PrivateLocations *[]string        `json:"privateLocations"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
-	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
-	CreatedAt        time.Time        `json:"created_at,omitempty"`
-	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list. The Checkly agent
+	// at those locations must be version 7.0.0 or later.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
 // DNSRecordType is the DNS record type a DNS monitor queries, in
@@ -63,14 +96,18 @@ const (
 	DNSProtocolTCP DNSProtocol = "TCP"
 )
 
-// DNSRequest represents the parameters for the request made by a DNS monitor.
+// DNSRequest is the query of a [DNSMonitor].
 type DNSRequest struct {
 	RecordType DNSRecordType `json:"recordType"`
 	Query      string        `json:"query"`
-	NameServer string        `json:"nameServer,omitempty"`
-	Port       int           `json:"port,omitempty"`
-	Protocol   DNSProtocol   `json:"protocol,omitempty"`
-	Assertions []Assertion   `json:"assertions"`
+	// NameServer and Port select the name server to query. Set both or
+	// neither. NameServer is left out of the request when empty. Port is
+	// left out of the request when zero.
+	NameServer string `json:"nameServer,omitempty"`
+	Port       int    `json:"port,omitempty"`
+	// Protocol is left out of the request when empty.
+	Protocol   DNSProtocol `json:"protocol,omitempty"`
+	Assertions []Assertion `json:"assertions"`
 }
 
 type dnsMonitorPayload struct {
@@ -82,10 +119,9 @@ type dnsMonitorPayload struct {
 	ID          *string    `json:"id,omitempty"`         // Skip, can't be changed.
 	CreatedAt   *time.Time `json:"created_at,omitempty"` // Skip, can't be changed.
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"` // Skip, can't be changed.
-	// The update endpoint is PATCH-style: keys omitted from the payload keep
-	// their server-side value. The fields below shadow embedded fields whose
-	// zero value would be omitted so that they are always sent and can
-	// actually be cleared via an update.
+	// The fields below shadow embedded fields whose zero value would be
+	// omitted so that they are always sent and can actually be cleared via
+	// an update.
 	Tags                      []string                   `json:"tags"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
@@ -100,7 +136,8 @@ func createDNSMonitorPayload(monitor DNSMonitor) dnsMonitorPayload {
 		Type: CheckTypeDNS,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
-		// Unfortunately, this will default to true if not set.
+		// The monitor type has no ShouldFail field, so it is always sent as
+		// false, which is also the API default.
 		ShouldFail: false,
 	}
 
@@ -152,9 +189,6 @@ func (c *client) CreateDNSMonitor(
 	return &result, nil
 }
 
-// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetDNSMonitor(
 	ctx context.Context,
 	ID string,

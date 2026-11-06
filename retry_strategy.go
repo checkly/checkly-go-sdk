@@ -35,15 +35,31 @@ const (
 	RetryOnlyOnNetworkError RetryOnlyOn = "NETWORK_ERROR"
 )
 
+// RetryStrategy sets how the failed runs of a check, monitor or group are
+// retried.
 type RetryStrategy struct {
-	Type               RetryStrategyType `json:"type"`
-	BaseBackoffSeconds int               `json:"baseBackoffSeconds"`
-	MaxRetries         int               `json:"maxRetries"`
-	MaxDurationSeconds int               `json:"maxDurationSeconds"`
-	SameRegion         bool              `json:"sameRegion"`
-	OnlyOn             []RetryOnlyOn     `json:"onlyOn,omitempty"`
+	// Type is how failed runs are retried. MarshalJSON encodes
+	// [RetryStrategyTypeNoRetries] and [RetryStrategyTypeFallback] specially.
+	Type RetryStrategyType `json:"type"`
+	// BaseBackoffSeconds is the number of seconds to wait before the first
+	// retry.
+	BaseBackoffSeconds int `json:"baseBackoffSeconds"`
+	// MaxRetries is the maximum number of retries, 1 to 10.
+	MaxRetries int `json:"maxRetries"`
+	// MaxDurationSeconds is how long retrying may continue, 0 to 600
+	// seconds.
+	MaxDurationSeconds int `json:"maxDurationSeconds"`
+	// SameRegion runs retries in the same region as the failed run.
+	SameRegion bool `json:"sameRegion"`
+	// OnlyOn limits retries to the listed failure causes.
+	// OnlyOn is left out of the request when empty.
+	OnlyOn []RetryOnlyOn `json:"onlyOn,omitempty"`
 }
 
+// MarshalJSON encodes Type [RetryStrategyTypeNoRetries] as null and
+// [RetryStrategyTypeFallback] as the string "FALLBACK". For
+// [RetryStrategyTypeSingleRetry] it leaves out MaxRetries and
+// MaxDurationSeconds, which do not apply to that type.
 func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 	type flexibleRetryStrategy struct {
 		Type               RetryStrategyType `json:"type"`
@@ -81,6 +97,9 @@ func (s RetryStrategy) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// UnmarshalJSON is the reverse of MarshalJSON: it decodes null as Type
+// [RetryStrategyTypeNoRetries] and the string "FALLBACK" as Type
+// [RetryStrategyTypeFallback].
 func (s *RetryStrategy) UnmarshalJSON(data []byte) error {
 	// Clear all fields so previous values don't leak through.
 	*s = RetryStrategy{}

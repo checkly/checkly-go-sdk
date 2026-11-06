@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
+// ClientCertificate is a TLS client certificate that checks present to the
+// hosts it matches. It is the input and result of CreateClientCertificate and
+// the result of GetClientCertificate; a certificate cannot be updated.
 type ClientCertificate struct {
-	// ID is the Checkly identifier of the client certificate.
 	ID string `json:"id,omitempty"`
 
-	// Host is the host domain that the certificate should be used for.
-	// Wildcards are supported, e.g. "*.acme.com".
+	// Host is the host domain that the certificate should be used for,
+	// without a scheme. Wildcards are supported, e.g. "*.acme.com".
 	Host string `json:"host"`
 
 	// Path is an optional URL path prefix that limits the certificate to
@@ -21,22 +23,26 @@ type ClientCertificate struct {
 	// but not to "/partnership". API checks and Multistep checks match on
 	// path; gRPC, SSL and TCP monitors only use certificates without one.
 	// Leave it empty to use the certificate for every path on the host.
+	// Path is left out of the request when empty.
 	Path string `json:"path,omitempty"`
 
 	// Certificate is the client certificate in PEM format.
 	Certificate string `json:"cert"`
 
-	// PrivateKey is the private key for the certificate in PEM format.
+	// PrivateKey is the private key for the certificate in PEM format. It is
+	// only sent: reads never return it.
 	PrivateKey string `json:"key"`
 
-	// Passphrase is an optional passphrase for the private key.
+	// Passphrase is an optional passphrase for the private key. Like
+	// PrivateKey, reads never return it.
+	// Passphrase is left out of the request when empty.
 	Passphrase string `json:"passphrase,omitempty"`
 
 	// TrustedCA is an optional PEM formatted bundle of CA certificates that
 	// the client should trust. The bundle may contain many CA certificates.
+	// TrustedCA is left out of the request when empty.
 	TrustedCA string `json:"ca,omitempty"`
 
-	// CreatedAt is the time when the client certificate was created.
 	CreatedAt time.Time `json:"created_at"`
 }
 

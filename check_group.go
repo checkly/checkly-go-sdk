@@ -7,67 +7,137 @@ import (
 	"time"
 )
 
-// Group represents a check group.
+// Group is a check group: settings shared by the checks in it, as used by
+// [Client.CreateGroup], [Client.GetGroup] and [Client.UpdateGroup].
 type Group struct {
-	ID                        int64                      `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	RunParallel               bool                       `json:"runParallel"`
-	Tags                      []string                   `json:"tags"`
-	Locations                 []string                   `json:"locations"`
-	Concurrency               int                        `json:"concurrency"`
-	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
-	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
-	SetupSnippetID            int64                      `json:"setupSnippetId,omitempty"`
-	TearDownSnippetID         int64                      `json:"tearDownSnippetId,omitempty"`
-	LocalSetupScript          string                     `json:"localSetupScript,omitempty"`
-	LocalTearDownScript       string                     `json:"localTearDownScript,omitempty"`
+	// ID is the group's ID, assigned by the API.
+	ID   int64  `json:"id,omitempty"`
+	Name string `json:"name"`
+	// Activated, when false, deactivates every check in the group.
+	Activated bool `json:"activated"`
+	// Muted mutes every check in the group.
+	Muted bool `json:"muted"`
+	// RunParallel runs the group's checks in all their locations in
+	// parallel, overriding the checks' own setting.
+	RunParallel bool `json:"runParallel"`
+	// Tags are added to the tags of every check in the group.
+	Tags []string `json:"tags"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list. When the group has any
+	// public or private locations, they replace those of its checks.
+	Locations []string `json:"locations"`
+	// Concurrency is how many of the group's checks run at once when the
+	// group is triggered from the API or CI/CD; at least 1.
+	Concurrency      int              `json:"concurrency"`
+	APICheckDefaults APICheckDefaults `json:"apiCheckDefaults"`
+	// EnvironmentVariables are merged into those of every check in the
+	// group.
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings, for every check in the group.
+	UseGlobalAlertSettings bool `json:"useGlobalAlertSettings"`
+	// AlertSettings replaces the alert settings of every check in the group.
+	AlertSettings AlertSettings `json:"alertSettings,omitempty"`
+	// SetupSnippetID and TearDownSnippetID are the IDs of the [Snippet] run
+	// in the setup and teardown phase of the group's API checks; 0 means
+	// none.
+	SetupSnippetID    int64 `json:"setupSnippetId,omitempty"`
+	TearDownSnippetID int64 `json:"tearDownSnippetId,omitempty"`
+	// LocalSetupScript and LocalTearDownScript are Node.js code run in the
+	// setup and teardown phase of the group's API checks; empty means none.
+	LocalSetupScript    string `json:"localSetupScript,omitempty"`
+	LocalTearDownScript string `json:"localTearDownScript,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive alerts
+	// for the group's checks. The SDK disables automatic assignment, so an
+	// empty list leaves the group without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	CreatedAt                 time.Time                  `json:"created_at"`
 	UpdatedAt                 time.Time                  `json:"updated_at"`
 
-	// Pointers
-	RuntimeID        *string        `json:"runtimeId"`
-	PrivateLocations *[]string      `json:"privateLocations"`
-	RetryStrategy    *RetryStrategy `json:"retryStrategy"`
+	// RuntimeID is the runtime version, such as "2025.04", for the checks
+	// in the group that have none of their own.
+	RuntimeID *string `json:"runtimeId"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RetryStrategy applies to every check in the group instead of the
+	// check's own, unless its Type is [RetryStrategyTypeFallback], which lets
+	// each check use its own. Nil, with DoubleCheck false, disables retries.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
 
 	// Deprecated: this property will be removed in future versions. Please use RetryStrategy instead.
 	DoubleCheck bool `json:"doubleCheck"`
 }
 
-// Group represents a check group v2.
+// GroupV2 is a check group as used by [Client.CreateGroupV2],
+// [Client.GetGroupV2] and [Client.UpdateGroupV2]. Unlike [Group], its
+// RunParallel, UseGlobalAlertSettings and AlertSettings can be nil, so that
+// each check in the group keeps its own setting.
 type GroupV2 struct {
-	ID                        int64                      `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	RunParallel               *bool                      `json:"runParallel"`
-	Tags                      []string                   `json:"tags"`
-	Locations                 []string                   `json:"locations"`
-	Concurrency               int                        `json:"concurrency"`
-	APICheckDefaults          APICheckDefaults           `json:"apiCheckDefaults"`
-	EnvironmentVariables      []EnvironmentVariable      `json:"environmentVariables"`
-	UseGlobalAlertSettings    *bool                      `json:"useGlobalAlertSettings"`
-	AlertSettings             *AlertSettings             `json:"alertSettings"`
-	SetupSnippetID            *int64                     `json:"setupSnippetId"`
-	TearDownSnippetID         *int64                     `json:"tearDownSnippetId"`
-	LocalSetupScript          *string                    `json:"localSetupScript"`
-	LocalTearDownScript       *string                    `json:"localTearDownScript"`
+	// ID is the group's ID, assigned by the API.
+	ID   int64  `json:"id,omitempty"`
+	Name string `json:"name"`
+	// Activated, when false, deactivates every check in the group.
+	Activated bool `json:"activated"`
+	// Muted mutes every check in the group.
+	Muted bool `json:"muted"`
+	// RunParallel runs the group's checks in all their locations in
+	// parallel; nil leaves each check its own setting.
+	RunParallel *bool `json:"runParallel"`
+	// Tags are added to the tags of every check in the group.
+	Tags []string `json:"tags"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list. When the group has any
+	// public or private locations, they replace those of its checks.
+	Locations []string `json:"locations"`
+	// Concurrency is how many of the group's checks run at once when the
+	// group is triggered from the API or CI/CD; at least 1.
+	Concurrency      int              `json:"concurrency"`
+	APICheckDefaults APICheckDefaults `json:"apiCheckDefaults"`
+	// EnvironmentVariables are merged into those of every check in the
+	// group.
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings, for every check in the group; nil leaves each check
+	// its own setting.
+	UseGlobalAlertSettings *bool `json:"useGlobalAlertSettings"`
+	// AlertSettings replaces the alert settings of every check in the group;
+	// nil leaves each check its own.
+	AlertSettings *AlertSettings `json:"alertSettings"`
+	// SetupSnippetID and TearDownSnippetID are the IDs of the [Snippet] run
+	// in the setup and teardown phase of the group's API checks.
+	SetupSnippetID    *int64 `json:"setupSnippetId"`
+	TearDownSnippetID *int64 `json:"tearDownSnippetId"`
+	// LocalSetupScript and LocalTearDownScript are Node.js code run in the
+	// setup and teardown phase of the group's API checks.
+	LocalSetupScript    *string `json:"localSetupScript"`
+	LocalTearDownScript *string `json:"localTearDownScript"`
+	// AlertChannelSubscriptions are the alert channels that receive alerts
+	// for the group's checks. The SDK disables automatic assignment, so an
+	// empty list leaves the group without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	CreatedAt                 time.Time                  `json:"created_at"`
-	UpdatedAt                 time.Time                  `json:"updated_at"`
+	// RuntimeID is the runtime version, such as "2025.04", for the checks
+	// in the group that have none of their own.
+	RuntimeID *string `json:"runtimeId"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RetryStrategy applies to every check in the group instead of the
+	// check's own, unless its Type is [RetryStrategyTypeFallback], which lets
+	// each check use its own. Nil disables retries.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
-// APICheckDefaults represents the default settings for API checks within a
-// given group.
+// APICheckDefaults are request settings of a [Group] or [GroupV2] for the
+// API checks in it.
 type APICheckDefaults struct {
-	BaseURL         string      `json:"url"`
+	// BaseURL is the group's base URL, which the checks' request URLs can
+	// reference as {{GROUP_BASE_URL}}.
+	BaseURL string `json:"url"`
+	// Headers, QueryParameters and Assertions are left out of the request
+	// when empty.
 	Headers         []KeyValue  `json:"headers,omitempty"`
 	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
 	Assertions      []Assertion `json:"assertions,omitempty"`
@@ -122,8 +192,6 @@ func createGroupPayload(group Group) groupPayload {
 	return payload
 }
 
-// CreateGroup creates a new check group with the specified details. It returns
-// the newly-created group, or an error.
 func (c *client) CreateGroup(
 	ctx context.Context,
 	group Group,
@@ -168,8 +236,6 @@ func createGroupV2Payload(group GroupV2) groupV2Payload {
 	return payload
 }
 
-// GetGroup takes the ID of an existing check group, and returns the
-// corresponding group, or an error.
 func (c *client) GetGroup(
 	ctx context.Context,
 	ID int64,
@@ -182,9 +248,6 @@ func (c *client) GetGroup(
 	return &result, nil
 }
 
-// UpdateGroup takes the ID of an existing check group, and updates the
-// corresponding check group to match the supplied group. It returns the updated
-// group, or an error.
 func (c *client) UpdateGroup(
 	ctx context.Context,
 	ID int64,
@@ -198,7 +261,6 @@ func (c *client) UpdateGroup(
 	return &result, nil
 }
 
-// DeleteGroup deletes the check group with the specified ID.
 func (c *client) DeleteGroup(
 	ctx context.Context,
 	ID int64,
@@ -207,8 +269,6 @@ func (c *client) DeleteGroup(
 	return err
 }
 
-// CreateGroupV2 creates a new check group with the specified details. It returns
-// the newly-created group, or an error.
 func (c *client) CreateGroupV2(
 	ctx context.Context,
 	group GroupV2,
@@ -221,8 +281,6 @@ func (c *client) CreateGroupV2(
 	return &result, nil
 }
 
-// GetGroupV2 takes the ID of an existing check group, and returns the
-// corresponding group, or an error.
 func (c *client) GetGroupV2(
 	ctx context.Context,
 	ID int64,
@@ -238,9 +296,6 @@ func (c *client) GetGroupV2(
 	return &result, nil
 }
 
-// UpdateGroupV2 takes the ID of an existing check group, and updates the
-// corresponding check group to match the supplied group. It returns the updated
-// group, or an error.
 func (c *client) UpdateGroupV2(
 	ctx context.Context,
 	ID int64,
@@ -254,7 +309,6 @@ func (c *client) UpdateGroupV2(
 	return &result, nil
 }
 
-// DeleteGroupV2 deletes the check group with the specified ID.
 func (c *client) DeleteGroupV2(
 	ctx context.Context,
 	ID int64,

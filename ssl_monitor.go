@@ -7,49 +7,86 @@ import (
 	"time"
 )
 
-// SSLMonitor represents an SSL/TLS certificate monitor.
-//
-// Like the other connection monitors (gRPC, traceroute), the response-time
-// thresholds are top-level DegradedResponseTime/MaxResponseTime fields.
+// SSLMonitor connects to a host over TLS and checks its certificate and
+// connection against its assertions and security baseline. It is the input of
+// [Client.CreateSSLMonitor] and [Client.UpdateSSLMonitor], and is returned by
+// [Client.GetSSLMonitor].
 type SSLMonitor struct {
-	ID                        string                     `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   SSLRequest                 `json:"request"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the monitor in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds, each at most 30000, with
+	// MaxResponseTime at least DegradedResponseTime. DegradedResponseTime and
+	// MaxResponseTime are left out of the request when zero.
+	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool       `json:"useGlobalAlertSettings"`
+	Request                SSLRequest `json:"request"`
+	// GroupID is the ID of the check group the monitor belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the monitor's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version, such as "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
-// SSLRequest represents the parameters for an SSL monitor's connection.
-//
-// SSLConfig is required by the public API (the wire schema is `.required()`),
-// so it is sent as a value rather than an optional pointer.
+// SSLRequest is the connection of an [SSLMonitor]. The API requires
+// SSLConfig, so it is a value rather than a pointer.
 type SSLRequest struct {
 	SSLConfig SSLConfig `json:"sslConfig"`
-	// SSLClientCertificateID is the FK to a stored client certificate. It is
-	// required when SSLConfig.ClientCertificateMode is explicit. Nil is sent
-	// as null, which removes a stored certificate.
-	SSLClientCertificateID *string     `json:"sslClientCertificateId"`
-	Assertions             []Assertion `json:"assertions,omitempty"`
+	// SSLClientCertificateID is the ID of a [ClientCertificate]. It is
+	// required when SSLConfig.ClientCertificateMode is
+	// [SSLClientCertificateModeExplicit]. Nil is sent as null, which removes
+	// a stored certificate.
+	SSLClientCertificateID *string `json:"sslClientCertificateId"`
+	// Assertions is sent as an empty list when nil.
+	Assertions []Assertion `json:"assertions,omitempty"`
 }
 
 // SSLClientCertificateMode is how an SSL monitor picks the client
@@ -87,58 +124,91 @@ const (
 	SSLBaselineSeverityIgnore  SSLBaselineSeverity = "ignore"
 )
 
-// SSLConfig represents the SSL-specific configuration nested inside an SSL
-// monitor's request. SecurityBaseline is an optional pointer:
-// leave it nil to inherit the server-side default baseline.
+// SSLConfig is the TLS configuration in an [SSLRequest].
 type SSLConfig struct {
 	Hostname string `json:"hostname"`
-	Port     int    `json:"port,omitempty"`
+	// Port is 1 to 65535; the API defaults to 443. Port is left out of the
+	// request when zero. An update with a zero Port keeps the stored port, as
+	// the API rejects a zero value.
+	Port int `json:"port,omitempty"`
 	// ServerName is an optional SNI override. Nil is sent as null, which
 	// removes a stored override.
-	ServerName            *string           `json:"serverName"`
-	IPFamily              IPFamily          `json:"ipFamily,omitempty"`
-	SkipChainValidation   bool              `json:"skipChainValidation"`
-	HandshakeTimeoutMs    int               `json:"handshakeTimeoutMs,omitempty"`
-	AlertDaysBeforeExpiry int               `json:"alertDaysBeforeExpiry,omitempty"`
-	SecurityBaseline      *SecurityBaseline `json:"securityBaseline,omitempty"`
-	// ClientCertificateMode is optional.
+	ServerName *string `json:"serverName"`
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
+	IPFamily            IPFamily `json:"ipFamily,omitempty"`
+	SkipChainValidation bool     `json:"skipChainValidation"`
+	// HandshakeTimeoutMs is 1000 to 30000; the API defaults to 10000.
+	// HandshakeTimeoutMs is left out of the request when zero. An update
+	// with a zero HandshakeTimeoutMs keeps the stored timeout, as the API
+	// rejects a zero value.
+	HandshakeTimeoutMs int `json:"handshakeTimeoutMs,omitempty"`
+	// AlertDaysBeforeExpiry is 1 to 365; the API defaults to 20.
+	// AlertDaysBeforeExpiry is left out of the request when zero. An update
+	// with a zero AlertDaysBeforeExpiry keeps the stored value, as the API
+	// rejects a zero value.
+	AlertDaysBeforeExpiry int `json:"alertDaysBeforeExpiry,omitempty"`
+	// SecurityBaseline is left out of the request when nil, and the API
+	// then applies its default baseline.
+	SecurityBaseline *SecurityBaseline `json:"securityBaseline,omitempty"`
+	// With [SSLClientCertificateModeExplicit],
+	// SSLRequest.SSLClientCertificateID is required.
+	// ClientCertificateMode is left out of the request when empty.
 	ClientCertificateMode SSLClientCertificateMode `json:"clientCertificateMode,omitempty"`
 }
 
-// SecurityBaseline represents the SSL security baseline — a set of enforceable
-// and advisory rules, each with an optional value and a severity. Construct one
-// only to override the server defaults; a nil *SecurityBaseline on SSLConfig
-// inherits them. Enabled is a pointer so an explicit `false` can be sent while
-// an unset value is omitted (the server defaults it to true).
+// SecurityBaseline is the set of TLS rules in [SSLConfig] that an SSL monitor
+// enforces or reports on, each with a severity. Set it only to override the
+// API defaults, which apply on create to the rules and values left unset.
 type SecurityBaseline struct {
+	// Enabled defaults to true, but an update that sets a MinTLSVersion or
+	// MinKeySizeBits value with a nil Enabled stores none, and the baseline
+	// then runs disabled; set Enabled explicitly. Enabled is left out of the
+	// request when nil.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Enforceable rules — server default severity fail.
+	// Enforceable rules, with the default severity
+	// [SSLBaselineSeverityFail]. The defaults for MinTLSVersion and
+	// MinKeySizeBits are [TLSVersion12] and 2048. MinTLSVersion,
+	// MinKeySizeBits, WeakSignatureAlgorithm, WeakCipherSuite and KnownBadCA
+	// are left out of the request when nil.
 	MinTLSVersion          *SSLBaselineTLSRule      `json:"minTLSVersion,omitempty"`
 	MinKeySizeBits         *SSLBaselineKeySizeRule  `json:"minKeySizeBits,omitempty"`
 	WeakSignatureAlgorithm *SSLBaselineSeverityRule `json:"weakSignatureAlgorithm,omitempty"`
 	WeakCipherSuite        *SSLBaselineSeverityRule `json:"weakCipherSuite,omitempty"`
 	KnownBadCA             *SSLBaselineSeverityRule `json:"knownBadCA,omitempty"`
-	// Advisory rules — server default severity ignore.
+	// Advisory rules, with the default severity
+	// [SSLBaselineSeverityIgnore]. The defaults for RecommendedTLSVersion
+	// and RecommendedKeySizeBits are [TLSVersion13] and 3072.
+	// RecommendedTLSVersion, RecommendedKeySizeBits, OCSPMustStapleRespected
+	// and SCTPresent are left out of the request when nil.
 	RecommendedTLSVersion   *SSLBaselineTLSRule      `json:"recommendedTLSVersion,omitempty"`
 	RecommendedKeySizeBits  *SSLBaselineKeySizeRule  `json:"recommendedKeySizeBits,omitempty"`
 	OCSPMustStapleRespected *SSLBaselineSeverityRule `json:"ocspMustStapleRespected,omitempty"`
 	SCTPresent              *SSLBaselineSeverityRule `json:"sctPresent,omitempty"`
 }
 
-// SSLBaselineTLSRule is a baseline rule whose value is a TLS version.
+// SSLBaselineTLSRule is a [SecurityBaseline] rule whose value is a TLS
+// version.
 type SSLBaselineTLSRule struct {
-	Value    TLSVersion          `json:"value,omitempty"`
+	// Value is left out of the request when empty.
+	Value TLSVersion `json:"value,omitempty"`
+	// Severity is left out of the request when empty.
 	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
-// SSLBaselineKeySizeRule is a baseline rule whose value is a key size in bits.
+// SSLBaselineKeySizeRule is a [SecurityBaseline] rule whose value is a key
+// size in bits, 1024 to 16384.
 type SSLBaselineKeySizeRule struct {
-	Value    int                 `json:"value,omitempty"`
+	// Value is left out of the request when zero.
+	Value int `json:"value,omitempty"`
+	// Severity is left out of the request when empty.
 	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
-// SSLBaselineSeverityRule is a baseline rule that only carries a severity.
+// SSLBaselineSeverityRule is a [SecurityBaseline] rule without a value.
 type SSLBaselineSeverityRule struct {
+	// Severity is left out of the request when empty.
 	Severity SSLBaselineSeverity `json:"severity,omitempty"`
 }
 
@@ -210,9 +280,6 @@ func (c *client) CreateSSLMonitor(
 	return &result, nil
 }
 
-// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetSSLMonitor(
 	ctx context.Context,
 	ID string,

@@ -6,18 +6,28 @@ import (
 	"net/http"
 )
 
-// EnvironmentVariable represents a key-value pair for setting environment
-// values during check execution.
+// EnvironmentVariable is an environment variable that checks can read when
+// they run. It is the input and result of CreateEnvironmentVariable and
+// UpdateEnvironmentVariable for account-level variables, and the element
+// type of the EnvironmentVariables fields of checks and groups.
 type EnvironmentVariable struct {
-	Key    string `json:"key,omitempty"`
-	Value  string `json:"value"`
-	Locked bool   `json:"locked"`
-	Secret bool   `json:"secret"`
+	// Key is the variable's name, such as "API_KEY". UpdateEnvironmentVariable
+	// rejects a different key. Key is left out of the request when empty.
+	Key string `json:"key,omitempty"`
+
+	// Value must not be empty for an account-level variable. Reads return an
+	// empty Value for a secret variable, and a secret variable of a check or
+	// group sent with an empty Value keeps its stored value.
+	Value string `json:"value"`
+
+	// Locked hides the value in the Checkly UI, like a password.
+	Locked bool `json:"locked"`
+
+	// Secret stores the value as a secret, which reads never return. A
+	// secret variable cannot be made non-secret again.
+	Secret bool `json:"secret"`
 }
 
-// CreateEnvironmentVariable creates a new environment variable with the
-// specified details.  It returns the newly-created environment variable,
-// or an error.
 func (c *client) CreateEnvironmentVariable(
 	ctx context.Context,
 	envVar EnvironmentVariable,
@@ -30,8 +40,6 @@ func (c *client) CreateEnvironmentVariable(
 	return &result, nil
 }
 
-// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
-// corresponding environment variable, or an error.
 func (c *client) GetEnvironmentVariable(
 	ctx context.Context,
 	key string,
@@ -44,9 +52,6 @@ func (c *client) GetEnvironmentVariable(
 	return &result, nil
 }
 
-// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
-// corresponding environment variable to match the supplied environment variable. It returns the updated
-// environment variable, or an error.
 func (c *client) UpdateEnvironmentVariable(
 	ctx context.Context,
 	key string,
@@ -60,7 +65,6 @@ func (c *client) UpdateEnvironmentVariable(
 	return &result, nil
 }
 
-// DeleteEnvironmentVariable deletes the environment variable with the specified ID.
 func (c *client) DeleteEnvironmentVariable(
 	ctx context.Context,
 	key string,

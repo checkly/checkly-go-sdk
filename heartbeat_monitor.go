@@ -7,20 +7,36 @@ import (
 	"time"
 )
 
+// HeartbeatMonitor expects pings at its ping URL instead of running checks
+// itself: [Heartbeat] sets how often a ping is expected. It is the input of
+// [Client.CreateHeartbeatMonitor] and [Client.UpdateHeartbeatMonitor], and is
+// returned by [Client.GetHeartbeatMonitor].
 type HeartbeatMonitor struct {
-	ID                        string                     `json:"id"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             AlertSettings              `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Activated   bool    `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool     `json:"muted"`
+	Tags  []string `json:"tags,omitempty"`
+	// AlertSettings with the [EscalationTypeRunBased] escalation type
+	// requires RunBasedEscalation.FailedRunThreshold.
+	AlertSettings AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool `json:"useGlobalAlertSettings"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	Heartbeat                 Heartbeat                  `json:"heartbeat"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at"`
-	UpdatedAt                 time.Time                  `json:"updated_at"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at"`
+	UpdatedAt       time.Time        `json:"updated_at"`
 }
 
 // HeartbeatUnit is the time unit of a heartbeat monitor's period and grace,
@@ -36,13 +52,18 @@ const (
 	HeartbeatUnitDays    HeartbeatUnit = "days"
 )
 
-// Heartbeat represents the parameter for the heartbeat check.
+// Heartbeat is the ping schedule of a [HeartbeatMonitor].
 type Heartbeat struct {
+	// Period is the interval expected between pings, from 30 seconds to 365
+	// days.
 	Period     int           `json:"period"`
 	PeriodUnit HeartbeatUnit `json:"periodUnit"`
-	Grace      int           `json:"grace"`
-	GraceUnit  HeartbeatUnit `json:"graceUnit"`
-	PingToken  string        `json:"pingToken"`
+	// Grace is added to the period, and must be less than 365 days.
+	Grace     int           `json:"grace"`
+	GraceUnit HeartbeatUnit `json:"graceUnit"`
+	// PingToken is the UUID that the ping URL is built from. An update with
+	// an empty PingToken keeps the stored token.
+	PingToken string `json:"pingToken"`
 }
 
 type heartbeatMonitorPayload struct {
@@ -78,9 +99,6 @@ func (c *client) CreateHeartbeatMonitor(
 	return &result, nil
 }
 
-// GetHeartbeatMonitor takes the ID of an existing heartbeat monitor, and
-// returns the monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetHeartbeatMonitor(
 	ctx context.Context,
 	ID string,

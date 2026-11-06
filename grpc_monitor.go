@@ -7,46 +7,88 @@ import (
 	"time"
 )
 
-// GRPCMonitor represents a gRPC monitor.
+// GRPCMonitor calls a gRPC method, or queries a server's health status, and
+// checks the result against its assertions. It is the input of
+// [Client.CreateGRPCMonitor] and [Client.UpdateGRPCMonitor], and is returned
+// by [Client.GetGRPCMonitor].
 type GRPCMonitor struct {
-	ID                        string                     `json:"id,omitempty"`
-	Name                      string                     `json:"name"`
-	Description               *string                    `json:"description"`
-	Frequency                 int                        `json:"frequency"`
-	FrequencyOffset           int                        `json:"frequencyOffset,omitempty"`
-	Activated                 bool                       `json:"activated"`
-	Muted                     bool                       `json:"muted"`
-	ShouldFail                bool                       `json:"shouldFail"`
-	RunParallel               bool                       `json:"runParallel"`
-	Locations                 []string                   `json:"locations"`
-	DegradedResponseTime      int                        `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime           int                        `json:"maxResponseTime,omitempty"`
-	Tags                      []string                   `json:"tags,omitempty"`
-	AlertSettings             *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings    bool                       `json:"useGlobalAlertSettings"`
-	Request                   GRPCRequest                `json:"request"`
-	GroupID                   int64                      `json:"groupId,omitempty"`
-	GroupOrder                int                        `json:"groupOrder,omitempty"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool `json:"muted"`
+	// ShouldFail inverts the result: a run that would fail passes, and the
+	// other way around.
+	ShouldFail bool `json:"shouldFail"`
+	// RunParallel runs the monitor in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedResponseTime and MaxResponseTime are the degraded and failing
+	// response time limits in milliseconds, each at most 180000.
+	// DegradedResponseTime and MaxResponseTime are left out of the request when
+	// zero.
+	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool        `json:"useGlobalAlertSettings"`
+	Request                GRPCRequest `json:"request"`
+	// GroupID is the ID of the check group the monitor belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the monitor's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	PrivateLocations          *[]string                  `json:"privateLocations"`
-	RuntimeID                 *string                    `json:"runtimeId"`
-	RetryStrategy             *RetryStrategy             `json:"retryStrategy"`
-	TriggerIncident           *IncidentTrigger           `json:"triggerIncident"`
-	CreatedAt                 time.Time                  `json:"created_at,omitempty"`
-	UpdatedAt                 time.Time                  `json:"updated_at,omitempty"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RuntimeID is the runtime version, such as "2025.04".
+	RuntimeID *string `json:"runtimeId"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
-// GRPCRequest represents the parameters for a gRPC monitor's connection.
-//
-// GRPCConfig is required by the public API (the wire schema is `.required()`),
-// so it is sent as a value rather than an optional pointer.
+// GRPCRequest is the connection of a [GRPCMonitor]. The API requires
+// GRPCConfig, so it is a value rather than a pointer.
 type GRPCRequest struct {
 	URL string `json:"url"`
-	// Port accepts a number or a `{{template}}` string, mirroring the public
-	// API's `Joi.alternatives`, so its type is intentionally open.
-	Port       interface{} `json:"port"`
-	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
-	SkipSSL    bool        `json:"skipSSL"`
+	// Port is 1 to 65535. Its type is open because the API may return it as
+	// a string; send a number or a numeric string.
+	Port interface{} `json:"port"`
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+	SkipSSL  bool     `json:"skipSSL"`
+	// Timeout is 1 to 180; zero means 60.
 	Timeout    int         `json:"timeout,omitempty"`
 	GRPCConfig GRPCConfig  `json:"grpcConfig"`
 	Assertions []Assertion `json:"assertions,omitempty"`
@@ -89,29 +131,47 @@ const (
 	GRPCServiceDefinitionProtoFile GRPCServiceDefinition = "PROTO_FILE"
 )
 
-// GRPCConfig represents the gRPC-specific configuration nested inside a gRPC
-// monitor's request. `Mode` defaults to BEHAVIOR (which requires `Method`);
-// the HEALTH mode forbids the BEHAVIOR-only fields, so they are tagged
-// omitempty to drop them from the marshaled body when unset.
+// GRPCConfig is the gRPC configuration in a [GRPCRequest]. Mode selects which
+// of the other fields apply: the API drops the fields of the other mode.
 type GRPCConfig struct {
-	Mode     GRPCMode       `json:"mode,omitempty"`
-	TLS      bool           `json:"tls"`
+	// An empty Mode is sent as [GRPCModeBehavior], also on update, so set
+	// [GRPCModeHealth] on every write of a health monitor.
+	Mode GRPCMode `json:"mode,omitempty"`
+	TLS  bool     `json:"tls"`
+	// Metadata holds at most 50 entries, with keys unique regardless of
+	// case.
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
-	// BEHAVIOR-mode only (forbidden in HEALTH mode).
-	// Encoding is PROTOBUF or FLATBUFFERS. An update that omits it keeps the
-	// stored encoding, so send PROTOBUF explicitly to switch a FLATBUFFERS
-	// monitor back; that also clears the stored BfbsContent.
-	Encoding          GRPCEncoding          `json:"encoding,omitempty"`
+	// The fields from Encoding to Message are for [GRPCModeBehavior] only.
+	//
+	// An update that omits Encoding keeps the stored encoding, so send
+	// [GRPCEncodingProtobuf] explicitly to switch a [GRPCEncodingFlatbuffers]
+	// monitor back; that also clears the stored BfbsContent. Encoding is left
+	// out of the request when empty.
+	Encoding GRPCEncoding `json:"encoding,omitempty"`
+	// ServiceDefinition applies to [GRPCEncodingProtobuf] only, and
+	// [GRPCServiceDefinitionProtoFile] requires ProtoContent.
+	// ServiceDefinition is left out of the request when empty, so send
+	// [GRPCServiceDefinitionReflection] explicitly to switch a
+	// [GRPCServiceDefinitionProtoFile] monitor back.
 	ServiceDefinition GRPCServiceDefinition `json:"serviceDefinition,omitempty"`
-	Method            string                `json:"method,omitempty"`
-	ProtoContent      string                `json:"protoContent,omitempty"`
-	BfbsContent       string                `json:"bfbsContent,omitempty"`
-	Message           string                `json:"message,omitempty"`
-	// HEALTH-mode only (forbidden in BEHAVIOR mode).
+	// Method is required with [GRPCModeBehavior]. Method is left out of the
+	// request when empty.
+	Method string `json:"method,omitempty"`
+	// ProtoContent is the proto file of [GRPCServiceDefinitionProtoFile].
+	// With [GRPCModeBehavior], an empty ProtoContent is sent only with an
+	// explicit [GRPCServiceDefinitionReflection] ServiceDefinition, which
+	// removes the stored file; otherwise it is left out of the request.
+	ProtoContent string `json:"protoContent,omitempty"`
+	// BfbsContent is the base64-encoded binary FlatBuffers schema, required
+	// for [GRPCEncodingFlatbuffers]. BfbsContent is left out of the request
+	// when empty.
+	BfbsContent string `json:"bfbsContent,omitempty"`
+	Message     string `json:"message,omitempty"`
+	// Service is for [GRPCModeHealth] only.
 	Service string `json:"service,omitempty"`
 }
 
-// GRPCMetadata represents a single gRPC metadata key/value pair.
+// GRPCMetadata is a metadata entry in [GRPCConfig].
 type GRPCMetadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -254,9 +314,6 @@ func (c *client) CreateGRPCMonitor(
 	return &result, nil
 }
 
-// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetGRPCMonitor(
 	ctx context.Context,
 	ID string,

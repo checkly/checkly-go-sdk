@@ -18,18 +18,20 @@ const (
 	StatusPageThemeLight StatusPageTheme = "LIGHT"
 )
 
+// StatusPage is a v1 status page, which shows StatusPageService entries
+// grouped into cards. It is the input and result of CreateStatusPage and
+// UpdateStatusPage, which both require Name, URL and Cards. See
+// [StatusPageV3] for the components-based status pages.
 type StatusPage struct {
-	// ID is the Checkly identifier of the status page.
-	ID string `json:"id,omitempty"`
-
-	// Name is the name of the status page.
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 
-	// URL is the unique subdomain of the status page.
+	// URL is the unique subdomain of the status page. The API stores it in
+	// lowercase.
 	URL string `json:"url"`
 
 	// CustomDomain is an optional user-managed domain that hosts the status
-	// page.
+	// page; empty removes it.
 	CustomDomain string `json:"customDomain,omitempty"`
 
 	// Logo is a URL to an image file to use as the logo for the status page.
@@ -43,26 +45,30 @@ type StatusPage struct {
 	// page.
 	Favicon string `json:"favicon"`
 
-	// DefaultTheme is the default theme of the status page.
+	// DefaultTheme is left out of the request when empty, so the API
+	// applies [StatusPageThemeAuto], also on update.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
 
-	// Cards is a list of cards to include on the status page.
 	Cards []StatusPageCard `json:"cards"`
 }
 
+// StatusPageCard is a card of a v1 status page, in StatusPage.Cards: a named
+// group of services.
 type StatusPageCard struct {
-	// Name is the name of the card.
 	Name string `json:"name"`
 
-	// Services is the list of services to include in the card.
+	// Services lists the services shown in the card. Create and update
+	// requests refer to existing services by ID; see
+	// CreateStatusPageService.
 	Services []StatusPageService `json:"services"`
 }
 
+// StatusPageService is a service of the v1 status pages: something whose
+// status a card shows and that incidents affect, as IncidentTrigger.ServiceID
+// refers to it. It is the input and result of CreateStatusPageService and
+// UpdateStatusPageService, which both require only Name.
 type StatusPageService struct {
-	// ID is the Checkly identifier of the service.
-	ID string `json:"id,omitempty"`
-
-	// Name is the name of the service.
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 }
 

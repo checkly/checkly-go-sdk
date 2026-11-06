@@ -19,16 +19,23 @@ const (
 	RuntimeStageRemoved    RuntimeStage = "REMOVED"
 )
 
+// Runtime describes a Checkly runtime, the versioned set of Node.js and
+// libraries that checks run on. It is returned by GetRuntime.
 type Runtime struct {
-	Name             string       `json:"name"`
-	MultiStepSupport bool         `json:"multiStepSupport"`
-	Stage            RuntimeStage `json:"stage"`
-	RuntimeEndOfLife string       `json:"runtimeEndOfLife"`
-	Description      string       `json:"description"`
+	// Name is the runtime's ID, such as "2025.04", as the RuntimeID fields
+	// of checks and groups take it.
+	Name             string `json:"name"`
+	MultiStepSupport bool   `json:"multiStepSupport"`
+
+	// Stage is the runtime's life stage.
+	Stage RuntimeStage `json:"stage"`
+
+	// RuntimeEndOfLife is the date on which the runtime will be removed,
+	// if one is set.
+	RuntimeEndOfLife string `json:"runtimeEndOfLife"`
+	Description      string `json:"description"`
 }
 
-// GetRuntime returns the specs of a runtime. The endpoint is public, so the
-// request is sent without credentials.
 func (c *client) GetRuntime(
 	ctx context.Context,
 	ID string,

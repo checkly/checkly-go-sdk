@@ -6,21 +6,12 @@ import (
 	"net/http"
 )
 
-// StatusPageV3 represents a v3 (components-based) status page. Unlike
-// StatusPage, a v3 page has no cards or services: its structure is managed
-// through StatusPageComponentV3 resources, and incidents can be automated
-// with StatusPageAutomationRuleV3 resources.
-//
-// The update endpoint only touches the fields present in the payload, so
-// the optional fields are serialized even when empty: an empty string
-// clears a previously set value, while omitting the field would leave it
-// unchanged. DefaultTheme is the exception — the API rejects an empty
-// value, so it is omitted when unset and the server defaults it to AUTO.
+// StatusPageV3 is a v3 (components-based) status page. Unlike StatusPage, a
+// v3 page has no cards or services: its structure is managed through
+// StatusPageComponentV3 resources, and incidents can be automated with
+// StatusPageAutomationRuleV3 resources.
 type StatusPageV3 struct {
-	// ID is the Checkly identifier of the status page.
-	ID string `json:"id,omitempty"`
-
-	// Name is the name of the status page.
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 
 	// URL is the unique subdomain of the status page.
@@ -47,7 +38,7 @@ type StatusPageV3 struct {
 	// page.
 	Favicon string `json:"favicon"`
 
-	// DefaultTheme is the default theme of the status page.
+	// DefaultTheme is left out of the request when empty.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
 
 	// PrivacyPolicyLink is a link to a privacy policy, shown in the page
@@ -158,10 +149,12 @@ const (
 type StatusPageComponentV3Configuration struct {
 	// ShowHistoricalData shows the historical status (the uptime bar) of
 	// the component on the status page. Defaults to true.
+	// ShowHistoricalData is left out of the request when nil.
 	ShowHistoricalData *bool `json:"showHistoricalData,omitempty"`
 
 	// ExpandedByDefault renders the group expanded when the status page
 	// loads. GROUP components only. Defaults to false.
+	// ExpandedByDefault is left out of the request when nil.
 	ExpandedByDefault *bool `json:"expandedByDefault,omitempty"`
 }
 
@@ -169,7 +162,6 @@ type StatusPageComponentV3Configuration struct {
 // SERVICE (a monitored thing with its own status) or a GROUP (a container
 // for other components).
 type StatusPageComponentV3 struct {
-	// ID is the Checkly identifier of the component.
 	ID string `json:"id,omitempty"`
 
 	// StatusPageID is the identifier of the v3 status page the component
@@ -177,14 +169,15 @@ type StatusPageComponentV3 struct {
 	// the URL path instead.
 	StatusPageID string `json:"statusPageId,omitempty"`
 
-	// Type is the type of the component, SERVICE or GROUP. Defaults to
-	// SERVICE.
+	// An empty Type means [StatusPageComponentV3TypeService]. Type is left
+	// out of the request when empty.
 	Type StatusPageComponentV3Type `json:"type,omitempty"`
 
 	// Name is the name shown on the status page.
 	Name string `json:"name"`
 
 	// Description is an optional description shown next to the name.
+	// Description is left out of the request when empty.
 	Description string `json:"description,omitempty"`
 
 	// DisplayOrder is the position among siblings; lower comes first.
@@ -194,15 +187,15 @@ type StatusPageComponentV3 struct {
 	// available for incidents and automation.
 	Hidden bool `json:"hidden"`
 
-	// Configuration holds the component's type-specific settings. Omitted
-	// (nil) on a write, the component gets (or is reset to, on update) the
-	// defaults of its type.
+	// Configuration holds the component's type-specific settings.
+	// Configuration is left out of the request when nil, and the component
+	// then gets (or is reset to, on update) the defaults of its type.
 	Configuration *StatusPageComponentV3Configuration `json:"configuration,omitempty"`
 
 	// ParentID is the identifier of the GROUP component this component sits
 	// under. It must belong to the same status page. Updates replace the
 	// component wholesale, so omitting it detaches the component from its
-	// parent.
+	// parent. ParentID is left out of the request when empty.
 	ParentID string `json:"parentId,omitempty"`
 }
 
@@ -236,7 +229,6 @@ const (
 // component of the same status page, with the impact an automated incident
 // sets on it.
 type StatusPageAutomationRuleComponentV3 struct {
-	// ComponentID is the identifier of the impacted component.
 	ComponentID string `json:"componentId"`
 
 	// TargetImpact is the impact set on the component while the automated
@@ -249,7 +241,6 @@ type StatusPageAutomationRuleComponentV3 struct {
 // opens one incident on the page impacting the listed components, and
 // resolves it when the check recovers.
 type StatusPageAutomationRuleV3 struct {
-	// ID is the Checkly identifier of the automation rule.
 	ID string `json:"id,omitempty"`
 
 	// StatusPageID is the identifier of the v3 status page the rule belongs
@@ -257,7 +248,6 @@ type StatusPageAutomationRuleV3 struct {
 	// path instead.
 	StatusPageID string `json:"statusPageId,omitempty"`
 
-	// Name is the name of the rule.
 	Name string `json:"name"`
 
 	// Enabled determines whether the rule may open incidents. A disabled
@@ -285,9 +275,9 @@ type StatusPageAutomationRuleV3 struct {
 	Tags []string `json:"tags"`
 
 	// Components is the list of components an automated incident impacts,
-	// with the impact each gets. The API rejects null, so an empty list is
-	// omitted; updates replace the rule wholesale, so that removes every
-	// component.
+	// with the impact each gets. Components is left out of the request when
+	// empty, as the API rejects null; updates replace the rule wholesale, so
+	// that removes every component.
 	Components []StatusPageAutomationRuleComponentV3 `json:"components,omitempty"`
 }
 

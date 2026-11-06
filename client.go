@@ -15,10 +15,16 @@ const DefaultBaseURL = "https://api.checklyhq.com"
 // WithSource sets another.
 const defaultSource = "go-sdk"
 
-// Client is an interface that implements Checkly's API
+// Client is a client for the Checkly public API, with methods for the
+// resources of a Checkly account. [NewClient] returns one; it is not
+// modified afterwards, so it is safe for concurrent use. The package
+// documentation describes the errors, cancellation, retries and update
+// behaviour that all methods share.
 type Client interface {
-	// CreateCheck creates a new check with the specified details.
-	// It returns the newly-created check, or an error.
+	// CreateCheck creates a check from the generic [Check] fields and returns
+	// it with its ID. Type must be [CheckTypeAPI], [CheckTypeBrowser],
+	// [CheckTypeHeartbeat] or [CheckTypeMultiStep]; for any other type it
+	// returns an error without sending a request.
 	//
 	// Deprecated: use CreateAPICheck, CreateBrowserCheck,
 	// CreateMultiStepCheck or the create method of the monitor type, which
@@ -28,8 +34,8 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// GetCheck takes the ID of an existing check, and returns the check
-	// parameters, or an error.
+	// GetCheck returns the check with the given ID, whatever its type, as a
+	// [Check].
 	//
 	// Deprecated: use GetAPICheck, GetBrowserCheck, GetMultiStepCheck or the
 	// get method of the monitor type.
@@ -38,8 +44,7 @@ type Client interface {
 		ID string,
 	) (*Check, error)
 
-	// UpdateCheck updates an existing check with the specified details.
-	// It returns the updated check, or an error.
+	// UpdateCheck updates the check with the given ID and returns it.
 	//
 	// Deprecated: use UpdateAPICheck, UpdateBrowserCheck,
 	// UpdateMultiStepCheck or the update method of the monitor type.
@@ -51,7 +56,7 @@ type Client interface {
 		check Check,
 	) (*Check, error)
 
-	// DeleteCheck deletes the check with the specified ID.
+	// DeleteCheck deletes the check with the given ID, whatever its type.
 	//
 	// Deprecated: use DeleteAPICheck, DeleteBrowserCheck, DeleteMultiStepCheck
 	// or the delete method of the monitor type.
@@ -60,125 +65,126 @@ type Client interface {
 		ID string,
 	) error
 
-	// CreateAPICheck creates a new API check with the specified details.
-	// It returns the newly-created check, or an error.
+	// CreateAPICheck creates an API check and returns it with its ID.
 	CreateAPICheck(
 		ctx context.Context,
 		check APICheck,
 	) (*APICheck, error)
 
-	// GetAPICheck takes the ID of an existing API check, and returns the check
-	// parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetAPICheck returns the API check with the given ID. It fails with an error
+	// matching [ErrCheckTypeMismatch] when the ID belongs to a check of another
+	// type.
 	GetAPICheck(
 		ctx context.Context,
 		ID string,
 	) (*APICheck, error)
 
-	// UpdateAPICheck updates an existing API check with the specified details.
-	// It returns the updated check, or an error.
+	// UpdateAPICheck updates the API check with the given ID and returns it.
 	UpdateAPICheck(
 		ctx context.Context,
 		ID string,
 		check APICheck,
 	) (*APICheck, error)
 
-	// DeleteAPICheck deletes the API check with the specified ID. It uses
-	// the generic check endpoint and does not verify the check type.
+	// DeleteAPICheck deletes the API check with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteAPICheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateBrowserCheck creates a new browser check with the specified
-	// details. It returns the newly-created check, or an error.
+	// CreateBrowserCheck creates a browser check and returns it with its ID.
 	CreateBrowserCheck(
 		ctx context.Context,
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
-	// GetBrowserCheck takes the ID of an existing browser check, and returns the
-	// check parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetBrowserCheck returns the browser check with the given ID, including its
+	// script dependencies. It fails with an error matching [ErrCheckTypeMismatch]
+	// when the ID belongs to a check of another type.
 	GetBrowserCheck(
 		ctx context.Context,
 		ID string,
 	) (*BrowserCheck, error)
 
-	// UpdateBrowserCheck updates an existing browser check with the specified
-	// details. It returns the updated check, or an error.
+	// UpdateBrowserCheck updates the browser check with the given ID and returns
+	// it.
 	UpdateBrowserCheck(
 		ctx context.Context,
 		ID string,
 		check BrowserCheck,
 	) (*BrowserCheck, error)
 
-	// DeleteBrowserCheck deletes the browser check with the specified ID. It uses
+	// DeleteBrowserCheck deletes the browser check with the given ID. It uses
 	// the generic check endpoint and does not verify the check type.
 	DeleteBrowserCheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateMultiStepCheck creates a new multi-step check with the specified
-	// details. It returns the newly-created check, or an error.
+	// CreateMultiStepCheck creates a multi-step check and returns it with its ID.
 	CreateMultiStepCheck(
 		ctx context.Context,
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
-	// GetMultiStepCheck takes the ID of an existing multi-step check, and
-	// returns the check parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetMultiStepCheck returns the multi-step check with the given ID, including
+	// its script dependencies. It fails with an error matching
+	// [ErrCheckTypeMismatch] when the ID belongs to a check of another type.
 	GetMultiStepCheck(
 		ctx context.Context,
 		ID string,
 	) (*MultiStepCheck, error)
 
-	// UpdateMultiStepCheck updates an existing multi-step check with the
-	// specified details. It returns the updated check, or an error.
+	// UpdateMultiStepCheck updates the multi-step check with the given ID and
+	// returns it.
 	UpdateMultiStepCheck(
 		ctx context.Context,
 		ID string,
 		check MultiStepCheck,
 	) (*MultiStepCheck, error)
 
-	// DeleteMultiStepCheck deletes the multi-step check with the specified ID. It uses
-	// the generic check endpoint and does not verify the check type.
+	// DeleteMultiStepCheck deletes the multi-step check with the given ID. It
+	// uses the generic check endpoint and does not verify the check type.
 	DeleteMultiStepCheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreatePlaywrightCheck creates a new Playwright check.
+	// CreatePlaywrightCheck creates a Playwright check and returns it with its
+	// ID.
 	CreatePlaywrightCheck(
 		ctx context.Context,
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
-	// GetPlaywrightCheck takes the ID of an existing Playwright check, and
-	// returns the check parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetPlaywrightCheck returns the Playwright check with the given ID. It fails
+	// with an error matching [ErrCheckTypeMismatch] when the ID belongs to a check
+	// of another type.
 	GetPlaywrightCheck(
 		ctx context.Context,
 		ID string,
 	) (*PlaywrightCheck, error)
 
-	// UpdatePlaywrightCheck updates an existing Playwright check.
+	// UpdatePlaywrightCheck updates the Playwright check with the given ID and
+	// returns it. An empty Tags or Browsers, a nil AlertSettings, or a zero
+	// GroupID or GroupOrder, which are left out of the request, resets that
+	// field to the API default.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
 		ID string,
 		check PlaywrightCheck,
 	) (*PlaywrightCheck, error)
 
-	// DeletePlaywrightCheck deletes an existing Playwright check.
+	// DeletePlaywrightCheck deletes the Playwright check with the given ID. It
+	// uses the generic check endpoint and does not verify the check type.
 	DeletePlaywrightCheck(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// UploadCodeBundle uploads a code bundle which can be used with
-	// Playwright checks.
+	// UploadCodeBundle uploads size bytes read from data as a code bundle for
+	// Playwright checks and returns the stored bundle's metadata.
 	UploadCodeBundle(
 		ctx context.Context,
 		data io.Reader,
@@ -186,598 +192,611 @@ type Client interface {
 		options UploadCodeBundleOptions,
 	) (*CodeBundle, error)
 
-	// PeekCodeBundle peeks the associated metadata of a code bundle without
-	// downloading the code bundle.
+	// PeekCodeBundle returns the metadata of the code bundle stored under key,
+	// such as its size and checksum, without downloading it. When there is no
+	// bundle for the key, including when the key belongs to another account,
+	// the error matches [ErrCodeBundleNotFound].
 	PeekCodeBundle(
 		ctx context.Context,
 		key string,
 	) (*CodeBundle, error)
 
-	// CreateHeartbeatMonitor creates a new heartbeat monitor with the
-	// specified details. It returns the newly-created monitor, or an error.
+	// CreateHeartbeatMonitor creates a heartbeat monitor and returns it with its
+	// ID.
 	CreateHeartbeatMonitor(
 		ctx context.Context,
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
 
-	// GetHeartbeatMonitor takes the ID of an existing heartbeat monitor, and
-	// returns the monitor parameters, or an error. It fails with an error
-	// matching ErrCheckTypeMismatch when the ID belongs to a check of another
-	// type.
+	// GetHeartbeatMonitor returns the heartbeat monitor with the given ID. It
+	// fails with an error matching [ErrCheckTypeMismatch] when the ID belongs to a
+	// check of another type.
 	GetHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
 	) (*HeartbeatMonitor, error)
 
-	// UpdateHeartbeatMonitor updates an existing heartbeat monitor with the
-	// specified details. It returns the updated monitor, or an error.
+	// UpdateHeartbeatMonitor updates the heartbeat monitor with the given ID and
+	// returns it.
 	UpdateHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
 		monitor HeartbeatMonitor,
 	) (*HeartbeatMonitor, error)
 
-	// DeleteHeartbeatMonitor deletes the monitor with the specified ID.
+	// DeleteHeartbeatMonitor deletes the heartbeat monitor with the given ID. It
+	// uses the generic check endpoint and does not verify the check type.
 	DeleteHeartbeatMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateURLMonitor creates a new URL monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateURLMonitor creates a URL monitor and returns it with its ID.
 	CreateURLMonitor(
 		ctx context.Context,
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
-	// GetURLMonitor takes the ID of an existing URL monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetURLMonitor returns the URL monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetURLMonitor(
 		ctx context.Context,
 		ID string,
 	) (*URLMonitor, error)
 
-	// UpdateURLMonitor updates an existing URL monitor with the specified details.
-	// It returns the updated monitor, or an error.
+	// UpdateURLMonitor updates the URL monitor with the given ID and returns it.
 	UpdateURLMonitor(
 		ctx context.Context,
 		ID string,
 		monitor URLMonitor,
 	) (*URLMonitor, error)
 
-	// DeleteURLMonitor deletes the monitor with the specified ID.
+	// DeleteURLMonitor deletes the URL monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteURLMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateTCPMonitor creates a new TCP monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateTCPMonitor creates a TCP monitor and returns it with its ID.
 	CreateTCPMonitor(
 		ctx context.Context,
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
-	// GetTCPMonitor takes the ID of an existing TCP monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetTCPMonitor returns the TCP monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetTCPMonitor(
 		ctx context.Context,
 		ID string,
 	) (*TCPMonitor, error)
 
-	// UpdateTCPMonitor updates an existing TCP monitor with the specified
-	// details. It returns the updated monitor, or an error.
+	// UpdateTCPMonitor updates the TCP monitor with the given ID and returns it.
 	UpdateTCPMonitor(
 		ctx context.Context,
 		ID string,
 		monitor TCPMonitor,
 	) (*TCPMonitor, error)
 
-	// DeleteTCPMonitor deletes the monitor with the specified ID.
+	// DeleteTCPMonitor deletes the TCP monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteTCPMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateDNSMonitor creates a new DNS monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateDNSMonitor creates a DNS monitor and returns it with its ID.
 	CreateDNSMonitor(
 		ctx context.Context,
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
-	// GetDNSMonitor takes the ID of an existing DNS monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetDNSMonitor returns the DNS monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetDNSMonitor(
 		ctx context.Context,
 		ID string,
 	) (*DNSMonitor, error)
 
-	// UpdateDNSMonitor updates an existing DNS monitor with the specified details.
-	// It returns the updated monitor, or an error.
+	// UpdateDNSMonitor updates the DNS monitor with the given ID and returns it.
+	// A nil AlertSettings, which is left out of the request, resets the alert
+	// settings to the API default.
 	UpdateDNSMonitor(
 		ctx context.Context,
 		ID string,
 		monitor DNSMonitor,
 	) (*DNSMonitor, error)
 
-	// DeleteDNSMonitor deletes the monitor with the specified ID.
+	// DeleteDNSMonitor deletes the DNS monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteDNSMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateICMPMonitor creates a new ICMP monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateICMPMonitor creates an ICMP monitor and returns it with its ID.
 	CreateICMPMonitor(
 		ctx context.Context,
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
-	// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetICMPMonitor returns the ICMP monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetICMPMonitor(
 		ctx context.Context,
 		ID string,
 	) (*ICMPMonitor, error)
 
-	// UpdateICMPMonitor updates an existing ICMP monitor with the specified details.
-	// It returns the updated monitor, or an error.
+	// UpdateICMPMonitor updates the ICMP monitor with the given ID and returns
+	// it.
 	UpdateICMPMonitor(
 		ctx context.Context,
 		ID string,
 		monitor ICMPMonitor,
 	) (*ICMPMonitor, error)
 
-	// DeleteICMPMonitor deletes the monitor with the specified ID.
+	// DeleteICMPMonitor deletes the ICMP monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteICMPMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateGRPCMonitor creates a new gRPC monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateGRPCMonitor creates a gRPC monitor and returns it with its ID.
 	CreateGRPCMonitor(
 		ctx context.Context,
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
-	// GetGRPCMonitor takes the ID of an existing gRPC monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetGRPCMonitor returns the gRPC monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetGRPCMonitor(
 		ctx context.Context,
 		ID string,
 	) (*GRPCMonitor, error)
 
-	// UpdateGRPCMonitor updates an existing gRPC monitor with the specified
-	// details. It returns the updated monitor, or an error.
+	// UpdateGRPCMonitor updates the gRPC monitor with the given ID and returns
+	// it.
 	UpdateGRPCMonitor(
 		ctx context.Context,
 		ID string,
 		monitor GRPCMonitor,
 	) (*GRPCMonitor, error)
 
-	// DeleteGRPCMonitor deletes the monitor with the specified ID.
+	// DeleteGRPCMonitor deletes the gRPC monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteGRPCMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateTracerouteMonitor creates a new traceroute monitor with the
-	// specified details. It returns the newly-created monitor, or an error.
+	// CreateTracerouteMonitor creates a traceroute monitor and returns it with
+	// its ID.
 	CreateTracerouteMonitor(
 		ctx context.Context,
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
-	// GetTracerouteMonitor takes the ID of an existing traceroute monitor, and
-	// returns the monitor parameters, or an error. It fails with an error
-	// matching ErrCheckTypeMismatch when the ID belongs to a check of another
-	// type.
+	// GetTracerouteMonitor returns the traceroute monitor with the given ID. It
+	// fails with an error matching [ErrCheckTypeMismatch] when the ID belongs to a
+	// check of another type.
 	GetTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 	) (*TracerouteMonitor, error)
 
-	// UpdateTracerouteMonitor updates an existing traceroute monitor with the
-	// specified details. It returns the updated monitor, or an error.
+	// UpdateTracerouteMonitor updates the traceroute monitor with the given ID
+	// and returns it.
 	UpdateTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 		monitor TracerouteMonitor,
 	) (*TracerouteMonitor, error)
 
-	// DeleteTracerouteMonitor deletes the monitor with the specified ID.
+	// DeleteTracerouteMonitor deletes the traceroute monitor with the given ID.
+	// It uses the generic check endpoint and does not verify the check type.
 	DeleteTracerouteMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateSSLMonitor creates a new SSL monitor with the specified details.
-	// It returns the newly-created monitor, or an error.
+	// CreateSSLMonitor creates an SSL monitor and returns it with its ID.
 	CreateSSLMonitor(
 		ctx context.Context,
 		monitor SSLMonitor,
 	) (*SSLMonitor, error)
 
-	// GetSSLMonitor takes the ID of an existing SSL monitor, and returns the
-	// monitor parameters, or an error. It fails with an error matching
-	// ErrCheckTypeMismatch when the ID belongs to a check of another type.
+	// GetSSLMonitor returns the SSL monitor with the given ID. It fails with an
+	// error matching [ErrCheckTypeMismatch] when the ID belongs to a check of
+	// another type.
 	GetSSLMonitor(
 		ctx context.Context,
 		ID string,
 	) (*SSLMonitor, error)
 
-	// UpdateSSLMonitor updates an existing SSL monitor with the specified
-	// details. It returns the updated monitor, or an error.
+	// UpdateSSLMonitor updates the SSL monitor with the given ID and returns it.
+	// A nil Request.SSLConfig.SecurityBaseline or an empty ClientCertificateMode,
+	// which are left out of the request, resets that field to the API default.
 	UpdateSSLMonitor(
 		ctx context.Context,
 		ID string,
 		monitor SSLMonitor,
 	) (*SSLMonitor, error)
 
-	// DeleteSSLMonitor deletes the monitor with the specified ID.
+	// DeleteSSLMonitor deletes the SSL monitor with the given ID. It uses the
+	// generic check endpoint and does not verify the check type.
 	DeleteSSLMonitor(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateGroup creates a new check group with the specified details.
-	// It returns the newly-created group, or an error.
+	// CreateGroup creates a check group and returns it with its ID.
 	CreateGroup(
 		ctx context.Context,
 		group Group,
 	) (*Group, error)
 
-	// GetGroup takes the ID of an existing check group, and returns the
-	// corresponding group, or an error.
+	// GetGroup returns the check group with the given ID.
 	GetGroup(
 		ctx context.Context,
 		ID int64,
 	) (*Group, error)
 
-	// UpdateGroup takes the ID of an existing check group, and updates the
-	// corresponding check group to match the supplied group. It returns the updated
-	// group, or an error.
+	// UpdateGroup updates the check group with the given ID and returns it.
 	UpdateGroup(
 		ctx context.Context,
 		ID int64,
 		group Group,
 	) (*Group, error)
 
-	// DeleteGroup deletes the check group with the specified ID. It returns a
+	// DeleteGroup deletes the check group with the given ID.
 	DeleteGroup(
 		ctx context.Context,
 		ID int64,
 	) error
 
-	// CreateGroupV2 creates a new check group with the specified details.
-	// It returns the newly-created group, or an error.
+	// CreateGroupV2 creates a check group through the v2 check group endpoint
+	// and returns it with its ID.
 	CreateGroupV2(
 		ctx context.Context,
 		group GroupV2,
 	) (*GroupV2, error)
 
-	// GetGroupV2 takes the ID of an existing check group, and returns the
-	// corresponding group, or an error.
+	// GetGroupV2 returns the check group with the given ID as a [GroupV2].
 	GetGroupV2(
 		ctx context.Context,
 		ID int64,
 	) (*GroupV2, error)
 
-	// UpdateGroupV2 takes the ID of an existing check group, and updates the
-	// corresponding check group to match the supplied group. It returns the updated
-	// group, or an error.
+	// UpdateGroupV2 updates the check group with the given ID through the v2
+	// check group endpoint and returns it.
 	UpdateGroupV2(
 		ctx context.Context,
 		ID int64,
 		group GroupV2,
 	) (*GroupV2, error)
 
-	// DeleteGroupV2 deletes the check group with the specified ID. It returns a
+	// DeleteGroupV2 deletes the check group with the given ID, like
+	// DeleteGroup.
 	DeleteGroupV2(
 		ctx context.Context,
 		ID int64,
 	) error
 
-	// GetCheckResult gets a specific Check result, or it returns an error.
+	// GetCheckResult returns the result with ID checkResultID of the check with
+	// ID checkID.
 	GetCheckResult(
 		ctx context.Context,
 		checkID,
 		checkResultID string,
 	) (*CheckResult, error)
 
-	// GetCheckResults gets the results of the given Check
+	// GetCheckResults returns one page of the final results of the check with ID
+	// checkID, narrowed by filters, which may be nil; [CheckResultsFilter] gives
+	// the defaults and limits. It uses the v1 check results endpoint, which the
+	// API has deprecated.
 	GetCheckResults(
 		ctx context.Context,
 		checkID string,
 		filters *CheckResultsFilter,
 	) ([]CheckResult, error)
 
-	// CreateSnippet creates a new snippet with the specified details. It returns
-	// the newly-created snippet, or an error.
+	// CreateSnippet creates a snippet and returns it with its ID.
 	CreateSnippet(
 		ctx context.Context,
 		snippet Snippet,
 	) (*Snippet, error)
 
-	// GetSnippet takes the ID of an existing snippet, and returns the
-	// corresponding snippet, or an error.
+	// GetSnippet returns the snippet with the given ID.
 	GetSnippet(
 		ctx context.Context,
 		ID int64,
 	) (*Snippet, error)
 
-	// UpdateSnippet takes the ID of an existing snippet, and updates the
-	// corresponding snippet to match the supplied snippet. It returns the updated
-	// snippet, or an error.
+	// UpdateSnippet replaces the name and script of the snippet with the given ID
+	// and returns it.
 	UpdateSnippet(
 		ctx context.Context,
 		ID int64,
 		snippet Snippet,
 	) (*Snippet, error)
 
-	// DeleteSnippet deletes the snippet with the specified ID. It returns a
+	// DeleteSnippet deletes the snippet with the given ID.
 	DeleteSnippet(
 		ctx context.Context,
 		ID int64,
 	) error
 
-	// CreateEnvironmentVariable creates a new environment variable with the
-	// specified details.  It returns the newly-created environment variable,
-	// or an error.
+	// CreateEnvironmentVariable creates an environment variable and returns it.
 	CreateEnvironmentVariable(
 		ctx context.Context,
 		envVar EnvironmentVariable,
 	) (*EnvironmentVariable, error)
 
-	// GetEnvironmentVariable takes the ID of an existing environment variable, and returns the
-	// corresponding environment variable, or an error.
+	// GetEnvironmentVariable returns the environment variable with the given
+	// key.
 	GetEnvironmentVariable(
 		ctx context.Context,
 		key string,
 	) (*EnvironmentVariable, error)
 
-	// UpdateEnvironmentVariable takes the ID of an existing environment variable, and updates the
-	// corresponding environment variable to match the supplied environment variable. It returns the updated
-	// environment variable, or an error.
+	// UpdateEnvironmentVariable updates the environment variable with the given
+	// key and returns it. Value must be set, because the API rejects an empty
+	// value and a Get of a secret variable returns none. The API rejects a
+	// change of the key and turning a secret variable into a non-secret one.
 	UpdateEnvironmentVariable(
 		ctx context.Context,
 		key string,
 		envVar EnvironmentVariable,
 	) (*EnvironmentVariable, error)
 
-	// DeleteEnvironmentVariable deletes the environment variable with the specified ID. It returns a
+	// DeleteEnvironmentVariable deletes the environment variable with the given
+	// key.
 	DeleteEnvironmentVariable(
 		ctx context.Context,
 		key string,
 	) error
 
-	// CreateAlertChannel creates a new alert channel with the specified details. It returns
-	// the newly-created alert channel, or an error.
+	// CreateAlertChannel creates an alert channel and returns it with its ID.
 	CreateAlertChannel(
 		ctx context.Context,
 		ac AlertChannel,
 	) (*AlertChannel, error)
 
-	// GetAlertChannel takes the ID of an existing alert channel, and returns the
-	// corresponding alert channel, or an error.
+	// GetAlertChannel returns the alert channel with the given ID.
 	GetAlertChannel(
 		ctx context.Context,
 		ID int64,
 	) (*AlertChannel, error)
 
-	// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
-	// corresponding alert channel to match the supplied alert channel. It returns the updated
-	// alert channel, or an error.
+	// UpdateAlertChannel updates the alert channel with the given ID and returns
+	// it. A nil SSLExpiry, SSLExpiryThreshold or AutoSubscribe resets it to the
+	// API default, while a nil SendRecovery, SendFailure or SendDegraded keeps
+	// its current value.
 	UpdateAlertChannel(
 		ctx context.Context,
 		ID int64,
 		ac AlertChannel,
 	) (*AlertChannel, error)
 
-	// DeleteAlertChannel deletes the alert channel with the specified ID.
+	// DeleteAlertChannel deletes the alert channel with the given ID.
 	DeleteAlertChannel(
 		ctx context.Context,
 		ID int64,
 	) error
 
-	// CreateDashboard creates a new dashboard with the specified details.
+	// CreateDashboard creates a dashboard and returns it with its IDs.
 	CreateDashboard(
 		ctx context.Context,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
-	// GetDashboard takes the ID of an existing dashboard and returns it
+	// GetDashboard returns the dashboard whose [Dashboard.DashboardID] is ID.
 	GetDashboard(
 		ctx context.Context,
 		ID string,
 	) (*Dashboard, error)
 
-	// UpdateDashboard takes the ID of an existing dashboard, and updates the
-	// corresponding dashboard to match the supplied dashboard.
+	// UpdateDashboard updates the dashboard whose [Dashboard.DashboardID] is ID
+	// and returns it. A nil ShowHeader, Paginate, ShowGroupNames, ShowP95 or
+	// ShowP99, a false IsPrivate, SortByStatus, HideTags or
+	// UseTagsAndOperator, an empty Width or Tags, or a zero RefreshRate,
+	// ChecksPerPage or PaginationRate resets that field to the API default,
+	// while an empty Header, Description, Logo, Link, Favicon or CustomDomain
+	// removes it.
 	UpdateDashboard(
 		ctx context.Context,
 		ID string,
 		dashboard Dashboard,
 	) (*Dashboard, error)
 
-	// DeleteDashboard deletes the dashboard with the specified ID.
+	// DeleteDashboard deletes the dashboard whose [Dashboard.DashboardID] is ID.
 	DeleteDashboard(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateMaintenanceWindow creates a new maintenance window with the specified details.
+	// CreateMaintenanceWindow creates a maintenance window and returns it with
+	// its ID.
 	CreateMaintenanceWindow(
 		ctx context.Context,
 		mw MaintenanceWindow,
 	) (*MaintenanceWindow, error)
 
-	// GetMaintenanceWindow takes the ID of an existing maintenance window and returns it
+	// GetMaintenanceWindow returns the maintenance window with the given ID.
 	GetMaintenanceWindow(
 		ctx context.Context,
 		ID int64,
 	) (*MaintenanceWindow, error)
 
-	// UpdateMaintenanceWindow takes the ID of an existing maintenance window, and updates the
-	// corresponding maintenance window to match the supplied maintenance window.
+	// UpdateMaintenanceWindow updates the maintenance window with the given ID
+	// and returns it.
 	UpdateMaintenanceWindow(
 		ctx context.Context,
 		ID int64,
 		mw MaintenanceWindow,
 	) (*MaintenanceWindow, error)
 
-	// DeleteMaintenanceWindow deletes the maintenance window with the specified ID.
+	// DeleteMaintenanceWindow deletes the maintenance window with the given ID.
 	DeleteMaintenanceWindow(
 		ctx context.Context,
 		ID int64,
 	) error
 
-	// CreatePrivateLocation creates a new private location with the specified details.
+	// CreatePrivateLocation creates a private location and returns it with its
+	// ID.
 	CreatePrivateLocation(
 		ctx context.Context,
 		pl PrivateLocation,
 	) (*PrivateLocation, error)
 
-	// GetPrivateLocation takes the ID of an existing private location and returns it
+	// GetPrivateLocation returns the private location with the given ID.
 	GetPrivateLocation(
 		ctx context.Context,
 		ID string,
 	) (*PrivateLocation, error)
 
-	// UpdatePrivateLocation takes the ID of an existing private location and updates it
-	// to match the new one.
+	// UpdatePrivateLocation updates the private location with the given ID and
+	// returns it. The slug name cannot be changed.
 	UpdatePrivateLocation(
 		ctx context.Context,
 		ID string,
 		pl PrivateLocation,
 	) (*PrivateLocation, error)
 
-	// DeletePrivateLocation deletes the private location with the specified ID.
+	// DeletePrivateLocation deletes the private location with the given ID.
 	DeletePrivateLocation(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateClientCertificate creates a new client certificate and returns
-	// the created resource.
+	// CreateClientCertificate creates a client certificate and returns it with
+	// its ID.
 	CreateClientCertificate(
 		ctx context.Context,
 		cs ClientCertificate,
 	) (*ClientCertificate, error)
 
-	// GetClientCertificate retrieves a client certificate.
+	// GetClientCertificate returns the client certificate with the given ID.
 	GetClientCertificate(
 		ctx context.Context,
 		ID string,
 	) (*ClientCertificate, error)
 
-	// DeleteClientCertificate deletes a client certificate.
+	// DeleteClientCertificate deletes the client certificate with the given ID.
 	DeleteClientCertificate(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateStatusPage creates a new status page and returns the created
-	// resource.
+	// CreateStatusPage creates a status page and returns it with its ID.
 	CreateStatusPage(
 		ctx context.Context,
 		page StatusPage,
 	) (*StatusPage, error)
 
-	// GetStatusPage retrieves a status page.
+	// GetStatusPage returns the status page with the given ID.
 	GetStatusPage(
 		ctx context.Context,
 		ID string,
 	) (*StatusPage, error)
 
-	// UpdateStatusPage updates a status page.
+	// UpdateStatusPage updates the status page with the given ID and returns
+	// it. An empty DefaultTheme, which is left out of the request, resets the
+	// theme to [StatusPageThemeAuto].
 	UpdateStatusPage(
 		ctx context.Context,
 		ID string,
 		page StatusPage,
 	) (*StatusPage, error)
 
-	// DeleteStatusPage deletes a status page.
+	// DeleteStatusPage deletes the status page with the given ID.
 	DeleteStatusPage(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateStatusPageService creates a new status page service and returns
-	// the created resource.
+	// CreateStatusPageService creates a status page service and returns it with
+	// its ID.
 	CreateStatusPageService(
 		ctx context.Context,
 		service StatusPageService,
 	) (*StatusPageService, error)
 
-	// GetStatusPageService retrieves a status page service.
+	// GetStatusPageService returns the status page service with the given ID.
 	GetStatusPageService(
 		ctx context.Context,
 		ID string,
 	) (*StatusPageService, error)
 
-	// UpdateStatusPageService updates a status page service.
+	// UpdateStatusPageService renames the status page service with the given ID
+	// and returns it.
 	UpdateStatusPageService(
 		ctx context.Context,
 		ID string,
 		service StatusPageService,
 	) (*StatusPageService, error)
 
-	// DeleteStatusPageService deletes a status page service.
+	// DeleteStatusPageService deletes the status page service with the given
+	// ID.
 	DeleteStatusPageService(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateStatusPageV3 creates a new v3 status page and returns the
-	// created resource.
+	// CreateStatusPageV3 creates a v3 status page and returns it with its ID.
 	CreateStatusPageV3(
 		ctx context.Context,
 		page StatusPageV3,
 	) (*StatusPageV3, error)
 
-	// GetStatusPageV3 retrieves a v3 status page.
+	// GetStatusPageV3 returns the v3 status page with the given ID.
 	GetStatusPageV3(
 		ctx context.Context,
 		ID string,
 	) (*StatusPageV3, error)
 
-	// UpdateStatusPageV3 updates a v3 status page.
+	// UpdateStatusPageV3 updates the v3 status page with the given ID and
+	// returns it. An empty DefaultTheme, which is left out of the request,
+	// resets the theme to [StatusPageThemeAuto].
 	UpdateStatusPageV3(
 		ctx context.Context,
 		ID string,
 		page StatusPageV3,
 	) (*StatusPageV3, error)
 
-	// DeleteStatusPageV3 deletes a v3 status page.
+	// DeleteStatusPageV3 deletes the v3 status page with the given ID.
 	DeleteStatusPageV3(
 		ctx context.Context,
 		ID string,
 	) error
 
-	// CreateStatusPageComponentV3 creates a new component on a v3 status
-	// page and returns the created resource.
+	// CreateStatusPageComponentV3 adds a component to the v3 status page with ID
+	// statusPageID and returns it with its ID.
 	CreateStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
 		component StatusPageComponentV3,
 	) (*StatusPageComponentV3, error)
 
-	// GetStatusPageComponentV3 retrieves a component of a v3 status page.
+	// GetStatusPageComponentV3 returns the component with the given ID of the v3
+	// status page with ID statusPageID.
 	GetStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
 		ID string,
 	) (*StatusPageComponentV3, error)
 
-	// UpdateStatusPageComponentV3 updates a component of a v3 status page.
+	// UpdateStatusPageComponentV3 updates the component with the given ID of
+	// the v3 status page with ID statusPageID and returns it. An empty Type
+	// resets the type to [StatusPageComponentV3TypeService], a nil
+	// Configuration resets the configuration to the type's default, and an
+	// empty Description or ParentID removes it.
 	UpdateStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
@@ -785,32 +804,34 @@ type Client interface {
 		component StatusPageComponentV3,
 	) (*StatusPageComponentV3, error)
 
-	// DeleteStatusPageComponentV3 deletes a component of a v3 status page.
-	// Child components are detached from a deleted GROUP, not deleted.
+	// DeleteStatusPageComponentV3 deletes the component with the given ID of
+	// the v3 status page with ID statusPageID. Child components are detached
+	// from a deleted [StatusPageComponentV3TypeGroup], not deleted.
 	DeleteStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
 		ID string,
 	) error
 
-	// CreateStatusPageAutomationRuleV3 creates a new automation rule on a
-	// v3 status page and returns the created resource.
+	// CreateStatusPageAutomationRuleV3 adds an automation rule to the v3 status
+	// page with ID statusPageID and returns it with its ID.
 	CreateStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
 		rule StatusPageAutomationRuleV3,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// GetStatusPageAutomationRuleV3 retrieves an automation rule of a v3
-	// status page.
+	// GetStatusPageAutomationRuleV3 returns the automation rule with the given
+	// ID of the v3 status page with ID statusPageID.
 	GetStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
 		ID string,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// UpdateStatusPageAutomationRuleV3 updates an automation rule of a v3
-	// status page.
+	// UpdateStatusPageAutomationRuleV3 updates the automation rule with the
+	// given ID of the v3 status page with ID statusPageID and returns it. An
+	// empty Components removes the rule's components.
 	UpdateStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
@@ -818,20 +839,24 @@ type Client interface {
 		rule StatusPageAutomationRuleV3,
 	) (*StatusPageAutomationRuleV3, error)
 
-	// DeleteStatusPageAutomationRuleV3 deletes an automation rule of a v3
-	// status page.
+	// DeleteStatusPageAutomationRuleV3 deletes the automation rule with the
+	// given ID of the v3 status page with ID statusPageID.
 	DeleteStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,
 		ID string,
 	) error
 
-	// GetRuntime returns the runtime with the specified ID, or an error.
+	// GetRuntime returns the runtime with the given ID, such as "2025.04". The
+	// endpoint is public, so the request is sent without credentials.
 	GetRuntime(
 		ctx context.Context,
 		ID string,
 	) (*Runtime, error)
 
+	// GetStaticIPs returns the IP ranges that checks run from, per region: IPv6
+	// prefixes, and IPv4 addresses as /32 prefixes. The endpoints are public, so
+	// the requests are sent without credentials.
 	GetStaticIPs(ctx context.Context) ([]StaticIP, error)
 }
 
@@ -861,8 +886,7 @@ type client struct {
 // URL WithBaseURL rejects, or auth WithAuth or WithAuthFromEnv rejects, an
 // empty or unset API key (ErrMissingAPIKey) or account ID
 // (ErrMissingAccountID), or an account ID that is not a UUID
-// (ErrInvalidAccountID). The client is not modified after construction and
-// is safe for concurrent use.
+// (ErrInvalidAccountID).
 func NewClient(opts ...ClientOption) (Client, error) {
 	c := &client{
 		url:        DefaultBaseURL,

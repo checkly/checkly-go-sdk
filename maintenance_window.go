@@ -19,23 +19,28 @@ const (
 	MaintenanceWindowRepeatUnitMonth MaintenanceWindowRepeatUnit = "MONTH"
 )
 
-// MaintenanceWindow defines a type for a maintenance window.
-//
-// Create and update requests always send every field, so an update replaces
-// the whole window: the API keeps a field's stored value only when the field
-// is omitted, and this type omits only a nil
-// StatusPageVisibility.ComponentConfigs. A zero value means the API's
-// default: no repeat, UTC, no description, empty tag lists, nothing paused or
-// silenced, and a StatusPageVisibility that is hidden and unlinked.
+// MaintenanceWindow is a scheduled, optionally recurring period during which
+// checks are paused or their alerts silenced. It is the input and result of
+// CreateMaintenanceWindow and UpdateMaintenanceWindow. A zero value means the
+// API's default: no repeat, UTC, no description, empty tag lists, nothing
+// paused or silenced, and a StatusPageVisibility that is hidden and unlinked.
 type MaintenanceWindow struct {
-	ID             int64                       `json:"id"`
-	Name           string                      `json:"name"`
-	StartsAt       string                      `json:"startsAt"`
-	EndsAt         string                      `json:"endsAt"`
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	StartsAt string `json:"startsAt"`
+	EndsAt   string `json:"endsAt"`
+
+	// RepeatInterval, between 1 and 365, and RepeatUnit repeat the window
+	// from its first occurrence. A zero RepeatInterval means no repeat.
 	RepeatInterval int                         `json:"repeatInterval"`
 	RepeatUnit     MaintenanceWindowRepeatUnit `json:"repeatUnit"`
-	RepeatEndsAt   string                      `json:"repeatEndsAt"`
-	Tags           []string                    `json:"tags"`
+
+	// RepeatEndsAt is the last calendar date, in Timezone, on which an
+	// occurrence may start, preferably as YYYY-MM-DD.
+	RepeatEndsAt string `json:"repeatEndsAt"`
+
+	// Tags selects, by tag, the checks and groups the window applies to.
+	Tags []string `json:"tags"`
 
 	// Timezone is the named IANA time zone used for recurring maintenance
 	// scheduling, e.g. "America/New_York". UTC offset identifiers such as
@@ -129,33 +134,33 @@ type MaintenanceWindowStatusPageVisibility struct {
 	ServiceIDs    []string `json:"serviceIds"`
 
 	// ComponentConfigs lists the affected components of each linked status
-	// page with components, at most one entry per page. Unlike the other
-	// settings, nil is left out of the request, and an update then keeps
-	// the stored component configs; a non-nil slice replaces them all, so an
-	// empty one removes them. The API rejects an update that leaves them
-	// out while StatusPageIDs is non-empty and neither ServiceIDs nor
-	// AffectAllServices is set, so send back the ones a read returned.
+	// page with components, at most one entry per page. ComponentConfigs is
+	// left out of the request when nil. The API rejects an update without
+	// them that links status pages without ServiceIDs or AffectAllServices,
+	// so send back the ones a read returned.
 	ComponentConfigs []MaintenanceWindowComponentConfig `json:"componentConfigs"`
 }
 
 // MaintenanceWindowComponentConfig lists the components of one status page
-// that a maintenance window affects.
+// that a maintenance window affects, in
+// MaintenanceWindowStatusPageVisibility.ComponentConfigs.
 type MaintenanceWindowComponentConfig struct {
 	// StatusPageID is the ID of a status page listed in StatusPageIDs.
 	StatusPageID string `json:"statusPageId"`
 	// AffectAllComponents affects every component of the page, including
-	// components added later. It requires Components to be empty.
+	// components added later, and requires Components to be empty.
+	// Components is left out of the request when empty.
 	AffectAllComponents bool                               `json:"affectAllComponents"`
 	Components          []MaintenanceWindowComponentImpact `json:"components,omitempty"`
 }
 
 // MaintenanceWindowComponentImpact is a status page component affected by a
-// maintenance window, and the status it shows while the window is in
-// progress.
+// maintenance window, in MaintenanceWindowComponentConfig.Components, with
+// the status it shows while the window is in progress.
 type MaintenanceWindowComponentImpact struct {
 	ComponentID string `json:"componentId"`
-	// Status is the status the component shows. Empty means
-	// UNDER_MAINTENANCE.
+	// Status is left out of the request when empty, so the API applies
+	// [StatusPageComponentStatusV3UnderMaintenance].
 	Status StatusPageComponentStatusV3 `json:"status,omitempty"`
 }
 
@@ -193,7 +198,6 @@ func (v MaintenanceWindowStatusPageVisibility) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// CreateMaintenanceWindow creates a new window with the specified details.
 func (c *client) CreateMaintenanceWindow(
 	ctx context.Context,
 	mw MaintenanceWindow,
@@ -206,8 +210,6 @@ func (c *client) CreateMaintenanceWindow(
 	return &result, nil
 }
 
-// GetMaintenanceWindow takes the ID of an existing window, and returns the
-// corresponding window.
 func (c *client) GetMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
@@ -220,8 +222,6 @@ func (c *client) GetMaintenanceWindow(
 	return &result, nil
 }
 
-// UpdateMaintenanceWindow takes the ID of an existing window, and updates the
-// corresponding window to match the supplied one.
 func (c *client) UpdateMaintenanceWindow(
 	ctx context.Context,
 	ID int64,
@@ -235,7 +235,6 @@ func (c *client) UpdateMaintenanceWindow(
 	return &result, nil
 }
 
-// DeleteMaintenanceWindow deletes the window with the specified ID.
 func (c *client) DeleteMaintenanceWindow(
 	ctx context.Context,
 	ID int64,

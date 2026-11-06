@@ -30,40 +30,51 @@ const (
 	AlertChannelTypeCall      AlertChannelType = "CALL"
 )
 
-// AlertChannelSubscription represents a subscription to an alert channel.
+// AlertChannelSubscription subscribes a check or group to the alert channel
+// ChannelID, in the AlertChannelSubscriptions field of checks, monitors and
+// groups.
 type AlertChannelSubscription struct {
 	ChannelID int64 `json:"alertChannelId"`
 	Activated bool  `json:"activated"`
 }
 
-// AlertChannelEmail defines a type for an email alert channel
+// AlertChannelEmail is the config of an [AlertChannelTypeEmail] alert
+// channel.
 type AlertChannelEmail struct {
 	Address string `json:"address"`
 }
 
-// AlertChannelSlack defines a type for a slack alert channel.
+// AlertChannelSlack is the config of an [AlertChannelTypeSlack] alert
+// channel, which posts to a Slack incoming webhook.
 //
 // Deprecated: Use [AlertChannelSlackApp] instead. The legacy Slack webhook
 // integration is being phased out in favor of the Checkly Slack App.
 type AlertChannelSlack struct {
+	// WebhookURL is a Slack incoming webhook URL, starting with
+	// "https://hooks.slack.com/services/", or a reference to an environment
+	// variable such as "{{SLACK_WEBHOOK_URL}}".
 	WebhookURL string `json:"url"`
 	Channel    string `json:"channel"`
 }
 
-// AlertChannelSlackApp defines a type for a Slack App alert channel. It targets
-// one or more Slack channels via the Checkly Slack App. SlackChannels must
-// contain at least one entry.
+// AlertChannelSlackApp is the config of an [AlertChannelTypeSlackApp] alert
+// channel, which alerts through the Checkly Slack App.
 type AlertChannelSlackApp struct {
+	// SlackChannels lists at least one target: a channel such as
+	// "#operations", or a user such as "@tim" for a direct message.
 	SlackChannels []string `json:"slackChannels"`
 }
 
-// AlertChannelSMS defines a type for a sms alert channel
+// AlertChannelSMS is the config of an [AlertChannelTypeSMS] alert channel.
+// The API rejects a Number in a country it does not support.
 type AlertChannelSMS struct {
 	Name   string `json:"name"`
 	Number string `json:"number"`
 }
 
-// AlertChannelCall defines a type for a phone call alert channel
+// AlertChannelCall is the config of an [AlertChannelTypeCall] alert channel,
+// which alerts by phone call. The API rejects a Number in a country it does
+// not support.
 type AlertChannelCall struct {
 	Name   string `json:"name"`
 	Number string `json:"number"`
@@ -92,7 +103,8 @@ const (
 	OpsgeniePriorityP5 OpsgeniePriority = "P5"
 )
 
-// AlertChannelOpsgenie defines a type for an opsgenie alert channel
+// AlertChannelOpsgenie is the config of an [AlertChannelTypeOpsgenie] alert
+// channel. Every field is required.
 type AlertChannelOpsgenie struct {
 	Name     string           `json:"name"`
 	APIKey   string           `json:"apiKey"`
@@ -100,53 +112,83 @@ type AlertChannelOpsgenie struct {
 	Priority OpsgeniePriority `json:"priority"`
 }
 
-// AlertChannelPagerduty defines a type for a PagerDuty alert channel
+// AlertChannelPagerduty is the config of an [AlertChannelTypePagerduty]
+// alert channel. Only ServiceKey is required.
 type AlertChannelPagerduty struct {
-	Account     string `json:"account,omitempty"`
-	ServiceKey  string `json:"serviceKey"`
+	// Account is left out of the request when empty.
+	Account    string `json:"account,omitempty"`
+	ServiceKey string `json:"serviceKey"`
+	// ServiceName is left out of the request when empty.
 	ServiceName string `json:"serviceName,omitempty"`
 }
 
-// AlertChannelWebhook defines a type for a webhook alert channel
+// AlertChannelWebhook is the config of an [AlertChannelTypeWebhook] alert
+// channel, which sends an HTTP request for each alert. Name and URL are
+// required.
 type AlertChannelWebhook struct {
-	Name        string `json:"name"`
-	URL         string `json:"url"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
+
+	// WebhookType is the kind of webhook, such as "WEBHOOK_TELEGRAM".
+	// WebhookType is left out of the request when empty.
 	WebhookType string `json:"webhookType,omitempty"`
+
 	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
-	// constants such as http.MethodPost name them. Method is left out of the
-	// request when empty, and the API then uses POST.
-	Method          string     `json:"method,omitempty"`
-	Template        string     `json:"template,omitempty"`
+	// constants such as http.MethodPost name them. Empty means POST. Method
+	// is left out of the request when empty.
+	Method string `json:"method,omitempty"`
+
+	// Template is the request body, with placeholders such as
+	// "{{ALERT_TITLE}}" and "{{RESULT_LINK}}". Template is left out of the
+	// request when empty.
+	Template string `json:"template,omitempty"`
+	// WebhookSecret, Headers and QueryParameters are left out of the request
+	// when empty.
 	WebhookSecret   string     `json:"webhookSecret,omitempty"`
 	Headers         []KeyValue `json:"headers,omitempty"`
 	QueryParameters []KeyValue `json:"queryParameters,omitempty"`
 }
 
-// AlertChannel represents an alert channel. It is the input of
-// CreateAlertChannel and UpdateAlertChannel, which send the config field that
-// matches Type, and their result.
+// AlertChannel is a destination for alerts, such as an email address or a
+// Slack channel. It is the input of CreateAlertChannel and
+// UpdateAlertChannel, which send the config field that matches Type, and
+// their result.
 type AlertChannel struct {
-	ID                 int64                  `json:"id,omitempty"`
-	Type               AlertChannelType       `json:"type"`
-	Email              *AlertChannelEmail     `json:"-"`
-	Slack              *AlertChannelSlack     `json:"-"`
-	SlackApp           *AlertChannelSlackApp  `json:"-"`
-	SMS                *AlertChannelSMS       `json:"-"`
-	CALL               *AlertChannelCall      `json:"-"`
-	Opsgenie           *AlertChannelOpsgenie  `json:"-"`
-	Webhook            *AlertChannelWebhook   `json:"-"`
-	Pagerduty          *AlertChannelPagerduty `json:"-"`
-	SendRecovery       *bool                  `json:"sendRecovery"`
-	SendFailure        *bool                  `json:"sendFailure"`
-	SendDegraded       *bool                  `json:"sendDegraded"`
-	SSLExpiry          *bool                  `json:"sslExpiry"`
-	SSLExpiryThreshold *int                   `json:"sslExpiryThreshold"`
-	CreatedAt          string                 `json:"created_at"`
-	UpdatedAt          string                 `json:"updated_at"`
+	ID   int64            `json:"id,omitempty"`
+	Type AlertChannelType `json:"type"`
 
-	// AutoSubscribe subscribes checks created later to the channel. Nil
-	// leaves the key out, and the API then applies its default, false, on
-	// update too.
+	// Email, Slack, SlackApp, SMS, CALL, Opsgenie, Webhook and Pagerduty
+	// hold the config of the channel. Only the one that matches Type is
+	// sent, and a read sets only that one.
+	Email     *AlertChannelEmail     `json:"-"`
+	Slack     *AlertChannelSlack     `json:"-"`
+	SlackApp  *AlertChannelSlackApp  `json:"-"`
+	SMS       *AlertChannelSMS       `json:"-"`
+	CALL      *AlertChannelCall      `json:"-"`
+	Opsgenie  *AlertChannelOpsgenie  `json:"-"`
+	Webhook   *AlertChannelWebhook   `json:"-"`
+	Pagerduty *AlertChannelPagerduty `json:"-"`
+
+	// SendRecovery, SendFailure and SendDegraded select which alerts the
+	// channel sends: on recovery, on failure, and on degraded results.
+	// SendRecovery, SendFailure and SendDegraded are left out of the request
+	// when nil.
+	SendRecovery *bool `json:"sendRecovery"`
+	SendFailure  *bool `json:"sendFailure"`
+	SendDegraded *bool `json:"sendDegraded"`
+
+	// SSLExpiry enables alerts for expiring SSL certificates, and
+	// SSLExpiryThreshold, between 1 and 30, sets when they start. SSLExpiry
+	// and SSLExpiryThreshold are left out of the request when nil, so the
+	// API applies its defaults: false and 30.
+	SSLExpiry          *bool  `json:"sslExpiry"`
+	SSLExpiryThreshold *int   `json:"sslExpiryThreshold"`
+	CreatedAt          string `json:"created_at"`
+	UpdatedAt          string `json:"updated_at"`
+
+	// AutoSubscribe subscribes checks created later to the channel.
+	// AutoSubscribe is left out of the request when nil, so the API applies
+	// its default, false.
 	AutoSubscribe *bool `json:"autoSubscribe"`
 }
 
@@ -176,8 +218,6 @@ func (a *AlertChannel) configField() any {
 	return nil
 }
 
-// CreateAlertChannel creates a new alert channel with the specified details. It returns
-// the newly-created alert channel, or an error.
 func (c *client) CreateAlertChannel(
 	ctx context.Context,
 	ac AlertChannel,
@@ -189,8 +229,6 @@ func (c *client) CreateAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// GetAlertChannel takes the ID of an existing alert channel, and returns the
-// corresponding alert channel, or an error.
 func (c *client) GetAlertChannel(
 	ctx context.Context,
 	ID int64,
@@ -202,9 +240,6 @@ func (c *client) GetAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// UpdateAlertChannel takes the ID of an existing alert channel, and updates the
-// corresponding alert channel to match the supplied alert channel. It returns the updated
-// alert channel, or an error.
 func (c *client) UpdateAlertChannel(
 	ctx context.Context,
 	ID int64,
@@ -217,7 +252,6 @@ func (c *client) UpdateAlertChannel(
 	return alertChannelFromJSON(res)
 }
 
-// DeleteAlertChannel deletes the alert channel with the specified ID. It returns a
 func (c *client) DeleteAlertChannel(
 	ctx context.Context,
 	ID int64,

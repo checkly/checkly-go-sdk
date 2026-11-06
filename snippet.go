@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-// Snippet defines Snippet type
+// Snippet is a reusable piece of Node.js code: a setup or teardown script
+// that checks and groups refer to by ID (SetupSnippetID, TearDownSnippetID),
+// or a partial for browser checks. It is the input and result of
+// CreateSnippet and UpdateSnippet, which both require Name and Script.
 type Snippet struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
@@ -16,8 +19,6 @@ type Snippet struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// CreateSnippet creates a new snippet with the specified details. It returns
-// the newly-created snippet, or an error.
 func (c *client) CreateSnippet(
 	ctx context.Context,
 	snippet Snippet,
@@ -30,8 +31,6 @@ func (c *client) CreateSnippet(
 	return &result, nil
 }
 
-// GetSnippet takes the ID of an existing snippet, and returns the
-// corresponding snippet, or an error.
 func (c *client) GetSnippet(
 	ctx context.Context,
 	ID int64,
@@ -44,9 +43,6 @@ func (c *client) GetSnippet(
 	return &result, nil
 }
 
-// UpdateSnippet takes the ID of an existing snippet, and updates the
-// corresponding snippet to match the supplied snippet. It returns the updated
-// snippet, or an error.
 func (c *client) UpdateSnippet(
 	ctx context.Context,
 	ID int64,
@@ -60,7 +56,6 @@ func (c *client) UpdateSnippet(
 	return &result, nil
 }
 
-// DeleteSnippet deletes the snippet with the specified ID. It returns a
 func (c *client) DeleteSnippet(
 	ctx context.Context,
 	ID int64,

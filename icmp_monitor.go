@@ -7,40 +7,82 @@ import (
 	"time"
 )
 
-// ICMPMonitor represents an ICMP monitor.
+// ICMPMonitor pings a host and checks the packet loss and its assertions. It
+// is the input of [Client.CreateICMPMonitor] and [Client.UpdateICMPMonitor],
+// and is returned by [Client.GetICMPMonitor].
 type ICMPMonitor struct {
-	ID                          string                     `json:"id,omitempty"`
-	Name                        string                     `json:"name"`
-	Description                 *string                    `json:"description"`
-	Frequency                   int                        `json:"frequency"`
-	FrequencyOffset             int                        `json:"frequencyOffset,omitempty"`
-	Activated                   bool                       `json:"activated"`
-	Muted                       bool                       `json:"muted"`
-	RunParallel                 bool                       `json:"runParallel"`
-	Locations                   []string                   `json:"locations"`
-	DegradedPacketLossThreshold int                        `json:"degradedPacketLossThreshold,omitempty"`
-	MaxPacketLossThreshold      int                        `json:"maxPacketLossThreshold,omitempty"`
-	Tags                        []string                   `json:"tags,omitempty"`
-	AlertSettings               *AlertSettings             `json:"alertSettings,omitempty"`
-	UseGlobalAlertSettings      bool                       `json:"useGlobalAlertSettings"`
-	Request                     ICMPRequest                `json:"request"`
-	GroupID                     int64                      `json:"groupId,omitempty"`
-	GroupOrder                  int                        `json:"groupOrder,omitempty"`
-	AlertChannelSubscriptions   []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
-	// PrivateLocations are the slugs of the private locations the monitor runs
-	// from. The Checkly agent at those locations must be version 7.0.0 or later and
-	// have the NET_RAW capability.
-	PrivateLocations *[]string        `json:"privateLocations"`
-	RetryStrategy    *RetryStrategy   `json:"retryStrategy"`
-	TriggerIncident  *IncidentTrigger `json:"triggerIncident"`
-	CreatedAt        time.Time        `json:"created_at,omitempty"`
-	UpdatedAt        time.Time        `json:"updated_at,omitempty"`
+	// ID is the monitor's UUID, assigned by the API.
+	ID          string  `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	// Frequency is the number of minutes between runs: 0, 1, 2, 5, 10, 15,
+	// 30, 60, 120, 180, 360, 720 or 1440.
+	Frequency int `json:"frequency"`
+	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
+	// that many seconds. For a higher Frequency the API assigns the offset,
+	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
+	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
+	// left out of the request when zero.
+	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
+	Activated       bool `json:"activated"`
+	// Muted stops notifications when the monitor fails or recovers.
+	Muted bool `json:"muted"`
+	// RunParallel runs the monitor in all its locations in parallel.
+	RunParallel bool `json:"runParallel"`
+	// Locations are the public locations to run from, as region codes such
+	// as "us-east-1". Nil is sent as an empty list.
+	Locations []string `json:"locations"`
+	// DegradedPacketLossThreshold and MaxPacketLossThreshold are the
+	// percentages of lost packets at which a run counts as degraded and as
+	// failed: greater than 0 and at most 100, with MaxPacketLossThreshold at
+	// least DegradedPacketLossThreshold. The SDK always sends both, so both
+	// must be set.
+	DegradedPacketLossThreshold int      `json:"degradedPacketLossThreshold,omitempty"`
+	MaxPacketLossThreshold      int      `json:"maxPacketLossThreshold,omitempty"`
+	Tags                        []string `json:"tags,omitempty"`
+	// AlertSettings is left out of the request when nil.
+	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
+	// UseGlobalAlertSettings applies the account's alert settings instead
+	// of AlertSettings.
+	UseGlobalAlertSettings bool        `json:"useGlobalAlertSettings"`
+	Request                ICMPRequest `json:"request"`
+	// GroupID is the ID of the check group the monitor belongs to; 0 means
+	// none.
+	GroupID int64 `json:"groupId,omitempty"`
+	// GroupOrder is the monitor's position in its group, which sets the run
+	// order when the group is triggered from the API or CI/CD.
+	GroupOrder int `json:"groupOrder,omitempty"`
+	// AlertChannelSubscriptions are the alert channels that receive the
+	// monitor's alerts. The SDK disables automatic assignment, so an
+	// empty list leaves the monitor without any.
+	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
+	// PrivateLocations are the slug names of the account's private
+	// locations to run from. Nil is sent as an empty list. The Checkly agent
+	// at those locations must be version 7.0.0 or later and have the NET_RAW
+	// capability.
+	PrivateLocations *[]string `json:"privateLocations"`
+	// RetryStrategy sets how failed runs are retried; nil disables retries.
+	// In a group whose RetryStrategy is not [RetryStrategyTypeFallback], the
+	// group's strategy applies instead.
+	RetryStrategy *RetryStrategy `json:"retryStrategy"`
+	// TriggerIncident makes the monitor open and resolve an incident on a
+	// status page service, based on its alert configuration. Nil turns it
+	// off.
+	TriggerIncident *IncidentTrigger `json:"triggerIncident"`
+	CreatedAt       time.Time        `json:"created_at,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at,omitempty"`
 }
 
-// ICMPRequest represents the parameters for the request made by an ICMP monitor.
+// ICMPRequest is the ping of an [ICMPMonitor].
 type ICMPRequest struct {
-	Hostname   string      `json:"hostname"`
-	IPFamily   IPFamily    `json:"ipFamily,omitempty"`
+	Hostname string `json:"hostname"`
+	// IPFamily is left out of the request when empty. An update with an
+	// empty IPFamily keeps the stored family, as the API rejects an empty
+	// value.
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+	// PingCount is 1 to 50; the API defaults to 10. PingCount is left out of
+	// the request when zero. An update with a zero PingCount keeps the stored
+	// count, as the API rejects a zero value.
 	PingCount  int         `json:"pingCount,omitempty"`
 	Assertions []Assertion `json:"assertions"`
 }
@@ -72,7 +114,8 @@ func createICMPMonitorPayload(monitor ICMPMonitor) icmpMonitorPayload {
 		Type: CheckTypeICMP,
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
-		// Unfortunately, this will default to true if not set.
+		// The monitor type has no ShouldFail field, so it is always sent as
+		// false, which is also the API default.
 		ShouldFail: false,
 	}
 
@@ -126,9 +169,6 @@ func (c *client) CreateICMPMonitor(
 	return &result, nil
 }
 
-// GetICMPMonitor takes the ID of an existing ICMP monitor, and returns the
-// monitor parameters, or an error. It fails with an error matching
-// ErrCheckTypeMismatch when the ID belongs to a check of another type.
 func (c *client) GetICMPMonitor(
 	ctx context.Context,
 	ID string,
