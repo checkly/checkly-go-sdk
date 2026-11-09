@@ -75,15 +75,16 @@ func mustNewClient(t *testing.T, opts ...ClientOption) *client {
 	return c.(*client)
 }
 
-// newTestClient returns a client whose waits are recorded instead of slept.
-func newTestClient(t *testing.T, url string) (*client, *[]time.Duration) {
+// newTestClient returns a client whose waits are recorded instead of slept,
+// with opts applied after its own options.
+func newTestClient(t *testing.T, url string, opts ...ClientOption) (*client, *[]time.Duration) {
 	t.Helper()
 	var waits []time.Duration
-	c := mustNewClient(t, WithBaseURL(url), WithAuth("test-key", testAccountID), withSleep(func(ctx context.Context, d time.Duration) error {
+	opts = append([]ClientOption{WithBaseURL(url), WithAuth("test-key", testAccountID), withSleep(func(ctx context.Context, d time.Duration) error {
 		waits = append(waits, d)
 		return ctx.Err()
-	}))
-	return c, &waits
+	})}, opts...)
+	return mustNewClient(t, opts...), &waits
 }
 
 var tooMany = cannedReply{status: http.StatusTooManyRequests, body: `{"message":"Rate limit exceeded"}`}

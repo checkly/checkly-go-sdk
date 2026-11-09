@@ -130,7 +130,7 @@ if errors.As(err, &apiErr) {
 
 A request the API rejects as invalid matches `checkly.ErrBadRequest`. If it failed schema validation it also matches `checkly.ErrValidation`, and `apiErr.Details` lists the fields it names, if any.
 
-Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too. A request answered with HTTP 429 is retried a few times, waiting as the API asks while the context's deadline allows.
+Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too. A request answered with HTTP 429 is retried a few times, waiting as the API asks while the context's deadline allows. A request that can safely be re-sent, such as a GET, PUT or DELETE, is also retried twice when its connection breaks, for example with a connection reset.
 
 The SDK never adds the API key or the request body to an error. It does keep the backend's error message, and the start of an error body that is not JSON, cut at 500 bytes. A validation message can quote a submitted value, and so can the text of such a body, so take care when logging errors from requests that carry secrets.
 
