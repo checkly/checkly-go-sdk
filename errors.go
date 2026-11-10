@@ -162,7 +162,8 @@ type APIError struct {
 	// want lists the statuses the method accepts. It is only used to
 	// describe an unexpected success status.
 	want []int
-	// retries is how many times a rate-limited request was re-sent.
+	// retries is how many times the request was re-sent, after a 429 or a
+	// broken connection.
 	retries int
 	// hint is a sentence suggesting what to check.
 	hint string
@@ -198,17 +199,17 @@ func (e *APIError) Error() string {
 	if len(e.Details) > 0 {
 		fmt.Fprintf(&b, " (keys: %s)", strings.Join(e.Details, ", "))
 	}
-	if e.StatusCode == http.StatusTooManyRequests {
-		var parts []string
-		if e.retries > 0 {
-			parts = append(parts, fmt.Sprintf("retried %d %s", e.retries, plural(e.retries, "time", "times")))
-		}
-		if e.RetryAfter > 0 {
-			parts = append(parts, fmt.Sprintf("retry after %v", ceilSeconds(e.RetryAfter)))
-		}
-		if len(parts) > 0 {
-			fmt.Fprintf(&b, " (%s)", strings.Join(parts, "; "))
-		}
+	// The retry count explains, for example, a 404 from a re-sent DELETE
+	// whose first attempt succeeded but lost its response.
+	var parts []string
+	if e.retries > 0 {
+		parts = append(parts, fmt.Sprintf("retried %d %s", e.retries, plural(e.retries, "time", "times")))
+	}
+	if e.StatusCode == http.StatusTooManyRequests && e.RetryAfter > 0 {
+		parts = append(parts, fmt.Sprintf("retry after %v", ceilSeconds(e.RetryAfter)))
+	}
+	if len(parts) > 0 {
+		fmt.Fprintf(&b, " (%s)", strings.Join(parts, "; "))
 	}
 	if e.hint != "" {
 		// The hint is a sentence of its own. The message usually is one

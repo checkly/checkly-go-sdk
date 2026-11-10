@@ -64,10 +64,21 @@ func rateLimitWait(h http.Header, retry int, now time.Time) time.Duration {
 		return min(wait, rateLimitMaxWait) + rateLimitHintPadding +
 			time.Duration(rand.Int63n(int64(rateLimitHintJitter)))
 	}
-	// "Equal jitter": half the exponential step is fixed, the other half
-	// random, so retries back off but concurrent clients spread out.
-	step := min(rateLimitBaseBackoff<<retry, rateLimitMaxWait)
+	return equalJitter(min(rateLimitBaseBackoff<<retry, rateLimitMaxWait))
+}
+
+// equalJitter returns a wait between half of step and step: half is fixed,
+// the other half random, so retries back off but concurrent clients spread
+// out.
+func equalJitter(step time.Duration) time.Duration {
 	return step/2 + time.Duration(rand.Int63n(int64(step/2)+1))
+}
+
+// leavesTime reports whether ctx's deadline, if it has one, is more than d
+// after now.
+func leavesTime(ctx context.Context, now time.Time, d time.Duration) bool {
+	deadline, ok := ctx.Deadline()
+	return !ok || !now.Add(d).After(deadline)
 }
 
 // rateLimitHint returns how long a 429 response asks the client to wait:

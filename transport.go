@@ -37,7 +37,8 @@ type rawResponse struct {
 	status int
 	body   []byte
 	header http.Header
-	// retries is how many times the request was re-sent after a 429.
+	// retries is how many times the request was re-sent, after a 429 or a
+	// broken connection.
 	retries int
 }
 
@@ -53,8 +54,10 @@ func errorPath(path string) string {
 // described in rate_limit.go; once the retries are spent, or the caller's deadline
 // does not leave time for another one, the 429 is returned like any other
 // response. When the context ends during a wait, the error matches both
-// ErrRateLimited and the context error. auth tells whether the request
-// carries credentials; only the public endpoints are sent without.
+// ErrRateLimited and the context error. An idempotent request whose
+// connection broke is re-sent as described in transport_retry.go. auth tells
+// whether the request carries credentials; only the public endpoints are sent
+// without.
 func (c *client) send(
 	ctx context.Context,
 	auth bool,
@@ -63,24 +66,37 @@ func (c *client) send(
 	data []byte,
 ) (rawResponse, error) {
 	requestURL := c.url + path
-	for retry := 0; ; retry++ {
+	rateLimitRetries, connectionRetries := 0, 0
+	for {
 		res, err := c.doRequest(ctx, auth, method, requestURL, errorPath(path), data)
-		res.retries = retry
-		if err != nil || res.status != http.StatusTooManyRequests || retry >= rateLimitMaxRetries {
-			return res, err
+		res.retries = rateLimitRetries + connectionRetries
+		if err != nil {
+			wait, ok := connectionRetry(ctx, method, errorPath(path), err, connectionRetries)
+			if !ok {
+				return res, withRetries(err, res.retries)
+			}
+			if sleepErr := c.sleep(ctx, wait); sleepErr != nil {
+				return res, fmt.Errorf("%w; gave up waiting to retry: %w", withRetries(err, res.retries), sleepErr)
+			}
+			connectionRetries++
+			continue
+		}
+		if res.status != http.StatusTooManyRequests || rateLimitRetries >= rateLimitMaxRetries {
+			return res, nil
 		}
 
 		// Rate limited: wait and re-send, unless the wait would leave too
 		// little of the caller's deadline for the re-sent request, in which
 		// case the caller sees the 429 itself.
 		now := time.Now()
-		wait := rateLimitWait(res.header, retry, now)
-		if deadline, ok := ctx.Deadline(); ok && now.Add(wait+rateLimitRequestMargin).After(deadline) {
+		wait := rateLimitWait(res.header, rateLimitRetries, now)
+		if !leavesTime(ctx, now, wait+rateLimitRequestMargin) {
 			return res, nil
 		}
 		if err := c.sleep(ctx, wait); err != nil {
 			return res, fmt.Errorf("%w; gave up waiting to retry: %w", newAPIError(res, nil, c.accountID), err)
 		}
+		rateLimitRetries++
 	}
 }
 
@@ -172,7 +188,7 @@ func decode(res rawResponse, out any) error {
 
 // doRequest sends a single API request, with credentials when auth is set.
 // The request is rebuilt from data on every call so that it can be re-sent
-// after a rate-limited response. path is the request path for error
+// after a rate-limited response or a broken connection. path is the request path for error
 // messages, as errorPath returns it.
 func (c *client) doRequest(
 	ctx context.Context,
