@@ -19,9 +19,9 @@ func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
 	// backend would default (create) or keep (update) the previous values.
 	assertRawBodyField(t, body, "degradedResponseTime", `0`)
 	assertRawBodyField(t, body, "maxResponseTime", `0`)
-	// 0 is the value the group order resets to and must be serialized, or
-	// the backend would keep the previous value on update.
-	assertRawBodyField(t, body, "groupOrder", `0`)
+	// A nil group order must be serialized as null, or the backend would
+	// keep the previous position on update instead of clearing it.
+	assertRawBodyField(t, body, "groupOrder", `null`)
 
 	// The endpoints are PATCH-style down to the nested request object, so
 	// clearable request keys must always be serialized as well.

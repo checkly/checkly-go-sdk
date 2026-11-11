@@ -202,9 +202,9 @@ func validateAPICheckEmptyPayload(t *testing.T, body []byte) {
 	assertRawBodyField(t, body, "locations", `[]`)
 	assertRawBodyField(t, body, "privateLocations", `[]`)
 	assertRawBodyField(t, body, "groupId", `null`)
-	// The group order must always be serialized, or the backend would keep
-	// the previous value on update instead of resetting it to 0.
-	assertRawBodyField(t, body, "groupOrder", `0`)
+	// A nil group order must be serialized as null, or the backend would
+	// keep the previous position on update instead of clearing it.
+	assertRawBodyField(t, body, "groupOrder", `null`)
 	assertRawBodyField(t, body, "setupSnippetId", `null`)
 	assertRawBodyField(t, body, "tearDownSnippetId", `null`)
 	assertRawBodyField(t, body, "localSetupScript", `null`)

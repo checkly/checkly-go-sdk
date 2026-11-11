@@ -1988,13 +1988,14 @@ func TestGRPCMonitorUpdateResetsFields(t *testing.T) {
 	client := setupClient(t)
 	group := createResetTestGroup(ctx, t, client)
 
+	groupOrder := 2
 	pending := checkly.GRPCMonitor{
 		Name:       "Update reset gRPC monitor",
 		Frequency:  10,
 		Locations:  []string{"us-east-1"},
 		Tags:       []string{"reset"},
 		GroupID:    group.ID,
-		GroupOrder: 2,
+		GroupOrder: &groupOrder,
 		Request: checkly.GRPCRequest{
 			URL:     "grpc.example.com",
 			Port:    443,
@@ -2015,7 +2016,7 @@ func TestGRPCMonitorUpdateResetsFields(t *testing.T) {
 
 	update := pending
 	update.Tags = nil
-	update.GroupOrder = 0
+	update.GroupOrder = nil
 	update.Request.Timeout = 0
 	update.Request.GRPCConfig = checkly.GRPCConfig{Method: "example.Service/New"}
 	if _, err := client.UpdateGRPCMonitor(ctx, created.ID, update); err != nil {
@@ -2032,8 +2033,8 @@ func TestGRPCMonitorUpdateResetsFields(t *testing.T) {
 	if len(got.Tags) != 0 {
 		t.Errorf("tags = %v, want none", got.Tags)
 	}
-	if got.GroupOrder != 0 {
-		t.Errorf("groupOrder = %d, want 0", got.GroupOrder)
+	if got.GroupOrder != nil {
+		t.Errorf("groupOrder = %d, want nil", *got.GroupOrder)
 	}
 	if got.Request.GRPCConfig.Mode != "BEHAVIOR" {
 		t.Errorf("mode = %q, want BEHAVIOR", got.Request.GRPCConfig.Mode)
@@ -2050,13 +2051,14 @@ func TestSSLMonitorUpdateResetsFields(t *testing.T) {
 	client := setupClient(t)
 	group := createResetTestGroup(ctx, t, client)
 
+	groupOrder := 2
 	pending := checkly.SSLMonitor{
 		Name:       "Update reset SSL monitor",
 		Frequency:  10,
 		Locations:  []string{"us-east-1"},
 		Tags:       []string{"reset"},
 		GroupID:    group.ID,
-		GroupOrder: 2,
+		GroupOrder: &groupOrder,
 		Request: checkly.SSLRequest{
 			SSLConfig: checkly.SSLConfig{Hostname: "api.checklyhq.com"},
 		},
@@ -2071,7 +2073,7 @@ func TestSSLMonitorUpdateResetsFields(t *testing.T) {
 
 	update := pending
 	update.Tags = nil
-	update.GroupOrder = 0
+	update.GroupOrder = nil
 	if _, err := client.UpdateSSLMonitor(ctx, created.ID, update); err != nil {
 		t.Fatalf("failed to update SSL monitor: %v", err)
 	}
@@ -2083,9 +2085,120 @@ func TestSSLMonitorUpdateResetsFields(t *testing.T) {
 	if len(got.Tags) != 0 {
 		t.Errorf("tags = %v, want none", got.Tags)
 	}
-	if got.GroupOrder != 0 {
-		t.Errorf("groupOrder = %d, want 0", got.GroupOrder)
+	if got.GroupOrder != nil {
+		t.Errorf("groupOrder = %d, want nil", *got.GroupOrder)
 	}
+}
+
+// assertGroupOrderZeroRoundTrip creates a resource with group order 0, reads
+// it back to check that 0 is stored as the first position rather than as no
+// position, then updates it with a nil group order and checks that the
+// position is cleared.
+func assertGroupOrderZeroRoundTrip(
+	t *testing.T,
+	create func(groupOrder *int) (id string, err error),
+	get func(id string) (groupOrder *int, err error),
+	update func(id string, groupOrder *int) error,
+) {
+	t.Helper()
+	zero := 0
+	id, err := create(&zero)
+	if err != nil {
+		t.Fatalf("failed to create: %v", err)
+	}
+	got, err := get(id)
+	if err != nil {
+		t.Fatalf("failed to get: %v", err)
+	}
+	if got == nil || *got != 0 {
+		t.Errorf("groupOrder after create = %v, want 0", got)
+	}
+	if err := update(id, nil); err != nil {
+		t.Fatalf("failed to update: %v", err)
+	}
+	got, err = get(id)
+	if err != nil {
+		t.Fatalf("failed to get: %v", err)
+	}
+	if got != nil {
+		t.Errorf("groupOrder after update = %d, want nil", *got)
+	}
+}
+
+// TestGroupOrderZeroRoundTrip verifies that group order 0 is stored and read
+// back as the first position, and that a nil group order clears it, on
+// monitor types that used to send 0 as null. Playwright checks need an
+// uploaded code bundle, so only unit tests cover their group order.
+func TestGroupOrderZeroRoundTrip(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+	group := createResetTestGroup(ctx, t, client)
+
+	t.Run("URL monitor", func(t *testing.T) {
+		monitor := checkly.URLMonitor{
+			Name:      "Group order round trip URL monitor",
+			Frequency: 10,
+			Locations: []string{"us-east-1"},
+			GroupID:   group.ID,
+			Request:   checkly.URLRequest{URL: "https://welcome.checklyhq.com"},
+		}
+		assertGroupOrderZeroRoundTrip(t,
+			func(groupOrder *int) (string, error) {
+				monitor.GroupOrder = groupOrder
+				created, err := client.CreateURLMonitor(ctx, monitor)
+				if err != nil {
+					return "", err
+				}
+				t.Cleanup(func() { _ = client.DeleteURLMonitor(ctx, created.ID) })
+				return created.ID, nil
+			},
+			func(id string) (*int, error) {
+				got, err := client.GetURLMonitor(ctx, id)
+				if err != nil {
+					return nil, err
+				}
+				return got.GroupOrder, nil
+			},
+			func(id string, groupOrder *int) error {
+				monitor.GroupOrder = groupOrder
+				_, err := client.UpdateURLMonitor(ctx, id, monitor)
+				return err
+			},
+		)
+	})
+
+	t.Run("DNS monitor", func(t *testing.T) {
+		monitor := checkly.DNSMonitor{
+			Name:      "Group order round trip DNS monitor",
+			Frequency: 10,
+			Locations: []string{"us-east-1"},
+			GroupID:   group.ID,
+			Request:   checkly.DNSRequest{RecordType: "A", Query: "api.checklyhq.com"},
+		}
+		assertGroupOrderZeroRoundTrip(t,
+			func(groupOrder *int) (string, error) {
+				monitor.GroupOrder = groupOrder
+				created, err := client.CreateDNSMonitor(ctx, monitor)
+				if err != nil {
+					return "", err
+				}
+				t.Cleanup(func() { _ = client.DeleteDNSMonitor(ctx, created.ID) })
+				return created.ID, nil
+			},
+			func(id string) (*int, error) {
+				got, err := client.GetDNSMonitor(ctx, id)
+				if err != nil {
+					return nil, err
+				}
+				return got.GroupOrder, nil
+			},
+			func(id string, groupOrder *int) error {
+				monitor.GroupOrder = groupOrder
+				_, err := client.UpdateDNSMonitor(ctx, id, monitor)
+				return err
+			},
+		)
+	})
 }
 
 // TestStatusPageUpdateResetsFields verifies that an update with an empty

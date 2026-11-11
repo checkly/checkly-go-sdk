@@ -56,8 +56,10 @@ type TracerouteMonitor struct {
 	// none.
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
-	// order when the group is triggered from the API or CI/CD.
-	GroupOrder int `json:"groupOrder,omitempty"`
+	// order when the group is triggered from the API or CI/CD. 0 is the
+	// first position. Nil means no position, and is sent as null so that
+	// an update clears it.
+	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
@@ -140,10 +142,8 @@ type tracerouteMonitorPayload struct {
 	GroupID     *int64    `json:"groupId"`
 	// The update endpoint keeps the stored value of an omitted key. The
 	// fields below shadow embedded fields whose zero value would be omitted,
-	// so that an update resets them: lists are sent empty, and the group
-	// order as null, which is also its default on create.
+	// so that an update resets them: lists are sent empty.
 	Tags                      []string                   `json:"tags"`
-	GroupOrder                *int                       `json:"groupOrder"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 }
 
@@ -183,7 +183,6 @@ func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck:               false,
 		Tags:                      emptyIfNil(monitor.Tags),
-		GroupOrder:                nullIfZero(monitor.GroupOrder),
 		AlertChannelSubscriptions: emptyIfNil(monitor.AlertChannelSubscriptions),
 	}
 

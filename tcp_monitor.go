@@ -53,8 +53,10 @@ type TCPMonitor struct {
 	// none.
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
-	// order when the group is triggered from the API or CI/CD.
-	GroupOrder int `json:"groupOrder,omitempty"`
+	// order when the group is triggered from the API or CI/CD. 0 is the
+	// first position. Nil means no position, and is sent as null so that
+	// an update clears it.
+	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
@@ -119,7 +121,6 @@ type tcpMonitorPayload struct {
 	Tags                      []string                   `json:"tags"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
 	MaxResponseTime           int                        `json:"maxResponseTime"`
-	GroupOrder                int                        `json:"groupOrder"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	Request                   tcpRequestPayload          `json:"request"`
 }
@@ -156,12 +157,6 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 	// keep the previous values on update.
 	payload.DegradedResponseTime = monitor.DegradedResponseTime
 	payload.MaxResponseTime = monitor.MaxResponseTime
-
-	// The group order must always be sent: 0 is the value it resets to, and
-	// omitting the key would make the backend keep the previous value on
-	// update. Note that the URL, DNS and ICMP monitor endpoints differ:
-	// they only reset the order on an explicit null, not 0.
-	payload.GroupOrder = monitor.GroupOrder
 
 	payload.Request = tcpRequestPayload{
 		TCPRequest: monitor.Request,
