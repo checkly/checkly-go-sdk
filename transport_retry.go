@@ -48,7 +48,8 @@ func safeToResend(method, path string) bool {
 // brokenConnection reports whether err is a connection that broke while a
 // request was sent or its response read: a reset or aborted connection, a
 // broken pipe, a response cut short, or an HTTP/2 stream or connection error,
-// such as GOAWAY. It does not match errors that a retry would only repeat or
+// such as GOAWAY or a connection the transport closed because another request
+// on it broke. It does not match errors that a retry would only repeat or
 // delay, such as a refused connection, a DNS or TLS failure, a timeout or an
 // ended context.
 func brokenConnection(err error) bool {
@@ -76,13 +77,31 @@ func brokenConnection(err error) bool {
 	// with unexported types (http.http2StreamError), and a client configured
 	// with golang.org/x/net/http2 returns that package's types
 	// (http2.StreamError). Only the bundled types are exercised by tests.
+	// The errors for a lost or closed connection are plain errors.New values,
+	// recognized by their message instead.
 	for e := err; e != nil; e = errors.Unwrap(e) {
 		name := fmt.Sprintf("%T", e)
 		if strings.HasPrefix(name, "http.http2") || strings.HasPrefix(name, "http2.") || strings.HasPrefix(name, "*http2.") {
 			return true
 		}
+		if _, ok := http2ConnectionErrors[e.Error()]; ok {
+			return true
+		}
 	}
 	return false
+}
+
+// http2ConnectionErrors are the messages of the HTTP/2 transport's errors for
+// a connection that broke while requests were in flight on it, in both
+// net/http and golang.org/x/net/http2. HTTP/2 multiplexes the requests of a
+// client over one connection, and when one request breaks it, for example
+// with a reset while sending its body, the transport closes the connection
+// and fails every other request on it with "client connection force closed".
+var http2ConnectionErrors = map[string]struct{}{
+	"http2: client connection force closed via ClientConn.Close":  {},
+	"http2: client connection lost":                               {},
+	"http2: client conn is closed":                                {},
+	"http2: Transport received Server's graceful shutdown GOAWAY": {},
 }
 
 // connectionRetry returns how long to wait before re-sending a request with

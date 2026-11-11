@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -217,6 +218,11 @@ func TestConnectionRetryRecognizesBrokenConnections(t *testing.T) {
 		"broken pipe":    &net.OpError{Op: "write", Net: "tcp", Err: os.NewSyscallError("write", syscall.EPIPE)},
 		"EOF":            io.EOF,
 		"unexpected EOF": fmt.Errorf("reading body: %w", io.ErrUnexpectedEOF),
+		// net/http returns these as plain errors, wrapped in a *url.Error.
+		"HTTP/2 force closed": &url.Error{Op: "Delete", URL: "https://api.checklyhq.com/v1/checks/x", Err: errors.New("http2: client connection force closed via ClientConn.Close")},
+		"HTTP/2 lost":         errors.New("http2: client connection lost"),
+		"HTTP/2 closed":       errors.New("http2: client conn is closed"),
+		"HTTP/2 GOAWAY":       errors.New("http2: Transport received Server's graceful shutdown GOAWAY"),
 	} {
 		if !brokenConnection(err) {
 			t.Errorf("%s: want a broken connection", name)
@@ -370,6 +376,64 @@ func TestConnectionRetryOnHTTP2StreamError(t *testing.T) {
 		t.Errorf("want 200 after one retry, got %d after %d requests and waits %v", res.status, calls, *waits)
 	}
 }
+
+// TestConnectionRetryOnHTTP2ConnectionClosed checks that a request whose
+// HTTP/2 connection the transport closed while it was in flight, as net/http
+// reports it, is recognized. The transport closes a connection that way when
+// another request on it breaks it.
+func TestConnectionRetryOnHTTP2ConnectionClosed(t *testing.T) {
+	var calls int
+	var mu sync.Mutex
+	received := make(chan struct{})
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		calls++
+		n := calls
+		mu.Unlock()
+		if n == 1 {
+			close(received)
+			<-r.Context().Done()
+			return
+		}
+		_, _ = io.WriteString(w, "{}")
+	}))
+	srv.EnableHTTP2 = true
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+
+	transport := srv.Client().Transport.(*http.Transport).Clone()
+	transport.Protocols = new(http.Protocols)
+	transport.Protocols.SetHTTP2(true)
+	var attempts int
+	roundTrip := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		conn, err := transport.NewClientConn(req.Context(), "https", srv.Listener.Addr().String())
+		if err != nil {
+			return nil, err
+		}
+		attempts++
+		if attempts == 1 {
+			go func() {
+				<-received
+				_ = conn.Close()
+			}()
+		}
+		return conn.RoundTrip(req)
+	})
+	c, waits := newTestClient(t, srv.URL, WithHTTPClient(&http.Client{Transport: roundTrip}))
+
+	res, err := c.send(context.Background(), true, http.MethodDelete, "/v1/things/x", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.status != http.StatusOK || calls != 2 || len(*waits) != 1 {
+		t.Errorf("want 200 after one retry, got %d after %d requests and waits %v", res.status, calls, *waits)
+	}
+}
+
+// roundTripFunc is an http.RoundTripper implemented by a function.
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 // http2TimeoutError is a timeout with the message of the response header
 // timeout of golang.org/x/net/http2, which brokenConnection must reject
