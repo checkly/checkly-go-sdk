@@ -2,24 +2,25 @@ package checkly
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
-	"io"
+	"net"
 	"net/http"
-	"strings"
-	"syscall"
+	"os"
 	"time"
 )
 
-// Connection retry policy. A request that gets no response because the
-// connection broke, such as a connection reset by the API's edge, is re-sent
-// when that cannot apply a change twice. HTTP/2 multiplexes the requests of a
+// Connection retry policy. A request that gets no response, for example
+// because its connection was reset by the API's edge, is re-sent when that
+// cannot apply a change twice, unless a retry would only repeat the failure. HTTP/2 multiplexes the requests of a
 // client over one connection, so a single reset fails every request in flight
 // on it, and Go's HTTP/2 transport only re-sends a request that it knows the
 // server did not process.
 const (
-	// connectionMaxRetries is how many times a request is re-sent after a
-	// broken connection before the error is returned to the caller.
+	// connectionMaxRetries is how many times a request that got no response
+	// is re-sent before the error is returned to the caller.
 	connectionMaxRetries = 2
 	// connectionBaseBackoff is the first backoff step. A broken connection
 	// is usually replaced by the next request, so the waits are short.
@@ -45,74 +46,96 @@ func safeToResend(method, path string) bool {
 	return false
 }
 
-// brokenConnection reports whether err is a connection that broke while a
-// request was sent or its response read: a reset or aborted connection, a
-// broken pipe, a response cut short, or an HTTP/2 stream or connection error,
-// such as GOAWAY or a connection the transport closed because another request
-// on it broke. It does not match errors that a retry would only repeat or
-// delay, such as a refused connection, a DNS or TLS failure, a timeout or an
-// ended context.
-func brokenConnection(err error) bool {
-	// A timeout would only be repeated. Some timeouts, such as the response
-	// header timeout of golang.org/x/net/http2, have HTTP/2 types that the
-	// type name match below would accept.
+// retryableFailure reports whether err is a request that got no response for
+// a reason that re-sending it may fix. That is any failure to send the request
+// or read its response, such as a reset or aborted connection, a response cut
+// short, or an HTTP/2 stream or connection error, except failures that a retry
+// would only repeat or delay: a timeout, an ended context, a DNS failure, a
+// TLS or certificate failure, and a failure to connect, such as a refused
+// connection. Every exception is recognized by its type, so failures that
+// Go's transport reports as plain errors, such as the HTTP/2 connection the
+// transport closes when another request on it breaks it, are retried too.
+// Errors the SDK finds before sending the request, such as a missing API key,
+// are never retried. Failures that have no type to recognize are retried like
+// any other, although a retry repeats them: those net/http finds without
+// sending anything, such as an unsupported URL scheme, a proxy that refuses
+// the CONNECT tunnel, and errors from a custom transport or redirect policy
+// passed to WithHTTPClient.
+func retryableFailure(err error) bool {
+	var transport *transportError
+	var read *responseReadError
+	if !errors.As(err, &transport) && !errors.As(err, &read) {
+		return false
+	}
 	var timeout interface{ Timeout() bool }
 	if errors.As(err, &timeout) && timeout.Timeout() {
 		return false
 	}
-	if errors.Is(err, syscall.ECONNRESET) ||
-		errors.Is(err, syscall.ECONNABORTED) ||
-		errors.Is(err, syscall.EPIPE) ||
-		errors.Is(err, io.ErrUnexpectedEOF) ||
-		errors.Is(err, io.EOF) {
-		return true
+	// url.Error.Timeout only looks at the error it wraps, and net/http wraps
+	// an HTTP/1 read timeout once more, so a deadline is also checked by
+	// identity.
+	if errors.Is(err, os.ErrDeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false
 	}
-	for _, target := range platformConnectionErrors {
-		if errors.Is(err, target) {
-			return true
-		}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return false
 	}
-	// HTTP/2 errors, such as stream errors and GOAWAY, can only be
-	// recognized by type name: net/http bundles its HTTP/2 implementation
-	// with unexported types (http.http2StreamError), and a client configured
-	// with golang.org/x/net/http2 returns that package's types
-	// (http2.StreamError). Only the bundled types are exercised by tests.
-	// The errors for a lost or closed connection are plain errors.New values,
-	// recognized by their message instead.
-	for e := err; e != nil; e = errors.Unwrap(e) {
-		name := fmt.Sprintf("%T", e)
-		if strings.HasPrefix(name, "http.http2") || strings.HasPrefix(name, "http2.") || strings.HasPrefix(name, "*http2.") {
-			return true
-		}
-		if _, ok := http2ConnectionErrors[e.Error()]; ok {
-			return true
-		}
+	if tlsFailure(err) {
+		return false
 	}
-	return false
+	// net/http reports a failure to connect to the API, or to the proxy, as
+	// a *net.OpError with Op "dial" or "proxyconnect". A connection that
+	// broke after it was established has another Op, such as "read".
+	var opErr *net.OpError
+	if errors.As(err, &opErr) && (opErr.Op == "dial" || opErr.Op == "proxyconnect") {
+		return false
+	}
+	return true
 }
 
-// http2ConnectionErrors are the messages of the HTTP/2 transport's errors for
-// a connection that broke while requests were in flight on it, in both
-// net/http and golang.org/x/net/http2. HTTP/2 multiplexes the requests of a
-// client over one connection, and when one request breaks it, for example
-// with a reset while sending its body, the transport closes the connection
-// and fails every other request on it with "client connection force closed".
-var http2ConnectionErrors = map[string]struct{}{
-	"http2: client connection force closed via ClientConn.Close":  {},
-	"http2: client connection lost":                               {},
-	"http2: client conn is closed":                                {},
-	"http2: Transport received Server's graceful shutdown GOAWAY": {},
+// tlsFailure reports whether err is a failed TLS handshake or certificate
+// check, or a TLS connection to a server that does not speak TLS. Over TCP,
+// crypto/tls reports an alert, such as a server that requires a client
+// certificate or a TLS version the client does not offer, as a *net.OpError
+// with Op "remote error" when the server sent it and "local error" when the
+// client did; it uses those Ops for nothing else. An alert on an established
+// connection, such as a corrupted record, is rare and is not retried either.
+// Handshake failures that crypto/tls reports as plain errors are not
+// recognized.
+func tlsFailure(err error) bool {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) && (opErr.Op == "remote error" || opErr.Op == "local error") {
+		return true
+	}
+	// http.Client reports an https request to a server that answers in
+	// plain HTTP with ErrSchemeMismatch instead of the RecordHeaderError.
+	if errors.Is(err, http.ErrSchemeMismatch) {
+		return true
+	}
+	var (
+		verification *tls.CertificateVerificationError
+		recordHeader tls.RecordHeaderError
+		unknownCA    x509.UnknownAuthorityError
+		hostname     x509.HostnameError
+		invalid      x509.CertificateInvalidError
+	)
+	return errors.As(err, &verification) ||
+		errors.As(err, &recordHeader) ||
+		errors.As(err, &unknownCA) ||
+		errors.As(err, &hostname) ||
+		errors.As(err, &invalid)
 }
 
 // connectionRetry returns how long to wait before re-sending a request with
 // method to path that failed with err after retries earlier connection
 // retries, and false when it must not be re-sent: it is not safe to re-send,
-// err is not a broken connection, the context has ended, the retries are
+// err is not a retryable failure, the context has ended, the retries are
 // spent, or the wait would leave too little of the context's deadline for the
 // request. The waits back off exponentially with jitter, so that the requests
 // that shared a broken connection don't all retry at once.
 func connectionRetry(ctx context.Context, method, path string, err error, retries int) (time.Duration, bool) {
-	if !safeToResend(method, path) || !brokenConnection(err) || ctx.Err() != nil || retries >= connectionMaxRetries {
+	if !safeToResend(method, path) || !retryableFailure(err) || ctx.Err() != nil || retries >= connectionMaxRetries {
 		return 0, false
 	}
 	wait := equalJitter(connectionBaseBackoff << retries)
@@ -123,7 +146,7 @@ func connectionRetry(ctx context.Context, method, path string, err error, retrie
 }
 
 // withRetries adds to err how many times the request was re-sent, after a 429
-// or a broken connection, if it was.
+// or a failure that got no response, if it was.
 func withRetries(err error, retries int) error {
 	if retries == 0 {
 		return err

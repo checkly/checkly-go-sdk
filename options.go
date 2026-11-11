@@ -96,12 +96,18 @@ func WithHTTPClient(httpClient *http.Client) ClientOption {
 }
 
 // WithSource sets the x-checkly-source header, which identifies the calling
-// tool to the API. An empty string restores the default, "go-sdk".
+// tool to the API. An empty string restores the default, "go-sdk". NewClient
+// fails with "checkly: WithSource: the source contains a character that HTTP
+// headers do not allow, such as a newline" for a source with a control
+// character other than tab.
 func WithSource(source string) ClientOption {
 	return func(c *client) error {
 		if source == "" {
 			c.source = defaultSource
 			return nil
+		}
+		if !validHeaderValue(source) {
+			return errors.New("checkly: WithSource: the source contains a character that HTTP headers do not allow, such as a newline")
 		}
 		c.source = source
 		return nil
@@ -114,7 +120,9 @@ func WithSource(source string) ClientOption {
 // A later WithAuth or WithAuthFromEnv replaces the credentials completely.
 //
 // NewClient fails with "checkly: WithAuth: the API key is empty" (matching
-// ErrMissingAPIKey), "checkly: WithAuth: the account ID is empty" (matching
+// ErrMissingAPIKey), "checkly: WithAuth: the API key contains a character
+// that HTTP headers do not allow, such as a newline" (matching
+// ErrInvalidAPIKey), "checkly: WithAuth: the account ID is empty" (matching
 // ErrMissingAccountID), or, for an account ID that is not a UUID, such as an
 // API key passed in its place, "checkly: WithAuth: the account ID is not a
 // UUID; check that the API key and account ID are not swapped" (matching
@@ -125,6 +133,11 @@ func WithAuth(apiKey, accountID string) ClientOption {
 		switch {
 		case apiKey == "":
 			return &messageError{msg: "checkly: WithAuth: the API key is empty", wrapped: ErrMissingAPIKey}
+		case !validHeaderValue(apiKey):
+			return &messageError{
+				msg:     "checkly: WithAuth: the API key contains a character that HTTP headers do not allow, such as a newline",
+				wrapped: ErrInvalidAPIKey,
+			}
 		case accountID == "":
 			return &messageError{msg: "checkly: WithAuth: the account ID is empty", wrapped: ErrMissingAccountID}
 		case !isUUID(accountID):
@@ -145,7 +158,11 @@ func WithAuth(apiKey, accountID string) ClientOption {
 // Both are required: if one is unset or empty, NewClient fails with an error
 // naming it, "checkly: WithAuthFromEnv: CHECKLY_API_KEY is not set" (matching
 // ErrMissingAPIKey) or "checkly: WithAuthFromEnv: CHECKLY_ACCOUNT_ID is not
-// set" (matching ErrMissingAccountID). The account ID must be a UUID, or
+// set" (matching ErrMissingAccountID). The API key must not contain a
+// control character other than tab, such as a trailing newline, or NewClient
+// fails with "checkly: WithAuthFromEnv: CHECKLY_API_KEY contains a character
+// that HTTP headers do not allow, such as a newline" (matching
+// ErrInvalidAPIKey). The account ID must be a UUID, or
 // NewClient fails with "checkly: WithAuthFromEnv: CHECKLY_ACCOUNT_ID is not a
 // UUID" (matching ErrInvalidAccountID).
 //
@@ -157,6 +174,12 @@ func WithAuthFromEnv() ClientOption {
 			return &messageError{
 				msg:     fmt.Sprintf("checkly: WithAuthFromEnv: %s is not set", envAPIKey),
 				wrapped: ErrMissingAPIKey,
+			}
+		}
+		if !validHeaderValue(apiKey) {
+			return &messageError{
+				msg:     fmt.Sprintf("checkly: WithAuthFromEnv: %s contains a character that HTTP headers do not allow, such as a newline", envAPIKey),
+				wrapped: ErrInvalidAPIKey,
 			}
 		}
 		accountID := os.Getenv(envAccountID)
@@ -176,4 +199,17 @@ func WithAuthFromEnv() ClientOption {
 		c.accountID = accountID
 		return nil
 	}
+}
+
+// validHeaderValue reports whether HTTP allows v as a header value: it has no
+// control characters other than tab. net/http fails a request with such a
+// header without sending it, in an error that has no type to tell it from a
+// failed connection, so the options that set header values reject them.
+func validHeaderValue(v string) bool {
+	for i := 0; i < len(v); i++ {
+		if b := v[i]; (b < ' ' && b != '\t') || b == 0x7f {
+			return false
+		}
+	}
+	return true
 }

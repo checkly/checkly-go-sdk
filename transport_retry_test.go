@@ -2,6 +2,7 @@ package checkly
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -193,6 +194,15 @@ func TestConnectionRetryNotForOtherErrors(t *testing.T) {
 		"certificate":        x509.UnknownAuthorityError{},
 		"timeout":            context.DeadlineExceeded,
 		"HTTP/2 timeout":     http2TimeoutError{},
+		"cancelled":          context.Canceled,
+		"certificate check":  &tls.CertificateVerificationError{Err: x509.UnknownAuthorityError{}},
+		"hostname":           x509.HostnameError{Host: "api.checklyhq.com", Certificate: &x509.Certificate{}},
+		"not TLS":            tls.RecordHeaderError{Msg: "first record does not look like a TLS handshake"},
+		"TLS alert":          &net.OpError{Op: "remote error", Err: errors.New("tls: certificate required")},
+		"proxy refused":      &net.OpError{Op: "proxyconnect", Net: "tcp", Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)},
+		"dial reset":         &net.OpError{Op: "dial", Net: "tcp", Err: os.NewSyscallError("connect", syscall.ECONNRESET)},
+		"HTTP/1 read timeout": fmt.Errorf("net/http: HTTP/1.x transport connection broken: %w",
+			&net.OpError{Op: "read", Net: "tcp", Err: os.ErrDeadlineExceeded}),
 	} {
 		t.Run(name, func(t *testing.T) {
 			transport := &scriptedTransport{replies: []error{err, nil}}
@@ -211,22 +221,87 @@ func TestConnectionRetryNotForOtherErrors(t *testing.T) {
 	}
 }
 
-func TestConnectionRetryRecognizesBrokenConnections(t *testing.T) {
+func TestConnectionRetryRecognizesRetryableFailures(t *testing.T) {
 	for name, err := range map[string]error{
 		"reset":          connectionReset,
 		"aborted":        &net.OpError{Op: "read", Net: "tcp", Err: os.NewSyscallError("read", syscall.ECONNABORTED)},
 		"broken pipe":    &net.OpError{Op: "write", Net: "tcp", Err: os.NewSyscallError("write", syscall.EPIPE)},
 		"EOF":            io.EOF,
-		"unexpected EOF": fmt.Errorf("reading body: %w", io.ErrUnexpectedEOF),
-		// net/http returns these as plain errors, wrapped in a *url.Error.
-		"HTTP/2 force closed": &url.Error{Op: "Delete", URL: "https://api.checklyhq.com/v1/checks/x", Err: errors.New("http2: client connection force closed via ClientConn.Close")},
+		"unexpected EOF": io.ErrUnexpectedEOF,
+		// net/http returns these as plain errors.
+		"HTTP/2 force closed": errors.New("http2: client connection force closed via ClientConn.Close"),
 		"HTTP/2 lost":         errors.New("http2: client connection lost"),
-		"HTTP/2 closed":       errors.New("http2: client conn is closed"),
-		"HTTP/2 GOAWAY":       errors.New("http2: Transport received Server's graceful shutdown GOAWAY"),
+		"unknown":             errors.New("something the transport has not reported before"),
 	} {
-		if !brokenConnection(err) {
-			t.Errorf("%s: want a broken connection", name)
+		if !retryableFailure(asTransportError(err)) {
+			t.Errorf("%s: want a retryable failure", name)
 		}
+	}
+	read := &responseReadError{method: http.MethodGet, path: "/v1/things", status: http.StatusOK, err: io.ErrUnexpectedEOF}
+	if !retryableFailure(read) {
+		t.Error("response read: want a retryable failure")
+	}
+}
+
+func TestConnectionRetryNotBeforeSending(t *testing.T) {
+	for name, err := range map[string]error{
+		"missing API key": fmt.Errorf("GET /v1/things: %w", ErrMissingAPIKey),
+		"building":        fmt.Errorf("GET /v1/things: building request: %w", io.ErrUnexpectedEOF),
+	} {
+		if retryableFailure(err) {
+			t.Errorf("%s: want no retry", name)
+		}
+	}
+}
+
+// TestConnectionRetryNotOnRealTLSAlert checks that a TLS handshake that a
+// real server rejects with an alert, as net/http reports it, is not retried.
+func TestConnectionRetryNotOnRealTLSAlert(t *testing.T) {
+	var calls int
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		_, _ = io.WriteString(w, "{}")
+	}))
+	srv.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+	c, waits := newTestClient(t, srv.URL, WithHTTPClient(srv.Client()))
+
+	if _, err := c.send(context.Background(), true, http.MethodDelete, "/v1/things/x", nil); err == nil {
+		t.Fatal("want an error")
+	}
+	if calls != 0 || len(*waits) != 0 {
+		t.Errorf("want no retries, got %d handled requests and waits %v", calls, *waits)
+	}
+}
+
+// TestConnectionRetryNotForPlainHTTPServer checks that an https request to a
+// server that only speaks plain HTTP, as net/http reports it, is not retried.
+func TestConnectionRetryNotForPlainHTTPServer(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		_, _ = io.WriteString(w, "{}")
+	}))
+	t.Cleanup(srv.Close)
+	c, waits := newTestClient(t, strings.Replace(srv.URL, "http://", "https://", 1))
+
+	if _, err := c.send(context.Background(), true, http.MethodGet, "/v1/things", nil); !errors.Is(err, http.ErrSchemeMismatch) {
+		t.Fatalf("want an error matching http.ErrSchemeMismatch, got %v", err)
+	}
+	if calls != 0 || len(*waits) != 0 {
+		t.Errorf("want no retries, got %d handled requests and waits %v", calls, *waits)
+	}
+}
+
+// asTransportError wraps err as the client's round trip returns a failed
+// request.
+func asTransportError(err error) error {
+	return &transportError{
+		method: http.MethodGet,
+		path:   "/v1/things",
+		host:   "api.checklyhq.com",
+		err:    &url.Error{Op: "Get", URL: "https://api.checklyhq.com/v1/things", Err: err},
 	}
 }
 
@@ -436,7 +511,7 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 // http2TimeoutError is a timeout with the message of the response header
-// timeout of golang.org/x/net/http2, which brokenConnection must reject
+// timeout of golang.org/x/net/http2, which retryableFailure must reject
 // whatever its type.
 type http2TimeoutError struct{}
 

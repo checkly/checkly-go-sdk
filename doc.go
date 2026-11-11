@@ -30,12 +30,14 @@
 // retry are abandoned. A request answered with HTTP 429 is retried a few
 // times, waiting as the API asks for up to a minute and while the context's
 // deadline allows; UploadCodeBundle, which streams its body, is not retried.
-// A GET, PUT or DELETE request whose connection breaks before the response
-// arrives, for example with a connection reset, is retried twice after short
-// waits, also while the deadline allows, and so is PeekCodeBundle. Other POST
-// requests are not, because a create may have happened even though its
-// response was lost. The error of a request that was retried says how often:
-// a re-sent DELETE, for example, gets a 404 if the first attempt succeeded.
+// A GET, PUT or DELETE request that gets no response, for example because
+// its connection was reset, is retried twice after short waits, also while
+// the deadline allows, and so is PeekCodeBundle. A timeout, a DNS failure, a
+// rejected certificate or a failure to connect is not retried, since a retry
+// would only repeat it. Other POST requests are not retried, because a create may have
+// happened even though its response was lost. The error of a request that
+// was retried says how often: a re-sent DELETE, for example, gets a 404 if
+// the first attempt succeeded.
 //
 // # Updates
 //

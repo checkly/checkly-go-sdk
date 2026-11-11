@@ -67,6 +67,10 @@ var (
 	// WithAuth with an empty account ID and for WithAuthFromEnv when
 	// CHECKLY_ACCOUNT_ID is not set.
 	ErrMissingAccountID = errors.New("an API key needs an account ID")
+	// ErrInvalidAPIKey is matched by the error NewClient returns when
+	// WithAuth or WithAuthFromEnv gets an API key with a character that HTTP
+	// headers do not allow, such as a trailing newline.
+	ErrInvalidAPIKey = errors.New("the API key contains a character that HTTP headers do not allow")
 	// ErrInvalidAccountID is matched by the error NewClient returns when
 	// WithAuth or WithAuthFromEnv gets an account ID that is not a UUID, such
 	// as an API key passed in its place.
@@ -163,7 +167,7 @@ type APIError struct {
 	// describe an unexpected success status.
 	want []int
 	// retries is how many times the request was re-sent, after a 429 or a
-	// broken connection.
+	// failure that got no response.
 	retries int
 	// hint is a sentence suggesting what to check.
 	hint string
@@ -379,6 +383,23 @@ func (e *transportError) Error() string {
 }
 
 func (e *transportError) Unwrap() error {
+	return e.err
+}
+
+// responseReadError is returned when the body of a response could not be
+// read, for example because the connection broke while it arrived.
+type responseReadError struct {
+	method string
+	path   string
+	status int
+	err    error
+}
+
+func (e *responseReadError) Error() string {
+	return fmt.Sprintf("%s %s: reading %d response: %v", e.method, e.path, e.status, e.err)
+}
+
+func (e *responseReadError) Unwrap() error {
 	return e.err
 }
 
