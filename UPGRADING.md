@@ -105,6 +105,7 @@ if err != nil {
   | `ErrMissingAPIKey` | empty API key, or `CHECKLY_API_KEY` not set |
   | `ErrMissingAccountID` | empty account ID, or `CHECKLY_ACCOUNT_ID` not set; replaces v1's `missing Checkly Account ID` request error |
   | `ErrInvalidAccountID` | account ID is not a UUID |
+  | `ErrInvalidAPIKey` | API key contains a character HTTP headers do not allow, such as a trailing newline |
 
 - `NewClient` never reads the environment unless you pass `WithAuthFromEnv`.
 - A client without auth can call `GetStaticIPs` and `GetRuntime`, whose endpoints are public; they
@@ -166,7 +167,7 @@ log.Println(monitor.Name)
   | `ErrRateLimited` | 429 still rate limited after the client's retries |
   | `ErrCheckTypeMismatch` | a typed getter got the ID of a check of another type (not an `*APIError`) |
   | `ErrUnsupportedCheckType` | `GetCheck` got the ID of a check of a type the SDK has no type for (not an `*APIError`) |
-  | `ErrMissingAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |
+  | `ErrMissingAPIKey`, `ErrInvalidAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |
 
 - **`ErrCodeBundleNotFound`** is now returned wrapped together with the `*APIError`; replace
   `err == checkly.ErrCodeBundleNotFound` with `errors.Is(err, checkly.ErrCodeBundleNotFound)`.

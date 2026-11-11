@@ -38,7 +38,7 @@ type rawResponse struct {
 	body   []byte
 	header http.Header
 	// retries is how many times the request was re-sent, after a 429 or a
-	// broken connection.
+	// failure that got no response.
 	retries int
 }
 
@@ -54,8 +54,8 @@ func errorPath(path string) string {
 // described in rate_limit.go; once the retries are spent, or the caller's deadline
 // does not leave time for another one, the 429 is returned like any other
 // response. When the context ends during a wait, the error matches both
-// ErrRateLimited and the context error. An idempotent request whose
-// connection broke is re-sent as described in transport_retry.go. auth tells
+// ErrRateLimited and the context error. An idempotent request that got no
+// response is re-sent as described in transport_retry.go. auth tells
 // whether the request carries credentials; only the public endpoints are sent
 // without.
 func (c *client) send(
@@ -188,8 +188,8 @@ func decode(res rawResponse, out any) error {
 
 // doRequest sends a single API request, with credentials when auth is set.
 // The request is rebuilt from data on every call so that it can be re-sent
-// after a rate-limited response or a broken connection. path is the request path for error
-// messages, as errorPath returns it.
+// after a rate-limited response or a failure that got no response. path is
+// the request path for error messages, as errorPath returns it.
 func (c *client) doRequest(
 	ctx context.Context,
 	auth bool,
@@ -233,7 +233,7 @@ func (c *client) roundTrip(req *http.Request, path string) (rawResponse, error) 
 	res := rawResponse{method: method, path: path, status: resp.StatusCode, header: resp.Header}
 	res.body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return res, fmt.Errorf("%s %s: reading %d response: %w", method, path, resp.StatusCode, err)
+		return res, &responseReadError{method: method, path: path, status: resp.StatusCode, err: err}
 	}
 	return res, nil
 }

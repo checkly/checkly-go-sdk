@@ -221,6 +221,8 @@ func TestNewClientErrors(t *testing.T) {
 		{name: "account ID abc", opts: []checkly.ClientOption{checkly.WithAuth("key", "abc")}, want: invalidAccount, sentinel: checkly.ErrInvalidAccountID},
 		{name: "account ID missing a UUID group", opts: []checkly.ClientOption{checkly.WithAuth("key", "a1b2c3d4-0000-4000-000000000001")}, want: invalidAccount, sentinel: checkly.ErrInvalidAccountID},
 		{name: "empty API key", opts: []checkly.ClientOption{checkly.WithAuth("", testAccountID)}, want: "checkly: WithAuth: the API key is empty", sentinel: checkly.ErrMissingAPIKey},
+		{name: "API key with a newline", opts: []checkly.ClientOption{checkly.WithAuth("key\n", testAccountID)}, want: "checkly: WithAuth: the API key contains a character that HTTP headers do not allow, such as a newline", sentinel: checkly.ErrInvalidAPIKey},
+		{name: "source with a newline", opts: []checkly.ClientOption{checkly.WithSource("tool\r\n")}, want: "checkly: WithSource: the source contains a character that HTTP headers do not allow, such as a newline"},
 		{name: "empty account ID", opts: []checkly.ClientOption{checkly.WithAuth("key", "")}, want: "checkly: WithAuth: the account ID is empty", sentinel: checkly.ErrMissingAccountID},
 		{name: "both empty", opts: []checkly.ClientOption{checkly.WithAuth("", "")}, want: "checkly: WithAuth: the API key is empty", sentinel: checkly.ErrMissingAPIKey},
 		{name: "empty values after valid auth", opts: []checkly.ClientOption{checkly.WithAuth("key", testAccountID), checkly.WithAuth("", "")}, want: "checkly: WithAuth: the API key is empty", sentinel: checkly.ErrMissingAPIKey},
@@ -285,6 +287,11 @@ func TestWithAuthFromEnvErrors(t *testing.T) {
 			newClientError: newClientError{name: "empty key", want: keyNotSet, sentinel: checkly.ErrMissingAPIKey},
 			envAccount:     testAccountID,
 			keySetEmpty:    true,
+		},
+		{
+			newClientError: newClientError{name: "key with a newline", want: "checkly: WithAuthFromEnv: CHECKLY_API_KEY contains a character that HTTP headers do not allow, such as a newline", sentinel: checkly.ErrInvalidAPIKey},
+			envKey:         "key\n",
+			envAccount:     testAccountID,
 		},
 		{
 			newClientError: newClientError{name: "only the key set", want: accountNotSet, sentinel: checkly.ErrMissingAccountID},
