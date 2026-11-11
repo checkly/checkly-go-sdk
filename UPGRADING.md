@@ -1,3 +1,40 @@
+# Upgrading from v2.1 to v2.2
+
+v2.2.0 changes the type of one field on every check and monitor type, so code that sets or reads
+it no longer compiles. The module path stays `github.com/checkly/checkly-go-sdk/v2`.
+
+## `GroupOrder` is now `*int`
+
+`GroupOrder` on `APICheck`, `BrowserCheck`, `MultiStepCheck`, `PlaywrightCheck`, `URLMonitor`,
+`DNSMonitor`, `ICMPMonitor`, `GRPCMonitor`, `SSLMonitor`, `TCPMonitor` and `TracerouteMonitor`
+changed from `int` to `*int`. A group numbers its checks from 0, so 0 is the first position, and
+`nil` means the check has no position. As an `int`, 0 could not be told apart from no position: a
+response with no position decoded as 0, and depending on the type a 0 was sent as `null`, left
+out, or sent as `0`.
+
+Now every create and update request sends `nil` as `null` and any number, 0 included, as that
+number, and a response's `null` decodes to `nil`. An update with a `nil` group order clears the
+stored position.
+
+To migrate, take the address of a variable where you set a position, and check for `nil` where you
+read one:
+
+```go
+// v2.1
+check := checkly.APICheck{GroupID: groupID, GroupOrder: 2}
+fmt.Println(check.GroupOrder)
+
+// v2.2
+order := 2
+check := checkly.APICheck{GroupID: groupID, GroupOrder: &order}
+if check.GroupOrder != nil {
+	fmt.Println(*check.GroupOrder)
+}
+```
+
+Code that set `GroupOrder` to 0 to mean no position should now leave it `nil`; setting `&0` puts
+the check first in its group.
+
 # Upgrading from v1 to v2
 
 v2.0.0 is a major release. It changes how a client is built, returns typed errors, adds dedicated

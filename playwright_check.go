@@ -54,9 +54,10 @@ type PlaywrightCheck struct {
 	// none. GroupID is left out of the request when zero.
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the check's position in its group, which sets the run
-	// order when the group is triggered from the API or CI/CD.
-	// GroupOrder is left out of the request when zero.
-	GroupOrder int `json:"groupOrder,omitempty"`
+	// order when the group is triggered from the API or CI/CD. 0 is the
+	// first position. Nil means no position, and is sent as null so that
+	// an update clears it.
+	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// check's alerts. The SDK disables automatic assignment, so an empty
 	// list leaves the check without any.

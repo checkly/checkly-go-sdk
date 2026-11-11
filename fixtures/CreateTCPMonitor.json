@@ -13,7 +13,7 @@
   "maxResponseTime": 5000,
   "useGlobalAlertSettings": true,
   "groupId": null,
-  "groupOrder": 0,
+  "groupOrder": null,
   "alertChannelSubscriptions": [],
   "privateLocations": [],
   "request": {

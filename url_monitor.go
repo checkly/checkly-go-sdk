@@ -52,8 +52,10 @@ type URLMonitor struct {
 	// none.
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
-	// order when the group is triggered from the API or CI/CD.
-	GroupOrder int `json:"groupOrder,omitempty"`
+	// order when the group is triggered from the API or CI/CD. 0 is the
+	// first position. Nil means no position, and is sent as null so that
+	// an update clears it.
+	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
@@ -113,7 +115,6 @@ type urlMonitorPayload struct {
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	DegradedResponseTime      int                        `json:"degradedResponseTime"`
 	MaxResponseTime           int                        `json:"maxResponseTime"`
-	GroupOrder                *int                       `json:"groupOrder"`
 }
 
 func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
@@ -150,11 +151,6 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 	// keep the previous values on update.
 	payload.DegradedResponseTime = monitor.DegradedResponseTime
 	payload.MaxResponseTime = monitor.MaxResponseTime
-
-	// GroupOrder must be null if empty or the order will not get unset on
-	// update. Note that the check and TCP monitor endpoints differ: they
-	// accept and reset on a literal 0.
-	payload.GroupOrder = nullIfZero(monitor.GroupOrder)
 
 	return payload
 }

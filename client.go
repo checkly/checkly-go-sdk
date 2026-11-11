@@ -139,8 +139,8 @@ type Client interface {
 
 	// UpdatePlaywrightCheck updates the Playwright check with the given ID and
 	// returns it. An empty Tags or Browsers, a nil AlertSettings, or a zero
-	// GroupID or GroupOrder, which are left out of the request, resets that
-	// field to the API default.
+	// GroupID, which are left out of the request, resets that field to the
+	// API default.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
 		id string,
