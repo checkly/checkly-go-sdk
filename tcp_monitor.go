@@ -20,10 +20,12 @@ type TCPMonitor struct {
 	// 30, 60, 120, 180, 360, 720 or 1440.
 	Frequency int `json:"frequency"`
 	// FrequencyOffset is 10, 20 or 30 when Frequency is 0, for a run every
-	// that many seconds. For a higher Frequency the API assigns the offset,
-	// but rejects a value sent above Frequency * 10 for a Frequency up to 60,
-	// or above Frequency / 5 rounded up for a higher one. FrequencyOffset is
-	// left out of the request when zero.
+	// that many seconds. For any other Frequency the API picks the offset
+	// itself and keeps it until Frequency changes: a value sent has no
+	// effect, and the value read back is the API's. The API still rejects a
+	// value above Frequency * 10 for a Frequency up to 60, or above
+	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
+	// of the request when zero.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
