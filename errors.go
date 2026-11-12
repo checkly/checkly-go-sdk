@@ -186,8 +186,8 @@ func (e *SlackIntegrationNotConnectedError) Unwrap() error { return e.APIError }
 // write that names @handles the connected Slack workspace could not resolve.
 // It matches [ErrUnresolvableSlackHandles] and [ErrBadRequest], and
 // errors.As finds the embedded *APIError too, so code that only handles
-// *APIError keeps working. Its text is the *APIError's followed by the
-// handles.
+// *APIError keeps working. Its text names the handles and why each failed,
+// and leaves out the request and the response.
 type UnresolvableSlackHandlesError struct {
 	*APIError
 	// Handles are the unresolved handles, from the details field of the
@@ -197,13 +197,31 @@ type UnresolvableSlackHandlesError struct {
 
 func (e *UnresolvableSlackHandlesError) Error() string {
 	if len(e.Handles) == 0 {
-		return e.APIError.Error()
+		return "the connected Slack workspace cannot resolve some of the Slack handles. " + unresolvableSlackHandleHint
 	}
 	handles := make([]string, len(e.Handles))
 	for i, h := range e.Handles {
-		handles[i] = fmt.Sprintf("%s (%s)", h.Handle, h.Reason)
+		handles[i] = fmt.Sprintf("%s (%s)", h.Handle, slackHandleReason(h.Reason))
 	}
-	return fmt.Sprintf("%s Unresolved Slack handles: %s.", e.APIError.Error(), strings.Join(handles, ", "))
+	return fmt.Sprintf("the connected Slack workspace cannot resolve the Slack handles %s. %s", strings.Join(handles, ", "), unresolvableSlackHandleHint)
+}
+
+// unresolvableSlackHandleHint says how to resolve a Slack App alert channel
+// write with handles the Slack workspace cannot resolve.
+const unresolvableSlackHandleHint = "Use the Slack handles of members of the connected Slack workspace."
+
+// slackHandleReason describes a reason of an [UnresolvedSlackHandle] in
+// words, or returns an unknown reason as it is.
+func slackHandleReason(reason string) string {
+	switch reason {
+	case "handle_not_found":
+		return "no member has it"
+	case "handle_ambiguous":
+		return "several members have it"
+	case "handle_reserved":
+		return "reserved by Slack"
+	}
+	return reason
 }
 
 // Unwrap returns the embedded *APIError.
@@ -465,7 +483,7 @@ func newAPIError(res rawResponse, want []int, accountID string) error {
 			e.hint = slackIntegrationNotConnectedHint
 			return &SlackIntegrationNotConnectedError{APIError: e}
 		case isUnresolvableSlackHandle(e.Code):
-			e.hint = "Use the Slack handles of members of the connected Slack workspace."
+			e.hint = unresolvableSlackHandleHint
 			slackErr := &UnresolvableSlackHandlesError{APIError: e}
 			// Details of another shape are left out entirely.
 			var handles []UnresolvedSlackHandle

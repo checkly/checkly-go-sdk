@@ -168,7 +168,7 @@ log.Println(monitor.Name)
   | `ErrConflict` | 409 |
   | `ErrRateLimited` | 429 still rate limited after the client's retries |
   | `ErrSlackIntegrationNotConnected` | 400 with code `ERR_SLACK_INTEGRATION_NOT_CONNECTED` or `slack_integration_not_connected`: a Slack App alert channel on an account without a connected Slack workspace; the error is a `*SlackIntegrationNotConnectedError`, whose text says how to connect one without the request and response details, and which wraps the `*APIError`; also matches `ErrBadRequest` |
-  | `ErrUnresolvableSlackHandles` | 400 with code `ERR_UNRESOLVABLE_SLACK_HANDLE` or `unresolvable_handles`: a Slack App alert channel names handles the workspace cannot resolve; the error is a `*UnresolvableSlackHandlesError`, whose `Handles` lists them and which wraps the `*APIError`; also matches `ErrBadRequest` |
+  | `ErrUnresolvableSlackHandles` | 400 with code `ERR_UNRESOLVABLE_SLACK_HANDLE` or `unresolvable_handles`: a Slack App alert channel names handles the workspace cannot resolve; the error is a `*UnresolvableSlackHandlesError`, whose `Handles` lists them, whose text names them without the request and response details, and which wraps the `*APIError`; also matches `ErrBadRequest` |
   | `ErrCheckTypeMismatch` | a typed getter got the ID of a check of another type (not an `*APIError`) |
   | `ErrUnsupportedCheckType` | `GetCheck` got the ID of a check of a type the SDK has no type for (not an `*APIError`) |
   | `ErrMissingAPIKey`, `ErrInvalidAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |
