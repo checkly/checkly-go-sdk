@@ -78,7 +78,9 @@ type URLMonitor struct {
 func (*URLMonitor) isCheck() {}
 
 // URLRequest is the request of a [URLMonitor]. The SDK always sends it with
-// the method GET.
+// the method GET. It has no headers: the SDK neither reads nor sends them,
+// so an update keeps headers set on the monitor in the web app or through
+// the API.
 type URLRequest struct {
 	URL             string      `json:"url"`
 	FollowRedirects bool        `json:"followRedirects"`
@@ -90,23 +92,28 @@ type URLRequest struct {
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 
-func (r *URLRequest) toRequest() Request {
-	return Request{
-		Method:          "GET",
-		URL:             r.URL,
-		FollowRedirects: r.FollowRedirects,
-		SkipSSL:         r.SkipSSL,
-		Assertions:      r.Assertions,
-		IPFamily:        r.IPFamily,
-	}
+// urlRequestPayload is the request of a URL monitor as the SDK sends it: only
+// the fields a URL monitor has, not those of an API check's [Request]. On
+// accounts that can set URL monitor headers, the API stores the headers of
+// every write that sends the key, so sending none keeps the headers set
+// outside the SDK.
+type urlRequestPayload struct {
+	Method string `json:"method"`
+	URLRequest
+}
+
+func (r URLRequest) toPayload() urlRequestPayload {
+	// The API rejects null assertions.
+	r.Assertions = emptyIfNil(r.Assertions)
+	return urlRequestPayload{Method: http.MethodGet, URLRequest: r}
 }
 
 type urlMonitorPayload struct {
 	URLMonitor
-	Type        CheckType `json:"checkType"`
-	Request     Request   `json:"request"`
-	DoubleCheck bool      `json:"doubleCheck"`
-	GroupID     *int64    `json:"groupId"`
+	Type        CheckType         `json:"checkType"`
+	Request     urlRequestPayload `json:"request"`
+	DoubleCheck bool              `json:"doubleCheck"`
+	GroupID     *int64            `json:"groupId"`
 	// The update endpoint is PATCH-style: keys omitted from the payload keep
 	// their server-side value. The fields below shadow embedded fields whose
 	// zero value would be omitted so that they are always sent and can
@@ -122,7 +129,7 @@ func createURLMonitorPayload(monitor URLMonitor) urlMonitorPayload {
 		URLMonitor: monitor,
 		// Unfortunately `checkType` is required for this endpoint.
 		Type:    CheckTypeURL,
-		Request: monitor.Request.toRequest(),
+		Request: monitor.Request.toPayload(),
 		// Unfortunately, this will default to true if not set.
 		DoubleCheck: false,
 	}

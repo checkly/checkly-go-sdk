@@ -580,8 +580,11 @@ Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
 - **Check groups:** `tags` and `alertChannelSubscriptions` as `[]`. Code moving from `Group` to
   `GroupV2` also sends `setupSnippetId`, `tearDownSnippetId`, `localSetupScript` and
   `localTearDownScript` as `null`.
-- **`Request` (API checks, URL monitors):** `BasicAuth` as `null` when nil, so removing
-  credentials clears them.
+- **`Request` (API checks):** `BasicAuth` as `null` when nil, so removing credentials clears
+  them.
+- **URL monitors:** the request has only the fields a URL monitor has (`method`, `url`,
+  `followRedirects`, `skipSSL`, `assertions` and `ipFamily`) and no `headers`, so an update keeps
+  headers set on the monitor in the web app or through the API.
 - **`AlertSettings`:** `reminders.amount` and `parallelRunFailureThreshold.enabled`, on create too.
 - **Status pages (v1):** `customDomain` as `null`, and `logo`, `redirectTo` and `favicon` as `""`.
 - **Dashboards:** `UpdateDashboard` sends empty `CustomDomain`, `Logo`, `Link`, `Description` and
