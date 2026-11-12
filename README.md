@@ -130,6 +130,8 @@ if errors.As(err, &apiErr) {
 
 A request the API rejects as invalid matches `checkly.ErrBadRequest`. If it failed schema validation it also matches `checkly.ErrValidation`, and `apiErr.Details` lists the fields it names, if any.
 
+Creating or updating a Slack App alert channel fails with a `*checkly.SlackIntegrationNotConnectedError`, matching `checkly.ErrSlackIntegrationNotConnected`, when the account has no connected Slack workspace, and with a `*checkly.UnresolvableSlackHandlesError`, matching `checkly.ErrUnresolvableSlackHandles`, when the workspace cannot resolve some of its handles, which `Handles` lists. Their texts leave out the request and the response: they say what is wrong and how to fix it. `errors.As` still finds the `*checkly.APIError` that both wrap.
+
 Errors for requests that got no response wrap their cause, so `errors.Is(err, context.DeadlineExceeded)` works too. A request answered with HTTP 429 is retried a few times, waiting as the API asks while the context's deadline allows. A request that can safely be re-sent, such as a GET, PUT or DELETE, is also retried twice when it gets no response, for example because its connection was reset, unless the cause is one a retry would only repeat: a timeout, a DNS failure, a rejected certificate or a failure to connect. Errors returned by a custom transport or redirect policy passed to `WithHTTPClient` are retried too.
 
 The SDK never adds the API key or the request body to an error. It does keep the backend's error message, and the start of an error body that is not JSON, cut at 500 bytes. A validation message can quote a submitted value, and so can the text of such a body, so take care when logging errors from requests that carry secrets.

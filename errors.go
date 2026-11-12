@@ -15,7 +15,8 @@ import (
 
 // Sentinel errors for the API failures callers commonly branch on. An
 // *APIError matches them with errors.Is according to its status code (and,
-// for ErrAccountNotAccessible and ErrValidation, its body), also when wrapped:
+// for ErrAccountNotAccessible, ErrValidation, ErrSlackIntegrationNotConnected
+// and ErrUnresolvableSlackHandles, its body), also when wrapped:
 //
 //	if errors.Is(err, checkly.ErrNotFound) { ... }
 var (
@@ -50,6 +51,20 @@ var (
 	// ErrRateLimited matches a 429 response that was still rate limited after
 	// the client's retries.
 	ErrRateLimited = errors.New("rate limited")
+	// ErrSlackIntegrationNotConnected matches a 400 response with the error
+	// code ERR_SLACK_INTEGRATION_NOT_CONNECTED, or
+	// slack_integration_not_connected as the API sends it today: a Slack App
+	// alert channel was created or updated on an account without a connected
+	// Slack workspace. The error is a [*SlackIntegrationNotConnectedError].
+	// Such an error also matches ErrBadRequest.
+	ErrSlackIntegrationNotConnected = errors.New("slack integration not connected")
+	// ErrUnresolvableSlackHandles matches a 400 response with the error code
+	// ERR_UNRESOLVABLE_SLACK_HANDLE, or unresolvable_handles as the API sends
+	// it today: a Slack App alert channel names @handles that the connected
+	// Slack workspace has no single member for. The error is an
+	// [*UnresolvableSlackHandlesError], which lists them. Such an error also
+	// matches ErrBadRequest.
+	ErrUnresolvableSlackHandles = errors.New("unresolvable slack handles")
 )
 
 // Sentinel errors for auth that cannot authenticate a request. They are not
@@ -112,9 +127,117 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, ErrNotFound)
 }
 
-// errorCodeAccountNotAccessible is the backend's error code for a request
-// whose API key has no access to the selected account.
-const errorCodeAccountNotAccessible = "ERR_ACCOUNT_NOT_ACCESSIBLE"
+// Error codes of the backend that the SDK classifies.
+const (
+	// errorCodeAccountNotAccessible is the code for a request whose API key
+	// has no access to the selected account.
+	errorCodeAccountNotAccessible = "ERR_ACCOUNT_NOT_ACCESSIBLE"
+	// errorCodeSlackIntegrationNotConnected is the code for a Slack App
+	// alert channel write on an account without a connected Slack
+	// workspace.
+	errorCodeSlackIntegrationNotConnected = "ERR_SLACK_INTEGRATION_NOT_CONNECTED"
+	// errorCodeUnresolvableSlackHandle is the code for a Slack App alert
+	// channel write whose @handles the Slack workspace cannot resolve.
+	errorCodeUnresolvableSlackHandle = "ERR_UNRESOLVABLE_SLACK_HANDLE"
+)
+
+// The Slack App alert channel writes send their codes in lower snake case in
+// the code field instead of errorCode. These are those names for the codes
+// above, which are the names in the errorCode format; both are recognised.
+const (
+	snakeErrorCodeSlackIntegrationNotConnected = "slack_integration_not_connected"
+	snakeErrorCodeUnresolvableSlackHandle      = "unresolvable_handles"
+)
+
+// isSlackIntegrationNotConnected reports whether code is either name of the
+// code for an account without a connected Slack workspace.
+func isSlackIntegrationNotConnected(code string) bool {
+	return code == errorCodeSlackIntegrationNotConnected || code == snakeErrorCodeSlackIntegrationNotConnected
+}
+
+// isUnresolvableSlackHandle reports whether code is either name of the code
+// for @handles the Slack workspace cannot resolve.
+func isUnresolvableSlackHandle(code string) bool {
+	return code == errorCodeUnresolvableSlackHandle || code == snakeErrorCodeUnresolvableSlackHandle
+}
+
+// slackIntegrationNotConnectedHint says how to resolve a Slack App alert
+// channel write on an account without a connected Slack workspace.
+const slackIntegrationNotConnectedHint = "Connect a Slack workspace in the Checkly web app under Account settings > Integrations, then try again."
+
+// SlackIntegrationNotConnectedError is returned for a Slack App alert channel
+// write on an account without a connected Slack workspace. It matches
+// [ErrSlackIntegrationNotConnected] and [ErrBadRequest], and errors.As finds
+// the embedded *APIError too. Unlike the *APIError, its text leaves out the
+// request and the response, as the failure is a setting of the account and
+// the text says how to fix it.
+type SlackIntegrationNotConnectedError struct {
+	*APIError
+}
+
+func (e *SlackIntegrationNotConnectedError) Error() string {
+	return "no Slack workspace is connected to the Checkly account. " + slackIntegrationNotConnectedHint
+}
+
+// Unwrap returns the embedded *APIError.
+func (e *SlackIntegrationNotConnectedError) Unwrap() error { return e.APIError }
+
+// UnresolvableSlackHandlesError is returned for a Slack App alert channel
+// write that names @handles the connected Slack workspace could not resolve.
+// It matches [ErrUnresolvableSlackHandles] and [ErrBadRequest], and
+// errors.As finds the embedded *APIError too, so code that only handles
+// *APIError keeps working. Its text names the handles and why each failed,
+// and leaves out the request and the response.
+type UnresolvableSlackHandlesError struct {
+	*APIError
+	// Handles are the unresolved handles, from the details field of the
+	// response. It is nil when the details have another shape.
+	Handles []UnresolvedSlackHandle
+}
+
+func (e *UnresolvableSlackHandlesError) Error() string {
+	if len(e.Handles) == 0 {
+		return "the connected Slack workspace cannot resolve some of the Slack handles. " + unresolvableSlackHandleHint
+	}
+	handles := make([]string, len(e.Handles))
+	for i, h := range e.Handles {
+		handles[i] = fmt.Sprintf("%s (%s)", h.Handle, slackHandleReason(h.Reason))
+	}
+	return fmt.Sprintf("the connected Slack workspace cannot resolve the Slack handles %s. %s", strings.Join(handles, ", "), unresolvableSlackHandleHint)
+}
+
+// unresolvableSlackHandleHint says how to resolve a Slack App alert channel
+// write with handles the Slack workspace cannot resolve.
+const unresolvableSlackHandleHint = "Use the Slack handles of members of the connected Slack workspace."
+
+// slackHandleReason describes a reason of an [UnresolvedSlackHandle] in
+// words, or returns an unknown reason as it is.
+func slackHandleReason(reason string) string {
+	switch reason {
+	case "handle_not_found":
+		return "no member has it"
+	case "handle_ambiguous":
+		return "several members have it"
+	case "handle_reserved":
+		return "reserved by Slack"
+	}
+	return reason
+}
+
+// Unwrap returns the embedded *APIError.
+func (e *UnresolvableSlackHandlesError) Unwrap() error { return e.APIError }
+
+// UnresolvedSlackHandle is a Slack @handle of a Slack App alert channel that
+// the connected Slack workspace could not resolve to a single member, in
+// [UnresolvableSlackHandlesError].Handles.
+type UnresolvedSlackHandle struct {
+	// Handle is the handle as the alert channel names it, such as "@alice".
+	Handle string `json:"handle"`
+	// Reason is the API's reason: "handle_not_found" when no member has the
+	// handle, "handle_ambiguous" when several do, and "handle_reserved" for
+	// @everyone, @here and @channel.
+	Reason string `json:"reason"`
+}
 
 // maxMessageExcerpt is the number of bytes of an error message kept in
 // APIError.Message: the message field of a JSON error body, or a body that is
@@ -123,8 +246,10 @@ const errorCodeAccountNotAccessible = "ERR_ACCOUNT_NOT_ACCESSIBLE"
 const maxMessageExcerpt = 500
 
 // APIError is returned when the API answers with a status the method does not
-// accept. Use errors.As to inspect it, or errors.Is with the sentinel errors
-// above to classify it.
+// accept, wrapped in a [SlackIntegrationNotConnectedError] or an
+// [UnresolvableSlackHandlesError] for those Slack App alert channel errors.
+// Use errors.As to inspect it, or errors.Is with the sentinel errors above to
+// classify it.
 //
 // The error text has the form
 //
@@ -143,7 +268,9 @@ type APIError struct {
 	// StatusCode is the HTTP status of the response.
 	StatusCode int
 	// Code is the machine-readable error code from the response body, such
-	// as "ERR_ACCOUNT_NOT_ACCESSIBLE", if any.
+	// as "ERR_ACCOUNT_NOT_ACCESSIBLE", if any. It is the body's errorCode
+	// field, or its code field when errorCode is absent, as some endpoints,
+	// such as the Slack App alert channel writes, send it there.
 	Code string
 	// Message is the error message from the response body, or the body
 	// itself if it is not JSON, with whitespace collapsed and truncated to
@@ -196,7 +323,9 @@ func (e *APIError) Error() string {
 	if e.Code != "" {
 		fmt.Fprintf(&b, " [%s]", e.Code)
 	}
-	if e.Message != "" && !strings.EqualFold(e.Message, e.reasonPhrase()) {
+	// Some endpoints send the error code as the message too; it is shown
+	// once, as the code.
+	if e.Message != "" && !strings.EqualFold(e.Message, e.reasonPhrase()) && e.Message != e.Code {
 		b.WriteString(": ")
 		b.WriteString(e.Message)
 	}
@@ -248,6 +377,10 @@ func (e *APIError) Is(target error) bool {
 		return e.StatusCode == http.StatusConflict
 	case ErrRateLimited:
 		return e.StatusCode == http.StatusTooManyRequests
+	case ErrSlackIntegrationNotConnected:
+		return e.StatusCode == http.StatusBadRequest && isSlackIntegrationNotConnected(e.Code)
+	case ErrUnresolvableSlackHandles:
+		return e.StatusCode == http.StatusBadRequest && isUnresolvableSlackHandle(e.Code)
 	}
 	return false
 }
@@ -291,11 +424,15 @@ func plural(n int, one, many string) string {
 
 // errorBody is the error response body of the API: a Boom error payload,
 // optionally with an error code and, for validation errors, the offending
-// keys.
+// keys. Code and Details are raw because their shape is not the same on
+// every endpoint: they are decoded only where the SDK knows it, so that an
+// unexpected shape does not make the whole body undecodable.
 type errorBody struct {
-	Error      string `json:"error"`
-	Message    string `json:"message"`
-	ErrorCode  string `json:"errorCode"`
+	Error      string          `json:"error"`
+	Message    string          `json:"message"`
+	ErrorCode  string          `json:"errorCode"`
+	Code       json.RawMessage `json:"code"`
+	Details    json.RawMessage `json:"details"`
 	Validation *struct {
 		Keys []string `json:"keys"`
 	} `json:"validation"`
@@ -303,8 +440,10 @@ type errorBody struct {
 
 // newAPIError describes res, a response whose status the method does not
 // accept. want lists the accepted statuses and accountID is the account the
-// client selected, if any; both only feed the error text.
-func newAPIError(res rawResponse, want []int, accountID string) *APIError {
+// client selected, if any; both only feed the error text. The error is an
+// *APIError, or a *SlackIntegrationNotConnectedError or
+// *UnresolvableSlackHandlesError wrapping one.
+func newAPIError(res rawResponse, want []int, accountID string) error {
 	status, header, body := res.status, res.header, res.body
 	e := &APIError{
 		Method:     res.method,
@@ -324,6 +463,10 @@ func newAPIError(res rawResponse, want []int, accountID string) *APIError {
 		if err := json.Unmarshal(body, &parsed); err == nil {
 			e.reason = parsed.Error
 			e.Code = parsed.ErrorCode
+			if e.Code == "" {
+				// A code that is not a string is left out.
+				_ = json.Unmarshal(parsed.Code, &e.Code)
+			}
 			e.Message = excerpt(parsed.Message)
 			if parsed.Validation != nil {
 				e.Details = emptyIfNil(parsed.Validation.Keys)
@@ -334,6 +477,21 @@ func newAPIError(res rawResponse, want []int, accountID string) *APIError {
 	}
 
 	switch status {
+	case http.StatusBadRequest:
+		switch {
+		case isSlackIntegrationNotConnected(e.Code):
+			e.hint = slackIntegrationNotConnectedHint
+			return &SlackIntegrationNotConnectedError{APIError: e}
+		case isUnresolvableSlackHandle(e.Code):
+			e.hint = unresolvableSlackHandleHint
+			slackErr := &UnresolvableSlackHandlesError{APIError: e}
+			// Details of another shape are left out entirely.
+			var handles []UnresolvedSlackHandle
+			if json.Unmarshal(parsed.Details, &handles) == nil {
+				slackErr.Handles = handles
+			}
+			return slackErr
+		}
 	case http.StatusUnauthorized:
 		e.hint = "Check the API key."
 	case http.StatusForbidden:
