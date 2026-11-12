@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -122,7 +123,52 @@ func TestErrorMessages(t *testing.T) {
 			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"The \"to\" date should be after the \"from\" date."}`},
 			want:  `GET /v1/checks/abc: 400 Bad Request: The "to" date should be after the "from" date.`,
 			is:    []error{checkly.ErrBadRequest},
-			isNot: []error{checkly.ErrValidation},
+			isNot: []error{checkly.ErrValidation, checkly.ErrSlackIntegrationNotConnected, checkly.ErrUnresolvableSlackHandles},
+		},
+		{
+			// The Slack App alert channel writes send the code as the
+			// message and in a code field.
+			name:  "slack integration not connected",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"slack_integration_not_connected","code":"slack_integration_not_connected"}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [slack_integration_not_connected]. Connect a Slack workspace in the Checkly web app under Account settings > Integrations, then try again.",
+			is:    []error{checkly.ErrSlackIntegrationNotConnected, checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation, checkly.ErrUnresolvableSlackHandles},
+		},
+		{
+			name:  "unresolvable slack handles",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":[{"handle":"@alice","reason":"handle_not_found"},{"handle":"@here","reason":"handle_reserved"}]}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [unresolvable_handles] (unresolved Slack handles: @alice (handle_not_found), @here (handle_reserved)). Use the Slack handles of members of the connected Slack workspace.",
+			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation, checkly.ErrSlackIntegrationNotConnected},
+		},
+		{
+			name:  "unresolvable slack handles with details of another shape",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":["@alice"]}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [unresolvable_handles]. Use the Slack handles of members of the connected Slack workspace.",
+			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
+		},
+		{
+			// A code without a sentinel is still shown, once.
+			name:  "slack app missing account context",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"slack_app_missing_account_context","code":"slack_app_missing_account_context"}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [slack_app_missing_account_context]",
+			is:    []error{checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrSlackIntegrationNotConnected, checkly.ErrUnresolvableSlackHandles},
+		},
+		{
+			name:  "error code takes precedence over code",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Not allowed.","errorCode":"ERR_SOMETHING_ELSE","code":"slack_integration_not_connected"}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [ERR_SOMETHING_ELSE]: Not allowed.",
+			is:    []error{checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrSlackIntegrationNotConnected},
+		},
+		{
+			// A code that is not a string is left out, and the rest of
+			// the body is still read.
+			name:  "code that is not a string",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Invalid request","code":42}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request: Invalid request",
+			is:    []error{checkly.ErrBadRequest},
 		},
 		{
 			name:  "bad token",
@@ -309,6 +355,42 @@ func TestAPIErrorFields(t *testing.T) {
 	}
 	if apiErr.Method != "GET" || apiErr.Path != "/v1/checks/abc" || apiErr.Message != "Rate limit exceeded" || apiErr.RetryAfter != 12*time.Second {
 		t.Errorf("unexpected fields %#v", apiErr)
+	}
+}
+
+// TestAPIErrorUnresolvedSlackHandles checks that the unresolved handles of an
+// unresolvable_handles response are exposed on the APIError, and that no
+// other response sets them.
+func TestAPIErrorUnresolvedSlackHandles(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name string
+		body string
+		want []checkly.UnresolvedSlackHandle
+	}{
+		{
+			name: "unresolvable handles",
+			body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":[{"handle":"@alice","reason":"handle_not_found"},{"handle":"@bob","reason":"handle_ambiguous"}]}`,
+			want: []checkly.UnresolvedSlackHandle{{Handle: "@alice", Reason: "handle_not_found"}, {Handle: "@bob", Reason: "handle_ambiguous"}},
+		},
+		{
+			name: "details with another code",
+			body: `{"statusCode":400,"error":"Bad Request","message":"Invalid","code":"something_else","details":[{"handle":"@alice","reason":"handle_not_found"}]}`,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			c := newErrorServer(t, errorReply{status: 400, body: tc.body})
+			_, err := c.GetCheck(context.Background(), "abc")
+			var apiErr *checkly.APIError
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("want *APIError, got %v", err)
+			}
+			if !reflect.DeepEqual(apiErr.UnresolvedSlackHandles, tc.want) {
+				t.Errorf("UnresolvedSlackHandles = %#v, want %#v", apiErr.UnresolvedSlackHandles, tc.want)
+			}
+		})
 	}
 }
 
