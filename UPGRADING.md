@@ -148,10 +148,11 @@ if err != nil {
 log.Println(monitor.Name)
 ```
 
-- **`*APIError`** is returned for every response with a status the method does not accept. Its
+- **`*APIError`** is returned for every response with a status the method does not accept,
+  wrapped in a `*SlackIntegrationNotConnectedError` or an `*UnresolvableSlackHandlesError` for
+  those Slack App alert channel errors. Its
   fields are `Method`, `Path`, `StatusCode`, `Code` (the backend's error code), `Message`,
-  `Details` (the fields a validation error names), `UnresolvedSlackHandles` (the Slack handles a
-  Slack App alert channel names that the workspace cannot resolve) and `RetryAfter` (for a 429). Its text reads
+  `Details` (the fields a validation error names) and `RetryAfter` (for a 429). Its text reads
   `GET /v1/checks/abc: 404 Not Found`, followed by the error code, message and keys when present.
 - **Sentinels**, matched with `errors.Is`:
 
@@ -166,8 +167,8 @@ log.Println(monitor.Name)
   | `ErrPlanLimit` | 402 |
   | `ErrConflict` | 409 |
   | `ErrRateLimited` | 429 still rate limited after the client's retries |
-  | `ErrSlackIntegrationNotConnected` | 400 with code `slack_integration_not_connected`: a Slack App alert channel on an account without a connected Slack workspace; also matches `ErrBadRequest` |
-  | `ErrUnresolvableSlackHandles` | 400 with code `unresolvable_handles`: a Slack App alert channel names handles the workspace cannot resolve, listed in `UnresolvedSlackHandles`; also matches `ErrBadRequest` |
+  | `ErrSlackIntegrationNotConnected` | 400 with code `ERR_SLACK_INTEGRATION_NOT_CONNECTED` or `slack_integration_not_connected`: a Slack App alert channel on an account without a connected Slack workspace; the error is a `*SlackIntegrationNotConnectedError`, whose text says how to connect one without the request and response details, and which wraps the `*APIError`; also matches `ErrBadRequest` |
+  | `ErrUnresolvableSlackHandles` | 400 with code `ERR_UNRESOLVABLE_SLACK_HANDLE` or `unresolvable_handles`: a Slack App alert channel names handles the workspace cannot resolve; the error is a `*UnresolvableSlackHandlesError`, whose `Handles` lists them and which wraps the `*APIError`; also matches `ErrBadRequest` |
   | `ErrCheckTypeMismatch` | a typed getter got the ID of a check of another type (not an `*APIError`) |
   | `ErrUnsupportedCheckType` | `GetCheck` got the ID of a check of a type the SDK has no type for (not an `*APIError`) |
   | `ErrMissingAPIKey`, `ErrInvalidAPIKey`, `ErrMissingAccountID`, `ErrInvalidAccountID` | client construction and missing auth (not `*APIError`s, and they do not match `ErrUnauthorized`) |

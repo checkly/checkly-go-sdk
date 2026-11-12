@@ -130,7 +130,7 @@ func TestErrorMessages(t *testing.T) {
 			// message and in a code field.
 			name:  "slack integration not connected",
 			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"slack_integration_not_connected","code":"slack_integration_not_connected"}`},
-			want:  "GET /v1/checks/abc: 400 Bad Request [slack_integration_not_connected]. Connect a Slack workspace in the Checkly web app under Account settings > Integrations, then try again.",
+			want:  "no Slack workspace is connected to the Checkly account. Connect a Slack workspace in the Checkly web app under Account settings > Integrations, then try again.",
 			is:    []error{checkly.ErrSlackIntegrationNotConnected, checkly.ErrBadRequest},
 			isNot: []error{checkly.ErrValidation, checkly.ErrUnresolvableSlackHandles},
 		},
@@ -146,6 +146,20 @@ func TestErrorMessages(t *testing.T) {
 			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":["@alice"]}`},
 			want:  "GET /v1/checks/abc: 400 Bad Request [unresolvable_handles]. Use the Slack handles of members of the connected Slack workspace.",
 			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
+		},
+		{
+			name:  "slack integration not connected in errorCode",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Connect a Slack workspace first.","errorCode":"ERR_SLACK_INTEGRATION_NOT_CONNECTED"}`},
+			want:  "no Slack workspace is connected to the Checkly account. Connect a Slack workspace in the Checkly web app under Account settings > Integrations, then try again.",
+			is:    []error{checkly.ErrSlackIntegrationNotConnected, checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation, checkly.ErrUnresolvableSlackHandles},
+		},
+		{
+			name:  "unresolvable slack handle in errorCode",
+			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Some Slack handles could not be resolved.","errorCode":"ERR_UNRESOLVABLE_SLACK_HANDLE","details":[{"handle":"@alice","reason":"handle_not_found"}]}`},
+			want:  "GET /v1/checks/abc: 400 Bad Request [ERR_UNRESOLVABLE_SLACK_HANDLE]: Some Slack handles could not be resolved. (unresolved Slack handles: @alice (handle_not_found)). Use the Slack handles of members of the connected Slack workspace.",
+			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
+			isNot: []error{checkly.ErrValidation, checkly.ErrSlackIntegrationNotConnected},
 		},
 		{
 			// A code without a sentinel is still shown, once.
@@ -358,20 +372,70 @@ func TestAPIErrorFields(t *testing.T) {
 	}
 }
 
-// TestAPIErrorUnresolvedSlackHandles checks that the unresolved handles of an
-// unresolvable_handles response are exposed on the APIError, and that no
-// other response sets them.
-func TestAPIErrorUnresolvedSlackHandles(t *testing.T) {
+// TestSlackIntegrationNotConnectedError checks that a response with either
+// name of the code is a SlackIntegrationNotConnectedError, which errors.As
+// also finds as its *APIError with the response's details.
+func TestSlackIntegrationNotConnectedError(t *testing.T) {
+	t.Parallel()
+	for _, body := range []string{
+		`{"statusCode":400,"error":"Bad Request","message":"slack_integration_not_connected","code":"slack_integration_not_connected"}`,
+		`{"statusCode":400,"error":"Bad Request","message":"Connect a Slack workspace first.","errorCode":"ERR_SLACK_INTEGRATION_NOT_CONNECTED"}`,
+	} {
+		c := newErrorServer(t, errorReply{status: 400, body: body})
+		_, err := c.GetCheck(context.Background(), "abc")
+		var slackErr *checkly.SlackIntegrationNotConnectedError
+		if !errors.As(err, &slackErr) {
+			t.Fatalf("want *SlackIntegrationNotConnectedError, got %T: %v", err, err)
+		}
+		var apiErr *checkly.APIError
+		if !errors.As(err, &apiErr) || apiErr != slackErr.APIError {
+			t.Fatalf("errors.As does not find the embedded *APIError: %v", err)
+		}
+		if apiErr.Method != "GET" || apiErr.Path != "/v1/checks/abc" || apiErr.StatusCode != 400 {
+			t.Errorf("unexpected fields %#v", apiErr)
+		}
+		// The embedded error keeps the full text for callers that log it.
+		if got := apiErr.Error(); !strings.HasPrefix(got, "GET /v1/checks/abc: 400 Bad Request [") {
+			t.Errorf("APIError text = %q", got)
+		}
+	}
+	// A 400 with another code is a plain *APIError.
+	c := newErrorServer(t, errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Invalid"}`})
+	_, err := c.GetCheck(context.Background(), "abc")
+	var slackErr *checkly.SlackIntegrationNotConnectedError
+	if errors.As(err, &slackErr) {
+		t.Errorf("a 400 without the code is a SlackIntegrationNotConnectedError: %v", err)
+	}
+}
+
+// TestUnresolvableSlackHandlesError checks that a response with either name
+// of the unresolvable Slack handle code is an UnresolvableSlackHandlesError
+// with the handles, which errors.As also finds as its *APIError, and that no
+// other response is one.
+func TestUnresolvableSlackHandlesError(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
-		name string
-		body string
-		want []checkly.UnresolvedSlackHandle
+		name     string
+		body     string
+		wantType bool
+		want     []checkly.UnresolvedSlackHandle
 	}{
 		{
-			name: "unresolvable handles",
-			body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":[{"handle":"@alice","reason":"handle_not_found"},{"handle":"@bob","reason":"handle_ambiguous"}]}`,
-			want: []checkly.UnresolvedSlackHandle{{Handle: "@alice", Reason: "handle_not_found"}, {Handle: "@bob", Reason: "handle_ambiguous"}},
+			name:     "unresolvable handles",
+			body:     `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":[{"handle":"@alice","reason":"handle_not_found"},{"handle":"@bob","reason":"handle_ambiguous"}]}`,
+			wantType: true,
+			want:     []checkly.UnresolvedSlackHandle{{Handle: "@alice", Reason: "handle_not_found"}, {Handle: "@bob", Reason: "handle_ambiguous"}},
+		},
+		{
+			name:     "unresolvable slack handle in errorCode",
+			body:     `{"statusCode":400,"error":"Bad Request","message":"Some Slack handles could not be resolved.","errorCode":"ERR_UNRESOLVABLE_SLACK_HANDLE","details":[{"handle":"@here","reason":"handle_reserved"}]}`,
+			wantType: true,
+			want:     []checkly.UnresolvedSlackHandle{{Handle: "@here", Reason: "handle_reserved"}},
+		},
+		{
+			name:     "unresolvable handles with details of another shape",
+			body:     `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":["@alice"]}`,
+			wantType: true,
 		},
 		{
 			name: "details with another code",
@@ -384,11 +448,24 @@ func TestAPIErrorUnresolvedSlackHandles(t *testing.T) {
 			c := newErrorServer(t, errorReply{status: 400, body: tc.body})
 			_, err := c.GetCheck(context.Background(), "abc")
 			var apiErr *checkly.APIError
-			if !errors.As(err, &apiErr) {
-				t.Fatalf("want *APIError, got %v", err)
+			if !errors.As(err, &apiErr) || apiErr.StatusCode != 400 {
+				t.Fatalf("want a 400 *APIError, got %v", err)
 			}
-			if !reflect.DeepEqual(apiErr.UnresolvedSlackHandles, tc.want) {
-				t.Errorf("UnresolvedSlackHandles = %#v, want %#v", apiErr.UnresolvedSlackHandles, tc.want)
+			var slackErr *checkly.UnresolvableSlackHandlesError
+			if got := errors.As(err, &slackErr); got != tc.wantType {
+				t.Fatalf("errors.As UnresolvableSlackHandlesError = %v, want %v (%v)", got, tc.wantType, err)
+			}
+			if !tc.wantType {
+				return
+			}
+			if slackErr.APIError != apiErr {
+				t.Errorf("embedded APIError %p is not the one errors.As finds, %p", slackErr.APIError, apiErr)
+			}
+			if !reflect.DeepEqual(slackErr.Handles, tc.want) {
+				t.Errorf("Handles = %#v, want %#v", slackErr.Handles, tc.want)
+			}
+			if !errors.Is(err, checkly.ErrUnresolvableSlackHandles) || !errors.Is(err, checkly.ErrBadRequest) {
+				t.Errorf("want a match for ErrUnresolvableSlackHandles and ErrBadRequest: %v", err)
 			}
 		})
 	}
