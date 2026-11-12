@@ -1980,6 +1980,58 @@ func TestTracerouteMonitorUpdateResetsFields(t *testing.T) {
 	}
 }
 
+// TestTracerouteMonitorNoMaxResponseTime verifies that NoMaxResponseTime
+// stores no failing response time limit on create and update, that a read
+// reports it, and that an update with a limit replaces it.
+func TestTracerouteMonitorNoMaxResponseTime(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	pending := checkly.TracerouteMonitor{
+		Name:                 "No max response time traceroute monitor",
+		Frequency:            10,
+		Locations:            []string{"us-east-1"},
+		DegradedResponseTime: 25000,
+		NoMaxResponseTime:    true,
+		Request:              checkly.TracerouteRequest{URL: "api.checklyhq.com"},
+	}
+	created, err := client.CreateTracerouteMonitor(ctx, pending)
+	if err != nil {
+		t.Fatalf("failed to create traceroute monitor: %v", err)
+	}
+	defer func() {
+		_ = client.DeleteTracerouteMonitor(ctx, created.ID)
+	}()
+
+	assertLimits := func(step string, wantNoMax bool, wantMax int) {
+		t.Helper()
+		got, err := client.GetTracerouteMonitor(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("%s: failed to get traceroute monitor: %v", step, err)
+		}
+		if got.NoMaxResponseTime != wantNoMax || got.MaxResponseTime != wantMax {
+			t.Errorf("%s: NoMaxResponseTime = %v, MaxResponseTime = %d, want %v, %d", step, got.NoMaxResponseTime, got.MaxResponseTime, wantNoMax, wantMax)
+		}
+		if got.DegradedResponseTime != 25000 {
+			t.Errorf("%s: DegradedResponseTime = %d, want 25000", step, got.DegradedResponseTime)
+		}
+	}
+	assertLimits("create", true, 0)
+
+	withLimit := pending
+	withLimit.NoMaxResponseTime = false
+	withLimit.MaxResponseTime = 30000
+	if _, err := client.UpdateTracerouteMonitor(ctx, created.ID, withLimit); err != nil {
+		t.Fatalf("failed to update traceroute monitor with a limit: %v", err)
+	}
+	assertLimits("update with a limit", false, 30000)
+
+	if _, err := client.UpdateTracerouteMonitor(ctx, created.ID, pending); err != nil {
+		t.Fatalf("failed to update traceroute monitor without a limit: %v", err)
+	}
+	assertLimits("update without a limit", true, 0)
+}
+
 // TestGRPCMonitorUpdateResetsFields verifies that an update with unset fields
 // replaces the stored timeout, tags and group order, and that an update with
 // an empty mode applies its BEHAVIOR-mode fields.
