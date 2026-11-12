@@ -1,13 +1,12 @@
 # Upgrading from v2.3 to v2.4
 
-v2.4.0 changes what two update requests send. Code compiles unchanged.
+v2.4.0 changes what two updates do. Code compiles unchanged.
 
-- **TCP monitors:** an empty `TCPRequest.Data` is sent as `null`, so `UpdateTCPMonitor` with an
-  empty `Data` clears the stored data. It used to keep it. To keep data set elsewhere, such as in
-  the web app, read the monitor and send its `Data` back.
-- **URL monitors:** the request no longer has `headers` or the other API check request fields, so
-  `UpdateURLMonitor` keeps headers set on the monitor in the web app or through the API. It used to
-  clear them on accounts that can set URL monitor headers.
+- **TCP monitors:** `UpdateTCPMonitor` with an empty `TCPRequest.Data` clears the stored data. It
+  used to keep it. To keep data set elsewhere, such as in the web app, read the monitor and send
+  its `Data` back.
+- **URL monitors:** `UpdateURLMonitor` keeps headers set on the monitor in the web app or through
+  the API. It used to clear them on accounts that can set URL monitor headers.
 
 # Upgrading from v2.1 to v2.2
 

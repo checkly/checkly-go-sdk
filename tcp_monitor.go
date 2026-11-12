@@ -84,8 +84,8 @@ func (*TCPMonitor) isCheck() {}
 type TCPRequest struct {
 	Hostname string `json:"hostname"`
 	Port     uint16 `json:"port"`
-	// Data is sent after the connection is established. It is sent as null
-	// when empty, so an update with an empty Data clears the stored data.
+	// Data is sent to the server after the connection is established. An
+	// update with an empty Data clears the stored data.
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
 	// IPFamily is left out of the request when empty. An update with an
