@@ -137,7 +137,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:  "unresolvable slack handles",
 			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"unresolvable_handles","code":"unresolvable_handles","details":[{"handle":"@alice","reason":"handle_not_found"},{"handle":"@here","reason":"handle_reserved"}]}`},
-			want:  "GET /v1/checks/abc: 400 Bad Request [unresolvable_handles] (unresolved Slack handles: @alice (handle_not_found), @here (handle_reserved)). Use the Slack handles of members of the connected Slack workspace.",
+			want:  "GET /v1/checks/abc: 400 Bad Request [unresolvable_handles]. Use the Slack handles of members of the connected Slack workspace. Unresolved Slack handles: @alice (handle_not_found), @here (handle_reserved).",
 			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
 			isNot: []error{checkly.ErrValidation, checkly.ErrSlackIntegrationNotConnected},
 		},
@@ -157,7 +157,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:  "unresolvable slack handle in errorCode",
 			reply: errorReply{status: 400, body: `{"statusCode":400,"error":"Bad Request","message":"Some Slack handles could not be resolved.","errorCode":"ERR_UNRESOLVABLE_SLACK_HANDLE","details":[{"handle":"@alice","reason":"handle_not_found"}]}`},
-			want:  "GET /v1/checks/abc: 400 Bad Request [ERR_UNRESOLVABLE_SLACK_HANDLE]: Some Slack handles could not be resolved. (unresolved Slack handles: @alice (handle_not_found)). Use the Slack handles of members of the connected Slack workspace.",
+			want:  "GET /v1/checks/abc: 400 Bad Request [ERR_UNRESOLVABLE_SLACK_HANDLE]: Some Slack handles could not be resolved. Use the Slack handles of members of the connected Slack workspace. Unresolved Slack handles: @alice (handle_not_found).",
 			is:    []error{checkly.ErrUnresolvableSlackHandles, checkly.ErrBadRequest},
 			isNot: []error{checkly.ErrValidation, checkly.ErrSlackIntegrationNotConnected},
 		},

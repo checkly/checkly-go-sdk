@@ -186,13 +186,24 @@ func (e *SlackIntegrationNotConnectedError) Unwrap() error { return e.APIError }
 // write that names @handles the connected Slack workspace could not resolve.
 // It matches [ErrUnresolvableSlackHandles] and [ErrBadRequest], and
 // errors.As finds the embedded *APIError too, so code that only handles
-// *APIError keeps working. Its text is the *APIError's, which lists the
+// *APIError keeps working. Its text is the *APIError's followed by the
 // handles.
 type UnresolvableSlackHandlesError struct {
 	*APIError
 	// Handles are the unresolved handles, from the details field of the
 	// response. It is nil when the details have another shape.
 	Handles []UnresolvedSlackHandle
+}
+
+func (e *UnresolvableSlackHandlesError) Error() string {
+	if len(e.Handles) == 0 {
+		return e.APIError.Error()
+	}
+	handles := make([]string, len(e.Handles))
+	for i, h := range e.Handles {
+		handles[i] = fmt.Sprintf("%s (%s)", h.Handle, h.Reason)
+	}
+	return fmt.Sprintf("%s Unresolved Slack handles: %s.", e.APIError.Error(), strings.Join(handles, ", "))
 }
 
 // Unwrap returns the embedded *APIError.
@@ -218,12 +229,13 @@ const maxMessageExcerpt = 500
 
 // APIError is returned when the API answers with a status the method does not
 // accept, wrapped in a [SlackIntegrationNotConnectedError] or an
-// [UnresolvableSlackHandlesError] for those Slack App alert channel errors. Use errors.As to inspect it, or errors.Is with the sentinel
-// errors above to classify it.
+// [UnresolvableSlackHandlesError] for those Slack App alert channel errors.
+// Use errors.As to inspect it, or errors.Is with the sentinel errors above to
+// classify it.
 //
 // The error text has the form
 //
-//	METHOD /v1/path: 404 Not Found[ [ERROR_CODE]][: message][ (keys: ...)][ (unresolved Slack handles: ...)]
+//	METHOD /v1/path: 404 Not Found[ [ERROR_CODE]][: message][ (keys: ...)]
 //
 // and may end with a sentence suggesting what to check. It never contains the
 // API key, request headers, the request body or, for an unexpected success
@@ -268,9 +280,6 @@ type APIError struct {
 	retries int
 	// hint is a sentence suggesting what to check.
 	hint string
-	// slackHandles are the unresolved handles of an
-	// [UnresolvableSlackHandlesError] wrapping e, kept here for the text.
-	slackHandles []UnresolvedSlackHandle
 }
 
 // Error implements the error interface.
@@ -304,13 +313,6 @@ func (e *APIError) Error() string {
 	}
 	if len(e.Details) > 0 {
 		fmt.Fprintf(&b, " (keys: %s)", strings.Join(e.Details, ", "))
-	}
-	if len(e.slackHandles) > 0 {
-		handles := make([]string, len(e.slackHandles))
-		for i, h := range e.slackHandles {
-			handles[i] = fmt.Sprintf("%s (%s)", h.Handle, h.Reason)
-		}
-		fmt.Fprintf(&b, " (unresolved Slack handles: %s)", strings.Join(handles, ", "))
 	}
 	// The retry count explains, for example, a 404 from a re-sent DELETE
 	// whose first attempt succeeded but lost its response.
@@ -447,13 +449,6 @@ func newAPIError(res rawResponse, want []int, accountID string) error {
 				// A code that is not a string is left out.
 				_ = json.Unmarshal(parsed.Code, &e.Code)
 			}
-			if isUnresolvableSlackHandle(e.Code) {
-				// Details of another shape are left out entirely.
-				var handles []UnresolvedSlackHandle
-				if json.Unmarshal(parsed.Details, &handles) == nil {
-					e.slackHandles = handles
-				}
-			}
 			e.Message = excerpt(parsed.Message)
 			if parsed.Validation != nil {
 				e.Details = emptyIfNil(parsed.Validation.Keys)
@@ -471,7 +466,13 @@ func newAPIError(res rawResponse, want []int, accountID string) error {
 			return &SlackIntegrationNotConnectedError{APIError: e}
 		case isUnresolvableSlackHandle(e.Code):
 			e.hint = "Use the Slack handles of members of the connected Slack workspace."
-			return &UnresolvableSlackHandlesError{APIError: e, Handles: e.slackHandles}
+			slackErr := &UnresolvableSlackHandlesError{APIError: e}
+			// Details of another shape are left out entirely.
+			var handles []UnresolvedSlackHandle
+			if json.Unmarshal(parsed.Details, &handles) == nil {
+				slackErr.Handles = handles
+			}
+			return slackErr
 		}
 	case http.StatusUnauthorized:
 		e.hint = "Check the API key."
