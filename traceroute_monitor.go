@@ -42,10 +42,30 @@ type TracerouteMonitor struct {
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
 	// response time limits in milliseconds, each at most 30000; the API
 	// defaults them to 10000 and 20000. DegradedResponseTime and
-	// MaxResponseTime are left out of the request when zero.
-	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
-	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
-	Tags                 []string `json:"tags,omitempty"`
+	// MaxResponseTime are left out of the request when zero, so a create
+	// gets the API default and an update keeps the stored value. To store
+	// no failing limit, set NoMaxResponseTime instead.
+	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
+	MaxResponseTime      int `json:"maxResponseTime,omitempty"`
+	// NoMaxResponseTime sends a MaxResponseTime of 0, which the API stores
+	// as no failing response time limit: the monitor never fails on
+	// latency, and DegradedResponseTime may be any value up to 30000.
+	// Creating or updating a monitor with NoMaxResponseTime and a non-zero
+	// MaxResponseTime fails without sending the request. A monitor read
+	// from the API has NoMaxResponseTime set when it has no limit, so a
+	// read, modify and update keeps it.
+	//
+	// It is a separate flag rather than a pointer MaxResponseTime so that
+	// code setting MaxResponseTime as an int keeps compiling, and a zero
+	// MaxResponseTime keeps meaning "left out of the request".
+	//
+	// The flag is carried by the SDK's own create and update requests and
+	// by decoding API responses, but not by a plain json.Marshal of a
+	// TracerouteMonitor, which leaves it out. TracerouteMonitor has no
+	// MarshalJSON on purpose: the request payloads embed it, so such a
+	// method would be promoted to them and replace their encoding.
+	NoMaxResponseTime bool     `json:"-"`
+	Tags              []string `json:"tags,omitempty"`
 	// AlertSettings is left out of the request when nil.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
@@ -84,6 +104,39 @@ type TracerouteMonitor struct {
 }
 
 func (*TracerouteMonitor) isCheck() {}
+
+// UnmarshalJSON decodes a monitor and sets NoMaxResponseTime when
+// maxResponseTime is 0, the API's value for no failing response time limit.
+func (m *TracerouteMonitor) UnmarshalJSON(data []byte) error {
+	// The alias has the same fields but no UnmarshalJSON method, so the
+	// default struct decoder runs. Its MaxResponseTime is shadowed by a
+	// pointer that tells an explicit 0 apart from a missing key. Starting
+	// from the current value keeps fields that data does not set, as the
+	// default decoder does.
+	type alias TracerouteMonitor
+	decoded := struct {
+		*alias
+		MaxResponseTime *int `json:"maxResponseTime"`
+	}{alias: (*alias)(m)}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	if decoded.MaxResponseTime != nil {
+		m.MaxResponseTime = *decoded.MaxResponseTime
+		m.NoMaxResponseTime = *decoded.MaxResponseTime == 0
+	}
+	return nil
+}
+
+// checkTracerouteMaxResponseTime returns the error for a monitor that sets
+// both NoMaxResponseTime and a non-zero MaxResponseTime, prefixed with the
+// request it would have sent.
+func checkTracerouteMaxResponseTime(method, path string, monitor TracerouteMonitor) error {
+	if monitor.NoMaxResponseTime && monitor.MaxResponseTime != 0 {
+		return fmt.Errorf("%s %s: NoMaxResponseTime is set together with MaxResponseTime %d; set only one", method, errorPath(path), monitor.MaxResponseTime)
+	}
+	return nil
+}
 
 // TracerouteProtocol is the protocol of a traceroute monitor's probes, in
 // [TracerouteRequest].Protocol.
@@ -145,6 +198,9 @@ type tracerouteMonitorPayload struct {
 	// so that an update resets them: lists are sent empty.
 	Tags                      []string                   `json:"tags"`
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
+	// MaxResponseTime shadows the embedded field so that NoMaxResponseTime
+	// can send 0. It is left out when nil.
+	MaxResponseTime *int `json:"maxResponseTime,omitempty"`
 }
 
 // tracerouteMonitorUpdatePayload is the update request. It differs from the
@@ -184,6 +240,11 @@ func createTracerouteMonitorPayload(monitor TracerouteMonitor) tracerouteMonitor
 		DoubleCheck:               false,
 		Tags:                      emptyIfNil(monitor.Tags),
 		AlertChannelSubscriptions: emptyIfNil(monitor.AlertChannelSubscriptions),
+		MaxResponseTime:           nullIfZero(monitor.MaxResponseTime),
+	}
+
+	if monitor.NoMaxResponseTime {
+		payload.MaxResponseTime = new(int)
 	}
 
 	// GroupID must be null if empty or the group will not get unset on update.
@@ -229,8 +290,12 @@ func (c *client) CreateTracerouteMonitor(
 	ctx context.Context,
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
+	path := withAutoAssignAlertsFlag("/v1/checks/traceroute")
+	if err := checkTracerouteMaxResponseTime(http.MethodPost, path, monitor); err != nil {
+		return nil, err
+	}
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodPost, withAutoAssignAlertsFlag("/v1/checks/traceroute"), createTracerouteMonitorPayload(monitor), &result, http.StatusCreated)
+	err := c.callJSON(ctx, http.MethodPost, path, createTracerouteMonitorPayload(monitor), &result, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -253,8 +318,12 @@ func (c *client) UpdateTracerouteMonitor(
 	id string,
 	monitor TracerouteMonitor,
 ) (*TracerouteMonitor, error) {
+	path := withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", id))
+	if err := checkTracerouteMaxResponseTime(http.MethodPut, path, monitor); err != nil {
+		return nil, err
+	}
 	var result TracerouteMonitor
-	err := c.callJSON(ctx, http.MethodPut, withAutoAssignAlertsFlag(fmt.Sprintf("/v1/checks/traceroute/%s", id)), updateTracerouteMonitorPayload(monitor), &result, http.StatusOK)
+	err := c.callJSON(ctx, http.MethodPut, path, updateTracerouteMonitorPayload(monitor), &result, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

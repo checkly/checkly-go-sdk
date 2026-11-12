@@ -351,3 +351,142 @@ func TestTracerouteMonitorSendsPrivateLocations(t *testing.T) {
 		},
 	})
 }
+
+// --- no maximum response time ------------------------------------------------
+
+// TestTracerouteMonitorSendsMaxResponseTime asserts that NoMaxResponseTime
+// sends a maxResponseTime of 0 on create and update, while a zero
+// MaxResponseTime without it stays left out of the request.
+func TestTracerouteMonitorSendsMaxResponseTime(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name    string
+		monitor checkly.TracerouteMonitor
+		want    string // "" means left out
+	}{
+		{"no limit", checkly.TracerouteMonitor{NoMaxResponseTime: true}, `0`},
+		{"no limit with degraded time", checkly.TracerouteMonitor{NoMaxResponseTime: true, DegradedResponseTime: 25000}, `0`},
+		{"limit", checkly.TracerouteMonitor{MaxResponseTime: 5000}, `5000`},
+		{"unset", checkly.TracerouteMonitor{}, ``},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			monitor := tc.monitor
+			monitor.Name = "Traceroute Monitor #1"
+			monitor.Request = checkly.TracerouteRequest{URL: "traceroute.example.com"}
+			for _, call := range []struct {
+				name   string
+				status int
+				call   func(checkly.Client) error
+			}{
+				{"create", http.StatusCreated, func(c checkly.Client) error {
+					_, err := c.CreateTracerouteMonitor(context.Background(), monitor)
+					return err
+				}},
+				{"update", http.StatusOK, func(c checkly.Client) error {
+					_, err := c.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, monitor)
+					return err
+				}},
+			} {
+				c, lastBody := newRecordingServer(t, call.status, `{"checkType":"TRACEROUTE"}`)
+				if err := call.call(c); err != nil {
+					t.Fatalf("%s: %v", call.name, err)
+				}
+				body := lastBody()
+				if tc.want == "" {
+					assertRawBodyKeyAbsent(t, body, "maxResponseTime")
+				} else {
+					assertRawBodyField(t, body, "maxResponseTime", tc.want)
+				}
+				if tc.monitor.DegradedResponseTime != 0 {
+					assertRawBodyField(t, body, "degradedResponseTime", fmt.Sprint(tc.monitor.DegradedResponseTime))
+				}
+				if t.Failed() {
+					t.Logf("%s body: %s", call.name, body)
+				}
+			}
+		})
+	}
+}
+
+// TestTracerouteMonitorRejectsNoMaxResponseTimeWithLimit asserts that
+// NoMaxResponseTime together with a non-zero MaxResponseTime fails on create
+// and update without sending a request.
+func TestTracerouteMonitorRejectsNoMaxResponseTimeWithLimit(t *testing.T) {
+	t.Parallel()
+	c, lastBody := newRecordingServer(t, http.StatusOK, `{"checkType":"TRACEROUTE"}`)
+	monitor := checkly.TracerouteMonitor{
+		Name:              "Traceroute Monitor #1",
+		NoMaxResponseTime: true,
+		MaxResponseTime:   5000,
+		Request:           checkly.TracerouteRequest{URL: "traceroute.example.com"},
+	}
+	_, err := c.CreateTracerouteMonitor(context.Background(), monitor)
+	if want := "POST /v1/checks/traceroute: NoMaxResponseTime is set together with MaxResponseTime 5000; set only one"; err == nil || err.Error() != want {
+		t.Errorf("create error = %v, want %q", err, want)
+	}
+	_, err = c.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, monitor)
+	if want := "PUT /v1/checks/traceroute/" + testTracerouteMonitor.ID + ": NoMaxResponseTime is set together with MaxResponseTime 5000; set only one"; err == nil || err.Error() != want {
+		t.Errorf("update error = %v, want %q", err, want)
+	}
+	if body := lastBody(); body != nil {
+		t.Errorf("a request was sent: %s", body)
+	}
+}
+
+// TestTracerouteMonitorDecodesNoMaxResponseTime asserts that a maxResponseTime
+// of 0 read from the API sets NoMaxResponseTime, and that an update of the
+// monitor read back sends 0 again.
+func TestTracerouteMonitorDecodesNoMaxResponseTime(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name   string
+		field  string
+		want   checkly.TracerouteMonitor
+		update string // the maxResponseTime an update of the read monitor sends; "" means left out
+	}{
+		{"zero", `,"maxResponseTime":0`, checkly.TracerouteMonitor{NoMaxResponseTime: true}, `0`},
+		{"limit", `,"maxResponseTime":5000`, checkly.TracerouteMonitor{MaxResponseTime: 5000}, `5000`},
+		{"null", `,"maxResponseTime":null`, checkly.TracerouteMonitor{}, ``},
+		{"missing", ``, checkly.TracerouteMonitor{}, ``},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			c, lastBody := newRecordingServer(t, http.StatusOK, `{"checkType":"TRACEROUTE","request":{"url":"traceroute.example.com"}`+tc.field+`}`)
+			got, err := c.GetTracerouteMonitor(context.Background(), testTracerouteMonitor.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := tc.want
+			want.Request = checkly.TracerouteRequest{URL: "traceroute.example.com"}
+			if diff := cmp.Diff(want, *got); diff != "" {
+				t.Errorf("decoded monitor (-want +got):\n%s", diff)
+			}
+			if _, err := c.UpdateTracerouteMonitor(context.Background(), testTracerouteMonitor.ID, *got); err != nil {
+				t.Fatal(err)
+			}
+			if tc.update == "" {
+				assertRawBodyKeyAbsent(t, lastBody(), "maxResponseTime")
+			} else {
+				assertRawBodyField(t, lastBody(), "maxResponseTime", tc.update)
+			}
+		})
+	}
+}
+
+// TestTracerouteMonitorUnmarshalKeepsUnsetFields asserts that decoding into a
+// monitor that already has values keeps those the JSON does not set, as the
+// default decoder does.
+func TestTracerouteMonitorUnmarshalKeepsUnsetFields(t *testing.T) {
+	t.Parallel()
+	monitor := checkly.TracerouteMonitor{Name: "kept", NoMaxResponseTime: true}
+	if err := json.Unmarshal([]byte(`{"frequency":5}`), &monitor); err != nil {
+		t.Fatal(err)
+	}
+	want := checkly.TracerouteMonitor{Name: "kept", Frequency: 5, NoMaxResponseTime: true}
+	if diff := cmp.Diff(want, monitor); diff != "" {
+		t.Errorf("decoded monitor (-want +got):\n%s", diff)
+	}
+}
