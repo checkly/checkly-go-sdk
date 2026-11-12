@@ -84,8 +84,7 @@ func (*TCPMonitor) isCheck() {}
 type TCPRequest struct {
 	Hostname string `json:"hostname"`
 	Port     uint16 `json:"port"`
-	// Data is left out of the request when empty. An update with an empty
-	// Data keeps the stored data, as the API rejects an empty value.
+	// Data is sent to the server after the connection is established.
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
 	// IPFamily is left out of the request when empty. An update with an
@@ -98,15 +97,15 @@ type TCPRequest struct {
 // endpoints are PATCH-style down to the nested request object: request keys
 // omitted from the payload keep their server-side value. Assertions shadows
 // the embedded field, whose omitempty would drop the key for an empty list,
-// so that removing all assertions reliably clears them. Data is not shadowed
-// because the backend rejects an empty string ("request.data is not allowed
-// to be empty") and silently keeps the previous value on null, so a data
-// value can never be cleared, only changed. IPFamily is not shadowed because
-// an empty string is not a valid value for it either; it can only be changed
-// to another valid value.
+// so that removing all assertions reliably clears them. Data shadows the
+// embedded field to send an empty value as null, which clears the stored
+// data on update; the API rejects an empty string. IPFamily is not shadowed
+// because an empty string is not a valid value for it; it can only be
+// changed to another valid value.
 type tcpRequestPayload struct {
 	TCPRequest
 	Assertions []Assertion `json:"assertions"`
+	Data       *string     `json:"data"`
 }
 
 type tcpMonitorPayload struct {
@@ -161,6 +160,7 @@ func createTCPMonitorPayload(monitor TCPMonitor) tcpMonitorPayload {
 	payload.Request = tcpRequestPayload{
 		TCPRequest: monitor.Request,
 		Assertions: emptyIfNil(monitor.Request.Assertions),
+		Data:       nullIfZero(monitor.Request.Data),
 	}
 
 	return payload

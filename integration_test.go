@@ -700,6 +700,44 @@ func TestTCPCheckCRUD(t *testing.T) {
 	}
 }
 
+// TestTCPMonitorDataClear checks that an update with an empty Data clears the
+// data a TCP monitor was created with.
+func TestTCPMonitorDataClear(t *testing.T) {
+	ctx := context.TODO()
+	client := setupClient(t)
+
+	created, err := client.CreateTCPMonitor(ctx, checkly.TCPMonitor{
+		Name:      "TestTCPMonitorDataClear",
+		Frequency: 60,
+		Locations: []string{"eu-west-1"},
+		Request: checkly.TCPRequest{
+			Hostname: "api.checklyhq.com",
+			Port:     443,
+			Data:     "ping",
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create TCP monitor: %v", err)
+	}
+	t.Cleanup(func() { _ = client.DeleteCheck(context.TODO(), created.ID) })
+	if created.Request.Data != "ping" {
+		t.Fatalf("created data = %q, want %q", created.Request.Data, "ping")
+	}
+
+	update := *created
+	update.Request.Data = ""
+	if _, err := client.UpdateTCPMonitor(ctx, created.ID, update); err != nil {
+		t.Fatalf("failed to update TCP monitor: %v", err)
+	}
+	got, err := client.GetTCPMonitor(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("failed to get TCP monitor: %v", err)
+	}
+	if got.Request.Data != "" {
+		t.Errorf("data after clearing = %q, want empty", got.Request.Data)
+	}
+}
+
 func TestTCPMonitorGroupUnset(t *testing.T) {
 	ctx := context.TODO()
 
