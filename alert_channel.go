@@ -12,8 +12,8 @@ import (
 type AlertChannelType string
 
 // Alert channel types, the values of [AlertChannel].Type. Each selects the
-// config field of AlertChannel that is sent and decoded, such as Email for
-// AlertChannelTypeEmail.
+// config field of AlertChannel that writes use and reads set, such as Email
+// for AlertChannelTypeEmail.
 const (
 	AlertChannelTypeEmail AlertChannelType = "EMAIL"
 
@@ -115,10 +115,8 @@ type AlertChannelOpsgenie struct {
 // AlertChannelPagerduty is the config of an [AlertChannelTypePagerduty]
 // alert channel. Only ServiceKey is required.
 type AlertChannelPagerduty struct {
-	// Account is left out of the request when empty.
-	Account    string `json:"account,omitempty"`
-	ServiceKey string `json:"serviceKey"`
-	// ServiceName is left out of the request when empty.
+	Account     string `json:"account,omitempty"`
+	ServiceKey  string `json:"serviceKey"`
 	ServiceName string `json:"serviceName,omitempty"`
 }
 
@@ -130,20 +128,15 @@ type AlertChannelWebhook struct {
 	URL  string `json:"url"`
 
 	// WebhookType is the kind of webhook, such as "WEBHOOK_TELEGRAM".
-	// WebhookType is left out of the request when empty.
 	WebhookType string `json:"webhookType,omitempty"`
 
 	// Method is GET, POST, PUT, HEAD, DELETE or PATCH, as the net/http
-	// constants such as http.MethodPost name them. Empty means POST. Method
-	// is left out of the request when empty.
+	// constants such as http.MethodPost name them. Empty means POST.
 	Method string `json:"method,omitempty"`
 
 	// Template is the request body, with placeholders such as
-	// "{{ALERT_TITLE}}" and "{{RESULT_LINK}}". Template is left out of the
-	// request when empty.
-	Template string `json:"template,omitempty"`
-	// WebhookSecret, Headers and QueryParameters are left out of the request
-	// when empty.
+	// "{{ALERT_TITLE}}" and "{{RESULT_LINK}}".
+	Template        string     `json:"template,omitempty"`
 	WebhookSecret   string     `json:"webhookSecret,omitempty"`
 	Headers         []KeyValue `json:"headers,omitempty"`
 	QueryParameters []KeyValue `json:"queryParameters,omitempty"`
@@ -151,7 +144,7 @@ type AlertChannelWebhook struct {
 
 // AlertChannel is a destination for alerts, such as an email address or a
 // Slack channel. It is the input of CreateAlertChannel and
-// UpdateAlertChannel, which send the config field that matches Type, and
+// UpdateAlertChannel, which use the config field that matches Type, and
 // their result.
 type AlertChannel struct {
 	ID   int64            `json:"id,omitempty"`
@@ -159,7 +152,7 @@ type AlertChannel struct {
 
 	// Email, Slack, SlackApp, SMS, CALL, Opsgenie, Webhook and Pagerduty
 	// hold the config of the channel. Only the one that matches Type is
-	// sent, and a read sets only that one.
+	// used, and a read sets only that one.
 	Email     *AlertChannelEmail     `json:"-"`
 	Slack     *AlertChannelSlack     `json:"-"`
 	SlackApp  *AlertChannelSlackApp  `json:"-"`
@@ -170,25 +163,23 @@ type AlertChannel struct {
 	Pagerduty *AlertChannelPagerduty `json:"-"`
 
 	// SendRecovery, SendFailure and SendDegraded select which alerts the
-	// channel sends: on recovery, on failure, and on degraded results.
-	// SendRecovery, SendFailure and SendDegraded are left out of the request
-	// when nil.
+	// channel sends: on recovery, on failure, and on degraded results. Nil
+	// means the API's default on create, and an update with nil keeps the
+	// stored value.
 	SendRecovery *bool `json:"sendRecovery"`
 	SendFailure  *bool `json:"sendFailure"`
 	SendDegraded *bool `json:"sendDegraded"`
 
 	// SSLExpiry enables alerts for expiring SSL certificates, and
-	// SSLExpiryThreshold, between 1 and 30, sets when they start. SSLExpiry
-	// and SSLExpiryThreshold are left out of the request when nil, so the
-	// API applies its defaults: false and 30.
+	// SSLExpiryThreshold, between 1 and 30, sets when they start. Nil means
+	// the API's defaults, false and 30, also on update.
 	SSLExpiry          *bool  `json:"sslExpiry"`
 	SSLExpiryThreshold *int   `json:"sslExpiryThreshold"`
 	CreatedAt          string `json:"created_at"`
 	UpdatedAt          string `json:"updated_at"`
 
-	// AutoSubscribe subscribes checks created later to the channel.
-	// AutoSubscribe is left out of the request when nil, so the API applies
-	// its default, false.
+	// AutoSubscribe subscribes checks created later to the channel. Nil
+	// means the API's default, false, also on update.
 	AutoSubscribe *bool `json:"autoSubscribe"`
 }
 

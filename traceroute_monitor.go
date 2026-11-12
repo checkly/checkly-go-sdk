@@ -25,8 +25,8 @@ type TracerouteMonitor struct {
 	// itself and keeps it until Frequency changes: a value sent has no
 	// effect, and the value read back is the API's. The API still rejects a
 	// value above Frequency * 10 for a Frequency up to 60, or above
-	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
-	// of the request when zero.
+	// Frequency / 5 rounded up for a higher one. With Frequency 0, an update
+	// with a zero FrequencyOffset keeps the stored offset.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -37,19 +37,18 @@ type TracerouteMonitor struct {
 	// RunParallel runs the monitor in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
 	// response time limits in milliseconds, each at most 30000; the API
-	// defaults them to 10000 and 20000. DegradedResponseTime and
-	// MaxResponseTime are left out of the request when zero, so a create
-	// gets the API default and an update keeps the stored value. To store
-	// no failing limit, set NoMaxResponseTime instead.
+	// defaults them to 10000 and 20000. Zero means the API default on
+	// create, and an update with zero keeps the stored value. To store no
+	// failing limit, set NoMaxResponseTime instead.
 	DegradedResponseTime int `json:"degradedResponseTime,omitempty"`
 	MaxResponseTime      int `json:"maxResponseTime,omitempty"`
-	// NoMaxResponseTime sends a MaxResponseTime of 0, which the API stores
-	// as no failing response time limit: the monitor never fails on
-	// latency, and DegradedResponseTime may be any value up to 30000.
+	// NoMaxResponseTime stores no failing response time limit: the monitor
+	// never fails on latency, and DegradedResponseTime may be any value up
+	// to 30000.
 	// Creating or updating a monitor with NoMaxResponseTime and a non-zero
 	// MaxResponseTime fails without sending the request. A monitor read
 	// from the API has NoMaxResponseTime set when it has no limit, so a
@@ -57,7 +56,8 @@ type TracerouteMonitor struct {
 	//
 	// It is a separate flag rather than a pointer MaxResponseTime so that
 	// code setting MaxResponseTime as an int keeps compiling, and a zero
-	// MaxResponseTime keeps meaning "left out of the request".
+	// MaxResponseTime keeps meaning the API's default on create and the
+	// stored limit on update.
 	//
 	// The flag is carried by the SDK's own create and update requests and
 	// by decoding API responses, but not by a plain json.Marshal of a
@@ -66,7 +66,8 @@ type TracerouteMonitor struct {
 	// method would be promoted to them and replace their encoding.
 	NoMaxResponseTime bool     `json:"-"`
 	Tags              []string `json:"tags,omitempty"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings on create, and an
+	// update with nil keeps the stored settings.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -77,15 +78,14 @@ type TracerouteMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list. The Checkly agent
+	// locations to run from. The Checkly agent
 	// at those locations must be version 8.4.0 or later and have the NET_RAW
 	// capability.
 	PrivateLocations *[]string `json:"privateLocations"`
@@ -159,17 +159,16 @@ type TracerouteRequest struct {
 	// Port is 1 to 65535; zero means 443 for TCP and 33434 for UDP and SCTP.
 	// It is ignored when Protocol is [TracerouteProtocolICMP].
 	Port int `json:"port,omitempty"`
-	// IPFamily is left out of the request when empty. An update with an
-	// empty IPFamily keeps the stored family, as the API rejects an empty
-	// value.
+	// An update with an empty IPFamily keeps the stored family, as the API
+	// rejects an empty value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 	// MaxHops is 1 to 64; zero means 30.
 	MaxHops int `json:"maxHops,omitempty"`
 	// MaxUnknownHops is 1 to 30 and at most MaxHops; zero means 15, or
 	// MaxHops if that is lower.
 	MaxUnknownHops int `json:"maxUnknownHops,omitempty"`
-	// PtrLookup is a pointer so that an explicit false can be sent; the API
-	// defaults it to true. PtrLookup is left out of the request when nil.
+	// PtrLookup nil means the API's default, true, on create, and an update
+	// with nil keeps the stored setting.
 	PtrLookup *bool `json:"ptrLookup,omitempty"`
 	// Timeout is 1 to 30; zero means 10.
 	Timeout    int         `json:"timeout,omitempty"`

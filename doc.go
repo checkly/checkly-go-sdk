@@ -41,15 +41,14 @@
 //
 // # Updates
 //
-// An Update method sends every settable field of the value it is given, so
-// zero values are applied, except fields whose comment says they are left
-// out of the request when nil, empty, zero or false. A left-out field keeps
-// its current value, with these exceptions: fields an Update method names as
-// reset to the API default; AlertChannelSubscriptions, described below; and
-// fields nested in AlertSettings, in a group's APICheckDefaults, or in an
-// alert channel's or status page component's configuration, which the API
-// replaces together with the object they are in, as it does for the request
-// of DNS monitors. To change some fields, start from the value a Get returns.
+// An Update method stores every settable field of the value it is given, so
+// zero values are applied. A field's comment says so when an update keeps
+// the stored value for a nil, empty or zero field, when such a value means
+// a default (on create, or also on update), or when it has another specific
+// meaning. Fields nested in AlertSettings, in a group's APICheckDefaults, or
+// in an alert channel's or status page component's configuration are
+// replaced together with the object they are in, as is the request of a DNS
+// monitor. To change some fields, start from the value a Get returns.
 //
 // Creates and updates of checks, monitors and check groups ask the API not
 // to subscribe alert channels automatically, so a resource written with an

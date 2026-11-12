@@ -47,8 +47,7 @@ type StatusPage struct {
 	// page.
 	Favicon string `json:"favicon"`
 
-	// DefaultTheme is left out of the request when empty, so the API
-	// applies [StatusPageThemeAuto], also on update.
+	// An empty DefaultTheme means [StatusPageThemeAuto], also on update.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
 
 	Cards []StatusPageCard `json:"cards"`

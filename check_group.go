@@ -23,7 +23,7 @@ type GroupV2 struct {
 	// Tags are added to the tags of every check in the group.
 	Tags []string `json:"tags"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list. When the group has any
+	// as "us-east-1". When the group has any
 	// public or private locations, they replace those of its checks.
 	Locations []string `json:"locations"`
 	// Concurrency is how many of the group's checks run at once when the
@@ -60,7 +60,7 @@ type GroupV2 struct {
 	// in the group that have none of their own.
 	RuntimeID *string `json:"runtimeId"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list.
+	// locations to run from.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RetryStrategy applies to every check in the group instead of the
 	// check's own, unless its Type is [RetryStrategyTypeFallback], which lets
@@ -75,9 +75,7 @@ type GroupV2 struct {
 type APICheckDefaults struct {
 	// BaseURL is the group's base URL, which the checks' request URLs can
 	// reference as {{GROUP_BASE_URL}}.
-	BaseURL string `json:"url"`
-	// Headers, QueryParameters and Assertions are left out of the request
-	// when empty.
+	BaseURL         string      `json:"url"`
 	Headers         []KeyValue  `json:"headers,omitempty"`
 	QueryParameters []KeyValue  `json:"queryParameters,omitempty"`
 	Assertions      []Assertion `json:"assertions,omitempty"`

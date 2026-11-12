@@ -138,9 +138,7 @@ type Client interface {
 	) (*PlaywrightCheck, error)
 
 	// UpdatePlaywrightCheck updates the Playwright check with the given ID and
-	// returns it. An empty Tags or Browsers, a nil AlertSettings, or a zero
-	// GroupID, which are left out of the request, resets that field to the
-	// API default.
+	// returns it.
 	UpdatePlaywrightCheck(
 		ctx context.Context,
 		id string,
@@ -273,8 +271,6 @@ type Client interface {
 	) (*DNSMonitor, error)
 
 	// UpdateDNSMonitor updates the DNS monitor with the given ID and returns it.
-	// A nil AlertSettings, which is left out of the request, resets the alert
-	// settings to the API default.
 	UpdateDNSMonitor(
 		ctx context.Context,
 		id string,
@@ -391,8 +387,6 @@ type Client interface {
 	) (*SSLMonitor, error)
 
 	// UpdateSSLMonitor updates the SSL monitor with the given ID and returns it.
-	// A nil Request.SSLConfig.SecurityBaseline or an empty ClientCertificateMode,
-	// which are left out of the request, resets that field to the API default.
 	UpdateSSLMonitor(
 		ctx context.Context,
 		id string,
@@ -518,9 +512,7 @@ type Client interface {
 	) (*AlertChannel, error)
 
 	// UpdateAlertChannel updates the alert channel with the given ID and returns
-	// it. A nil SSLExpiry, SSLExpiryThreshold or AutoSubscribe resets it to the
-	// API default, while a nil SendRecovery, SendFailure or SendDegraded keeps
-	// its current value.
+	// it.
 	UpdateAlertChannel(
 		ctx context.Context,
 		id int64,
@@ -546,12 +538,7 @@ type Client interface {
 	) (*Dashboard, error)
 
 	// UpdateDashboard updates the dashboard whose [Dashboard.DashboardID] is ID
-	// and returns it. A nil ShowHeader, Paginate, ShowGroupNames, ShowP95 or
-	// ShowP99, a false IsPrivate, SortByStatus, HideTags or
-	// UseTagsAndOperator, an empty Width or Tags, or a zero RefreshRate,
-	// ChecksPerPage or PaginationRate resets that field to the API default,
-	// while an empty Header, Description, Logo, Link, Favicon or CustomDomain
-	// removes it.
+	// and returns it.
 	UpdateDashboard(
 		ctx context.Context,
 		id string,
@@ -658,8 +645,7 @@ type Client interface {
 	) (*StatusPage, error)
 
 	// UpdateStatusPage updates the status page with the given ID and returns
-	// it. An empty DefaultTheme, which is left out of the request, resets the
-	// theme to [StatusPageThemeAuto].
+	// it.
 	//
 	// Deprecated: Use [Client.UpdateStatusPageV3] instead. The public API
 	// cannot migrate a v1 status page to v3, so this method remains for
@@ -737,8 +723,7 @@ type Client interface {
 	) (*StatusPageV3, error)
 
 	// UpdateStatusPageV3 updates the v3 status page with the given ID and
-	// returns it. An empty DefaultTheme, which is left out of the request,
-	// resets the theme to [StatusPageThemeAuto].
+	// returns it.
 	UpdateStatusPageV3(
 		ctx context.Context,
 		id string,
@@ -768,10 +753,7 @@ type Client interface {
 	) (*StatusPageComponentV3, error)
 
 	// UpdateStatusPageComponentV3 updates the component with ID componentID of
-	// the v3 status page with ID statusPageID and returns it. An empty Type
-	// resets the type to [StatusPageComponentV3TypeService], a nil
-	// Configuration resets the configuration to the type's default, and an
-	// empty Description or ParentID removes it.
+	// the v3 status page with ID statusPageID and returns it.
 	UpdateStatusPageComponentV3(
 		ctx context.Context,
 		statusPageID string,
@@ -805,8 +787,7 @@ type Client interface {
 	) (*StatusPageAutomationRuleV3, error)
 
 	// UpdateStatusPageAutomationRuleV3 updates the automation rule with ID
-	// ruleID of the v3 status page with ID statusPageID and returns it. An
-	// empty Components removes the rule's components.
+	// ruleID of the v3 status page with ID statusPageID and returns it.
 	UpdateStatusPageAutomationRuleV3(
 		ctx context.Context,
 		statusPageID string,

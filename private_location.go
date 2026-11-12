@@ -31,9 +31,8 @@ type PrivateLocation struct {
 	// the API ignores it on update.
 	SlugName string `json:"slugName"`
 
-	// Icon defaults to "location" on create. Icon is left out of the request
-	// when empty. An update with an empty Icon keeps the stored icon, as the
-	// API rejects an empty value.
+	// Icon defaults to "location" on create. An update with an empty Icon
+	// keeps the stored icon, as the API rejects an empty value.
 	Icon       string               `json:"icon,omitempty"`
 	Keys       []PrivateLocationKey `json:"keys,omitempty"`
 	LastSeen   string               `json:"lastSeen,omitempty"`

@@ -24,8 +24,8 @@ type TCPMonitor struct {
 	// itself and keeps it until Frequency changes: a value sent has no
 	// effect, and the value read back is the API's. The API still rejects a
 	// value above Frequency * 10 for a Frequency up to 60, or above
-	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
-	// of the request when zero.
+	// Frequency / 5 rounded up for a higher one. With Frequency 0, an update
+	// with a zero FrequencyOffset keeps the stored offset.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -36,14 +36,15 @@ type TCPMonitor struct {
 	// RunParallel runs the monitor in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
 	// response time limits in milliseconds, each at most 45000.
 	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
 	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
 	Tags                 []string `json:"tags,omitempty"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings on create, and an
+	// update with nil keeps the stored settings.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -54,15 +55,14 @@ type TCPMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list.
+	// locations to run from.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RuntimeID is the runtime version, such as "2025.04".
 	RuntimeID *string `json:"runtimeId"`
@@ -87,9 +87,8 @@ type TCPRequest struct {
 	// Data is sent to the server after the connection is established.
 	Data       string      `json:"data,omitempty"`
 	Assertions []Assertion `json:"assertions,omitempty"`
-	// IPFamily is left out of the request when empty. An update with an
-	// empty IPFamily keeps the stored family, as the API rejects an empty
-	// value.
+	// An update with an empty IPFamily keeps the stored family, as the API
+	// rejects an empty value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 

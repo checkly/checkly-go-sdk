@@ -23,24 +23,21 @@ type ClientCertificate struct {
 	// but not to "/partnership". API checks and Multistep checks match on
 	// path; gRPC, SSL and TCP monitors only use certificates without one.
 	// Leave it empty to use the certificate for every path on the host.
-	// Path is left out of the request when empty.
 	Path string `json:"path,omitempty"`
 
 	// Certificate is the client certificate in PEM format.
 	Certificate string `json:"cert"`
 
-	// PrivateKey is the private key for the certificate in PEM format. It is
-	// only sent: reads never return it.
+	// PrivateKey is the private key for the certificate in PEM format. Reads
+	// never return it.
 	PrivateKey string `json:"key"`
 
 	// Passphrase is an optional passphrase for the private key. Like
 	// PrivateKey, reads never return it.
-	// Passphrase is left out of the request when empty.
 	Passphrase string `json:"passphrase,omitempty"`
 
 	// TrustedCA is an optional PEM formatted bundle of CA certificates that
 	// the client should trust. The bundle may contain many CA certificates.
-	// TrustedCA is left out of the request when empty.
 	TrustedCA string `json:"ca,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`

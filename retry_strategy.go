@@ -14,14 +14,14 @@ const (
 	RetryStrategyTypeLinear      RetryStrategyType = "LINEAR"
 	RetryStrategyTypeExponential RetryStrategyType = "EXPONENTIAL"
 	// RetryStrategyTypeSingleRetry retries once; MaxRetries and
-	// MaxDurationSeconds are not sent.
+	// MaxDurationSeconds do not apply to it.
 	RetryStrategyTypeSingleRetry RetryStrategyType = "SINGLE_RETRY"
-	// RetryStrategyTypeNoRetries disables retries. It is not an API value:
-	// the SDK sends the retry strategy as null.
+	// RetryStrategyTypeNoRetries disables retries, like a nil retry
+	// strategy. Reads return a nil retry strategy instead.
 	RetryStrategyTypeNoRetries RetryStrategyType = "NO_RETRIES"
 	// RetryStrategyTypeFallback lets each check in a group use its own retry
-	// strategy, and only groups accept it. It is not an API type value: the
-	// SDK sends the retry strategy as the string "FALLBACK".
+	// strategy, and only groups accept it. A read of such a group returns
+	// it.
 	RetryStrategyTypeFallback RetryStrategyType = "FALLBACK"
 )
 
@@ -38,8 +38,7 @@ const (
 // RetryStrategy sets how the failed runs of a check, monitor or group are
 // retried.
 type RetryStrategy struct {
-	// Type is how failed runs are retried. MarshalJSON encodes
-	// [RetryStrategyTypeNoRetries] and [RetryStrategyTypeFallback] specially.
+	// Type is how failed runs are retried.
 	Type RetryStrategyType `json:"type"`
 	// BaseBackoffSeconds is the number of seconds to wait before the first
 	// retry.
@@ -52,7 +51,6 @@ type RetryStrategy struct {
 	// SameRegion runs retries in the same region as the failed run.
 	SameRegion bool `json:"sameRegion"`
 	// OnlyOn limits retries to the listed failure causes.
-	// OnlyOn is left out of the request when empty.
 	OnlyOn []RetryOnlyOn `json:"onlyOn,omitempty"`
 }
 

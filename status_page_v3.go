@@ -38,7 +38,7 @@ type StatusPageV3 struct {
 	// page.
 	Favicon string `json:"favicon"`
 
-	// DefaultTheme is left out of the request when empty.
+	// An empty DefaultTheme means [StatusPageThemeAuto], also on update.
 	DefaultTheme StatusPageTheme `json:"defaultTheme,omitempty"`
 
 	// PrivacyPolicyLink is a link to a privacy policy, shown in the page
@@ -149,12 +149,10 @@ const (
 type StatusPageComponentV3Configuration struct {
 	// ShowHistoricalData shows the historical status (the uptime bar) of
 	// the component on the status page. Defaults to true.
-	// ShowHistoricalData is left out of the request when nil.
 	ShowHistoricalData *bool `json:"showHistoricalData,omitempty"`
 
 	// ExpandedByDefault renders the group expanded when the status page
 	// loads. GROUP components only. Defaults to false.
-	// ExpandedByDefault is left out of the request when nil.
 	ExpandedByDefault *bool `json:"expandedByDefault,omitempty"`
 }
 
@@ -169,15 +167,13 @@ type StatusPageComponentV3 struct {
 	// the URL path instead.
 	StatusPageID string `json:"statusPageId,omitempty"`
 
-	// An empty Type means [StatusPageComponentV3TypeService]. Type is left
-	// out of the request when empty.
+	// An empty Type means [StatusPageComponentV3TypeService], also on update.
 	Type StatusPageComponentV3Type `json:"type,omitempty"`
 
 	// Name is the name shown on the status page.
 	Name string `json:"name"`
 
 	// Description is an optional description shown next to the name.
-	// Description is left out of the request when empty.
 	Description string `json:"description,omitempty"`
 
 	// DisplayOrder is the position among siblings; lower comes first.
@@ -187,15 +183,12 @@ type StatusPageComponentV3 struct {
 	// available for incidents and automation.
 	Hidden bool `json:"hidden"`
 
-	// Configuration holds the component's type-specific settings.
-	// Configuration is left out of the request when nil, and the component
-	// then gets (or is reset to, on update) the defaults of its type.
+	// Configuration holds the component's type-specific settings. Nil means
+	// the defaults of the component's type, also on update.
 	Configuration *StatusPageComponentV3Configuration `json:"configuration,omitempty"`
 
 	// ParentID is the identifier of the GROUP component this component sits
-	// under. It must belong to the same status page. Updates replace the
-	// component wholesale, so omitting it detaches the component from its
-	// parent. ParentID is left out of the request when empty.
+	// under. It must belong to the same status page.
 	ParentID string `json:"parentId,omitempty"`
 }
 
@@ -275,9 +268,7 @@ type StatusPageAutomationRuleV3 struct {
 	Tags []string `json:"tags"`
 
 	// Components is the list of components an automated incident impacts,
-	// with the impact each gets. Components is left out of the request when
-	// empty, as the API rejects null; updates replace the rule wholesale, so
-	// that removes every component.
+	// with the impact each gets.
 	Components []StatusPageAutomationRuleComponentV3 `json:"components,omitempty"`
 }
 
