@@ -2,7 +2,6 @@ package checkly_test
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -26,13 +25,35 @@ func validateTCPMonitorEmptyPayload(t *testing.T, body []byte) {
 	// The endpoints are PATCH-style down to the nested request object, so
 	// clearable request keys must always be serialized as well.
 	assertRawNestedBodyField(t, body, "request", "assertions", `[]`)
-	// data must NOT be present: the backend rejects an empty string and a
-	// null value cannot clear it either, so an empty data value is omitted.
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(body, &raw); err != nil {
-		t.Fatalf("decoding error for data %q: %v", body, err)
+	// An empty data is sent as null, which clears the stored data on update;
+	// the backend rejects an empty string.
+	assertRawNestedBodyField(t, body, "request", "data", `null`)
+}
+
+func TestUpdateTCPMonitorSendsData(t *testing.T) {
+	t.Parallel()
+	ts := cannedResponseServer(t,
+		http.MethodPut,
+		"/v1/checks/tcp/26900d4d-a852-4e34-9bd0-e40a7a5a2495?autoAssignAlerts=false",
+		func(t *testing.T, body []byte) {
+			assertRawNestedBodyField(t, body, "request", "data", `"ping"`)
+		},
+		http.StatusOK,
+		"CreateTCPMonitor.json",
+	)
+	defer ts.Close()
+	client := newTestClient(t, checkly.WithBaseURL(ts.URL), checkly.WithAuth("dummy-key", testAccountID), checkly.WithHTTPClient(ts.Client()))
+	_, err := client.UpdateTCPMonitor(
+		context.Background(),
+		"26900d4d-a852-4e34-9bd0-e40a7a5a2495",
+		checkly.TCPMonitor{
+			Name:    "TCP Monitor #1",
+			Request: checkly.TCPRequest{Hostname: "example.com", Port: 443, Data: "ping"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
 	}
-	assertRawBodyKeyAbsent(t, raw["request"], "data")
 }
 
 func TestCreateTCPMonitorSerializesEmptyValues(t *testing.T) {

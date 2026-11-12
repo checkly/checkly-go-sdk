@@ -1,3 +1,14 @@
+# Upgrading from v2.3 to v2.4
+
+v2.4.0 changes what two update requests send. Code compiles unchanged.
+
+- **TCP monitors:** an empty `TCPRequest.Data` is sent as `null`, so `UpdateTCPMonitor` with an
+  empty `Data` clears the stored data. It used to keep it. To keep data set elsewhere, such as in
+  the web app, read the monitor and send its `Data` back.
+- **URL monitors:** the request no longer has `headers` or the other API check request fields, so
+  `UpdateURLMonitor` keeps headers set on the monitor in the web app or through the API. It used to
+  clear them on accounts that can set URL monitor headers.
+
 # Upgrading from v2.1 to v2.2
 
 v2.2.0 changes the type of one field on every check and monitor type, so code that sets or reads
@@ -567,7 +578,8 @@ Fields now always sent, as `[]`, `null`, `""` or `0` when empty:
 - **TCP, URL and DNS monitors:** `degradedResponseTime` and `maxResponseTime`. **ICMP monitors:**
   `degradedPacketLossThreshold` and `maxPacketLossThreshold`. A zero value is no longer replaced by
   the API's default (and the API rejects a packet loss threshold of 0), so set these explicitly.
-- **TCP monitors:** `request.assertions` as `[]`.
+- **TCP monitors:** `request.assertions` as `[]`, and an empty `request.data` as `null`, so an update
+  with an empty `Data` clears the stored data.
 - **gRPC monitors:** an empty `GRPCConfig.Mode` is sent as `BEHAVIOR`. On a stored `HEALTH` monitor,
   an update with an empty mode now switches it to `BEHAVIOR` (or fails with a 400 when `Method` is
   empty); set `Mode` to keep `HEALTH`. With `ServiceDefinition` `REFLECTION`, an empty
