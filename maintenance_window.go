@@ -59,9 +59,7 @@ type MaintenanceWindow struct {
 	SilenceAllAlerts bool `json:"silenceAllAlerts"`
 
 	// Description is shown on linked status pages when the window is visible
-	// there. An empty Description is sent as null; the API compares null and
-	// an empty string as different values, so an update of a window stored
-	// with an empty-string description counts as a description change.
+	// there.
 	Description string `json:"description"`
 
 	// StatusPageVisibility controls whether and how the window appears on
@@ -134,10 +132,11 @@ type MaintenanceWindowStatusPageVisibility struct {
 	ServiceIDs    []string `json:"serviceIds"`
 
 	// ComponentConfigs lists the affected components of each linked status
-	// page with components, at most one entry per page. ComponentConfigs is
-	// left out of the request when nil. The API rejects an update without
-	// them that links status pages without ServiceIDs or AffectAllServices,
-	// so send back the ones a read returned.
+	// page with components, at most one entry per page. The API rejects an
+	// update with nil ComponentConfigs and a non-empty StatusPageIDs unless
+	// ServiceIDs or AffectAllServices is set; when one of them is, nil keeps
+	// the stored entries of the status pages that stay linked. Send back the
+	// entries a read returned to keep them.
 	ComponentConfigs []MaintenanceWindowComponentConfig `json:"componentConfigs"`
 }
 
@@ -149,7 +148,6 @@ type MaintenanceWindowComponentConfig struct {
 	StatusPageID string `json:"statusPageId"`
 	// AffectAllComponents affects every component of the page, including
 	// components added later, and requires Components to be empty.
-	// Components is left out of the request when empty.
 	AffectAllComponents bool                               `json:"affectAllComponents"`
 	Components          []MaintenanceWindowComponentImpact `json:"components,omitempty"`
 }
@@ -159,8 +157,8 @@ type MaintenanceWindowComponentConfig struct {
 // the status it shows while the window is in progress.
 type MaintenanceWindowComponentImpact struct {
 	ComponentID string `json:"componentId"`
-	// Status is left out of the request when empty, so the API applies
-	// [StatusPageComponentStatusV3UnderMaintenance].
+	// An empty Status means [StatusPageComponentStatusV3UnderMaintenance],
+	// also on update.
 	Status StatusPageComponentStatusV3 `json:"status,omitempty"`
 }
 

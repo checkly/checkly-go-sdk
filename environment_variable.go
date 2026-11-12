@@ -12,12 +12,12 @@ import (
 // type of the EnvironmentVariables fields of checks and groups.
 type EnvironmentVariable struct {
 	// Key is the variable's name, such as "API_KEY". UpdateEnvironmentVariable
-	// rejects a different key. Key is left out of the request when empty.
+	// rejects a different key.
 	Key string `json:"key,omitempty"`
 
 	// Value must not be empty for an account-level variable. Reads return an
-	// empty Value for a secret variable, and a secret variable of a check or
-	// group sent with an empty Value keeps its stored value.
+	// empty Value for a secret variable, and an update of a check or group
+	// keeps the stored value of a secret variable whose Value is empty.
 	Value string `json:"value"`
 
 	// Locked hides the value in the Checkly UI, like a password.

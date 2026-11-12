@@ -163,7 +163,8 @@ type CheckResultsPage struct {
 }
 
 // CheckResultsFilter narrows the results returned by
-// [Client.GetCheckResults]. Zero-valued fields are not sent.
+// [Client.GetCheckResults]. A zero-valued field does not narrow the
+// results, and a zero Limit uses the API's default.
 //
 // The API allows 60 requests per 60 seconds to this endpoint, and a request
 // that sets HasFailures counts as five.

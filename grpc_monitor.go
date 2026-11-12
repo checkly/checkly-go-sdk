@@ -24,8 +24,8 @@ type GRPCMonitor struct {
 	// itself and keeps it until Frequency changes: a value sent has no
 	// effect, and the value read back is the API's. The API still rejects a
 	// value above Frequency * 10 for a Frequency up to 60, or above
-	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
-	// of the request when zero.
+	// Frequency / 5 rounded up for a higher one. With Frequency 0, an update
+	// with a zero FrequencyOffset keeps the stored offset.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -36,16 +36,17 @@ type GRPCMonitor struct {
 	// RunParallel runs the monitor in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
-	// response time limits in milliseconds, each at most 180000.
-	// DegradedResponseTime and MaxResponseTime are left out of the request when
-	// zero.
+	// response time limits in milliseconds, each at most 180000. Zero means
+	// the API's default on create, and an update with zero keeps the stored
+	// limit.
 	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
 	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
 	Tags                 []string `json:"tags,omitempty"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings on create, and an
+	// update with nil keeps the stored settings.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -56,15 +57,14 @@ type GRPCMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list.
+	// locations to run from.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RuntimeID is the runtime version, such as "2025.04".
 	RuntimeID *string `json:"runtimeId"`
@@ -89,9 +89,8 @@ type GRPCRequest struct {
 	// Port is 1 to 65535. Its type is open because the API may return it as
 	// a string; send a number or a numeric string.
 	Port interface{} `json:"port"`
-	// IPFamily is left out of the request when empty. An update with an
-	// empty IPFamily keeps the stored family, as the API rejects an empty
-	// value.
+	// An update with an empty IPFamily keeps the stored family, as the API
+	// rejects an empty value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 	SkipSSL  bool     `json:"skipSSL"`
 	// Timeout is 1 to 180; zero means 60.
@@ -103,7 +102,7 @@ type GRPCRequest struct {
 // GRPCMode is what a gRPC monitor checks, in [GRPCConfig].Mode.
 type GRPCMode string
 
-// gRPC modes, the values of [GRPCConfig].Mode. An empty mode is sent as
+// gRPC modes, the values of [GRPCConfig].Mode. An empty mode means
 // GRPCModeBehavior, the API default.
 const (
 	// GRPCModeBehavior calls the method in GRPCConfig.Method.
@@ -140,7 +139,7 @@ const (
 // GRPCConfig is the gRPC configuration in a [GRPCRequest]. Mode selects which
 // of the other fields apply: the API drops the fields of the other mode.
 type GRPCConfig struct {
-	// An empty Mode is sent as [GRPCModeBehavior], also on update, so set
+	// An empty Mode means [GRPCModeBehavior], also on update, so set
 	// [GRPCModeHealth] on every write of a health monitor.
 	Mode GRPCMode `json:"mode,omitempty"`
 	TLS  bool     `json:"tls"`
@@ -149,28 +148,29 @@ type GRPCConfig struct {
 	Metadata []GRPCMetadata `json:"metadata,omitempty"`
 	// The fields from Encoding to Message are for [GRPCModeBehavior] only.
 	//
-	// An update that omits Encoding keeps the stored encoding, so send
+	// An update with an empty Encoding keeps the stored encoding, so set
 	// [GRPCEncodingProtobuf] explicitly to switch a [GRPCEncodingFlatbuffers]
-	// monitor back; that also clears the stored BfbsContent. Encoding is left
-	// out of the request when empty.
+	// monitor back; that also clears the stored BfbsContent.
 	Encoding GRPCEncoding `json:"encoding,omitempty"`
 	// ServiceDefinition applies to [GRPCEncodingProtobuf] only, and
 	// [GRPCServiceDefinitionProtoFile] requires ProtoContent.
-	// ServiceDefinition is left out of the request when empty, so send
-	// [GRPCServiceDefinitionReflection] explicitly to switch a
+	// An update with an empty ServiceDefinition keeps the stored definition,
+	// so set [GRPCServiceDefinitionReflection] explicitly to switch a
 	// [GRPCServiceDefinitionProtoFile] monitor back.
 	ServiceDefinition GRPCServiceDefinition `json:"serviceDefinition,omitempty"`
-	// Method is required with [GRPCModeBehavior]. Method is left out of the
-	// request when empty.
+	// The API rejects an empty Method with [GRPCModeBehavior], also on
+	// update.
 	Method string `json:"method,omitempty"`
 	// ProtoContent is the proto file of [GRPCServiceDefinitionProtoFile].
-	// With [GRPCModeBehavior], an empty ProtoContent is sent only with an
-	// explicit [GRPCServiceDefinitionReflection] ServiceDefinition, which
-	// removes the stored file; otherwise it is left out of the request.
+	// With [GRPCModeBehavior], the API rejects an empty ProtoContent when
+	// ServiceDefinition is [GRPCServiceDefinitionProtoFile]. An update with
+	// an empty ProtoContent removes the stored file when ServiceDefinition is
+	// [GRPCServiceDefinitionReflection], and keeps it when ServiceDefinition
+	// is empty.
 	ProtoContent string `json:"protoContent,omitempty"`
 	// BfbsContent is the base64-encoded binary FlatBuffers schema, required
-	// for [GRPCEncodingFlatbuffers]. BfbsContent is left out of the request
-	// when empty.
+	// with [GRPCEncodingFlatbuffers]. An update with an empty Encoding ignores
+	// BfbsContent and keeps the stored schema.
 	BfbsContent string `json:"bfbsContent,omitempty"`
 	Message     string `json:"message,omitempty"`
 	// Service is for [GRPCModeHealth] only.

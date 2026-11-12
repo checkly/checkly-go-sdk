@@ -23,8 +23,8 @@ type DNSMonitor struct {
 	// itself and keeps it until Frequency changes: a value sent has no
 	// effect, and the value read back is the API's. The API still rejects a
 	// value above Frequency * 10 for a Frequency up to 60, or above
-	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
-	// of the request when zero.
+	// Frequency / 5 rounded up for a higher one. With Frequency 0, an update
+	// with a zero FrequencyOffset keeps the stored offset.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the monitor fails or recovers.
@@ -32,14 +32,14 @@ type DNSMonitor struct {
 	// RunParallel runs the monitor in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
 	// response time limits in milliseconds, each at most 5000.
 	DegradedResponseTime int      `json:"degradedResponseTime,omitempty"`
 	MaxResponseTime      int      `json:"maxResponseTime,omitempty"`
 	Tags                 []string `json:"tags,omitempty"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings, also on update.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -50,15 +50,14 @@ type DNSMonitor struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the monitor's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// monitor's alerts. The SDK disables automatic assignment, so an
 	// empty list leaves the monitor without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list. The Checkly agent
+	// locations to run from. The Checkly agent
 	// at those locations must be version 7.0.0 or later.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RetryStrategy sets how failed runs are retried; nil disables retries.
@@ -107,11 +106,11 @@ type DNSRequest struct {
 	RecordType DNSRecordType `json:"recordType"`
 	Query      string        `json:"query"`
 	// NameServer and Port select the name server to query. Set both or
-	// neither. NameServer is left out of the request when empty. Port is
-	// left out of the request when zero.
+	// neither.
 	NameServer string `json:"nameServer,omitempty"`
 	Port       int    `json:"port,omitempty"`
-	// Protocol is left out of the request when empty.
+	// Protocol empty means the API's default, [DNSProtocolUDP], also on
+	// update.
 	Protocol   DNSProtocol `json:"protocol,omitempty"`
 	Assertions []Assertion `json:"assertions"`
 }

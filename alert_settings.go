@@ -15,9 +15,12 @@ const (
 )
 
 // AlertSettings sets when a check, monitor or group sends alerts and
-// reminders.
+// reminders. An empty EscalationType means [EscalationTypeRunBased], an
+// empty Reminders.Interval means 5 and an empty
+// ParallelRunFailureThreshold.Percentage means 10, on create and on an
+// update of a group, DNS monitor or Playwright check. Other updates store
+// them as given.
 type AlertSettings struct {
-	// EscalationType is left out of the request when empty.
 	EscalationType              EscalationType              `json:"escalationType,omitempty"`
 	RunBasedEscalation          RunBasedEscalation          `json:"runBasedEscalation,omitempty"`
 	TimeBasedEscalation         TimeBasedEscalation         `json:"timeBasedEscalation,omitempty"`
@@ -29,9 +32,7 @@ type AlertSettings struct {
 // parallel alert only when a percentage of its parallel runs fail.
 type ParallelRunFailureThreshold struct {
 	Enabled bool `json:"enabled"`
-	// Percentage is 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100; the API
-	// defaults it to 10 on create. Percentage is left out of the request when
-	// zero.
+	// Percentage is 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100.
 	Percentage int `json:"percentage,omitempty"`
 }
 
@@ -40,7 +41,6 @@ type ParallelRunFailureThreshold struct {
 type RunBasedEscalation struct {
 	// FailedRunThreshold is the number of consecutive failed runs after
 	// which an alert is sent, 1 to 5.
-	// FailedRunThreshold is left out of the request when zero.
 	FailedRunThreshold int `json:"failedRunThreshold,omitempty"`
 }
 
@@ -49,7 +49,6 @@ type RunBasedEscalation struct {
 type TimeBasedEscalation struct {
 	// MinutesFailingThreshold is the number of minutes after a check starts
 	// failing that an alert is sent: 5, 10, 15 or 30.
-	// MinutesFailingThreshold is left out of the request when zero.
 	MinutesFailingThreshold int `json:"minutesFailingThreshold,omitempty"`
 }
 
@@ -58,7 +57,6 @@ type Reminders struct {
 	// Amount is the number of reminders: 0 to 5, or 100000.
 	Amount int `json:"amount"`
 	// Interval is the interval between reminders: 1, 2, 3, 4, 5, 10, 15 or
-	// 30; the API defaults it to 5 on create. Interval is left out of the
-	// request when zero.
+	// 30.
 	Interval int `json:"interval,omitempty"`
 }

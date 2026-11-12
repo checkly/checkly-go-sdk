@@ -43,25 +43,22 @@ type PlaywrightCheck struct {
 	// locations to run from.
 	PrivateLocations     *[]string             `json:"privateLocations"`
 	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
-	// Tags is left out of the request when empty.
-	Tags []string `json:"tags,omitempty"`
-	// AlertSettings is left out of the request when nil.
+	Tags                 []string              `json:"tags,omitempty"`
+	// AlertSettings nil means the API's default settings, also on update.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
 	UseGlobalAlertSettings bool `json:"useGlobalAlertSettings"`
 	// GroupID is the ID of the check group the check belongs to; 0 means
-	// none. GroupID is left out of the request when zero.
+	// none.
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the check's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// check's alerts. The SDK disables automatic assignment, so an empty
 	// list leaves the check without any.
-	// AlertChannelSubscriptions is left out of the request when empty.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions,omitempty"`
 	// TriggerIncident makes the check open and resolve an incident on a
 	// status page service, based on its alert configuration. Nil turns it
@@ -84,8 +81,7 @@ type PlaywrightCheck struct {
 	// InstallCommand defaults to an empty command when nil.
 	InstallCommand *string `json:"installCommand"`
 	// Browsers are the browsers to run the tests in, such as "chromium",
-	// without duplicates. Browsers is left out of the request when empty, and
-	// the API then uses ["chromium"].
+	// without duplicates. Empty means ["chromium"], also on update.
 	Browsers []string `json:"browsers,omitempty"`
 	// CodeBundlePath is the path of the check's code bundle, which the API
 	// requires.

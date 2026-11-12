@@ -35,19 +35,20 @@ type BrowserCheck struct {
 	// RunParallel runs the check in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
-	// Script is the check's code. An empty Script is sent as null.
+	// Script is the check's code. Empty means no inline script, for a check
+	// that runs ScriptPath.
 	Script string `json:"script"`
 	// ScriptPath is the path of the script in the runtime.
 	ScriptPath *string `json:"scriptPath"`
-	// Dependencies are files attached to the script. Nil is sent as an
-	// empty list.
+	// Dependencies are files attached to the script.
 	Dependencies         []ScriptDependency    `json:"dependencies"`
 	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables"`
 	SSLCheckDomain       string                `json:"sslCheckDomain"`
 	Tags                 []string              `json:"tags"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings on create, and an
+	// update with nil keeps the stored settings.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -57,15 +58,14 @@ type BrowserCheck struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the check's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// check's alerts. The SDK disables automatic assignment, so an empty
 	// list leaves the check without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list.
+	// locations to run from.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RuntimeID is the runtime version the check runs with, such as
 	// "2025.04".

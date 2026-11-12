@@ -11,11 +11,6 @@ import (
 // APICheck is an API check: it sends an HTTP request and runs assertions on
 // the response. It is the input and result of [Client.CreateAPICheck] and
 // [Client.UpdateAPICheck], and the result of [Client.GetAPICheck].
-//
-// Fields whose zero value would be left out of the request are sent anyway
-// where the zero value is how they are cleared: nil Locations,
-// PrivateLocations, Tags and AlertChannelSubscriptions are sent as empty
-// lists, and a GroupID, SetupSnippetID or TearDownSnippetID of 0 as null.
 type APICheck struct {
 	// ID is the check's UUID, assigned by the API.
 	ID          string  `json:"id,omitempty"`
@@ -29,8 +24,8 @@ type APICheck struct {
 	// itself and keeps it until Frequency changes: a value sent has no
 	// effect, and the value read back is the API's. The API still rejects a
 	// value above Frequency * 10 for a Frequency up to 60, or above
-	// Frequency / 5 rounded up for a higher one. FrequencyOffset is left out
-	// of the request when zero.
+	// Frequency / 5 rounded up for a higher one. With Frequency 0, an update
+	// with a zero FrequencyOffset keeps the stored offset.
 	FrequencyOffset int  `json:"frequencyOffset,omitempty"`
 	Activated       bool `json:"activated"`
 	// Muted stops notifications when the check fails or recovers.
@@ -41,14 +36,15 @@ type APICheck struct {
 	// RunParallel runs the check in all its locations in parallel.
 	RunParallel bool `json:"runParallel"`
 	// Locations are the public locations to run from, as region codes such
-	// as "us-east-1". Nil is sent as an empty list.
+	// as "us-east-1".
 	Locations []string `json:"locations"`
 	// DegradedResponseTime and MaxResponseTime are the degraded and failing
 	// response time limits in milliseconds, each at most 45000.
 	DegradedResponseTime int      `json:"degradedResponseTime"`
 	MaxResponseTime      int      `json:"maxResponseTime"`
 	Tags                 []string `json:"tags"`
-	// AlertSettings is left out of the request when nil.
+	// AlertSettings nil means the API's default settings on create, and an
+	// update with nil keeps the stored settings.
 	AlertSettings *AlertSettings `json:"alertSettings,omitempty"`
 	// UseGlobalAlertSettings applies the account's alert settings instead
 	// of AlertSettings.
@@ -67,15 +63,14 @@ type APICheck struct {
 	GroupID int64 `json:"groupId,omitempty"`
 	// GroupOrder is the check's position in its group, which sets the run
 	// order when the group is triggered from the API or CI/CD. 0 is the
-	// first position. Nil means no position, and is sent as null so that
-	// an update clears it.
+	// first position. Nil means no position.
 	GroupOrder *int `json:"groupOrder"`
 	// AlertChannelSubscriptions are the alert channels that receive the
 	// check's alerts. The SDK disables automatic assignment, so an empty
 	// list leaves the check without any.
 	AlertChannelSubscriptions []AlertChannelSubscription `json:"alertChannelSubscriptions"`
 	// PrivateLocations are the slug names of the account's private
-	// locations to run from. Nil is sent as an empty list.
+	// locations to run from.
 	PrivateLocations *[]string `json:"privateLocations"`
 	// RuntimeID is the runtime version the check runs with, such as
 	// "2025.04".
@@ -135,19 +130,15 @@ type Request struct {
 	FollowRedirects bool   `json:"followRedirects"`
 	SkipSSL         bool   `json:"skipSSL"`
 	Body            string `json:"body"`
-	// BodyType is left out of the request when empty. An update with an empty
-	// BodyType keeps the stored body type, as the API rejects an empty value.
+	// An update with an empty BodyType keeps the stored body type, as the
+	// API rejects an empty value.
 	BodyType        BodyType    `json:"bodyType,omitempty"`
 	Headers         []KeyValue  `json:"headers"`
 	QueryParameters []KeyValue  `json:"queryParameters"`
 	Assertions      []Assertion `json:"assertions"`
-	// BasicAuth is always sent, as null when nil: the update endpoints keep
-	// the stored credentials when the key is left out, so sending null is how
-	// previously configured credentials are removed.
-	BasicAuth *BasicAuth `json:"basicAuth"`
-	// IPFamily is left out of the request when empty. An update with an
-	// empty IPFamily keeps the stored family, as the API rejects an empty
-	// value.
+	BasicAuth       *BasicAuth  `json:"basicAuth"`
+	// An update with an empty IPFamily keeps the stored family, as the API
+	// rejects an empty value.
 	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 
