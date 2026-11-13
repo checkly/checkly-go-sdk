@@ -803,6 +803,11 @@ type Client interface {
 		ruleID string,
 	) error
 
+	// GetAccount returns the account the client acts on: the account of an
+	// API key that belongs to a single account, else the account whose ID
+	// the client was built with.
+	GetAccount(ctx context.Context) (*Account, error)
+
 	// GetRuntime returns the runtime with the given ID, such as "2025.04". The
 	// endpoint is public, so the request is sent without credentials.
 	GetRuntime(

@@ -36,6 +36,19 @@ func setupClient(t *testing.T) checkly.Client {
 	return client
 }
 
+// TestGetAccountIntegration verifies that GetAccount returns the account the
+// client was built for. It makes no assumption about the account's features.
+func TestGetAccountIntegration(t *testing.T) {
+	client := setupClient(t)
+	account, err := client.GetAccount(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := os.Getenv("CHECKLY_ACCOUNT_ID"); account.ID != want {
+		t.Errorf("want account ID %q, got %q", want, account.ID)
+	}
+}
+
 // TestGetCheckIntegration verifies that GetCheck reads a check created with a
 // per-type method.
 func TestGetCheckIntegration(t *testing.T) {
