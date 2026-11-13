@@ -31,6 +31,9 @@ func TestGetAccount(t *testing.T) {
 		ID:       testAccountID,
 		Name:     "Example account",
 		Features: []string{checkly.AccountFeatureExtendedResponseTimeLimits},
+		Integrations: []checkly.AccountIntegration{
+			{Type: checkly.AccountIntegrationSlack, Connected: false},
+		},
 	}
 	if !cmp.Equal(want, *got) {
 		t.Error(cmp.Diff(want, *got))
@@ -63,5 +66,22 @@ func TestGetAccountWithoutFeatures(t *testing.T) {
 				t.Errorf("want HasFeature(%q) false", checkly.AccountFeatureExtendedResponseTimeLimits)
 			}
 		})
+	}
+}
+
+func TestAccountIntegration(t *testing.T) {
+	t.Parallel()
+	account := checkly.Account{Integrations: []checkly.AccountIntegration{
+		{Type: "OTHER", Connected: false},
+		{Type: checkly.AccountIntegrationSlack, Connected: true},
+	}}
+	got, ok := account.Integration(checkly.AccountIntegrationSlack)
+	if want := (checkly.AccountIntegration{Type: checkly.AccountIntegrationSlack, Connected: true}); !ok || got != want {
+		t.Errorf("Integration(%q) = %+v, %v; want %+v, true", checkly.AccountIntegrationSlack, got, ok, want)
+	}
+	// A type the API does not report is not found, rather than reported
+	// as not connected.
+	if got, ok := (&checkly.Account{}).Integration(checkly.AccountIntegrationSlack); ok {
+		t.Errorf("Integration on an account without integrations = %+v, true; want false", got)
 	}
 }

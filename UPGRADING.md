@@ -2,7 +2,7 @@
 
 v2.5.0 adds a method to the `Client` interface. Code that only calls a `Client` compiles unchanged.
 
-- **`Client.GetAccount`:** returns the account the client acts on, with its feature flags. Types
+- **`Client.GetAccount`:** returns the account the client acts on, with its feature flags and integrations. Types
   that implement `Client` themselves, such as mocks or wrappers, must add the method.
 
 # Upgrading from v2.3 to v2.4
