@@ -54,6 +54,9 @@ func TestEnumWireValues(t *testing.T) {
 		{string(checkly.EscalationTypeRunBased), "RUN_BASED"},
 		{string(checkly.EscalationTypeTimeBased), "TIME_BASED"},
 
+		{string(checkly.AccountFeatureExtendedResponseTimeLimits), "EXTENDED_RESPONSE_TIME_LIMITS"},
+		{string(checkly.AccountIntegrationSlack), "SLACK"},
+
 		{string(checkly.AlertChannelTypeEmail), "EMAIL"},
 		{string(checkly.AlertChannelTypeSlack), "SLACK"},
 		{string(checkly.AlertChannelTypeSlackApp), "SLACK_APP"},

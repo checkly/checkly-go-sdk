@@ -684,6 +684,15 @@ var statusCases = map[string]statusCase{
 		},
 	},
 
+	// Account
+	"GetAccount": {
+		requests: []string{"GET /v1/accounts/me"},
+		accept:   statusOK,
+		call: func(ctx context.Context, c checkly.Client) error {
+			return ignoreResult(c.GetAccount(ctx))
+		},
+	},
+
 	// Runtimes and static IPs
 	"GetRuntime": {
 		requests: []string{"GET /v1/runtimes/2024.02"},

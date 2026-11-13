@@ -1,0 +1,12 @@
+{
+  "id": "a1b2c3d4-0000-4000-8000-000000000001",
+  "name": "Example account",
+  "runtimeId": "2025.04",
+  "plan": "team",
+  "planDisplayName": "Team",
+  "addons": {},
+  "settings": {},
+  "alertSettings": {},
+  "features": ["EXTENDED_RESPONSE_TIME_LIMITS"],
+  "integrations": [{ "type": "SLACK", "connected": false }]
+}
