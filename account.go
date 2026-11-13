@@ -13,9 +13,16 @@ import (
 // seconds for TCP monitors.
 const AccountFeatureExtendedResponseTimeLimits = "EXTENDED_RESPONSE_TIME_LIMITS"
 
-// AccountIntegrationSlack is the [AccountIntegration].Type of the Checkly
-// Slack app, which alert channels of type [AlertChannelTypeSlackApp] need.
-const AccountIntegrationSlack = "SLACK"
+// AccountIntegrationType is the type of an account integration, in
+// [AccountIntegration].Type.
+type AccountIntegrationType string
+
+// Account integration types, the values of [AccountIntegration].Type.
+const (
+	// AccountIntegrationSlack is the Checkly Slack app, which alert channels
+	// of type [AlertChannelTypeSlackApp] need.
+	AccountIntegrationSlack AccountIntegrationType = "SLACK"
+)
 
 // Account is a Checkly account, as returned by GetAccount.
 type Account struct {
@@ -35,8 +42,8 @@ type Account struct {
 
 // AccountIntegration is an integration of an [Account].
 type AccountIntegration struct {
-	Type      string `json:"type"`
-	Connected bool   `json:"connected"`
+	Type      AccountIntegrationType `json:"type"`
+	Connected bool                   `json:"connected"`
 }
 
 // HasFeature reports whether the account has the feature flag feature, such
@@ -48,7 +55,7 @@ func (a *Account) HasFeature(feature string) bool {
 // Integration returns the account's integration of type integrationType,
 // such as AccountIntegrationSlack. It returns false if the API does not
 // report that type.
-func (a *Account) Integration(integrationType string) (AccountIntegration, bool) {
+func (a *Account) Integration(integrationType AccountIntegrationType) (AccountIntegration, bool) {
 	i := slices.IndexFunc(a.Integrations, func(i AccountIntegration) bool {
 		return i.Type == integrationType
 	})
