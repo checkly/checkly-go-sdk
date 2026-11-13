@@ -30,7 +30,7 @@ func TestGetAccount(t *testing.T) {
 	want := checkly.Account{
 		ID:       testAccountID,
 		Name:     "Example account",
-		Features: []string{checkly.AccountFeatureExtendedResponseTimeLimits},
+		Features: []checkly.AccountFeature{checkly.AccountFeatureExtendedResponseTimeLimits},
 		Integrations: []checkly.AccountIntegration{
 			{Type: checkly.AccountIntegrationSlack, Connected: false},
 		},

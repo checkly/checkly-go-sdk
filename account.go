@@ -6,12 +6,18 @@ import (
 	"slices"
 )
 
-// AccountFeatureExtendedResponseTimeLimits is the [Account].Features flag of
-// accounts whose checks may set response time limits above the standard
-// runner timeouts: such checks currently wait up to 45 seconds for a
-// response, instead of 30 seconds for API checks and URL monitors and 5
-// seconds for TCP monitors.
-const AccountFeatureExtendedResponseTimeLimits = "EXTENDED_RESPONSE_TIME_LIMITS"
+// AccountFeature is a feature flag of an account, in [Account].Features.
+type AccountFeature string
+
+// Account feature flags, the values of [Account].Features.
+const (
+	// AccountFeatureExtendedResponseTimeLimits marks accounts whose checks
+	// may set response time limits above the standard runner timeouts: such
+	// checks currently wait up to 45 seconds for a response, instead of 30
+	// seconds for API checks and URL monitors and 5 seconds for TCP
+	// monitors.
+	AccountFeatureExtendedResponseTimeLimits AccountFeature = "EXTENDED_RESPONSE_TIME_LIMITS"
+)
 
 // AccountIntegrationType is the type of an account integration, in
 // [AccountIntegration].Type.
@@ -31,7 +37,7 @@ type Account struct {
 
 	// Features lists the account's feature flags that clients can act on,
 	// such as AccountFeatureExtendedResponseTimeLimits.
-	Features []string `json:"features"`
+	Features []AccountFeature `json:"features"`
 
 	// Integrations lists integrations of the account, such as
 	// AccountIntegrationSlack, each with whether it is connected. A type
@@ -48,7 +54,7 @@ type AccountIntegration struct {
 
 // HasFeature reports whether the account has the feature flag feature, such
 // as AccountFeatureExtendedResponseTimeLimits.
-func (a *Account) HasFeature(feature string) bool {
+func (a *Account) HasFeature(feature AccountFeature) bool {
 	return slices.Contains(a.Features, feature)
 }
 
